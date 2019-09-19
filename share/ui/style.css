@@ -51,7 +51,8 @@
 @define-color bg_color6 #898989;
 @define-color bg_color7 #636363;
 @define-color bg_color8 #000000;
-
+@define-color theme_bg_color #ff0000;
+@define-color theme_base_color #ff0000;
 /* Black */
 
 

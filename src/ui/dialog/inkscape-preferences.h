@@ -239,6 +239,7 @@ protected:
     UI::Widget::PrefCombo _gtk_theme;
     UI::Widget::PrefCombo _icon_theme;
     UI::Widget::PrefCheckButton _dark_theme;
+    UI::Widget::PrefSlider      _contrast_theme;
     UI::Widget::PrefCheckButton _symbolic_icons;
     UI::Widget::PrefCheckButton _symbolic_base_colors;
     UI::Widget::PrefColorPicker _symbolic_base_color;
@@ -590,6 +591,7 @@ protected:
 
 private:
   void themeChange();
+  bool contrastChange(GdkEventButton* button_event);
   void symbolicThemeCheck();
   void toggleSymbolic();
   void changeIconsColors();

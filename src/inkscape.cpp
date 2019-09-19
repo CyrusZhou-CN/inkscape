@@ -587,6 +587,20 @@ void Application::add_gtk_css()
         g_object_get(settings, "gtk-font-name", &gtk_font_name, NULL);
     }
 
+    Glib::ustring css_contrast = "";
+    int contrast = prefs->getInt("/theme/contrast", 0);
+    auto providercontrast = Gtk::CssProvider::create();
+    if (contrast) {
+        //css_contrast = "@define-color ink_contrast rgb(" + Glib::ustring::format(contrast)  + "," + Glib::ustring::format(contrast)  + "," + Glib::ustring::format(contrast) +");";
+        css_contrast = "@define-color theme_bg_color #ff0000;";
+        css_contrast += "@define-color theme_base_color #ff0000; /*mix( @theme_base_color, @theme_text_color, " + Glib::ustring::format(contrast) + " );*/";
+    }
+    try {
+        providercontrast->load_from_data(css_contrast);
+    } catch (const Gtk::CssProviderError &ex) {
+        g_critical("CSSProviderError::load_from_data(): failed to load '%s'\n(%s)",css_contrast.c_str(), ex.what().c_str());
+    }
+    Gtk::StyleContext::add_provider_for_screen(screen, providercontrast, GTK_STYLE_PROVIDER_PRIORITY_THEME);
 
     Glib::ustring style = get_filename(UIS, "style.css");
     if (!style.empty()) {

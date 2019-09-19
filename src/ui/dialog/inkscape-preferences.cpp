@@ -762,6 +762,11 @@ void InkscapePreferences::toggleSymbolic()
     INKSCAPE.signal_change_theme.emit();
 }
 
+bool InkscapePreferences::contrastChange(GdkEventButton* button_event) {
+    themeChange();
+    return true;
+}
+
 void InkscapePreferences::themeChange()
 {
     Gtk::Window *window = SP_ACTIVE_DESKTOP->getToplevel();
@@ -1112,6 +1117,11 @@ void InkscapePreferences::initPageUI()
     _dark_theme.init(_("Use dark theme"), "/theme/preferDarkTheme", false);
     _page_theme.add_line(true, "", _dark_theme, "", _("Use dark theme"), true);
     _dark_theme.signal_clicked().connect(sigc::mem_fun(*this, &InkscapePreferences::themeChange));
+    _contrast_theme.init("/theme/contrast", 0, 1, 0.1, 0.2, 0, 1);
+    _page_theme.add_line( true, _("_Theme contrast:"), _contrast_theme, "",
+                             _("Make background brighter or darker to reduce contrast"), true);
+    _contrast_theme.signal_button_release_event().connect(sigc::mem_fun(*this, &InkscapePreferences::contrastChange));
+
     // Icons
     _page_theme.add_group_header(_("Display icons"));
     {
