@@ -800,6 +800,7 @@ void InkscapePreferences::themeChange()
             window->get_style_context()->add_class("bright");
             window->get_style_context()->remove_class("dark");
         }
+        INKSCAPE.add_gtk_css();
         INKSCAPE.signal_change_theme.emit();
         resetIconsColors(toggled);
     }
@@ -1055,7 +1056,6 @@ void InkscapePreferences::initPageUI()
     _ui_yaxisdown.init( _("Origin at upper left with y-axis pointing down (requires restart)"), "/options/yaxisdown", true);
     _page_ui.add_line( false, "", _ui_yaxisdown, "",
                        _("When off, origin is at lower left corner and y-axis points up"), true);
-
 
     // Theme
     _page_theme.add_group_header(_("Theme changes"));

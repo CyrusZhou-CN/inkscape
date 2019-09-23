@@ -549,6 +549,74 @@ Glib::ustring Application::get_symbolic_colors()
     return css_str;
 }
 
+/*
+* Get filename of the of a theme to unset/mofify/reaply alowing to change constant colors
+*/
+
+Glib::ustring Application::getThemeStyleFile(Glib::ustring theme) {
+    const gchar *dir_entry;
+    std::string path;
+    std::string filename;
+    gchar **builtin_themes = g_resources_enumerate_children("/org/gtk/libgtk/theme", G_RESOURCE_LOOKUP_FLAGS_NONE, NULL);
+    for (i = 0; builtin_themes[i] != NULL; i++) {
+        if (g_str_has_suffix(builtin_themes[i], "/"))
+            if (strcmp(builtin_themes[i], strlen(builtin_themes[i]) - 1), theme.c_str()) == 0) {
+                filename = g_build_filename("/org/gtk/libgtk/theme", builtin_themes[i], "gtk-3.0", "gtk.css", NULL);
+                g_strfreev(builtin_themes);
+                return filename;
+            }
+    }
+    g_strfreev(builtin_themes);
+    path = g_build_filename(g_get_user_data_dir(), "themes", NULL);
+    
+    GDir *dir = g_dir_open(path.c_str(), 0, NULL);
+    if (!dir)
+        return;
+    while ((dir_entry = g_dir_read_name(dir))) {
+        filename = g_build_filename(path.c_str, dir_entry, "gtk-3.0", "gtk.css", NULL);
+        if (g_file_test(filename, G_FILE_TEST_IS_REGULAR)) {
+            if (dir_entry == theme){
+                g_dir_close(dir);
+                return filename;
+            }
+        }
+    }
+    g_dir_close(dir);
+
+    path = g_build_filename(g_get_home_dir(), ".themes", NULL)
+    GDir *dir = g_dir_open(path.c_str(), 0, NULL);
+    if (!dir)
+        return;
+    while ((dir_entry = g_dir_read_name(dir))) {
+        filename = g_build_filename(path.c_str, dir_entry, "gtk-3.0", "gtk.css", NULL);
+        if (g_file_test(filename, G_FILE_TEST_IS_REGULAR)) {
+            if (dir_entry == theme){
+                g_dir_close(dir);
+                return filename;
+            }
+        }
+    }
+    g_dir_close(dir);
+    dirs = g_get_system_data_dirs();
+    for (i = 0; dirs[i]; i++) {
+        path = g_build_filename(dirs[i], "themes", NULL);
+        GDir *dir = g_dir_open(path.c_str(), 0, NULL);
+        if (!dir)
+            return;
+        while ((dir_entry = g_dir_read_name(dir))) {
+            filename = g_build_filename(path.c_str, dir_entry, "gtk-3.0", "gtk.css", NULL);
+            if (g_file_test(filename, G_FILE_TEST_IS_REGULAR)) {
+                if (dir_entry == theme){
+                    g_dir_close(dir);
+                    return filename;
+                }
+            }
+        }
+        g_dir_close(dir);
+    }
+    return std::string("");    
+}
+
 /**
  * \brief Add our CSS style sheets
  */
@@ -586,21 +654,34 @@ void Application::add_gtk_css()
         }
         g_object_get(settings, "gtk-font-name", &gtk_font_name, NULL);
     }
+    Glib::ustring themefile = getThemeStyleFile(prefs->getString("/theme/gtkTheme"));
+    if (!themefile.empty()) {
+        Glib::ustring css_contrast = "";
+        int contrast = prefs->getInt("/theme/contrast", 0);
+        auto providercontrast = Gtk::CssProvider::create();
+        if (contrast) {
+            //css_contrast = "@define-color ink_contrast rgb(" + Glib::ustring::format(contrast)  + "," + Glib::ustring::format(contrast)  + "," + Glib::ustring::format(contrast) +");";
+            css_contrast = "*{all: unset;}";
+            css_contrast = "@define-color theme_bg_color #ff0000;";
+            css_contrast += "@define-color theme_base_color #ff0000; /*mix( @theme_base_color, @theme_text_color, " + Glib::ustring::format(contrast) + " );*/";
+        }
+        try {
+            providercontrast->load_from_data(css_contrast);
+        } catch (const Gtk::CssProviderError &ex) {
+            g_critical("CSSProviderError::load_from_data(): failed to load '%s'\n(%s)",css_contrast.c_str(), ex.what().c_str());
+        }
+        Gtk::StyleContext::add_provider_for_screen(screen, providercontrast, GTK_STYLE_PROVIDER_PRIORITY_SETTINGS);
 
-    Glib::ustring css_contrast = "";
-    int contrast = prefs->getInt("/theme/contrast", 0);
-    auto providercontrast = Gtk::CssProvider::create();
-    if (contrast) {
-        //css_contrast = "@define-color ink_contrast rgb(" + Glib::ustring::format(contrast)  + "," + Glib::ustring::format(contrast)  + "," + Glib::ustring::format(contrast) +");";
-        css_contrast = "@define-color theme_bg_color #ff0000;";
-        css_contrast += "@define-color theme_base_color #ff0000; /*mix( @theme_base_color, @theme_text_color, " + Glib::ustring::format(contrast) + " );*/";
+        Glib::ustring style = themefile;
+        auto provider = Gtk::CssProvider::create();
+        try {
+            provider->load_from_path(style);
+        } catch (const Gtk::CssProviderError &ex) {
+            g_critical("CSSProviderError::load_from_path(): failed to load '%s'\n(%s)", style.c_str(),
+                    ex.what().c_str());
+        }
+        Gtk::StyleContext::add_provider_for_screen(screen, provider, GTK_STYLE_PROVIDER_PRIORITY_THEME);
     }
-    try {
-        providercontrast->load_from_data(css_contrast);
-    } catch (const Gtk::CssProviderError &ex) {
-        g_critical("CSSProviderError::load_from_data(): failed to load '%s'\n(%s)",css_contrast.c_str(), ex.what().c_str());
-    }
-    Gtk::StyleContext::add_provider_for_screen(screen, providercontrast, GTK_STYLE_PROVIDER_PRIORITY_THEME);
 
     Glib::ustring style = get_filename(UIS, "style.css");
     if (!style.empty()) {
@@ -613,6 +694,7 @@ void Application::add_gtk_css()
         }
         Gtk::StyleContext::add_provider_for_screen(screen, provider, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     }
+
     if (!colorizeprovider) {
         colorizeprovider = Gtk::CssProvider::create();
     }
