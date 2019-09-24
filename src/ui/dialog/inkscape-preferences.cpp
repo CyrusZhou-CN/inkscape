@@ -1118,7 +1118,7 @@ void InkscapePreferences::initPageUI()
     _dark_theme.init(_("Use dark theme"), "/theme/preferDarkTheme", false);
     _page_theme.add_line(true, "", _dark_theme, "", _("Use dark theme"), true);
     _dark_theme.signal_clicked().connect(sigc::mem_fun(*this, &InkscapePreferences::themeChange));
-    _contrast_theme.init("/theme/contrast", 0, 1, 0.1, 0.2, 0, 1);
+    _contrast_theme.init("/theme/contrast", 1, 5, 1, 2, 5, 0);
     _page_theme.add_line(true, _("_Theme contrast:"), _contrast_theme, "",
                          _("Make background brighter or darker to reduce contrast"), true);
     _contrast_theme.signal_button_release_event().connect(sigc::mem_fun(*this, &InkscapePreferences::contrastChange));

@@ -205,7 +205,6 @@ public:
     gint get_pdf_page() {
         return _pdf_page;
     }
-    Glib::ustring getThemeStyleFile(Glib::ustring theme);
     void add_gtk_css();
     void add_icon_theme();
 
