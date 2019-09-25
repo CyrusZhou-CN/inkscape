@@ -30,6 +30,7 @@
 #include <glibmm/i18n.h>
 #include <glibmm/miscutils.h>
 #include <glibmm/convert.h>
+#include <regex>
 
 #include "desktop.h"
 #include "device-manager.h"
@@ -588,8 +589,20 @@ void Application::add_gtk_css()
     }
     Glib::ustring css_contrast = "";
     double contrast = (5 - prefs->getInt("/theme/contrast", 0)) / 20.0; // 0 - 0.20
-    auto providercontrast = Gtk::CssProvider::create();
-    css_contrast  = "@define-color theme_bg_color_contrasted mix( @theme_bg_color, @theme_fg_color, " + Glib::ustring::format(contrast) + " );\n";
+    const gchar *variant = nullptr;
+    if (prefs->getBool("/theme/darkTheme", false)) {
+        variant = "dark";
+    }
+    GtkCssProvider *themeprovider = gtk_css_provider_get_named(prefs->getString("/theme/gtkTheme").c_str(), variant);
+    std::string cssstring = gtk_css_provider_to_string(themeprovider);
+    std::smatch m;
+    std::regex e ("theme_bg_color ([^;]*)");   // matches words beginning by "sub"
+    std::regex_search (cssstring, m, e);
+    if (m.size()) {
+        std::cout << m[0] << std::endl;
+    }
+
+    /* css_contrast  = "@define-color theme_bg_color_contrasted mix( @theme_bg_color, @theme_fg_color, " + Glib::ustring::format(contrast) + " );\n";
     css_contrast += "@define-color theme_fg_color_contrasted mix( @theme_fg_color, @theme_bg_color, " + Glib::ustring::format(contrast) + " );\n";
     css_contrast += "@define-color theme_base_color_contrasted mix( @theme_base_color, @theme_text_color, " + Glib::ustring::format(0.2 - contrast) + " );\n";
     css_contrast += "@define-color theme_text_color_contrasted mix( @theme_text_color, @theme_base_color, " + Glib::ustring::format(0.2 - contrast) + " );\n";
@@ -605,7 +618,7 @@ void Application::add_gtk_css()
         g_critical("CSSProviderError::load_from_data(): failed to load '%s'\n(%s)", css_contrast.c_str(),
                 ex.what().c_str());
     }
-    Gtk::StyleContext::add_provider_for_screen(screen, providercontrast, GTK_STYLE_PROVIDER_PRIORITY_SETTINGS);
+    Gtk::StyleContext::add_provider_for_screen(screen, providercontrast, GTK_STYLE_PROVIDER_PRIORITY_SETTINGS); */
 
     Glib::ustring style = get_filename(UIS, "style.css");
     if (!style.empty()) {
