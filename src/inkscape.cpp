@@ -554,10 +554,10 @@ std::string sp_get_contrasted_color(std::string cssstring, std::string define, s
                                     std::string contrast)
 {
     std::smatch m;
-    std::regex e("@define-color " + define + " ([^;]*)"); // matches words beginning by "sub"
+    std::regex e("@define-color " + define + " ([^;]*)");
     std::regex_search(cssstring, m, e);
     std::smatch n;
-    std::regex f("@define-color " + define_b + " ([^;]*)"); // matches words beginning by "sub"
+    std::regex f("@define-color " + define_b + " ([^;]*)");
     std::regex_search(cssstring, n, f);
     std::string out = "";
     if (m.size() >= 1) {
@@ -570,7 +570,7 @@ std::string sp_get_contrasted_color(std::string cssstring, std::string define, s
 std::string sp_tweak_defined_color(std::string cssstring, std::string define)
 {
     std::smatch m;
-    std::regex e("@define-color " + define + " ([^;]*)"); // matches words beginning by "sub"
+    std::regex e("@define-color " + define + " ([^;]*)");
     std::regex_search(cssstring, m, e);
     if (m.size() >= 1) {
         std::string search = "@define-color " + define + " " + m[1].str();
@@ -638,59 +638,28 @@ void Application::add_gtk_css()
     std::string cssstring = gtk_css_provider_to_string(themeprovider);
     if (contrast) {
         out = sp_get_contrasted_color(cssstring, "theme_bg_color", "theme_fg_color", Glib::ustring::format(contrast));
-        /*     out += sp_get_contrasted_color(cssstring, "theme_fg_color",   "theme_bg_color",
-         * Glib::ustring::format(contrast)); */
-        /*     out += sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color",
-         * Glib::ustring::format(0.2 - contrast)); */
-        /*    out += sp_get_contrasted_color(cssstring, "theme_text_color", "theme_base_color",
-         * Glib::ustring::format(0.2 - contrast)); */
-        /*     cssstring = sp_tweak_defined_color(cssstring, "theme_fg_color"); */
+        out += sp_get_contrasted_color(cssstring, "theme_selected_bg_color", "theme_selected_fg_color", Glib::ustring::format(contrast));
+        out += sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color", Glib::ustring::format(0.2 - contrast));
         cssstring = sp_tweak_defined_color(cssstring, "theme_bg_color");
-        /*      cssstring = sp_tweak_defined_color(cssstring, "theme_base_color"); */
-        /*cssstring = sp_tweak_defined_color(cssstring, "theme_text_color"); */
+        cssstring = sp_tweak_defined_color(cssstring, "theme_base_color");
+        cssstring = sp_tweak_defined_color(cssstring, "theme_selected_bg_color");
         /* Study add
-        theme_selected_bg_color
+        theme_fg_color
+        theme_text_color
         insensitive_bg_color
         theme_unfocused_fg_color
         theme_unfocused_text_color
         theme_unfocused_selected_bg_color
         */
-        std::vector<Glib::ustring> tokens = Glib::Regex::split_simple("[}{]", cssstring);
-        for (unsigned i = 0; i < tokens.size() - 1; i += 2) {
-            Glib::ustring stament = "";
-            bool add = false;
-            stament += tokens[i];
-            if (tokens[i].find("@") != std::string::npos) {
-                std::vector<Glib::ustring> seletors = Glib::Regex::split_simple("[;]", tokens[i]);
-                for (auto sel : seletors) {
-                    size_t pos = sel.find("@define-color");
-                    if (pos != std::string::npos) {
-                        out += sel + ";";
-                    }
-                }
-            }
-            if ((i + 1) < tokens.size()) {
-                stament += "{";
-                std::vector<Glib::ustring> properties = Glib::Regex::split_simple("[;]", tokens[i + 1]);
-                for (auto prop : properties) {
-                    size_t pos = prop.find("@theme_");
-                    if (pos != std::string::npos) {
-                        stament += prop + ";";
-                        add = true;
-                    }
-                }
-                stament += "\n}";
-            }
-            if (add) {
-                out += stament;
-            }
-        }
     }
-#include <fstream>
+    out += cssstring;
+    std::regex e(R"((^|\r?\n)(?:.*?cubic-bezier.*?;|.*?engine.*?;|.*?-gtk-icon-source.*?;)(?=\r?\n|$))");
+    out = std::regex_replace( out, e, "$1" );
+    /* #include <fstream>
     std::ofstream file;
-    file.open("/home/jtx/as.svg");
+    file.open("/tmp/tmp.svg");
     file << out;
-    file.close();
+    file.close(); */
     auto provider = Gtk::CssProvider::create();
     try {
         provider->load_from_data(out.c_str());
