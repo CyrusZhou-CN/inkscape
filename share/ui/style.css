@@ -27,16 +27,6 @@
  *
  */
 
- /* Overrided by contrat slider theme.
- *
- * @theme_bg_color_contrasted
- * @theme_fg_color_contrasted
- * @theme_base_color_contrasted
- * @theme_text_color_contrasted
- *
- */
-
-
 /* Our own custom shades... better not to use.
  * Lightest to darkest based on linear rgb.
  */
@@ -88,7 +78,7 @@
 }
 
 image {
-    color: @theme_fg_color_contrasted;
+    color: @theme_fg_color;
     -gtk-icon-palette: default;
 }
 
@@ -107,11 +97,11 @@ image {
 .inverted,
 .dark .forcebright,
 .bright .forcedark {
-    color: @theme_bg_color_contrasted;
-    background-color: @theme_fg_color_contrasted;
-    background-image: image(@theme_fg_color_contrasted);
-    caret-color: @theme_bg_color_contrasted;
-    -gtk-secondary-caret-color: @theme_fg_color_contrasted;
+    color: @theme_bg_color;
+    background-color: @theme_fg_color;
+    background-image: image(@theme_fg_color);
+    caret-color: @theme_bg_color;
+    -gtk-secondary-caret-color: @theme_fg_color;
 }
 
 .inverted :not(menuitem):not(.rawstyle):not(overshoot):not(undershoot):not(selection),
@@ -123,16 +113,16 @@ image {
 }
 
 .combobright * {
-    color: @theme_text_color_contrasted;
-    background-color: @theme_base_color_contrasted;
-    background-image: image(@theme_base_color_contrasted);
+    color: @theme_text_color;
+    background-color: @theme_base_color;
+    background-image: image(@theme_base_color);
     border-radius: 4px;
 }
 
 .dark .combobright * {
-    color: @theme_base_color_contrasted;
-    background-color: @theme_text_color_contrasted;
-    background-image: image(@theme_text_color_contrasted);
+    color: @theme_base_color;
+    background-color: @theme_text_color;
+    background-image: image(@theme_text_color);
     border-radius: 4px;
 }
 
@@ -148,8 +138,8 @@ image {
 */
 
 .system_base_color {
-    color: @theme_fg_color_contrasted;
-    background-color: @theme_bg_color_contrasted;
+    color: @theme_fg_color;
+    background-color: @theme_bg_color;
 }
 
 .system_error_color {
@@ -190,13 +180,13 @@ spinbutton entry {
 
 iconview *:hover {
     border-width: 1px;
-    border-color: @theme_fg_color_contrasted;
+    border-color: @theme_fg_color;
     border-style: solid;
     border-radius: 4px;
 }
 
 .dark iconview *:hover {
-    border-color: @theme_bg_color_contrasted;
+    border-color: @theme_bg_color;
 }
 
 spinbutton undershoot {
@@ -245,7 +235,7 @@ spinbutton undershoot {
 }
 
 #LPESelectorFlowBox flowboxchild * {
-    color: @theme_fg_color_contrasted;
+    color: @theme_fg_color;
 }
 
 #LPESelectorFlowBox flowboxchild:selected image,
@@ -298,7 +288,7 @@ spinbutton undershoot {
 #LPEDialogSelector .searchbar entry image,
 #LPEDialogSelector .searchbar label,
 #LPEDialogSelector .searchbar #LPESelectorEffectFavShowImage {
-    color: @theme_fg_color_contrasted;
+    color: @theme_fg_color;
 }
 
 #LPEDialogSelector.LPEPackMore flowboxchild {
@@ -321,7 +311,7 @@ font-size:13px;
     margin:1px 0px 1px;
     border-radius:0;
     border-style:dotted;
-    border-color:@theme_fg_color_contrasted;
+    border-color:@theme_fg_color;
     border-width: 0 0 1px 0;
 }
 #LPEDialogSelector.LPEList flowboxchild:selected {
@@ -372,7 +362,7 @@ font-size:13px;
 #SelectorsAndStyleDialog treeview button:nth-child(3),
 #SelectorsAndStyleDialog treeview.style_sheet button:nth-child(4) {
     border-width: 0 0 0 2px;
-    border-color: @theme_fg_color_contrasted;
+    border-color: @theme_fg_color;
     border-style: solid;
     opacity: 0.5;
 }
@@ -447,7 +437,7 @@ combobox window.popup scrolledwindow treeview separator {}
 /* InkSpinScale */
 
 #InkSpinScale {
-    background: @theme_bg_color_contrasted;
+    background: @theme_bg_color;
     border: 1px black;
     border-radius: 3px;
     padding: 0px;
