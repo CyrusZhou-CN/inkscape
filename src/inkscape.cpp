@@ -550,6 +550,30 @@ Glib::ustring Application::get_symbolic_colors()
     return css_str;
 }
 
+std::string sp_tweak_defined_color(std::string cssstring, std::string define) {
+    std::smatch m;
+    std::regex e ("@define-color " + define + " ([^;]*)");   // matches words beginning by "sub"
+    std::regex_search (cssstring, m, e);
+    if (m.size()) {
+        // Get the first occurrence
+        std::string search  = "@define-color " + define + " " + m[0].str();
+        std::string replace = "@define-color " + define + " @" + define + "_contrasted";
+        size_t pos = cssstring.find(search);
+        if (pos != std::string::npos) {
+            cssstring.replace(pos, search.size(), replace);
+            search  = m[0].str();
+            replace = "@" + define;
+            pos = cssstring.find(search);
+            while( pos != std::string::npos)
+            {
+                cssstring.replace(pos, search.size(), replace);
+                pos = cssstring.find(search, pos + replace.size());
+            }
+        }
+    }
+    return cssstring;
+}
+
 /**
  * \brief Add our CSS style sheets
  */
@@ -594,31 +618,37 @@ void Application::add_gtk_css()
         variant = "dark";
     }
     GtkCssProvider *themeprovider = gtk_css_provider_get_named(prefs->getString("/theme/gtkTheme").c_str(), variant);
+    
     std::string cssstring = gtk_css_provider_to_string(themeprovider);
-    std::smatch m;
-    std::regex e ("theme_bg_color ([^;]*)");   // matches words beginning by "sub"
-    std::regex_search (cssstring, m, e);
-    if (m.size()) {
-        std::cout << m[0] << std::endl;
-    }
-
-    /* css_contrast  = "@define-color theme_bg_color_contrasted mix( @theme_bg_color, @theme_fg_color, " + Glib::ustring::format(contrast) + " );\n";
-    css_contrast += "@define-color theme_fg_color_contrasted mix( @theme_fg_color, @theme_bg_color, " + Glib::ustring::format(contrast) + " );\n";
-    css_contrast += "@define-color theme_base_color_contrasted mix( @theme_base_color, @theme_text_color, " + Glib::ustring::format(0.2 - contrast) + " );\n";
-    css_contrast += "@define-color theme_text_color_contrasted mix( @theme_text_color, @theme_base_color, " + Glib::ustring::format(0.2 - contrast) + " );\n";
-    css_contrast += "box { background-color:inherit; color:inherit;}\n";
-    css_contrast += "toolbar,menubar, menu, #InkRuler, #DesktopMainTable  {background-color:@theme_bg_color_contrasted; color:@theme_text_color;}\n";
-    css_contrast += "entry, spinbutton button{background-image:image(@theme_base_color_contrasted); color:@theme_fg_color}\n";
-    css_contrast += "togglebutton{background-image:image(@theme_fg_color_contrasted); color:@theme_text_color}\n";
-    css_contrast += "label{color:@theme_text_color_contrasted;}\n";
-    css_contrast += "tooltip label{color:@theme_base_color_contrasted;}\n";
+    /* Study add
+    theme_selected_bg_color
+    insensitive_bg_color
+    theme_unfocused_fg_color
+    theme_unfocused_text_color
+    theme_unfocused_selected_bg_color
+    */
+    cssstring = sp_tweak_defined_color(cssstring, "theme_bg_color");
+    cssstring = sp_tweak_defined_color(cssstring, "theme_fg_color");
+    cssstring = sp_tweak_defined_color(cssstring, "theme_base_color");
+    cssstring = sp_tweak_defined_color(cssstring, "theme_text_color");
+    std::string theme = "@define-color theme_bg_color_contrasted mix( @theme_bg_color, @theme_fg_color, " + Glib::ustring::format(contrast) + " );\n";
+    theme += "@define-color theme_fg_color_contrasted mix( @theme_fg_color, @theme_bg_color, " + Glib::ustring::format(contrast) + " );\n";
+    theme += "@define-color theme_base_color_contrasted mix( @theme_base_color, @theme_text_color, " + Glib::ustring::format(0.2 - contrast) + " );\n";
+    theme += "@define-color theme_text_color_contrasted mix( @theme_text_color, @theme_base_color, " + Glib::ustring::format(0.2 - contrast) + " );\n";
+    theme += cssstring;
+    #include <fstream>
+    std::ofstream file;
+    file.open ("/home/jtx/as.svg");
+    file << theme;
+    file.close();
+    auto provider = Gtk::CssProvider::create();
     try {
-        providercontrast->load_from_data(css_contrast);
+        provider->load_from_data(theme.c_str());
     } catch (const Gtk::CssProviderError &ex) {
-        g_critical("CSSProviderError::load_from_data(): failed to load '%s'\n(%s)", css_contrast.c_str(),
-                ex.what().c_str());
+        g_critical("CSSProviderError::load_from_data(): failed to load '%s'\n(%s)", theme.c_str(),
+                    ex.what().c_str());
     }
-    Gtk::StyleContext::add_provider_for_screen(screen, providercontrast, GTK_STYLE_PROVIDER_PRIORITY_SETTINGS); */
+    Gtk::StyleContext::add_provider_for_screen(screen, provider, GTK_STYLE_PROVIDER_PRIORITY_THEME);
 
     Glib::ustring style = get_filename(UIS, "style.css");
     if (!style.empty()) {
