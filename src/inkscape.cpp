@@ -633,26 +633,34 @@ void Application::add_gtk_css()
     if (prefs->getBool("/theme/darkTheme", false)) {
         variant = "dark";
     }
-    GtkCssProvider *themeprovider = gtk_css_provider_get_named(prefs->getString("/theme/gtkTheme").c_str(), variant);
+    auto const screen = Gdk::Screen::get_default();
+    if (themeprovider) {
+        Gtk::StyleContext::remove_provider_for_screen(screen, themeprovider);
+    }
+    themeprovider = Gtk::CssProvider::get_named(prefs->getString("/theme/gtkTheme").c_str(), variant);
     std::string out = "";
-    std::string cssstring = gtk_css_provider_to_string(themeprovider);
+    std::string cssstring = themeprovider->to_string();
     if (contrast) {
         out = sp_get_contrasted_color(cssstring, "theme_bg_color", "theme_fg_color", Glib::ustring::format(contrast));
         out += sp_get_contrasted_color(cssstring, "theme_selected_bg_color", "theme_selected_fg_color", Glib::ustring::format(contrast));
         out += sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color", Glib::ustring::format(0.2 - contrast));
+        out += sp_get_contrasted_color(cssstring, "theme_insensitive_bg_color", "theme_insensitive_fg_color", Glib::ustring::format(contrast));
+        out += sp_get_contrasted_color(cssstring, "theme_unfocused_bg_color", "theme_unfocused_fg_color", Glib::ustring::format(contrast));
+        out += sp_get_contrasted_color(cssstring, "theme_unfocused_selected_bg_color", "theme_unfocused_selected_fg_color", Glib::ustring::format(contrast));
+        out += sp_get_contrasted_color(cssstring, "theme_unfocused_base_color", "theme_unfocused_text_color", Glib::ustring::format(contrast));
+        out += sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color", Glib::ustring::format(contrast));
         cssstring = sp_tweak_defined_color(cssstring, "theme_bg_color");
-        cssstring = sp_tweak_defined_color(cssstring, "theme_base_color");
         cssstring = sp_tweak_defined_color(cssstring, "theme_selected_bg_color");
-        /* Study add
-        theme_fg_color
-        theme_text_color
-        insensitive_bg_color
-        theme_unfocused_fg_color
-        theme_unfocused_text_color
-        theme_unfocused_selected_bg_color
-        */
+        cssstring = sp_tweak_defined_color(cssstring, "theme_insensitive_bg_color");
+        cssstring = sp_tweak_defined_color(cssstring, "theme_unfocused_bg_color");
+        cssstring = sp_tweak_defined_color(cssstring, "theme_unfocused_selected_bg_color");
+        cssstring = sp_tweak_defined_color(cssstring, "theme_base_color");
+        cssstring = sp_tweak_defined_color(cssstring, "theme_unfocused_base_color");
     }
     out += cssstring;
+    // This reges is to override some rules that crashes css provider
+    // please fill up if more happends in the warning message showed on 
+    // theme change
     std::regex e(R"((^|\r?\n)(?:.*?cubic-bezier.*?;|.*?engine.*?;|.*?-gtk-icon-source.*?;)(?=\r?\n|$))");
     out = std::regex_replace( out, e, "$1" );
     /* #include <fstream>

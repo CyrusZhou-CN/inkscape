@@ -929,9 +929,11 @@ sp_desktop_widget_realize (GtkWidget *widget)
             }
         }
         if (dark) {
+            prefs->setBool("/theme/darkTheme", true);
             window->get_style_context()->add_class("dark");
             window->get_style_context()->remove_class("bright");
         } else {
+            prefs->setBool("/theme/darkTheme", false);
             window->get_style_context()->add_class("bright");
             window->get_style_context()->remove_class("dark");
         }

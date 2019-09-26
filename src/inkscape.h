@@ -110,6 +110,7 @@ public:
     SPDocument * active_document();
     SPDesktop * active_desktop();
     Glib::RefPtr<Gtk::CssProvider> colorizeprovider;
+    Glib::RefPtr<Gtk::CssProvider> themeprovider;
     // Use this function to get selection model etc for a document
     Inkscape::ActionContext action_context_for_document(SPDocument *doc);
     Inkscape::ActionContext active_action_context();

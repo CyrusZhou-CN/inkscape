@@ -791,7 +791,6 @@ void InkscapePreferences::themeChange()
             }
         }
         Gtk::Widget *dialog_window = Glib::wrap(gobj());
-        bool toggled = prefs->getBool("/theme/darkTheme", false) != dark;
         if (dark) {
             prefs->setBool("/theme/darkTheme", true);
             window->get_style_context()->add_class("dark");
@@ -803,6 +802,7 @@ void InkscapePreferences::themeChange()
         }
         INKSCAPE.add_gtk_css();
         INKSCAPE.signal_change_theme.emit();
+        bool toggled = prefs->getBool("/theme/darkTheme", false) != dark;
         resetIconsColors(toggled);
     }
 }
