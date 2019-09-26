@@ -633,7 +633,8 @@ void Application::add_gtk_css()
         variant = "dark";
         contrast *= 2; // 0 - 0.5
     }
-    GtkCssProvider *currentthemeprovider = gtk_css_provider_get_named(prefs->getString("/theme/gtkTheme").c_str(), variant);
+    GtkCssProvider *currentthemeprovider =
+        gtk_css_provider_get_named(prefs->getString("/theme/gtkTheme").c_str(), variant);
     std::string out = "";
     std::string cssstring = gtk_css_provider_to_string(currentthemeprovider);
     if (contrast) {
@@ -650,8 +651,8 @@ void Application::add_gtk_css()
                                        "theme_unfocused_selected_fg_color", Glib::ustring::format(contrast));
         out += sp_get_contrasted_color(cssstring, "theme_unfocused_base_color", "theme_unfocused_text_color",
                                        Glib::ustring::format(contrast));
-        out += sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color", 
-                                       Glib::ustring::format(contrast));
+        out +=
+            sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color", Glib::ustring::format(contrast));
         cssstring = sp_tweak_defined_color(cssstring, "theme_bg_color");
         cssstring = sp_tweak_defined_color(cssstring, "theme_selected_bg_color");
         cssstring = sp_tweak_defined_color(cssstring, "theme_insensitive_bg_color");
