@@ -27,9 +27,9 @@
 #include <gtkmm/messagedialog.h>
 
 #include <glib/gstdio.h>
+#include <glibmm/convert.h>
 #include <glibmm/i18n.h>
 #include <glibmm/miscutils.h>
-#include <glibmm/convert.h>
 #include <regex>
 
 #include "desktop.h"
@@ -550,35 +550,38 @@ Glib::ustring Application::get_symbolic_colors()
     return css_str;
 }
 
-std::string sp_get_contrasted_color(std::string cssstring, std::string define, std::string define_b, std::string contrast) {
+std::string sp_get_contrasted_color(std::string cssstring, std::string define, std::string define_b,
+                                    std::string contrast)
+{
     std::smatch m;
-    std::regex e ("@define-color " + define + " ([^;]*)");   // matches words beginning by "sub"
-    std::regex_search (cssstring, m, e);
+    std::regex e("@define-color " + define + " ([^;]*)"); // matches words beginning by "sub"
+    std::regex_search(cssstring, m, e);
     std::smatch n;
-    std::regex f ("@define-color " + define_b + " ([^;]*)");   // matches words beginning by "sub"
-    std::regex_search (cssstring, n, f);
+    std::regex f("@define-color " + define_b + " ([^;]*)"); // matches words beginning by "sub"
+    std::regex_search(cssstring, n, f);
     std::string out = "";
     if (m.size() >= 1) {
-        out = "@define-color " + define + "_contrasted mix(" + m[1].str() + ", " + n[1].str() + ", " + contrast + ");\n";
+        out =
+            "@define-color " + define + "_contrasted mix(" + m[1].str() + ", " + n[1].str() + ", " + contrast + ");\n";
     }
     return out;
 }
 
-std::string sp_tweak_defined_color(std::string cssstring, std::string define) {
+std::string sp_tweak_defined_color(std::string cssstring, std::string define)
+{
     std::smatch m;
-    std::regex e ("@define-color " + define + " ([^;]*)");   // matches words beginning by "sub"
-    std::regex_search (cssstring, m, e);
+    std::regex e("@define-color " + define + " ([^;]*)"); // matches words beginning by "sub"
+    std::regex_search(cssstring, m, e);
     if (m.size() >= 1) {
-        std::string search  = "@define-color " + define + " " + m[1].str();
+        std::string search = "@define-color " + define + " " + m[1].str();
         std::string replace = "@define-color " + define + " @" + define + "_contrasted";
         size_t pos = cssstring.find(search);
         if (pos != std::string::npos) {
             cssstring.replace(pos, search.size(), replace);
-            search  = m[1].str();
+            search = m[1].str();
             replace = "@" + define;
             pos = cssstring.find(search);
-            while( pos != std::string::npos)
-            {
+            while (pos != std::string::npos) {
                 cssstring.replace(pos, search.size(), replace);
                 pos = cssstring.find(search, pos);
             }
@@ -634,13 +637,16 @@ void Application::add_gtk_css()
     std::string out = "";
     std::string cssstring = gtk_css_provider_to_string(themeprovider);
     if (contrast) {
-        out =  sp_get_contrasted_color(cssstring, "theme_bg_color",   "theme_fg_color",   Glib::ustring::format(contrast));
-    /*     out += sp_get_contrasted_color(cssstring, "theme_fg_color",   "theme_bg_color",   Glib::ustring::format(contrast)); */
-    /*     out += sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color", Glib::ustring::format(0.2 - contrast)); */
-    /*    out += sp_get_contrasted_color(cssstring, "theme_text_color", "theme_base_color", Glib::ustring::format(0.2 - contrast)); */
-    /*     cssstring = sp_tweak_defined_color(cssstring, "theme_fg_color"); */
+        out = sp_get_contrasted_color(cssstring, "theme_bg_color", "theme_fg_color", Glib::ustring::format(contrast));
+        /*     out += sp_get_contrasted_color(cssstring, "theme_fg_color",   "theme_bg_color",
+         * Glib::ustring::format(contrast)); */
+        /*     out += sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color",
+         * Glib::ustring::format(0.2 - contrast)); */
+        /*    out += sp_get_contrasted_color(cssstring, "theme_text_color", "theme_base_color",
+         * Glib::ustring::format(0.2 - contrast)); */
+        /*     cssstring = sp_tweak_defined_color(cssstring, "theme_fg_color"); */
         cssstring = sp_tweak_defined_color(cssstring, "theme_bg_color");
-    /*      cssstring = sp_tweak_defined_color(cssstring, "theme_base_color"); */
+        /*      cssstring = sp_tweak_defined_color(cssstring, "theme_base_color"); */
         /*cssstring = sp_tweak_defined_color(cssstring, "theme_text_color"); */
         /* Study add
         theme_selected_bg_color
@@ -663,9 +669,9 @@ void Application::add_gtk_css()
                     }
                 }
             }
-            if ((i+1) < tokens.size()) {
+            if ((i + 1) < tokens.size()) {
                 stament += "{";
-                std::vector<Glib::ustring> properties = Glib::Regex::split_simple("[;]", tokens[i+1]);
+                std::vector<Glib::ustring> properties = Glib::Regex::split_simple("[;]", tokens[i + 1]);
                 for (auto prop : properties) {
                     size_t pos = prop.find("@theme_");
                     if (pos != std::string::npos) {
@@ -680,9 +686,9 @@ void Application::add_gtk_css()
             }
         }
     }
-    #include <fstream>
+#include <fstream>
     std::ofstream file;
-    file.open ("/home/jtx/as.svg");
+    file.open("/home/jtx/as.svg");
     file << out;
     file.close();
     auto provider = Gtk::CssProvider::create();
@@ -690,7 +696,7 @@ void Application::add_gtk_css()
         provider->load_from_data(out.c_str());
     } catch (const Gtk::CssProviderError &ex) {
         g_critical("CSSProviderError::load_from_data(): failed to load '%s'\n(%s)", "Error parsing contrast theme",
-                    ex.what().c_str());
+                   ex.what().c_str());
     }
     Gtk::StyleContext::add_provider_for_screen(screen, provider, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
