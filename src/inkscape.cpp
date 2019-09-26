@@ -633,7 +633,6 @@ void Application::add_gtk_css()
     if (prefs->getBool("/theme/darkTheme", false)) {
         variant = "dark";
     }
-    auto const screen = Gdk::Screen::get_default();
     if (themeprovider) {
         Gtk::StyleContext::remove_provider_for_screen(screen, themeprovider);
     }
