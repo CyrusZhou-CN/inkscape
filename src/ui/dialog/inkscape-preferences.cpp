@@ -772,6 +772,10 @@ void InkscapePreferences::themeChange()
 {
     Gtk::Window *window = SP_ACTIVE_DESKTOP->getToplevel();
     if (window) {
+        auto const screen = Gdk::Screen::get_default();
+        if (INKSCAPE.themeprovider) {
+            Gtk::StyleContext::remove_provider_for_screen(screen, INKSCAPE.themeprovider);
+        }
         Inkscape::Preferences *prefs = Inkscape::Preferences::get();
         bool darktheme = prefs->getBool("/theme/preferDarkTheme", false);
         Glib::ustring themename = prefs->getString("/theme/gtkTheme");
@@ -800,8 +804,8 @@ void InkscapePreferences::themeChange()
             window->get_style_context()->add_class("bright");
             window->get_style_context()->remove_class("dark");
         }
-        INKSCAPE.add_gtk_css();
         INKSCAPE.signal_change_theme.emit();
+        INKSCAPE.add_gtk_css();
         bool toggled = prefs->getBool("/theme/darkTheme", false) != dark;
         resetIconsColors(toggled);
     }

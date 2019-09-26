@@ -596,7 +596,6 @@ std::string sp_tweak_defined_color(std::string cssstring, std::string define)
 void Application::add_gtk_css()
 {
     using namespace Inkscape::IO::Resource;
-    // Add style sheet (GTK3)
     auto const screen = Gdk::Screen::get_default();
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
     const gchar *gtk_font_name = "";
@@ -628,17 +627,15 @@ void Application::add_gtk_css()
         g_object_get(settings, "gtk-font-name", &gtk_font_name, NULL);
     }
     Glib::ustring css_contrast = "";
-    double contrast = (5 - prefs->getInt("/theme/contrast", 0)) / 20.0; // 0 - 0.20
+    double contrast = (5 - prefs->getInt("/theme/contrast", 1)) / 20.0; // 0 - 0.25
     const gchar *variant = nullptr;
     if (prefs->getBool("/theme/darkTheme", false)) {
         variant = "dark";
+        contrast *= 2; // 0 - 0.5
     }
-    if (themeprovider) {
-        Gtk::StyleContext::remove_provider_for_screen(screen, themeprovider);
-    }
-    themeprovider = Gtk::CssProvider::get_named(prefs->getString("/theme/gtkTheme").c_str(), variant);
+    GtkCssProvider *currentthemeprovider = gtk_css_provider_get_named(prefs->getString("/theme/gtkTheme").c_str(), variant);
     std::string out = "";
-    std::string cssstring = themeprovider->to_string();
+    std::string cssstring = gtk_css_provider_to_string(currentthemeprovider);
     if (contrast) {
         out = sp_get_contrasted_color(cssstring, "theme_bg_color", "theme_fg_color", Glib::ustring::format(contrast));
         out += sp_get_contrasted_color(cssstring, "theme_selected_bg_color", "theme_selected_fg_color",
@@ -653,8 +650,8 @@ void Application::add_gtk_css()
                                        "theme_unfocused_selected_fg_color", Glib::ustring::format(contrast));
         out += sp_get_contrasted_color(cssstring, "theme_unfocused_base_color", "theme_unfocused_text_color",
                                        Glib::ustring::format(contrast));
-        out +=
-            sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color", Glib::ustring::format(contrast));
+        out += sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color", 
+                                       Glib::ustring::format(contrast));
         cssstring = sp_tweak_defined_color(cssstring, "theme_bg_color");
         cssstring = sp_tweak_defined_color(cssstring, "theme_selected_bg_color");
         cssstring = sp_tweak_defined_color(cssstring, "theme_insensitive_bg_color");
@@ -674,14 +671,16 @@ void Application::add_gtk_css()
     file.open("/tmp/tmp.svg");
     file << out;
     file.close(); */
-    auto provider = Gtk::CssProvider::create();
+    if (!themeprovider) {
+        themeprovider = Gtk::CssProvider::create();
+    }
     try {
-        provider->load_from_data(out.c_str());
+        themeprovider->load_from_data(out.c_str());
     } catch (const Gtk::CssProviderError &ex) {
         g_critical("CSSProviderError::load_from_data(): failed to load '%s'\n(%s)", "Error parsing contrast theme",
                    ex.what().c_str());
     }
-    Gtk::StyleContext::add_provider_for_screen(screen, provider, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    Gtk::StyleContext::add_provider_for_screen(screen, themeprovider, GTK_STYLE_PROVIDER_PRIORITY_SETTINGS);
 
     Glib::ustring style = get_filename(UIS, "style.css");
     if (!style.empty()) {
