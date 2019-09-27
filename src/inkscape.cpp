@@ -667,14 +667,12 @@ void Application::add_gtk_css()
     // theme change
     std::regex e(R"((^|\r?\n)(?:.*?cubic-bezier.*?;|.*?engine.*?;|.*?-gtk-icon-source.*?;)(?=\r?\n|$))");
     out = std::regex_replace(out, e, "$1");
-    #include <fstream>
+    /* #include <fstream>
     std::ofstream file;
-    file.open("/tmp/plasma.css");
+    file.open("/tmp/ink.css");
     file << out;
-    file.close();
-    if (out.empty()) {
-        g_object_set(settings, "gtk-theme-name", "Adwaita", NULL);
-    } else {
+    file.close(); */
+    if (!out.empty()) {
         if (!themeprovider) {
             themeprovider = Gtk::CssProvider::create();
         }
