@@ -667,22 +667,25 @@ void Application::add_gtk_css()
     // theme change
     std::regex e(R"((^|\r?\n)(?:.*?cubic-bezier.*?;|.*?engine.*?;|.*?-gtk-icon-source.*?;)(?=\r?\n|$))");
     out = std::regex_replace(out, e, "$1");
-    /* #include <fstream>
+    #include <fstream>
     std::ofstream file;
-    file.open("/tmp/tmp.svg");
+    file.open("/tmp/plasma.css");
     file << out;
-    file.close(); */
-    if (!themeprovider) {
-        themeprovider = Gtk::CssProvider::create();
+    file.close();
+    if (out.empty()) {
+        g_object_set(settings, "gtk-theme-name", "Adwaita", NULL);
+    } else {
+        if (!themeprovider) {
+            themeprovider = Gtk::CssProvider::create();
+        }
+        try {
+            themeprovider->load_from_data(out.c_str());
+        } catch (const Gtk::CssProviderError &ex) {
+            g_critical("CSSProviderError::load_from_data(): failed to load '%s'\n(%s)", "Error parsing contrast theme",
+                    ex.what().c_str());
+        }
+        Gtk::StyleContext::add_provider_for_screen(screen, themeprovider, GTK_STYLE_PROVIDER_PRIORITY_SETTINGS);
     }
-    try {
-        themeprovider->load_from_data(out.c_str());
-    } catch (const Gtk::CssProviderError &ex) {
-        g_critical("CSSProviderError::load_from_data(): failed to load '%s'\n(%s)", "Error parsing contrast theme",
-                   ex.what().c_str());
-    }
-    Gtk::StyleContext::add_provider_for_screen(screen, themeprovider, GTK_STYLE_PROVIDER_PRIORITY_SETTINGS);
-
     Glib::ustring style = get_filename(UIS, "style.css");
     if (!style.empty()) {
         auto provider = Gtk::CssProvider::create();
