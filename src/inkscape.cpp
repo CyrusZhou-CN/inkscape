@@ -627,7 +627,7 @@ void Application::add_gtk_css()
         g_object_get(settings, "gtk-font-name", &gtk_font_name, NULL);
     }
     Glib::ustring css_contrast = "";
-    double contrast = (5 - prefs->getInt("/theme/contrast", 1)) / 20.0; // 0 - 0.25
+    double contrast = (10 - prefs->getInt("/theme/contrast", 1)) / 40.0; // 0 - 0.25
     const gchar *variant = nullptr;
     if (prefs->getBool("/theme/darkTheme", false)) {
         variant = "dark";
