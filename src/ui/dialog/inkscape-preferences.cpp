@@ -1119,13 +1119,15 @@ void InkscapePreferences::initPageUI()
         _page_theme.add_line(false, _("Change Gtk theme:"), _gtk_theme, "", "", false);
         _gtk_theme.signal_changed().connect(sigc::mem_fun(*this, &InkscapePreferences::themeChange));
     }
+    _contrast_theme.init("/theme/contrast", 1, 10, 1, 2, 10, 1);
+    Gtk::Widget *space = new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL);
+    space->set_size_request(_sb_width / 3, -1);
+    _page_theme.add_line(false, _("_Contrast:"), _contrast_theme, "",
+                         _("Make background brighter or darker to reduce contrast"), true, space);
+    _contrast_theme.signal_button_release_event().connect(sigc::mem_fun(*this, &InkscapePreferences::contrastChange));
     _dark_theme.init(_("Use dark theme"), "/theme/preferDarkTheme", false);
     _page_theme.add_line(true, "", _dark_theme, "", _("Use dark theme"), true);
     _dark_theme.signal_clicked().connect(sigc::mem_fun(*this, &InkscapePreferences::themeChange));
-    _contrast_theme.init("/theme/contrast", 1, 10, 1, 2, 10, 0);
-    _page_theme.add_line(true, _("_Theme contrast:"), _contrast_theme, "",
-                         _("Make background brighter or darker to reduce contrast"), true);
-    _contrast_theme.signal_button_release_event().connect(sigc::mem_fun(*this, &InkscapePreferences::contrastChange));
 
     // Icons
     _page_theme.add_group_header(_("Display icons"));
