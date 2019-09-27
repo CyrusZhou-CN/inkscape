@@ -561,8 +561,7 @@ std::string sp_get_contrasted_color(std::string cssstring, std::string define, s
     std::regex_search(cssstring, n, f);
     std::string out = "";
     if (m.size() >= 1) {
-        out =
-            "@define-color " + define + "_contrasted mix(" + m[1].str() + ", " + n[1].str() + ", " + contrast + ");\n";
+        out = "@define-color " + define + " mix(" + m[1].str() + ", " + n[1].str() + ", " + contrast + ");\n";
     }
     return out;
 }
@@ -570,20 +569,48 @@ std::string sp_get_contrasted_color(std::string cssstring, std::string define, s
 std::string sp_tweak_defined_color(std::string cssstring, std::string define)
 {
     std::smatch m;
-    std::regex e("@define-color " + define + " ([^;]*)");
-    std::regex_search(cssstring, m, e);
+    std::regex f("@define-color " + define + " rgb\\(([^\\)]*)");
+    std::regex_search(cssstring, m, f);
     if (m.size() >= 1) {
-        std::string search = "@define-color " + define + " " + m[1].str();
-        std::string replace = "@define-color " + define + " @" + define + "_contrasted";
+        std::string color = m[1].str();
+        std::string search = "@define-color " + define + " rgb(" + color + ");";
+        std::string replace = "";
         size_t pos = cssstring.find(search);
         if (pos != std::string::npos) {
             cssstring.replace(pos, search.size(), replace);
-            search = m[1].str();
+            search = "rgb(" + color + ")";
             replace = "@" + define;
             pos = cssstring.find(search);
             while (pos != std::string::npos) {
                 cssstring.replace(pos, search.size(), replace);
                 pos = cssstring.find(search, pos);
+            }
+            search = "rgba(" + color;
+            replace = "alpha(@" + define;
+            pos = cssstring.find(search);
+            while (pos != std::string::npos) {
+                cssstring.replace(pos, search.size(), replace);
+                pos = cssstring.find(search, pos);
+            }
+        }
+    } else {
+        std::smatch n;
+        std::regex f("@define-color " + define + " ([^;]*)");
+        std::regex_search(cssstring, n, f);
+        if (m.size() >= 1) {
+            std::string color = m[1].str();
+            std::string search = "@define-color " + define + " " + color + ";";
+            std::string replace = "";
+            size_t pos = cssstring.find(search);
+            if (pos != std::string::npos) {
+                cssstring.replace(pos, search.size(), replace);
+                search = color;
+                replace = "@" + define;
+                pos = cssstring.find(search);
+                while (pos != std::string::npos) {
+                    cssstring.replace(pos, search.size(), replace);
+                    pos = cssstring.find(search, pos);
+                }
             }
         }
     }
@@ -639,10 +666,10 @@ void Application::add_gtk_css()
     std::string cssstring = gtk_css_provider_to_string(currentthemeprovider);
     if (contrast) {
         out = sp_get_contrasted_color(cssstring, "theme_bg_color", "theme_fg_color", Glib::ustring::format(contrast));
+        out += sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color",
+                                       Glib::ustring::format(contrast));
         out += sp_get_contrasted_color(cssstring, "theme_selected_bg_color", "theme_selected_fg_color",
                                        Glib::ustring::format(contrast));
-        out += sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color",
-                                       Glib::ustring::format(0.2 - contrast));
         out += sp_get_contrasted_color(cssstring, "theme_insensitive_bg_color", "theme_insensitive_fg_color",
                                        Glib::ustring::format(contrast));
         out += sp_get_contrasted_color(cssstring, "theme_unfocused_bg_color", "theme_unfocused_fg_color",
@@ -651,15 +678,26 @@ void Application::add_gtk_css()
                                        "theme_unfocused_selected_fg_color", Glib::ustring::format(contrast));
         out += sp_get_contrasted_color(cssstring, "theme_unfocused_base_color", "theme_unfocused_text_color",
                                        Glib::ustring::format(contrast));
-        out +=
-            sp_get_contrasted_color(cssstring, "theme_base_color", "theme_text_color", Glib::ustring::format(contrast));
+        out += sp_get_contrasted_color(cssstring, "wm_bg", "theme_fg_color",
+                                       Glib::ustring::format(contrast));
+        out += sp_get_contrasted_color(cssstring, "wm_bg_a", "theme_fg_color",
+                                       Glib::ustring::format(contrast));
+        out += sp_get_contrasted_color(cssstring, "wm_bg_b", "theme_fg_color",
+                                       Glib::ustring::format(contrast));
+        out += sp_get_contrasted_color(cssstring, "bg_color", "fg_color", Glib::ustring::format(contrast));
+        out += sp_get_contrasted_color(cssstring, "base_color", "text_color", Glib::ustring::format(contrast));
         cssstring = sp_tweak_defined_color(cssstring, "theme_bg_color");
+        cssstring = sp_tweak_defined_color(cssstring, "theme_base_color");
         cssstring = sp_tweak_defined_color(cssstring, "theme_selected_bg_color");
         cssstring = sp_tweak_defined_color(cssstring, "theme_insensitive_bg_color");
         cssstring = sp_tweak_defined_color(cssstring, "theme_unfocused_bg_color");
         cssstring = sp_tweak_defined_color(cssstring, "theme_unfocused_selected_bg_color");
-        cssstring = sp_tweak_defined_color(cssstring, "theme_base_color");
         cssstring = sp_tweak_defined_color(cssstring, "theme_unfocused_base_color");
+        cssstring = sp_tweak_defined_color(cssstring, "wm_bg");
+        cssstring = sp_tweak_defined_color(cssstring, "wm_bg_a");
+        cssstring = sp_tweak_defined_color(cssstring, "wm_bg_b");
+        cssstring = sp_tweak_defined_color(cssstring, "bg_color");
+        cssstring = sp_tweak_defined_color(cssstring, "base_color");
     }
     out += cssstring;
     // This reges is to override some rules that crashes css provider
