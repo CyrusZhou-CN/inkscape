@@ -1,0 +1,25 @@
+diff --git a/210-inkscape_build.sh b/210-inkscape_build.sh
+index 3d05feb..c3d4468 100755
+--- a/210-inkscape_build.sh
++++ b/210-inkscape_build.sh
+@@ -24,7 +24,11 @@ bash_d_include lib
+ 
+ ### variables ##################################################################
+ 
+-# Nothing here.
++if [ "$(uname -m)" = "arm64" ]; then
++  : # BUILD_ARCH=arm64e
++else
++  BUILD_ARCH=x86_64h
++fi
+ 
+ ### functions ##################################################################
+ 
+@@ -72,6 +76,7 @@ cd "$INK_BLD_DIR" || exit 1
+ cmake \
+   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+   -DCMAKE_C_COMPILER_LAUNCHER=ccache \
++  -DCMAKE_OSX_ARCHITECTURES=$BUILD_ARCH \
+   -DCMAKE_PREFIX_PATH="$VER_DIR" \
+   -DCMAKE_INSTALL_PREFIX="$VER_DIR" \
+   -GNinja \

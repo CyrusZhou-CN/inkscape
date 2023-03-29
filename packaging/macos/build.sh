@@ -14,13 +14,18 @@
 VERSION=v0.74
 
 # directory convenience handles
-SELF_DIR=$(dirname "${BASH_SOURCE[0]}")
+SELF_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1; pwd)
 MIBAP_DIR=$SELF_DIR/mibap
 
 git clone --single-branch https://gitlab.com/inkscape/devel/mibap "$MIBAP_DIR"
 
 if git -C "$MIBAP_DIR" checkout "$VERSION"; then
   git -C "$MIBAP_DIR" submodule update --init --recursive
+
+  (
+    cd "$MIBAP_DIR" || exit 1
+    patch -p1 < "$SELF_DIR"/arch.patch
+  )
 
   # make sure the runner is clean (this doesn't hurt if there's nothing to do)
   "$MIBAP_DIR"/uninstall_toolset.sh
