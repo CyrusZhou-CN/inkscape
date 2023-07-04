@@ -237,7 +237,7 @@ Template::Template(Inkscape::XML::Node *in_repr, Implementation::Implementation 
 int Template::parse_visibility(const std::string &value)
 {
     int ret = 0;
-    auto values = Glib::Regex::split_simple("," , value);
+    auto values = Glib::Regex::split_simple("," , value.c_str());
     for (auto val : values) {
         ret |= (val == "icon") * TEMPLATE_NEW_ICON;
         ret |= (val == "list") * TEMPLATE_SIZE_LIST;
