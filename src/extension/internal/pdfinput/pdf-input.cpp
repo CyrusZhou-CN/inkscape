@@ -148,21 +148,18 @@ PdfImportDialog::PdfImportDialog(std::shared_ptr<PDFDoc> doc, const gchar * /*ur
     this->set_title(_("PDF Import Settings"));
     this->set_modal(true);
     sp_transientize(this->Gtk::Widget::gobj());  //Make transient
-    this->property_window_position().set_value(Gtk::WIN_POS_NONE);
     this->set_resizable(true);
     this->property_destroy_with_parent().set_value(false);
 
     this->add_action_widget(*Gtk::make_managed<Gtk::Button>(_("_Cancel"), true), -6);
     this->add_action_widget(*okbutton, -5);
 
-    this->show_all();
-
     _render_thumb = false;
 
     // Connect signals
     _next_page.signal_clicked().connect([=] { _setPreviewPage(_preview_page + 1); });
     _prev_page.signal_clicked().connect([=] { _setPreviewPage(_preview_page - 1); });
-    _preview_area.signal_draw().connect(sigc::mem_fun(*this, &PdfImportDialog::_onDraw));
+    _preview_area.set_draw_func(sigc::mem_fun(*this, &PdfImportDialog::_drawFunc));
     _page_numbers.signal_changed().connect(sigc::mem_fun(*this, &PdfImportDialog::_onPageNumberChanged));
     _mesh_slider.get_adjustment()->signal_value_changed().connect(
         sigc::mem_fun(*this, &PdfImportDialog::_onPrecisionChanged));
@@ -196,8 +193,7 @@ PdfImportDialog::PdfImportDialog(std::shared_ptr<PDFDoc> doc, const gchar * /*ur
     _setPreviewPage(1);
 
     okbutton->set_can_focus();
-    okbutton->set_can_default();
-    set_default(*okbutton);
+    set_default_widget(*okbutton);
     set_focus(*okbutton);
 
     auto &font_strat = UI::get_object_raw<Gtk::CellRendererCombo>(_builder, "cell-strat");
@@ -423,10 +419,11 @@ static void copy_cairo_surface_to_pixbuf (cairo_surface_t *surface,
 
 #endif
 
-bool PdfImportDialog::_onDraw(const Cairo::RefPtr<Cairo::Context>& cr) {
+void PdfImportDialog::_drawFunc(const Cairo::RefPtr<Cairo::Context>& cr, int const width, int const height)
+{
     // Check if we have a thumbnail at all
     if (!_thumb_data) {
-        return true;
+        return;
     }
 
     // Create the pixbuf for the thumbnail
@@ -440,7 +437,7 @@ bool PdfImportDialog::_onDraw(const Cairo::RefPtr<Cairo::Context>& cr) {
             false, 8, _thumb_width, _thumb_height, _thumb_rowstride);
     }
     if (!thumb) {
-        return true;
+        return;
     }
 
     // Set background to white
@@ -449,6 +446,7 @@ bool PdfImportDialog::_onDraw(const Cairo::RefPtr<Cairo::Context>& cr) {
 	Gdk::Cairo::set_source_pixbuf(cr, thumb, 0, 0);
 	cr->paint();
     }
+
 #ifdef HAVE_POPPLER_CAIRO
     // Copy the thumbnail image from the Cairo surface
     if (_render_thumb) {
@@ -458,7 +456,6 @@ bool PdfImportDialog::_onDraw(const Cairo::RefPtr<Cairo::Context>& cr) {
 
     Gdk::Cairo::set_source_pixbuf(cr, thumb, 0, _render_thumb ? 0 : 20);
     cr->paint();
-    return true;
 }
 
 /**
