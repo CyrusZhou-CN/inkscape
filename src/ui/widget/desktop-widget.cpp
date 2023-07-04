@@ -365,7 +365,7 @@ void SPDesktopWidget::on_realize()
 
     updateNamedview();
 
-    auto const window = dynamic_cast<Gtk::Window *>(get_toplevel());
+    auto const window = dynamic_cast<Gtk::Window *>(get_root());
     if (window) {
         auto const dark = INKSCAPE.themecontext->isCurrentThemeDark(window);
         prefs->setBool("/theme/darkTheme", dark);
@@ -532,7 +532,7 @@ bool SPDesktopWidget::warnDialog (Glib::ustring const &text)
 void
 SPDesktopWidget::iconify()
 {
-    GtkWindow *topw = GTK_WINDOW(gtk_widget_get_toplevel(_canvas->Gtk::Widget::gobj()));
+    GtkWindow *topw = GTK_WINDOW(gtk_widget_get_root(_canvas->Gtk::Widget::gobj()));
     if (GTK_IS_WINDOW(topw)) {
         if (_desktop->is_iconified()) {
             gtk_window_deiconify(topw);
@@ -545,7 +545,7 @@ SPDesktopWidget::iconify()
 void
 SPDesktopWidget::maximize()
 {
-    GtkWindow *topw = GTK_WINDOW(gtk_widget_get_toplevel(_canvas->Gtk::Widget::gobj()));
+    GtkWindow *topw = GTK_WINDOW(gtk_widget_get_root(_canvas->Gtk::Widget::gobj()));
     if (GTK_IS_WINDOW(topw)) {
         if (_desktop->is_maximized()) {
             gtk_window_unmaximize(topw);
@@ -558,7 +558,7 @@ SPDesktopWidget::maximize()
 void
 SPDesktopWidget::fullscreen()
 {
-    GtkWindow *topw = GTK_WINDOW(gtk_widget_get_toplevel(_canvas->Gtk::Widget::gobj()));
+    GtkWindow *topw = GTK_WINDOW(gtk_widget_get_root(_canvas->Gtk::Widget::gobj()));
     if (GTK_IS_WINDOW(topw)) {
         if (_desktop->is_fullscreen()) {
             gtk_window_unfullscreen(topw);
