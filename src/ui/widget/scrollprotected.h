@@ -52,7 +52,7 @@ private:
      * - or the widget has no scrolled window ancestor
      * - or the Shift key is pressed
      */
-    virtual bool on_safe_scroll_event(GdkEventScroll *event)
+    /*virtual bool on_safe_scroll_event(GdkEventScroll *event)
     {
         return Base::on_scroll_event(event);
     }
@@ -63,7 +63,7 @@ private:
             return false;
         }
         return on_safe_scroll_event(event);
-    }
+    }*/
 };
 
 } // namespace Inkscape::UI::Widget

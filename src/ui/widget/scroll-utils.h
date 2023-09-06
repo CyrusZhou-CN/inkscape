@@ -21,8 +21,8 @@ namespace Inkscape::UI::Widget {
 Gtk::Widget       *get_scrollable_ancestor(Gtk::Widget       *widget);
 Gtk::Widget const *get_scrollable_ancestor(Gtk::Widget const *widget);
 
-bool scrolling_allowed(Gtk::Widget    const *widget,
-                       GdkEventScroll const *event = nullptr);
+//bool scrolling_allowed(Gtk::Widget    const *widget,
+//                       GdkEventScroll const *event = nullptr);
 
 } // namespace Inkscape::UI::Widget
 
