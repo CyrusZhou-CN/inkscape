@@ -105,8 +105,7 @@ CloneTiler::CloneTiler()
         auto prefs = Inkscape::Preferences::get();
 
         auto const mainbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 4);
-        mainbox->property_margin().set_value(6);
-
+        mainbox->set_margin(6);
         UI::pack_start(*this, *mainbox, true, true);
 
         nb = Gtk::make_managed<Gtk::Notebook>();
@@ -797,7 +796,7 @@ CloneTiler::CloneTiler()
             auto vb = new_tab(nb, _("_Trace"));
         {
             auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, VB_MARGIN);
-            hb->property_margin().set_value(4);
+            hb->set_margin(4);
             UI::pack_start(*vb, *hb, false, false);
 
             _b = Gtk::make_managed<UI::Widget::CheckButtonInternal>(_("Trace the drawing under the clones/sprayed items"));
@@ -822,7 +821,7 @@ CloneTiler::CloneTiler()
                 auto const table = Gtk::make_managed<Gtk::Grid>();
                 table->set_row_spacing(4);
                 table->set_column_spacing(6);
-                table->property_margin().set_value(4);
+                table->set_margin(4);
                 frame->add(*table);
 
                 Gtk::RadioButtonGroup rb_group;
@@ -893,7 +892,7 @@ CloneTiler::CloneTiler()
                 auto const table = Gtk::make_managed<Gtk::Grid>();
                 table->set_row_spacing(4);
                 table->set_column_spacing(6);
-                table->property_margin().set_value(4);
+                table->set_margin(4);
                 frame->add(*table);
 
                 {
@@ -937,7 +936,7 @@ CloneTiler::CloneTiler()
                 auto const table = Gtk::make_managed<Gtk::Grid>();
                 table->set_row_spacing(4);
                 table->set_column_spacing(6);
-                table->property_margin().set_value(4);
+                table->set_margin(4);
                 frame->add(*table);
 
                 {
@@ -994,8 +993,7 @@ CloneTiler::CloneTiler()
             auto const table = Gtk::make_managed<Gtk::Grid>();
             table->set_row_spacing(4);
             table->set_column_spacing(6);
-
-            table->property_margin().set_value(VB_MARGIN);
+            table->set_margin(VB_MARGIN);
             UI::pack_start(*mainbox, *table, false, false);
 
             {
@@ -2507,7 +2505,7 @@ Gtk::Box * CloneTiler::new_tab(Gtk::Notebook *nb, const gchar *label)
 {
     auto const l = Gtk::make_managed<Gtk::Label>(label, true);
     auto const vb = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, VB_MARGIN);
-    vb->property_margin().set_value(VB_MARGIN);
+    vb->set_margin(VB_MARGIN);
     nb->append_page(*vb, *l);
     return vb;
 }
@@ -2672,7 +2670,7 @@ Gtk::Grid * CloneTiler::table_x_y_rand(int values)
     table->set_row_spacing(6);
     table->set_column_spacing(8);
 
-    table->property_margin().set_value(VB_MARGIN);
+    table->set_margin(VB_MARGIN);
 
     {
 	auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 0);

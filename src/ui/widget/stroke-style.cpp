@@ -198,7 +198,7 @@ StrokeStyle::StrokeStyle() :
 {
     set_name("StrokeSelector");
     table = Gtk::make_managed<Gtk::Grid>();
-    table->property_margin().set_value(4);
+    table->set_margin(4);
     table->set_row_spacing(4);
     table->set_hexpand(false);
     table->set_halign(Gtk::Align::CENTER);
