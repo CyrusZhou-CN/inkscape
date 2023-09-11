@@ -15,13 +15,12 @@
  */
 
 #include <2geom/transforms.h>
+#include <gdkmm/pixbuf.h>
 
 #include "canvas-item-ctrl.h"
 #include "helper/geom.h"
-
 #include "preferences.h"         // Default size. 
 #include "display/cairo-utils.h" // argb32_from_rgba()
-
 #include "ui/widget/canvas.h"
 
 namespace Inkscape {
