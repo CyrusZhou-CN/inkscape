@@ -214,11 +214,11 @@ public:
             // toggle size link
             _locked_size_ratio = !_locked_size_ratio;
             // set image
-            _link_width_height.set_image_from_icon_name(_locked_size_ratio && _size_ratio > 0 ? g_linked : g_unlinked, Gtk::ICON_SIZE_LARGE_TOOLBAR);
+            _link_width_height.set_image_from_icon_name(_locked_size_ratio && _size_ratio > 0 ? g_linked : g_unlinked, Gtk::IconSize::LARGE);
         });
-        _link_width_height.set_image_from_icon_name(g_unlinked, Gtk::ICON_SIZE_LARGE_TOOLBAR);
+        _link_width_height.set_image_from_icon_name(g_unlinked, Gtk::IconSize::LARGE);
         // set image for linked scale
-        _linked_viewbox_scale.set_from_icon_name(g_linked, Gtk::ICON_SIZE_LARGE_TOOLBAR);
+        _linked_viewbox_scale.set_from_icon_name(g_linked);
 
         // report page size changes
         _page_width .signal_value_changed().connect([=](){ set_page_size_linked(true); });
@@ -424,7 +424,7 @@ private:
             _nonuniform_scale.set_visible(checked);
             _scale_is_uniform = !checked;
             _scale_x.set_sensitive(_scale_is_uniform);
-            _linked_viewbox_scale.set_from_icon_name(_scale_is_uniform ? g_linked : g_unlinked, Gtk::ICON_SIZE_LARGE_TOOLBAR);
+            _linked_viewbox_scale.set_from_icon_name(_scale_is_uniform ? g_linked : g_unlinked);
         }
         else if (element == Check::DisabledScale) {
             _scale_x.set_sensitive(!checked);
