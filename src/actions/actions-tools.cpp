@@ -132,7 +132,7 @@ get_active_tool(InkscapeWindow *win)
         return state;
     }
 
-    auto saction = Glib::RefPtr<Gio::SimpleAction>::cast_dynamic(action);
+    auto saction = std::dynamic_pointer_cast<Gio::SimpleAction>(action);
     if (!saction) {
         show_output("get_active_tool: action 'tool-switch' not SimpleAction!");
         return state;
@@ -230,7 +230,7 @@ tool_switch(Glib::ustring const &tool, InkscapeWindow *win)
         return;
     }
 
-    auto saction = Glib::RefPtr<Gio::SimpleAction>::cast_dynamic(action);
+    auto saction = std::dynamic_pointer_cast<Gio::SimpleAction>(action);
     if (!saction) {
         show_output("tool-switch: action 'tool-switch' not SimpleAction!");
         return;
@@ -311,7 +311,7 @@ tool_toggle(Glib::ustring const &tool, InkscapeWindow *win)
         return;
     }
 
-    auto saction = Glib::RefPtr<Gio::SimpleAction>::cast_dynamic(action);
+    auto saction = std::dynamic_pointer_cast<Gio::SimpleAction>(action);
     if (!saction) {
         show_output("tool_toogle: action 'tool_switch' not SimpleAction!");
         return;
