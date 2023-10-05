@@ -406,7 +406,7 @@ sp_file_open_dialog(Gtk::Window &parentWindow, gpointer /*object*/, gpointer /*d
         else
             g_warning( "ERROR CONVERTING OPEN FILENAME TO UTF-8" );
 
-        open_path = Glib::path_get_dirname (fileName);
+        open_path = Glib::path_get_dirname(fileName.raw());
         open_path.append(G_DIR_SEPARATOR_S);
         prefs->setString("/dialogs/open/path", open_path);
 
@@ -662,7 +662,7 @@ sp_file_save_dialog(Gtk::Window &parentWindow, SPDocument *doc, Inkscape::Extens
             recent->add_item(uri);
         }
 
-        save_path = Glib::path_get_dirname(fileName);
+        save_path = Glib::path_get_dirname(fileName.raw());
         Inkscape::Extension::store_save_path_in_prefs(save_path, save_method);
 
         return success;
@@ -1305,7 +1305,7 @@ sp_file_import(Gtk::Window &parentWindow)
         else
             g_warning("ERROR CONVERTING IMPORT FILENAME TO UTF-8");
 
-        import_path = Glib::path_get_dirname(fileName);
+        import_path = Glib::path_get_dirname(fileName.raw());
         import_path.append(G_DIR_SEPARATOR_S);
         prefs->setString("/dialogs/import/path", import_path);
 
