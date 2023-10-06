@@ -134,8 +134,6 @@ void SPAttributeTable::set_object(SPObject * const object,
                            this );
     }
 
-    table->show_all();
-
     blocked = false;
 }
 

@@ -398,8 +398,6 @@ FileSaveDialogImplGtk::FileSaveDialogImplGtk(Gtk::Window &parentWindow, const Gl
 
     add_button(_("_Cancel"), Gtk::ResponseType::CANCEL);
     set_default(*add_button(_("_Save"), Gtk::ResponseType::OK));
-
-    show_all_children();
 }
 
 /**

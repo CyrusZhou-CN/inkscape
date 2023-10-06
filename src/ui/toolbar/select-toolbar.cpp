@@ -154,8 +154,6 @@ SelectToolbar::SelectToolbar(SPDesktop *desktop)
             return false;
         },
         Glib::PRIORITY_HIGH));
-
-    show_all();
 }
 
 SelectToolbar::~SelectToolbar() = default;

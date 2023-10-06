@@ -50,7 +50,7 @@ bool SVGPreview::setDocument(SPDocument *doc)
 
     document.reset(doc);
 
-    show_all();
+    set_visible(true);
 
     return true;
 }
