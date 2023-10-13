@@ -283,7 +283,7 @@ void CanvasItemCtrl::_render(CanvasItemBuffer &buf) const
     // Size in device pixels. Does not set device scale.
     int width  = _width  * buf.device_scale;
     int height = _height * buf.device_scale;
-    auto work = Cairo::ImageSurface::create(Cairo::FORMAT_ARGB32, width, height);
+    auto work = Cairo::ImageSurface::create(Cairo::Surface::Format::ARGB32, width, height);
     cairo_surface_set_device_scale(work->cobj(), buf.device_scale, buf.device_scale); // No C++ API!
 
     auto cr = Cairo::Context::create(work);
@@ -376,7 +376,7 @@ void CanvasItemCtrl::_render(CanvasItemBuffer &buf) const
 
     buf.cr->rectangle(x, y, _width, _height);
     buf.cr->clip();
-    buf.cr->set_operator(Cairo::OPERATOR_SOURCE);
+    buf.cr->set_operator(Cairo::Context::Operator::SOURCE);
     buf.cr->paint();
     buf.cr->restore();
 }
@@ -1031,7 +1031,7 @@ void CanvasItemCtrl::build_cache(int device_scale) const
         {
             double size = _width; // Use unscaled width.
 
-            auto work = Cairo::ImageSurface::create(Cairo::FORMAT_ARGB32, device_scale * size, device_scale * size);
+            auto work = Cairo::ImageSurface::create(Cairo::Surface::Format::ARGB32, device_scale * size, device_scale * size);
             cairo_surface_set_device_scale(work->cobj(), device_scale, device_scale); // No C++ API!
             auto cr = Cairo::Context::create(work);
 

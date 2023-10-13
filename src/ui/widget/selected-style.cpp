@@ -132,7 +132,7 @@ static const std::vector<Gtk::TargetEntry> ui_drop_target_entries = {
 static Dialog::FillAndStroke *get_fill_and_stroke_panel(SPDesktop *desktop);
 
 SelectedStyle::SelectedStyle(bool /*layout*/)
-    : Gtk::Box(Gtk::ORIENTATION_HORIZONTAL)
+    : Gtk::Box(Gtk::Orientation::HORIZONTAL)
 {
     set_name("SelectedStyle");
     set_size_request (SELECTED_STYLE_WIDTH, -1);
@@ -143,7 +143,7 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
     // Fill and stroke
     for (int i = 0; i <2; i++) {
         label[i] = Gtk::make_managed<Gtk::Label>(i == 0 ? _("Fill:") : _("Stroke:"));
-        label[i]->set_halign(Gtk::ALIGN_END);
+        label[i]->set_halign(Gtk::Align::END);
 
         // Multiple, Average, or Single
         tag[i] = Gtk::make_managed<Gtk::Label>(); // "m", "a", or empty
@@ -166,7 +166,7 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
         color_preview[i]->set_no_show_all();
 
         // Shows one or two children at a time.
-        type_box[i] = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
+        type_box[i] = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
         type_box[i]->set_hexpand(false);
         type_box[i]->add(*type_label[i]);
         type_box[i]->add(*gradient_preview[i]);
@@ -568,7 +568,7 @@ void SelectedStyle::on_stroke_edit() {
 }
 
 Gtk::EventSequenceState
-SelectedStyle::on_fill_click(Gtk::GestureMultiPress const &click,
+SelectedStyle::on_fill_click(Gtk::GestureClick const &click,
                              int /*n_press*/, double /*x*/, double /*y*/)
 {
     auto const button = click.get_current_button();
@@ -584,11 +584,11 @@ SelectedStyle::on_fill_click(Gtk::GestureMultiPress const &click,
             on_fill_remove();
         }
     }
-    return Gtk::EVENT_SEQUENCE_CLAIMED;
+    return Gtk::EventSequenceState::CLAIMED;
 }
 
 Gtk::EventSequenceState
-SelectedStyle::on_stroke_click(Gtk::GestureMultiPress const &click,
+SelectedStyle::on_stroke_click(Gtk::GestureClick const &click,
                                int /*n_press*/, double /*x*/, double /*y*/)
 {
     auto const button = click.get_current_button();
@@ -604,11 +604,11 @@ SelectedStyle::on_stroke_click(Gtk::GestureMultiPress const &click,
             on_stroke_remove();
         }
     }
-    return Gtk::EVENT_SEQUENCE_CLAIMED;
+    return Gtk::EventSequenceState::CLAIMED;
 }
 
 Gtk::EventSequenceState
-SelectedStyle::on_sw_click(Gtk::GestureMultiPress const &click,
+SelectedStyle::on_sw_click(Gtk::GestureClick const &click,
                            int /*n_press*/, double /*x*/, double /*y*/)
 {
     auto const button = click.get_current_button();
@@ -624,11 +624,11 @@ SelectedStyle::on_sw_click(Gtk::GestureMultiPress const &click,
     } else if (button == 2) { // middle click, toggle none/lastwidth?
         //
     }
-    return Gtk::EVENT_SEQUENCE_CLAIMED;
+    return Gtk::EventSequenceState::CLAIMED;
 }
 
 Gtk::EventSequenceState
-SelectedStyle::on_opacity_click(Gtk::GestureMultiPress const & /*click*/,
+SelectedStyle::on_opacity_click(Gtk::GestureClick const & /*click*/,
                                 int /*n_press*/, double /*x*/, double /*y*/)
 {
     const char* opacity = opacity_sb->get_value() < 50? "0.5" : (opacity_sb->get_value() == 100? "0" : "1");
@@ -637,7 +637,7 @@ SelectedStyle::on_opacity_click(Gtk::GestureMultiPress const & /*click*/,
     sp_desktop_set_style (_desktop, css);
     sp_repr_css_attr_unref (css);
     DocumentUndo::done(_desktop->getDocument(), _("Change opacity"), INKSCAPE_ICON("dialog-fill-and-stroke"));
-    return Gtk::EVENT_SEQUENCE_CLAIMED;
+    return Gtk::EventSequenceState::CLAIMED;
 }
 
 template <typename Slot, typename ...Args>
@@ -645,14 +645,14 @@ static UI::Widget::PopoverMenuItem *make_menu_item(Glib::ustring const &label, S
                                             Args &&...args)
 {
     auto const item = Gtk::make_managed<UI::Widget::PopoverMenuItem>(std::forward<Args>(args)...);
-    item->add(*Gtk::make_managed<Gtk::Label>(label, Gtk::ALIGN_START, Gtk::ALIGN_START));
+    item->add(*Gtk::make_managed<Gtk::Label>(label, Gtk::Align::START, Gtk::Align::START));
     item->signal_activate().connect(std::move(slot));
     return item;
 };
 
 void SelectedStyle::make_popup(FillOrStroke const i)
 {
-    _popup[i] = std::make_unique<UI::Widget::PopoverMenu>(*this, Gtk::POS_TOP);
+    _popup[i] = std::make_unique<UI::Widget::PopoverMenu>(*this, Gtk::PositionType::TOP);
 
 
     auto const add_item = [&](Glib::ustring const &  fill_label, auto const   fill_method,
@@ -715,7 +715,7 @@ void SelectedStyle::make_popup(FillOrStroke const i)
 
 void SelectedStyle::make_popup_units()
 {
-    _popup_sw = std::make_unique<UI::Widget::PopoverMenu>(*this, Gtk::POS_TOP);
+    _popup_sw = std::make_unique<UI::Widget::PopoverMenu>(*this, Gtk::PositionType::TOP);
 
     _popup_sw->append_section_label(_("<b>Stroke Width</b>"));
 
@@ -818,7 +818,7 @@ SelectedStyle::update()
             if (!dropEnabled[i]) {
                 swatch[i]->drag_dest_set(ui_drop_target_entries,
                                          Gtk::DestDefaults::DEST_DEFAULT_ALL,
-                                         Gdk::DragAction::ACTION_COPY | Gdk::DragAction::ACTION_MOVE);
+                                         Gdk::DragAction::COPY | Gdk::DragAction::MOVE);
                 dropEnabled[i] = true;
             }
 
@@ -1013,7 +1013,7 @@ void SelectedStyle::opacity_1()   {opacity_sb->set_value(100);}
 
 void SelectedStyle::make_popup_opacity()
 {
-    _popup_opacity = std::make_unique<UI::Widget::PopoverMenu>(*this, Gtk::POS_TOP);
+    _popup_opacity = std::make_unique<UI::Widget::PopoverMenu>(*this, Gtk::PositionType::TOP);
     auto const add_item = [&](Glib::ustring const &label, auto const method)
                           { _popup_opacity->append(*make_menu_item(label, sigc::mem_fun(*this, method))); };
     add_item(_("0 (Transparent)"), &SelectedStyle::opacity_0  );

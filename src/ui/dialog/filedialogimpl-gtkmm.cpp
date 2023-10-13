@@ -71,7 +71,7 @@ namespace Inkscape::UI::Dialog {
 #########################################################################*/
 
 FileDialogBaseGtk::FileDialogBaseGtk(Gtk::Window &parentWindow, Glib::ustring const &title,
-                                     Gtk::FileChooserAction const dialogType,
+                                     Gtk::FileChooser::Action const dialogType,
                                      FileDialogType const type,
                                      char const * const preferenceBase)
     : Gtk::FileChooserDialog{parentWindow, title, dialogType}
@@ -177,7 +177,7 @@ Glib::ustring FileDialogBaseGtk::extToPattern(const Glib::ustring &extension) co
  */
 FileOpenDialogImplGtk::FileOpenDialogImplGtk(Gtk::Window &parentWindow, const Glib::ustring &dir,
                                              FileDialogType fileTypes, const Glib::ustring &title)
-    : FileDialogBaseGtk(parentWindow, title, Gtk::FILE_CHOOSER_ACTION_OPEN, fileTypes, "/dialogs/open")
+    : FileDialogBaseGtk(parentWindow, title, Gtk::FileChooser::Action::OPEN, fileTypes, "/dialogs/open")
 {
     if (_dialogType == EXE_TYPES) {
         /* One file at a time */
@@ -210,14 +210,14 @@ FileOpenDialogImplGtk::FileOpenDialogImplGtk(Gtk::Window &parentWindow, const Gl
     //###### Add the file types menu
     createFilterMenu();
 
-    add_button(_("_Cancel"), Gtk::RESPONSE_CANCEL);
-    set_default(*add_button(_("_Open"), Gtk::RESPONSE_OK));
+    add_button(_("_Cancel"), Gtk::ResponseType::CANCEL);
+    set_default(*add_button(_("_Open"), Gtk::ResponseType::OK));
 
     //###### Allow easy access to our examples folder
 
     using namespace Inkscape::IO::Resource;
     auto examplesdir = get_path_string(SYSTEM, EXAMPLES);
-    if (Glib::file_test(examplesdir, Glib::FILE_TEST_IS_DIR) && //
+    if (Glib::file_test(examplesdir, Glib::FileTest::IS_DIR) && //
         Glib::path_is_absolute(examplesdir)) {
         add_shortcut_folder(examplesdir);
     }
@@ -284,7 +284,7 @@ bool FileOpenDialogImplGtk::show()
     int response = dialog_run(*this); // Dialog
     svgPreview.showNoPreview();
 
-    if (response == Gtk::RESPONSE_OK) {
+    if (response == Gtk::ResponseType::OK) {
         if (auto iter = filterComboBox->get_active()) {
             setExtension((*iter)[FilterList.extension]);
         }
@@ -334,7 +334,7 @@ FileSaveDialogImplGtk::FileSaveDialogImplGtk(Gtk::Window &parentWindow, const Gl
                                              FileDialogType fileTypes, const Glib::ustring &title,
                                              const Glib::ustring & /*default_key*/, const gchar *docTitle,
                                              const Inkscape::Extension::FileSaveMethod save_method)
-    : FileDialogBaseGtk(parentWindow, title, Gtk::FILE_CHOOSER_ACTION_SAVE, fileTypes,
+    : FileDialogBaseGtk(parentWindow, title, Gtk::FileChooser::Action::SAVE, fileTypes,
                         (save_method == Inkscape::Extension::FILE_SAVE_METHOD_SAVE_COPY) ? "/dialogs/save_copy"
                                                                                          : "/dialogs/save_as")
     , save_method(save_method)
@@ -396,8 +396,8 @@ FileSaveDialogImplGtk::FileSaveDialogImplGtk(Gtk::Window &parentWindow, const Gl
         add_shortcut_folder(templates);
     }
 
-    add_button(_("_Cancel"), Gtk::RESPONSE_CANCEL);
-    set_default(*add_button(_("_Save"), Gtk::RESPONSE_OK));
+    add_button(_("_Cancel"), Gtk::ResponseType::CANCEL);
+    set_default(*add_button(_("_Save"), Gtk::ResponseType::OK));
 
     show_all_children();
 }
@@ -464,7 +464,7 @@ bool FileSaveDialogImplGtk::show()
     svgPreview.showNoPreview();
     set_preview_widget_active(false);
 
-    if (response == Gtk::RESPONSE_OK) {
+    if (response == Gtk::ResponseType::OK) {
         updateNameAndExtension();
         Inkscape::Preferences *prefs = Inkscape::Preferences::get();
 
@@ -520,12 +520,12 @@ void FileSaveDialogImplGtk::change_path(const Glib::ustring &path)
 {
     setFilename(path);
 
-    if (Glib::file_test(_filename, Glib::FILE_TEST_IS_DIR)) {
+    if (Glib::file_test(_filename, Glib::FileTest::IS_DIR)) {
         // fprintf(stderr,"set_current_folder(%s)\n",_filename.c_str());
         set_current_folder(_filename);
     } else {
         // fprintf(stderr,"set_filename(%s)\n",_filename.c_str());
-        if (Glib::file_test(_filename, Glib::FILE_TEST_EXISTS)) {
+        if (Glib::file_test(_filename, Glib::FileTest::EXISTS)) {
             set_filename(_filename);
         } else {
             std::string dirName = Glib::path_get_dirname(_filename);

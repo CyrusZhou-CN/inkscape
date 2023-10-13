@@ -249,8 +249,8 @@ void responsive_tooltip(MessageContext *message_context, KeyEvent const &event, 
 }
 
 static const std::map<int, int> key_map = {
-    {GDK_KEY_Alt_L, GDK_MOD1_MASK},
-    {GDK_KEY_Alt_R, GDK_MOD1_MASK},
+    {GDK_KEY_Alt_L, GDK_ALT_MASK},
+    {GDK_KEY_Alt_R, GDK_ALT_MASK},
     {GDK_KEY_Control_L, GDK_CONTROL_MASK},
     {GDK_KEY_Control_R, GDK_CONTROL_MASK},
     {GDK_KEY_Shift_L, GDK_SHIFT_MASK},

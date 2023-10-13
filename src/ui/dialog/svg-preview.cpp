@@ -379,17 +379,17 @@ void SVGPreview::showTooLarge(long fileLength)
 
 bool SVGPreview::set(Glib::ustring const &fileName, int dialogType)
 {
-    if (!Glib::file_test(fileName, Glib::FILE_TEST_EXISTS)) {
+    if (!Glib::file_test(fileName, Glib::FileTest::EXISTS)) {
         showNoPreview();
         return false;
     }
 
-    if (Glib::file_test(fileName, Glib::FILE_TEST_IS_DIR)) {
+    if (Glib::file_test(fileName, Glib::FileTest::IS_DIR)) {
         showNoPreview();
         return false;
     }
 
-    if (Glib::file_test(fileName, Glib::FILE_TEST_IS_REGULAR)) {
+    if (Glib::file_test(fileName, Glib::FileTest::IS_REGULAR)) {
         Glib::ustring fileNameUtf8 = Glib::filename_to_utf8(fileName);
         gchar *fName = const_cast<gchar *>(
             fileNameUtf8.c_str()); // const-cast probably not necessary? (not necessary on Windows version of stat())
@@ -425,7 +425,7 @@ bool SVGPreview::set(Glib::ustring const &fileName, int dialogType)
 }
 
 SVGPreview::SVGPreview()
-    : Gtk::Box(Gtk::ORIENTATION_VERTICAL)
+    : Gtk::Box(Gtk::Orientation::VERTICAL)
     , showingNoPreview(false)
 {
     set_size_request(200, 300);
