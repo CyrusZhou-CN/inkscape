@@ -25,6 +25,8 @@
 
 #include <glibmm/ustring.h>
 
+namespace Gtk { class Window; }
+
 class SPDocument;
 
 namespace Inkscape {
