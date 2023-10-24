@@ -293,7 +293,8 @@ void PatternEditor::bind_store(Gtk::FlowBox& list, PatternStore& pat) {
 
     list.bind_list_store(pat.store.get_store(), [=, &pat](const Glib::RefPtr<PatternItem>& item){
         auto const box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-        auto const image = Gtk::make_managed<Gtk::Image>(item->pix);
+        auto const image = Gtk::make_managed<Gtk::Image>(to_texture(item->pix));
+        image->set_size_request(_tile_size, _tile_size);
         UI::pack_start(*box, *image);
         auto name = Glib::ustring(item->label.c_str());
         if (_show_names.get_active()) {
@@ -311,7 +312,6 @@ void PatternEditor::bind_store(Gtk::FlowBox& list, PatternStore& pat) {
         cbox->set_child(*box);
         cbox->add_css_class("pattern-item-box");
         pat.widgets_to_pattern[cbox] = item;
-        cbox->set_size_request(_tile_size, _tile_size);
         return cbox;
     });
 }
@@ -441,7 +441,6 @@ void PatternEditor::set_selected(SPPattern* pattern) {
     set_active(_doc_gallery, _doc_pattern_store, item);
 
     // generate large preview of selected pattern
-    Cairo::RefPtr<Cairo::Surface> surface;
     if (link_pattern) {
         const double device_scale = get_scale_factor();
         auto size = _preview.get_allocation();
@@ -453,9 +452,11 @@ void PatternEditor::set_selected(SPPattern* pattern) {
         }
         // use white for checkerboard since most stock patterns are black
         unsigned int background = 0xffffffff;
-        surface = _manager.get_preview(link_pattern, size.get_width(), size.get_height(), background, device_scale);
+        auto surface = _manager.get_preview(link_pattern, size.get_width(), size.get_height(), background, device_scale);
+        _preview_img.set(to_texture(surface));
+    } else {
+        _preview_img.clear();
     }
-    _preview_img.set(surface);
 }
 
 // generate preview images for patterns
@@ -567,7 +568,7 @@ void PatternEditor::set_active(Gtk::FlowBox& gallery, PatternStore& pat, Glib::R
                             // update preview, it might be stale
                             for_each_descendant(*box, [&](Gtk::Widget &widget){
                                 if (auto const image = dynamic_cast<Gtk::Image *>(&widget)) {
-                                    image->set(item->pix);
+                                    image->set(to_texture(item->pix));
                                     return ForEachResult::_break;
                                 }
                                 return ForEachResult::_continue;
@@ -600,7 +601,7 @@ std::pair<std::string, SPDocument*> PatternEditor::get_selected() {
         else {
             // for current document, if selection hasn't changed return linked pattern ID
             // so that we can modify its properties (transform, offset, gap)
-            if (sel->id == _current_pattern.id) {
+            if (sel->id == _current_pattern.id.raw()) {
                 return std::make_pair(_current_pattern.link_id, nullptr);
             }
             // different pattern from current document selected; use its root pattern
