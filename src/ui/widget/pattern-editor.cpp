@@ -133,7 +133,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
             Inkscape::Preferences::get()->setInt(_prefs + "/tileSize", size);
         }
         return true;
-    });
+    }, true);
 
     auto show_labels = Inkscape::Preferences::get()->getBool(_prefs + "/showLabels", false);
     _show_names.set_active(show_labels);
@@ -156,13 +156,13 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
         _angle_btn.set_value(round(CLAMP(value, -max, max)) * ANGLE_STEP);
         _signal_changed.emit();
         return true;
-    });
+    }, true);
 
     for (auto slider : {&_gap_x_slider, &_gap_y_slider}) {
         slider->set_increments(1, 1);
         slider->set_digits(0);
         slider->set_value(0);
-        slider->signal_format_value().connect([=](double val){
+        slider->set_format_value_func([=](double val){
             auto upper = slider->get_adjustment()->get_upper();
             return Glib::ustring::format(std::fixed, std::setprecision(0), slider_to_gap(val, upper)) + "%";
         });
@@ -170,7 +170,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
             if (_update.pending()) return false;
             _signal_changed.emit();
             return true;
-        });
+        }, true);
     }
 
     _angle_btn.signal_value_changed().connect([=]() {
@@ -308,7 +308,7 @@ void PatternEditor::bind_store(Gtk::FlowBox& list, PatternStore& pat) {
         image->set_tooltip_text(name);
 
         auto const cbox = Gtk::make_managed<Gtk::FlowBoxChild>();
-        cbox->add(*box);
+        cbox->set_child(*box);
         cbox->add_css_class("pattern-item-box");
         pat.widgets_to_pattern[cbox] = item;
         cbox->set_size_request(_tile_size, _tile_size);
@@ -327,8 +327,7 @@ void PatternEditor::select_pattern_set(int index) {
 }
 
 void PatternEditor::update_scale_link() {
-    _link_scale.remove();
-    _link_scale.add(get_widget<Gtk::Image>(_builder, _scale_linked ? "image-linked" : "image-unlinked"));
+    _link_scale.set_child(get_widget<Gtk::Image>(_builder, _scale_linked ? "image-linked" : "image-unlinked"));
 }
 
 void PatternEditor::update_widgets_from_pattern(Glib::RefPtr<PatternItem>& pattern) {
@@ -559,7 +558,7 @@ std::pair<Glib::RefPtr<PatternItem>, SPDocument*> PatternEditor::get_active() {
 void PatternEditor::set_active(Gtk::FlowBox& gallery, PatternStore& pat, Glib::RefPtr<PatternItem> item) {
     bool selected = false;
     if (item) {
-        gallery.foreach([=,&selected,&pat,&gallery](Gtk::Widget& widget){
+        UI::for_each_child(gallery, [=,&selected,&pat,&gallery](Gtk::Widget& widget){
             if (auto box = dynamic_cast<Gtk::FlowBoxChild*>(&widget)) {
                 if (auto pattern = pat.widgets_to_pattern[box]) {
                     if (pattern->id == item->id && pattern->collection == item->collection) {
@@ -578,6 +577,7 @@ void PatternEditor::set_active(Gtk::FlowBox& gallery, PatternStore& pat, Glib::R
                     }
                 }
             }
+            return UI::ForEachResult::_continue;
         });
     }
 
