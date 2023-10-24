@@ -299,47 +299,6 @@ private:
     auto_connection _changed_connection;
 };
 
-class RegisteredRadioButtonPair : public RegisteredWidget<Gtk::Box> {
-public:
-    RegisteredRadioButtonPair(Glib::ustring const &label,
-                              Glib::ustring const &label1,
-                              Glib::ustring const &label2,
-                              Glib::ustring const &tip1,
-                              Glib::ustring const &tip2,
-                              Glib::ustring const &key,
-                              Registry &wr,
-                              Inkscape::XML::Node *repr_in = nullptr,
-                              SPDocument *doc_in = nullptr);
-
-    void setValue(bool second);
-
-    bool setProgrammatically; // true if the value was set by setValue, not changed by the user;
-                                    // if a callback checks it, it must reset it back to false
-protected:
-    void on_value_changed();
-
-private:
-    Gtk::RadioButton *_rb1, *_rb2;
-    auto_connection _changed_connection;
-};
-
-class RegisteredPoint : public RegisteredWidget<Point> {
-public:
-    RegisteredPoint(Glib::ustring const &label,
-                    Glib::ustring const &tip,
-                    Glib::ustring const &key,
-                    Registry &wr,
-                    Inkscape::XML::Node *repr_in = nullptr,
-                    SPDocument *doc_in = nullptr);
-
-protected:
-    void on_value_changed();
-
-private:
-    auto_connection _value_x_changed_connection;
-    auto_connection _value_y_changed_connection;
-};
-
 
 class RegisteredTransformedPoint : public RegisteredWidget<Point> {
 public:
