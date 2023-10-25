@@ -47,7 +47,7 @@ Gtk::Widget const *get_scrollable_ancestor(Gtk::Widget const * const widget)
  * - Widget has focus
  * - Widget has no scrollable ancestor
  */
-bool scrolling_allowed(Gtk::Widget    const * const widget,
+/*bool scrolling_allowed(Gtk::Widget    const * const widget,
                        GdkEventScroll const * const event )
 {
     g_return_val_if_fail(widget, false);
@@ -56,7 +56,7 @@ bool scrolling_allowed(Gtk::Widget    const * const widget,
     return shift ||               //
            widget->has_focus() || //
            get_scrollable_ancestor(widget) == nullptr;
-}
+}*/
 
 } // namespace Inkscape::UI::Widget
 

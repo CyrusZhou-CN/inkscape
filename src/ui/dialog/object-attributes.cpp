@@ -361,7 +361,7 @@ public:
                 attrs.emplace_back(anchor_desc[len].attribute);
                 len += 1;
             }
-            _table->set_object(anchor, labels, attrs, (GtkWidget*)_table->gobj());
+            _table->append(*_table->set_object(anchor, labels, attrs));
         }
         else {
             _table->reread_properties();
