@@ -24,7 +24,6 @@ namespace Inkscape::UI::Widget {
 MathSpinButton::MathSpinButton(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &refGlade)
     : Gtk::SpinButton(cobject)
 {
-    drag_dest_unset();
 }
 
 int MathSpinButton::on_input(double *newvalue)
