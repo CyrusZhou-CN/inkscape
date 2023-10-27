@@ -12,20 +12,15 @@
 
 #include "document-fonts.h"
 
-#include <iostream>
-
-using namespace Inkscape::IO::Resource;
+// #include <iostream>
 
 namespace Inkscape {
 
-// get instance method for the singleton design pattern.
-DocumentFonts* DocumentFonts::get()
+DocumentFonts *DocumentFonts::get()
 {
-    static DocumentFonts* s_instance = new Inkscape::DocumentFonts();
-    return s_instance;
+    static DocumentFonts instance;
+    return &instance;
 }
-
-DocumentFonts::DocumentFonts() {}
 
 void DocumentFonts::clear()
 {
@@ -45,14 +40,14 @@ void DocumentFonts::print_document_fonts()
 }
 */
 
-void DocumentFonts::update_document_fonts(const std::map<Glib::ustring, std::set<Glib::ustring>>& font_data)
+void DocumentFonts::update_document_fonts(std::map<Glib::ustring, std::set<Glib::ustring>> const &font_data)
 {
     // Clear the old fonts and then insert latest set.
     clear();
 
     // Iterate over all the fonts in this map,
     // and insert these fonts into the document_fonts.
-    for(auto const& ele: font_data) {
+    for(auto const &ele: font_data) {
         _document_fonts.insert(ele.first);
     }
 
@@ -66,7 +61,7 @@ std::set<Glib::ustring> const &DocumentFonts::get_fonts() const
     return _document_fonts;
 }
 
-} // Namespace
+} // namespace Inkscape
 
 /*
   Local Variables:

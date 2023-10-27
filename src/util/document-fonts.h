@@ -7,11 +7,10 @@
  *   Vaibhav Malik <vaibhavmalik2018@gmail.com>
  *
  * The contents of this file may be used under the GNU General Public License Version 2 or later.
- *
  */
 
-#ifndef INK_DOCUMENT_FONTS_H
-#define INK_DOCUMENT_FONTS_H
+#ifndef INKSCAPE_UTIL_DOCUMENT_FONTS_H
+#define INKSCAPE_UTIL_DOCUMENT_FONTS_H
 
 #include <vector>
 #include <map>
@@ -20,43 +19,35 @@
 #include <sigc++/connection.h>
 #include <sigc++/signal.h>
 
-#include "io/resource.h"
-#include "io/dir-util.h"
-
 namespace Inkscape {
 
-class DocumentFonts {
+class DocumentFonts
+{
 public:
-    enum What {
-        All,
-        System,
-        User
-    };
-
-    static DocumentFonts* get();
-    ~DocumentFonts() = default;
+    static DocumentFonts *get();
 
     void clear();
     // void print_document_fonts();
-    void update_document_fonts(const std::map<Glib::ustring, std::set<Glib::ustring>>& font_data);
+    void update_document_fonts(std::map<Glib::ustring, std::set<Glib::ustring>> const &font_data);
     std::set<Glib::ustring> const &get_fonts() const;
 
     // Signals
-    sigc::connection connectUpdate(sigc::slot <void ()> slot) {
+    sigc::connection connectUpdate(sigc::slot<void ()> slot) {
         return update_signal.connect(slot);
     }
 
 private:
-    DocumentFonts();
-    std::set <Glib::ustring> _document_fonts;
+    DocumentFonts() = default;
+
+    std::set<Glib::ustring> _document_fonts;
 
     // Signals
-    sigc::signal <void ()> update_signal;
+    sigc::signal<void ()> update_signal;
 };
 
-} // Namespace Inkscape
+} // namespace Inkscape
 
-#endif // INK_DOCUMENT_FONTS_H
+#endif // INKSCAPE_UTIL_DOCUMENT_FONTS_H
 
 /*
   Local Variables:

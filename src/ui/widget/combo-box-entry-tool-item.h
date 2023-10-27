@@ -18,13 +18,21 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_INK_COMBOBOXENTRYTOOLITEM
-#define SEEN_INK_COMBOBOXENTRYTOOLITEM
+#ifndef INKSCAPE_UI_WIDGET_COMBOBOXENTRYTOOLITEM_H
+#define INKSCAPE_UI_WIDGET_COMBOBOXENTRYTOOLITEM_H
 
+#include <optional>
 #include <glibmm/ustring.h>
 #include <gtk/gtk.h>
 #include <gtkmm/box.h>
+#include <gtkmm/combobox.h>
+#include <gtkmm/cellrenderertext.h>
 #include <sigc++/signal.h>
+#include "helper/auto-connection.h"
+
+namespace Gtk {
+class TreeModel;
+} // namespace Gtk
 
 namespace Inkscape::UI::Widget {
 
@@ -32,115 +40,93 @@ namespace Inkscape::UI::Widget {
  * Formerly a Gtk::ToolItem that wraps a Gtk::ComboBox object.
  * Now a Gtk::Box that wraps the same. To be replaced by a Gtk::DropDown in Gtk4.
  */
-class ComboBoxEntryToolItem : public Gtk::Box {
+class ComboBoxEntryToolItem : public Gtk::Box
+{
+public:
+    using InfoCallback = sigc::slot<void (Gtk::Entry const &)>;
+    using CellDataFunc = sigc::slot<void (Gtk::CellRenderer &cell, Gtk::TreeModel::const_iterator const &iter, bool with_markup)>;
+    using SeparatorFunc = sigc::slot<bool (Glib::RefPtr<Gtk::TreeModel> const &model, Gtk::TreeModel::const_iterator const &iter)>;
+
+    ComboBoxEntryToolItem(Glib::ustring name,
+                          Glib::ustring label,
+                          Glib::ustring tooltip,
+                          Glib::RefPtr<Gtk::TreeModel> model,
+                          int           entry_width    = -1,
+                          int           extra_width    = -1,
+                          CellDataFunc  cell_data_func = {},
+                          SeparatorFunc separator_func = {},
+                          Gtk::Widget  *focusWidget    = nullptr);
+
+    Glib::ustring const &get_active_text() const { return _text; }
+    bool set_active_text(Glib::ustring text, int row = -1);
+
+    void set_entry_width(int entry_width);
+    void set_extra_width(int extra_width);
+
+    void popup_enable();
+    void popup_disable();
+    void focus_on_click(bool focus_on_click);
+
+    void set_info      (Glib::ustring info);
+    void set_info_cb   (InfoCallback info_cb);
+    void set_warning   (Glib::ustring warning_cb);
+    void set_warning_cb(InfoCallback warning);
+    void set_tooltip   (Glib::ustring const &tooltip);
+
+    // Accessor methods
+    int get_active() const { return _active; }
+    sigc::connection connectChanged(sigc::slot<void ()> &&slot) { return _signal_changed.connect(std::move(slot)); }
+
+    // This doesn't seem right... surely we should set the active row in the Combobox too?
+    void set_active(int active) { _active = active; }
+
+    void set_model(Glib::RefPtr<Gtk::TreeModel> model) { _model = std::move(model); }
+
 private:
     Glib::ustring       _tooltip;
     Glib::ustring       _label;
-    GtkTreeModel       *_model; ///< Tree Model
-    GtkComboBox        *_combobox;
-    GtkEntry           *_entry = nullptr;
-    gint                _entry_width;// Width of GtkEntry in characters.
-    gint                _extra_width;// Extra Width of GtkComboBox.. to widen drop-down list in list mode.
-    gpointer            _cell_data_func; // drop-down menu format
-    gpointer            _separator_func;
-    gboolean            _popup;      // Do we pop-up an entry-completion dialog?
-    GtkEntryCompletion *_entry_completion;
-    GtkWidget          *_focusWidget; ///< The widget to return focus to
-    GtkCellRenderer    *_cell;
+    Glib::RefPtr<Gtk::TreeModel> _model;
+    Gtk::ComboBox       _combobox;
+    Gtk::Entry         *_entry;
+    int                 _entry_width; // Width of GtkEntry in characters.
+    int                 _extra_width; // Extra Width of GtkComboBox.. to widen drop-down list in list mode.
+    CellDataFunc        _cell_data_func; // drop-down menu format
+    bool                _popup = false; // Do we pop-up an entry-completion dialog?
+    Glib::RefPtr<Gtk::EntryCompletion> _entry_completion;
+    Gtk::Widget        *_focusWidget; ///< The widget to return focus to
+    std::optional<Gtk::CellRendererText> _cell;
 
-    gint                _active;     // Index of active menu item (-1 if not in list).
-    gchar              *_text;       // Text of active menu item or entry box.
-    gchar              *_info;       // Text for tooltip info about entry.
-    gpointer            _info_cb;    // Callback for clicking info icon.
-    gint                _info_cb_id;
-    gboolean            _info_cb_blocked;
-    gchar              *_warning;    // Text for tooltip warning that entry isn't in list.
-    gpointer            _warning_cb; // Callback for clicking warning icon.
-    gint                _warning_cb_id;
-    gboolean            _warning_cb_blocked;
+    int                 _active = -1; // Index of active menu item (-1 if not in list).
+    Glib::ustring       _text; // Text of active menu item or entry box.
+    Glib::ustring       _info;       // Text for tooltip info about entry.
+    InfoCallback        _info_cb; // Callback for clicking info icon.
+    auto_connection     _info_cb_id;
+    bool                _info_cb_blocked = false;
+    Glib::ustring       _warning; // Text for tooltip warning that entry isn't in list.
+    InfoCallback        _warning_cb; // Callback for clicking warning icon.
+    auto_connection     _warning_cb_id;
+    bool                _warning_cb_blocked = false;
 
-    // Signals
+    auto_connection idle_conn;
+
     sigc::signal<void ()> _signal_changed;
 
-    static gint get_active_row_from_text(ComboBoxEntryToolItem *action,
-                                         const gchar         *target_text,
-	                                 gboolean             exclude     = false,
-                                         gboolean             ignore_case = false);
+    int get_active_row_from_text(Glib::ustring const &target_text, bool exclude = false, bool ignore_case = false) const;
     void defocus();
 
-    static void combo_box_changed_cb( GtkComboBox* widget, gpointer data );
-    static gboolean combo_box_popup_cb( ComboBoxEntryToolItem* widget, gpointer data );
-    static gboolean set_cell_markup(gpointer data);
-    static void entry_activate_cb( GtkEntry *widget,
-                                   gpointer  data );
-    static gboolean match_selected_cb( GtkEntryCompletion *widget,
-                                       GtkTreeModel       *model,
-                                       GtkTreeIter        *iter,
-                                       gpointer            data);
-    static gboolean keypress_cb( GtkWidget   *widget,
-                                 GdkEventKey *event,
-                                 gpointer     data );
+    void combo_box_changed_cb();
+    bool combo_box_popup_cb();
+    bool set_cell_markup();
+    void entry_activate_cb();
+    bool match_selected_cb(Gtk::TreeModel::iterator const &iter);
+    bool keypress_cb(unsigned keyval);
 
-    Glib::ustring check_comma_separated_text();
- 
-public:
-    ComboBoxEntryToolItem(const Glib::ustring name,
-                          const Glib::ustring label,
-                          const Glib::ustring tooltip,
-                          GtkTreeModel *model,
-                          gint          entry_width    = -1,
-                          gint          extra_width    = -1,
-                          gpointer      cell_data_func = nullptr,
-                          gpointer      separator_func = nullptr,
-                          GtkWidget*    focusWidget    = nullptr);
-
-    Glib::ustring get_active_text();
-    gboolean set_active_text(const gchar* text, int row=-1);
-
-    void     set_entry_width(gint entry_width);
-    void     set_extra_width(gint extra_width);
-
-    void     popup_enable();
-    void     popup_disable();
-    void     focus_on_click( bool focus_on_click );
-
-    void     set_info(      const gchar* info );
-    void     set_info_cb(   gpointer info_cb );
-    void     set_warning(   const gchar* warning_cb );
-    void     set_warning_cb(gpointer warning );
-    void     set_tooltip(   const gchar* tooltip );
-
-    // Accessor methods
-    decltype(_model)          get_model()          const {return _model;}
-    decltype(_combobox)       get_combobox()       const {return _combobox;}
-    decltype(_entry)          get_entry()          const {return _entry;}
-    decltype(_entry_width)    get_entry_width()    const {return _entry_width;}
-    decltype(_extra_width)    get_extra_width()    const {return _extra_width;}
-    decltype(_cell_data_func) get_cell_data_func() const {return _cell_data_func;}
-    decltype(_separator_func) get_separator_func() const {return _separator_func;}
-    decltype(_popup)          get_popup()          const {return _popup;}
-    decltype(_focusWidget)    get_focus_widget()   const {return _focusWidget;}
-
-    decltype(_active)         get_active()         const {return _active;}
-
-    decltype(_signal_changed) signal_changed() {return _signal_changed;}
-
-    // Mutator methods
-    void set_model         (decltype(_model)          model)          {_model          = model;}
-    void set_combobox      (decltype(_combobox)       combobox)       {_combobox       = combobox;}
-    void set_entry         (decltype(_entry)          entry)          {_entry          = entry;}
-    void set_cell_data_func(decltype(_cell_data_func) cell_data_func) {_cell_data_func = cell_data_func;}
-    void set_separator_func(decltype(_separator_func) separator_func) {_separator_func = separator_func;}
-    void set_popup         (decltype(_popup)          popup)          {_popup          = popup;}
-    void set_focus_widget  (decltype(_focusWidget)    focus_widget)   {_focusWidget    = focus_widget;}
-
-    // This doesn't seem right... surely we should set the active row in the Combobox too?
-    void set_active        (decltype(_active)         active)         {_active         = active;}
+    Glib::ustring check_comma_separated_text() const;
 };
 
 } // namespace Inkscape::UI::Widget
 
-#endif // SEEN_INK_COMBOBOXENTRYTOOLITEM
+#endif // INKSCAPE_UI_WIDGET_COMBOBOXENTRYTOOLITEM_H
 
 /*
   Local Variables:

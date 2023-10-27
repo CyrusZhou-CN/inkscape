@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <utility>
 #include <memory>
+#include <unordered_map>
 
 #include <pango/pango.h>
 #include "style.h"
@@ -41,10 +42,13 @@ struct StyleNames
 {
     StyleNames() = default;
     StyleNames(Glib::ustring name) : StyleNames(name, std::move(name)) {}
-    StyleNames(Glib::ustring cssname, Glib::ustring displayname) : CssName(std::move(cssname)), DisplayName(std::move(displayname)) {};
+    StyleNames(Glib::ustring cssname, Glib::ustring displayname)
+        : css_name(std::move(cssname))
+        , display_name(std::move(displayname))
+    {}
 
-    Glib::ustring CssName;     // Style as Pango/CSS would write it.
-    Glib::ustring DisplayName; // Style as Font designer named it.
+    Glib::ustring css_name;     // Style as Pango/CSS would write it.
+    Glib::ustring display_name; // Style as Font designer named it.
 };
 
 class FontFactory
@@ -73,10 +77,10 @@ public:
     Glib::ustring GetUIStyleString(PangoFontDescription const *fontDescr);
     bool hasFontFamily(const std::string &family);
 
-    // Helpfully inserts all font families into the provided map.
-    std::map <std::string, PangoFontFamily*> GetUIFamilies();
-    // Retrieves style information about a family in a newly allocated GList.
-    GList *GetUIStyles(PangoFontFamily *in);
+    // Helpfully returns all font families in a map.
+    std::unordered_map<std::string, PangoFontFamily*> GetUIFamilies();
+    // Retrieves style information about a font family.
+    std::vector<StyleNames> GetUIStyles(PangoFontFamily *in);
 
     /// Retrieve a FontInstance from a style object, first trying to use the font-specification, the CSS information
     std::shared_ptr<FontInstance> FaceFromStyle(SPStyle const *style);

@@ -176,8 +176,8 @@ FontSelectorToolbar::get_missing_fonts ()
         Gtk::TreeModel::Children children = font_lister->get_font_list()->children();
         for (auto iter2: children) {
             Gtk::TreeModel::Row row2 = *iter2;
-            Glib::ustring family2 = row2[font_lister->FontList.family];
-            bool onSystem2        = row2[font_lister->FontList.onSystem];
+            Glib::ustring family2 = row2[font_lister->font_list.family];
+            bool onSystem2        = row2[font_lister->font_list.onSystem];
             // CSS dictates that font family names are case insensitive.
             // This should really implement full Unicode case unfolding.
             if (onSystem2 && token.casefold().compare(family2.casefold()) == 0) {

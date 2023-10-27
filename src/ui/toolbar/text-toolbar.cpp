@@ -29,6 +29,7 @@
 
 #include "text-toolbar.h"
 
+#include <boost/range/adaptor/reversed.hpp>
 #include <glibmm/i18n.h>
 #include <gtkmm/button.h>
 #include <gtkmm/checkbutton.h>
@@ -85,8 +86,6 @@ using Inkscape::UI::Widget::UnitTracker;
 #ifdef DEBUG_TEXT
 static void sp_print_font(SPStyle *query)
 {
-
-
     bool family_set   = query->font_family.set;
     bool style_set    = query->font_style.set;
     bool fontspec_set = query->font_specification.set;
@@ -142,71 +141,87 @@ static void recursively_set_properties(SPObject *object, SPCSSAttr *css, bool un
     sp_repr_css_attr_unref (css_unset);
 }
 
-/*
- * Set the default list of font sizes, scaled to the users preferred unit
- */
-static void sp_text_set_sizes(GtkListStore* model_size, int unit)
+static Glib::RefPtr<Gtk::ListStore> create_sizes_store_uncached(int unit)
 {
-    gtk_list_store_clear(model_size);
-
-    // List of font sizes for dropchange-down menu
-    int sizes[] = {
+    // List of font sizes for dropdown menu
+    constexpr int sizes[] = {
         4, 6, 8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 28,
         32, 36, 40, 48, 56, 64, 72, 144
     };
 
     // Array must be same length as SPCSSUnit in style.h
-    float ratios[] = {1, 1, 1, 10, 4, 40, 100, 16, 8, 0.16};
+    constexpr float ratios[] = {1, 1, 1, 10, 4, 40, 100, 16, 8, 0.16};
 
-    for(int i : sizes) {
-        GtkTreeIter iter;
-        Glib::ustring size = Glib::ustring::format(i / (float)ratios[unit]);
-        gtk_list_store_append( model_size, &iter );
-        gtk_list_store_set( model_size, &iter, 0, size.c_str(), -1 );
+    struct Columns : Gtk::TreeModelColumnRecord
+    {
+        Gtk::TreeModelColumn<Glib::ustring> str;
+        Columns() { add(str); }
+    };
+    static Columns const columns;
+
+    auto store = Gtk::ListStore::create(columns);
+
+    for (int i : sizes) {
+        store->append()->set_value(columns.str, Glib::ustring::format(i / ratios[unit]));
     }
+
+    return store;
 }
 
+/**
+ * Create a ListStore containing the default list of font sizes scaled for the given unit.
+ */
+static Glib::RefPtr<Gtk::ListStore> create_sizes_store(int unit)
+{
+    static std::unordered_map<int, Glib::RefPtr<Gtk::ListStore>> cache;
+
+    auto &result = cache[unit];
+
+    if (!result) {
+        result = create_sizes_store_uncached(unit);
+    }
+
+    return result;
+}
 
 // TODO: possibly share with font-selector by moving most code to font-lister (passing family name)
-static void sp_text_toolbox_select_cb( GtkEntry* entry, GtkEntryIconPosition /*position*/, GdkEvent /*event*/, gpointer /*data*/ ) {
+static void sp_text_toolbox_select_cb(Gtk::Entry const &entry)
+{
+    Glib::ustring family = entry.get_text();
+    // std::cout << "text_toolbox_missing_font_cb: selecting: " << family << std::endl;
 
-  Glib::ustring family = gtk_entry_get_text ( entry );
-  //std::cout << "text_toolbox_missing_font_cb: selecting: " << family << std::endl;
+    // Get all items with matching font-family set (not inherited!).
+    std::vector<SPItem *> selectList;
 
-  // Get all items with matching font-family set (not inherited!).
-  std::vector<SPItem*> selectList;
+    SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+    SPDocument *document = desktop->getDocument();
+    auto allList = get_all_items(document->getRoot(), desktop, false, false, true);
+    for (auto item : boost::adaptors::reverse(allList)) {
+        auto style = item->style;
+        if (!style) {
+            continue;
+        }
 
-  SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-  SPDocument *document = desktop->getDocument();
-  auto allList = get_all_items(document->getRoot(), desktop, false, false, true);
-  for(std::vector<SPItem*>::const_reverse_iterator i=allList.rbegin();i!=allList.rend(); ++i){
-      SPItem *item = *i;
-    SPStyle *style = item->style;
+        Glib::ustring family_style;
+        if (style->font_family.set) {
+            family_style = style->font_family.value();
+            // std::cout << " family style from font_family: " << family_style << std::endl;
+        } else if (style->font_specification.set) {
+            family_style = style->font_specification.value();
+            // std::cout << " family style from font_spec: " << family_style << std::endl;
+        }
 
-    if (style) {
-
-      Glib::ustring family_style;
-      if (style->font_family.set) {
-	family_style = style->font_family.value();
-	//std::cout << " family style from font_family: " << family_style << std::endl;
-      }
-      else if (style->font_specification.set) {
-	family_style = style->font_specification.value();
-	//std::cout << " family style from font_spec: " << family_style << std::endl;
-      }
-
-      if (family_style.compare( family ) == 0 ) {
-        //std::cout << "   found: " << item->getId() << std::endl;
-	selectList.push_back(item);
-      }
+        if (family_style.compare(family) == 0) {
+            // std::cout << "   found: " << item->getId() << std::endl;
+            selectList.push_back(item);
+        }
     }
-  }
 
-  // Update selection
-  Inkscape::Selection *selection = desktop->getSelection();
-  selection->clear();
-  //std::cout << "   list length: " << g_slist_length ( selectList ) << std::endl;
-  selection->setList(selectList);
+    // Update selection
+    auto selection = desktop->getSelection();
+    selection->clear();
+    // std::cout << "   list length: " << selectList.size() << std::endl;
+    selection->setList(selectList);
 }
 
 namespace Inkscape::UI::Toolbar {
@@ -270,36 +285,34 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
         // Font list
         auto fontlister = Inkscape::FontLister::get_instance();
         fontlister->update_font_list(desktop->getDocument());
-        Glib::RefPtr<Gtk::ListStore> store = fontlister->get_font_list();
-        GtkListStore* model = store->gobj();
+        auto store = fontlister->get_font_list();
 
         // Keep font list up to date with document fonts when refreshed.
         _fonts_updated_signal = fontlister->connectNewFonts([=](){
             fontlister->update_font_list(desktop->getDocument());
         });
 
-        _font_family_item =
-            Gtk::make_managed<UI::Widget::ComboBoxEntryToolItem>( "TextFontFamilyAction",
-                                                                 _("Font Family"),
-                                                                 _("Select Font Family (Alt-X to access)"),
-                                                                 GTK_TREE_MODEL(model),
-                                                                 -1,                // Entry width
-                                                                 50,                // Extra list width
-                                                                 (gpointer)font_lister_cell_data_func2, // Cell layout
-                                                                 (gpointer)font_lister_separator_func2,
-                                                                 desktop->getCanvas()->Gtk::Widget::gobj()); // Focus widget
+        _font_family_item = Gtk::make_managed<UI::Widget::ComboBoxEntryToolItem>(
+            "TextFontFamilyAction",
+            _("Font Family"),
+            _("Select Font Family (Alt-X to access)"),
+            store,
+            -1, // Entry width
+            50, // Extra list width
+            &font_lister_cell_data_func2, // Cell layout
+            &font_lister_separator_func,
+            desktop->getCanvas() // Focus widget
+        );
 
         _font_family_item->popup_enable(); // Enable entry completion
 
-        char const * const info = _("Select all text with this font-family");
-        _font_family_item->set_info( info ); // Show selection icon
-        _font_family_item->set_info_cb( (gpointer)sp_text_toolbox_select_cb );
+        _font_family_item->set_info(_("Select all text with this font-family")); // Show selection icon
+        _font_family_item->set_info_cb(&sp_text_toolbox_select_cb);
 
-        char const * const warning = _("Font not found on system");
-        _font_family_item->set_warning( warning ); // Show icon w/ tooltip if font missing
-        _font_family_item->set_warning_cb( (gpointer)sp_text_toolbox_select_cb );
+        _font_family_item->set_warning(_("Font not found on system")); // Show icon w/ tooltip if font missing
+        _font_family_item->set_warning_cb(&sp_text_toolbox_select_cb);
 
-        _font_family_item->signal_changed().connect([this](){ fontfamily_value_changed(); });
+        _font_family_item->connectChanged([this](){ fontfamily_value_changed(); });
         get_widget<Gtk::Box>(_builder, "font_list_box").add(*_font_family_item);
 
         _font_family_item->focus_on_click(false);
@@ -308,21 +321,21 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
     // Font styles
     {
         auto fontlister = Inkscape::FontLister::get_instance();
-        Glib::RefPtr<Gtk::ListStore> store = fontlister->get_style_list();
-        GtkListStore* model_style = store->gobj();
+        auto store = fontlister->get_style_list();
 
-        _font_style_item =
-            Gtk::make_managed<UI::Widget::ComboBoxEntryToolItem>( "TextFontStyleAction",
-                                                                 _("Font Style"),
-                                                                 _("Font style"),
-                                                                 GTK_TREE_MODEL(model_style),
-                                                                 12,     // Width in characters
-                                                                 0,      // Extra list width
-                                                                 nullptr,   // Cell layout
-                                                                 nullptr,   // Separator
-                                                                 desktop->getCanvas()->Gtk::Widget::gobj()); // Focus widget
+        _font_style_item = Gtk::manage(new UI::Widget::ComboBoxEntryToolItem(
+            "TextFontStyleAction",
+            _("Font Style"),
+            _("Font style"),
+            store,
+            12, // Width in characters
+            0, // Extra list width
+            {}, // Cell layout
+            {}, // Separator
+            desktop->getCanvas()
+        )); // Focus widget
 
-        _font_style_item->signal_changed().connect([this](){ fontstyle_value_changed(); });
+        _font_style_item->connectChanged([this] { fontstyle_value_changed(); });
         _font_style_item->focus_on_click(false);
         get_widget<Gtk::Box>(_builder, "styles_list_box").add(*_font_style_item);
     }
@@ -330,26 +343,24 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
     // Font size
     {
         // List of font sizes for drop-down menu
-        GtkListStore *model_size = gtk_list_store_new(1, G_TYPE_STRING);
         int unit = prefs->getInt("/options/font/unitType", SP_CSS_UNIT_PT);
-
-        sp_text_set_sizes(model_size, unit);
 
         auto unit_str = sp_style_get_css_unit_string(unit);
         Glib::ustring tooltip = Glib::ustring::format(_("Font size"), " (", unit_str, ")");
 
-        _font_size_item =
-            Gtk::make_managed<UI::Widget::ComboBoxEntryToolItem>( "TextFontSizeAction",
-                                                                 _("Font Size"),
-                                                                 tooltip,
-                                                                 GTK_TREE_MODEL(model_size),
-                                                                 8,      // Width in characters
-                                                                 0,      // Extra list width
-                                                                 nullptr,   // Cell layout
-                                                                 nullptr,   // Separator
-                                                                 desktop->getCanvas()->Gtk::Widget::gobj()); // Focus widget
+        _font_size_item = Gtk::manage(new UI::Widget::ComboBoxEntryToolItem(
+            "TextFontSizeAction",
+            _("Font Size"),
+            tooltip,
+            create_sizes_store(unit),
+            8, // Width in characters
+            0, // Extra list width
+            {}, // Cell layout
+            {}, // Separator
+            desktop->getCanvas() // Focus widget
+        ));
 
-        _font_size_item->signal_changed().connect([this](){ fontsize_value_changed(); });
+        _font_size_item->connectChanged([this] { fontsize_value_changed(); });
         _font_size_item->focus_on_click(false);
         get_widget<Gtk::Box>(_builder, "font_size_box").add(*_font_size_item);
     }
@@ -1578,10 +1589,8 @@ void TextToolbar::selection_changed(Inkscape::Selection *selection) // don't bot
     Inkscape::FontLister *fontlister = Inkscape::FontLister::get_instance();
     fontlister->selection_update();
     // Update font list, but only if widget already created.
-    if (_font_family_item->get_combobox() != nullptr) {
-        _font_family_item->set_active_text(fontlister->get_font_family().c_str(), fontlister->get_font_family_row());
-        _font_style_item->set_active_text(fontlister->get_font_style().c_str());
-    }
+    _font_family_item->set_active_text(fontlister->get_font_family().c_str(), fontlister->get_font_family_row());
+    _font_style_item->set_active_text(fontlister->get_font_style().c_str());
 
     /*
      * Query from current selection:
@@ -1659,9 +1668,7 @@ void TextToolbar::selection_changed(Inkscape::Selection *selection) // don't bot
 
         // To ensure the value of the combobox is properly set on start-up, only mark
         // the prefs set if the combobox has already been constructed.
-        if( _font_family_item->get_combobox() != nullptr ) {
-            _text_style_from_prefs = true;
-        }
+        _text_style_from_prefs = true;
     } else {
         _text_style_from_prefs = false;
     }
@@ -1691,7 +1698,7 @@ void TextToolbar::selection_changed(Inkscape::Selection *selection) // don't bot
         _font_size_item->set_tooltip(tooltip.c_str());
 
         Inkscape::CSSOStringStream os;
-        // We dot want to parse values just show
+        // We don't want to parse values just show
 
         _tracker_fs->setActiveUnitByAbbr(sp_style_get_css_unit_string(unit));
         int rounded_size = std::round(size);
@@ -1706,7 +1713,7 @@ void TextToolbar::selection_changed(Inkscape::Selection *selection) // don't bot
 
         // Freeze to ignore callbacks.
         //g_object_freeze_notify( G_OBJECT( fontSizeAction->combobox ) );
-        sp_text_set_sizes(GTK_LIST_STORE(_font_size_item->get_model()), unit);
+        _font_size_item->set_model(create_sizes_store(unit));
         //g_object_thaw_notify( G_OBJECT( fontSizeAction->combobox ) );
 
         _font_size_item->set_active_text( os.str().c_str() );
@@ -1979,8 +1986,8 @@ void TextToolbar::subselection_wrap_toggle(bool start)
 * We need to apply the container style to the optional first and last text nodes,
 * wrapping into a new element that gets the container style (this is not part to the sub-selection).
 * After wrapping, we unindent all children of the container and remove the container.
-* 
-*/  
+*
+*/
 void TextToolbar::prepare_inner()
 {
     Inkscape::UI::Tools::TextTool *const tc = SP_TEXT_CONTEXT(_desktop->getTool());

@@ -356,18 +356,6 @@ static int StyleNameValue(Glib::ustring const &style)
     return value;
 }
 
-// Determines order in which styles are presented (sorted by CSS style values)
-//static bool StyleNameCompareInternal(const StyleNames &style1, const StyleNames &style2)
-//{
-//   return( StyleNameValue( style1.CssName ) < StyleNameValue( style2.CssName ) );
-//}
-
-static gint StyleNameCompareInternalGlib(gconstpointer a, gconstpointer b)
-{
-    return StyleNameValue(((StyleNames*)a)->CssName) <
-           StyleNameValue(((StyleNames*)b)->CssName) ? -1 : 1;
-}
-
 /**
  * Returns a list of all font names available in this font config
  */
@@ -392,9 +380,9 @@ bool FontFactory::hasFontFamily(const std::string &family)
     return getSubstituteFontName(family) == family;
 }
 
-std::map <std::string, PangoFontFamily*> FontFactory::GetUIFamilies()
+std::unordered_map <std::string, PangoFontFamily*> FontFactory::GetUIFamilies()
 {
-    std::map <std::string, PangoFontFamily*> out;
+    std::unordered_map<std::string, PangoFontFamily*> result;
 
     // Gather the family names as listed by Pango
     PangoFontFamily **families = nullptr;
@@ -415,31 +403,32 @@ std::map <std::string, PangoFontFamily*> FontFactory::GetUIFamilies()
             std::cerr << "Ignoring font '" << displayName << "'" << std::endl;
             continue;
         }
-        out.insert({displayName, families[currentFamily]});
+        result.emplace(displayName, families[currentFamily]);
     }
 
     g_free(families);
-    return out;
+    return result;
 }
 
-GList *FontFactory::GetUIStyles(PangoFontFamily *in)
+std::vector<StyleNames> FontFactory::GetUIStyles(PangoFontFamily *in)
 {
-    GList* ret = nullptr;
+    if (!in) {
+        std::cerr << "FontFactory::GetUIStyles(): PangoFontFamily is NULL" << std::endl;
+        return {};
+    }
+
     // Gather the styles for this family
     PangoFontFace **faces = nullptr;
     int numFaces = 0;
-    if (!in) {
-        std::cerr << "FontFactory::GetUIStyles(): PangoFontFamily is NULL" << std::endl;
-        return ret;
-    }
-
     pango_font_family_list_faces(in, &faces, &numFaces);
+
+    std::vector<StyleNames> result;
 
     for (int currentFace = 0; currentFace < numFaces; currentFace++) {
 
         // If the face has a name, describe it, and then use the
         // description to get the UI family and face strings
-        gchar const *displayName = pango_font_face_get_face_name(faces[currentFace]);
+        char const *displayName = pango_font_face_get_face_name(faces[currentFace]);
         // std::cout << "Display Name: " << displayName << std::endl;
         if (!displayName || *displayName == '\0') {
             std::cerr << "FontFactory::GetUIStyles: Missing displayName! " << std::endl;
@@ -493,12 +482,12 @@ GList *FontFactory::GetUIStyles(PangoFontFamily *in)
             }
 
             bool exists = false;
-            for(GList *temp = ret; temp; temp = temp->next) {
-                if( ((StyleNames*)temp->data)->CssName.compare( styleUIName ) == 0 ) {
+            for (auto const &tmp : result) {
+                if (tmp.css_name.compare(styleUIName) == 0) {
                     exists = true;
                     std::cerr << "Warning: Font face with same CSS values already added: "
                               << familyUIName.raw() << " " << styleUIName.raw()
-                              << " (" << ((StyleNames*)temp->data)->DisplayName.raw()
+                              << " (" << tmp.display_name.raw()
                               << ", " << displayName << ")" << std::endl;
                     break;
                 }
@@ -506,16 +495,19 @@ GList *FontFactory::GetUIStyles(PangoFontFamily *in)
 
             if (!exists && !familyUIName.empty() && !styleUIName.empty()) {
                 // Add the style information
-                ret = g_list_append(ret, new StyleNames(styleUIName, displayName));
+                result.emplace_back(styleUIName, displayName);
             }
         }
         pango_font_description_free(faceDescr);
     }
     g_free(faces);
 
-    // Sort the style lists
-    ret = g_list_sort( ret, StyleNameCompareInternalGlib );
-    return ret;
+    // Sort the style list
+    std::sort(result.begin(), result.end(), [] (auto &a, auto &b) {
+        return StyleNameValue(a.css_name) < StyleNameValue(b.css_name);
+    });
+
+    return result;
 }
 
 std::shared_ptr<FontInstance> FontFactory::FaceFromStyle(SPStyle const *style)
