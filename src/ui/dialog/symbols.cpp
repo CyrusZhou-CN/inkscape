@@ -311,18 +311,6 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
         return Gdk::ContentProvider::create(ustring_value);
     }, false);
     icon_view->add_controller(source);
-    /* Glib::RefPtr<Gtk::DropTarget> target = Gtk::DropTarget::create((GType)APP_X_INK_PASTE, Gdk::DragAction::COPY);
-    target->set_modifier(Gdk::ModifierType::BUTTON1_MASK);
-    target->signal_drop().connect([this] (const Glib::ValueBase& value, double x, double y){
-        auto selected = get_selected_symbol();
-        if (!selected) {
-            return;
-        }
-        Glib::ustring symbol_id = (**selected)[g_columns.symbol_id];
-        GdkAtom dataAtom = gdk_atom_intern("application/x-inkscape-paste", false);
-        gtk_selection_data_set(data.gobj(), dataAtom, 9, (guchar*)symbol_id.c_str(), symbol_id.length());
-    }, true);
-    icon_view->add_controller(target); */
     icon_view->signal_selection_changed().connect(sigc::mem_fun(*this, &SymbolsDialog::iconChanged));
 
     scroller = &get_widget<Gtk::ScrolledWindow>(_builder, "scroller");

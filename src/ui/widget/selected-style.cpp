@@ -499,12 +499,9 @@ void SelectedStyle::_on_paste_callback(Glib::RefPtr<Gio::AsyncResult>& result, G
     Glib::RefPtr<Gdk::Clipboard> refClipboard = display->get_primary_clipboard();
     // Parse the clipboard text as if it was a color string.
     Glib::ustring text;
-    try
-    {
+    try {
         text = refClipboard->read_text_finish(result);
-    }
-    catch (const Glib::Error& err)
-    {
+    } catch (Glib::Error const &err) {
         std::cout << "Pasting text failed: " << err.what() << std::endl;
         return;
     }
@@ -517,20 +514,20 @@ void SelectedStyle::_on_paste_callback(Glib::RefPtr<Gio::AsyncResult>& result, G
         sp_repr_css_set_property (css, typepaste.c_str(), text.c_str());
         sp_desktop_set_style (_desktop, css);
         sp_repr_css_attr_unref (css);
-        DocumentUndo::done(_desktop->getDocument(), typepaste.c_str() == "fill"?_("Paste fill"):_("Paste stroke"), INKSCAPE_ICON("dialog-fill-and-stroke"));
+        DocumentUndo::done(_desktop->getDocument(), typepaste.c_str() == "fill" ? _("Paste fill") : _("Paste stroke"), INKSCAPE_ICON("dialog-fill-and-stroke"));
     }
 }
 
 void SelectedStyle::on_fill_paste() {
     auto const display = Gdk::Display::get_default();
     Glib::RefPtr<Gdk::Clipboard> refClipboard = display->get_primary_clipboard();
-    refClipboard->read_text_async(sigc::bind(sigc::mem_fun(*this,&SelectedStyle::_on_paste_callback), "fill"));
+    refClipboard->read_text_async(sigc::bind(sigc::mem_fun(*this, &SelectedStyle::_on_paste_callback), "fill"));
 }
 
 void SelectedStyle::on_stroke_paste() {
     auto const display = Gdk::Display::get_default();
     Glib::RefPtr<Gdk::Clipboard> refClipboard = display->get_primary_clipboard();
-    refClipboard->read_text_async(sigc::bind(sigc::mem_fun(*this,&SelectedStyle::_on_paste_callback), "stroke"));
+    refClipboard->read_text_async(sigc::bind(sigc::mem_fun(*this, &SelectedStyle::_on_paste_callback), "stroke"));
 }
 
 void SelectedStyle::on_fillstroke_swap() {

@@ -203,7 +203,7 @@ protected:
     void on_stroke_paste();
     void on_fill_opaque();
     void on_stroke_opaque();
-    void _on_paste_callback(Glib::RefPtr<Gio::AsyncResult>& result, Glib::ustring typepaste);
+    void _on_paste_callback(Glib::RefPtr<Gio::AsyncResult> &result, Glib::ustring typepaste);
 
     std::unique_ptr<UI::Widget::PopoverMenu> _popup[2];
     UI::Widget::PopoverMenuItem *_popup_copy[2]{};
