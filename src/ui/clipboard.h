@@ -15,9 +15,13 @@
 #define SEEN_INKSCAPE_CLIPBOARD_H
 
 #include <glibmm/ustring.h>
+#include <glibmm/main.h>
+#include <giomm/asyncresult.h>
 #include <vector>
 #include <2geom/point.h>
 #include <2geom/rect.h>
+
+typedef struct _GObject GObject;
 
 // forward declarations
 class SPDesktop;

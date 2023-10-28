@@ -119,10 +119,14 @@ public:
     bool pasteStyle(ObjectSet *set) override;
     bool pasteSize(ObjectSet *set, bool separately, bool apply_x, bool apply_y) override;
     bool pastePathEffect(ObjectSet *set) override;
+    Glib::RefPtr<Gdk::Clipboard> getClipboard();
     Glib::ustring getPathParameter(SPDesktop* desktop) override;
     Glib::ustring getShapeOrTextObjectId(SPDesktop *desktop) override;
     std::vector<Glib::ustring> getElementsOfType(SPDesktop *desktop, gchar const* type = "*", gint maxdepth = -1) override;
     Glib::ustring getFirstObjectID() override;
+    void _pasteImageCallback(Glib::RefPtr<Gio::AsyncResult>& result, SPDocument *document);
+    void _pasteTextCallback(Glib::RefPtr<Gio::AsyncResult>& result, SPDesktop *desktop);
+    void _retrieveClipboardCallback(Glib::RefPtr<Gio::AsyncResult>& result, Glib::ustring required_target);
 
     ClipboardManagerImpl();
     ~ClipboardManagerImpl() override;
@@ -146,9 +150,6 @@ private:
     void _applyPathEffect(SPItem *, gchar const *);
     std::unique_ptr<SPDocument> _retrieveClipboard(Glib::ustring = "");
 
-    // clipboard callbacks
-    void _onGet(Gtk::SelectionData &, guint);
-    void _onClear();
 
     // various helpers
     void _createInternalClipboard();
@@ -170,6 +171,8 @@ private:
     std::vector<SPCSSAttr*> te_selected_style;
     std::vector<unsigned> te_selected_style_positions;
     int nr_blocks = 0;
+    int _paste_success = -1;
+    SPDocument *_current_document = nullptr;
 
     // we need a way to copy plain text AND remember its style;
     // the standard _clipnode is only available in an SVG tree, hence this special storage
@@ -185,8 +188,7 @@ ClipboardManagerImpl::ClipboardManagerImpl()
       _root(nullptr),
       _clipnode(nullptr),
       _doc(nullptr),
-      _text_style(nullptr),
-      _clipboard( Gdk::Clipboard::get() )
+      _text_style(nullptr)
 {
     // Clipboard Formats: http://msdn.microsoft.com/en-us/library/ms649013(VS.85).aspx
     // On Windows, most graphical applications can handle CF_DIB/CF_BITMAP and/or CF_ENHMETAFILE
@@ -194,6 +196,7 @@ ClipboardManagerImpl::ClipboardManagerImpl()
     // Presenting "image/x-emf" as CF_ENHMETAFILE must be done by Inkscape ?
 
     // push supported clipboard targets, in order of preference
+    _clipboard = getClipboard();
     _preferred_targets.emplace_back("image/x-inkscape-svg");
     _preferred_targets.emplace_back("image/svg+xml");
     _preferred_targets.emplace_back("image/svg+xml-compressed");
@@ -207,11 +210,17 @@ ClipboardManagerImpl::ClipboardManagerImpl()
     // popup windows. Clearing the clipboard can prevent this.
     auto application = Gio::Application::get_default();
     if (application) {
-        application->signal_shutdown().connect_notify([this]() { this->_discardInternalClipboard(); });
+        application->signal_shutdown().connect([this]() { this->_discardInternalClipboard(); });
     }
 }
 
 ClipboardManagerImpl::~ClipboardManagerImpl() = default;
+
+Glib::RefPtr<Gdk::Clipboard> 
+ClipboardManagerImpl::getClipboard() {
+    auto const display = Gdk::Display::get_default();
+    return display->get_primary_clipboard();
+}
 
 /**
  * Copy selection contents to the clipboard.
@@ -1402,6 +1411,46 @@ Inkscape::XML::Node *ClipboardManagerImpl::_copyIgnoreDup(Inkscape::XML::Node *n
     return dup;
 }
 
+void ClipboardManagerImpl::_pasteImageCallback(Glib::RefPtr<Gio::AsyncResult>& result, SPDocument *doc)
+{
+    // retrieve image data
+    Glib::RefPtr<Gdk::Texture> img;
+    try
+    {
+        img = _clipboard->read_texture_finish(result);
+    }
+    catch (const Glib::Error& err)
+    {
+        std::cout << "Pasting image failed: " << err.what() << std::endl;
+        _paste_success = 0;
+        return;
+    }
+    if (!img) {
+        _paste_success = 0;
+        return;
+    }
+    if (!doc) {
+        _paste_success = 0;
+        return;
+    }
+    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    Glib::ustring attr_saved = prefs->getString("/dialogs/import/link");
+    bool ask_saved = prefs->getBool("/dialogs/import/ask");
+    prefs->setString("/dialogs/import/link", "embed");
+    prefs->setBool("/dialogs/import/ask", false);
+    gchar *filename = g_build_filename( g_get_user_cache_dir(), "inkscape-clipboard-import", nullptr );
+    img->save_to_png(filename);
+    Inkscape::Extension::Extension *png = Inkscape::Extension::find_by_mime("image/png");
+    
+    png->set_gui(false);
+    file_import(doc, filename, png);
+    g_free(filename);
+    prefs->setString("/dialogs/import/link", attr_saved);
+    prefs->setBool("/dialogs/import/ask", ask_saved);
+    png->set_gui(true);
+    _paste_success = 1;
+}
+
 /**
  * Retrieve a bitmap image from the clipboard and paste it into the active document.
  */
@@ -1410,30 +1459,53 @@ bool ClipboardManagerImpl::_pasteImage(SPDocument *doc)
     if ( doc == nullptr ) {
         return false;
     }
-
     // retrieve image data
-    Glib::RefPtr<Gdk::Pixbuf> img = _clipboard->wait_for_image();
-    if (!img) {
-        return false;
+    _paste_success = -1;
+    _clipboard->read_texture_async(sigc::bind(sigc::mem_fun(*this,&ClipboardManagerImpl::_pasteImageCallback), doc));
+    // not know a clean way to do await here
+    while (_paste_success == -1) {}
+    return _paste_success == 1;
+}
+
+void ClipboardManagerImpl::_pasteTextCallback(Glib::RefPtr<Gio::AsyncResult>& result, SPDesktop *desktop)
+{
+    // retrieve text data
+    if (!desktop) {
+        _paste_success = 0;
+        return;
     }
-
-    Inkscape::Extension::Extension *png = Inkscape::Extension::find_by_mime("image/png");
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-    Glib::ustring attr_saved = prefs->getString("/dialogs/import/link");
-    bool ask_saved = prefs->getBool("/dialogs/import/ask");
-    prefs->setString("/dialogs/import/link", "embed");
-    prefs->setBool("/dialogs/import/ask", false);
-    png->set_gui(false);
-
-    gchar *filename = g_build_filename( g_get_user_cache_dir(), "inkscape-clipboard-import", nullptr );
-    img->save(filename, "png");
-    file_import(doc, filename, png);
-    g_free(filename);
-    prefs->setString("/dialogs/import/link", attr_saved);
-    prefs->setBool("/dialogs/import/ask", ask_saved);
-    png->set_gui(true);
-
-    return true;
+    // Parse the clipboard text as if it was a color string.
+    Glib::ustring clip_text;
+    try
+    {
+        clip_text = _clipboard->read_text_finish(result);
+    }
+    catch (const Glib::Error& err)
+    {
+        std::cout << "Pasting text failed: " << err.what() << std::endl;
+        _paste_success = 0;
+        return;
+    }
+    // retrieve text data
+    // if the text editing tool is active, paste the text into the active text object
+    if (auto text_tool = dynamic_cast<Tools::TextTool*>(desktop->getTool())) {
+        _paste_success = text_tool->pasteInline(clip_text);
+        return;
+    }
+    if (clip_text.length() < 30) {
+        // Zero makes it impossible to paste a 100% transparent black, but it's useful.
+        guint32 const rgb0 = sp_svg_read_color(clip_text.c_str(), 0x0);
+        if (rgb0) {
+            SPCSSAttr *color_css = sp_repr_css_attr_new();
+            sp_repr_css_set_property(color_css, "fill", SPColor(rgb0).toString().c_str());
+            // In the future this could parse opacity, but sp_svg_read_color lacks this.
+            sp_repr_css_set_property(color_css, "fill-opacity", "1.0");
+            sp_desktop_set_style(desktop, color_css);
+            _paste_success = 1;
+            return;
+        }
+    }
+    _paste_success = 0;
 }
 
 /**
@@ -1444,28 +1516,11 @@ bool ClipboardManagerImpl::_pasteText(SPDesktop *desktop)
     if (!desktop) {
         return false;
     }
-
-    // if the text editing tool is active, paste the text into the active text object
-    if (auto text_tool = dynamic_cast<Tools::TextTool*>(desktop->getTool())) {
-        return text_tool->pasteInline();
-    }
-
-    // Parse the clipboard text as if it was a color string.
-    Glib::RefPtr<Gdk::Clipboard> clipboard = Gdk::Clipboard::get();
-    Glib::ustring const clip_text = clipboard->wait_for_text();
-    if (clip_text.length() < 30) {
-        // Zero makes it impossible to paste a 100% transparent black, but it's useful.
-        guint32 const rgb0 = sp_svg_read_color(clip_text.c_str(), 0x0);
-        if (rgb0) {
-            SPCSSAttr *color_css = sp_repr_css_attr_new();
-            sp_repr_css_set_property(color_css, "fill", SPColor(rgb0).toString().c_str());
-            // In the future this could parse opacity, but sp_svg_read_color lacks this.
-            sp_repr_css_set_property(color_css, "fill-opacity", "1.0");
-            sp_desktop_set_style(desktop, color_css);
-            return true;
-        }
-    }
-    return false;
+    _paste_success = -1;
+    _clipboard->read_text_async(sigc::bind(sigc::mem_fun(*this,&ClipboardManagerImpl::_pasteTextCallback), desktop));
+    // not know a clean way to do await here
+    while (_paste_success == -1) {}
+    return _paste_success == 1;
 }
 
 /**
@@ -1503,11 +1558,7 @@ void ClipboardManagerImpl::_applyPathEffect(SPItem *item, gchar const *effectsta
     }
 }
 
-/**
- * Retrieve the clipboard contents as a document.
- * @return Clipboard contents converted to SPDocument, or NULL if no suitable content was present
- */
-std::unique_ptr<SPDocument> ClipboardManagerImpl::_retrieveClipboard(Glib::ustring required_target)
+void ClipboardManagerImpl::_retrieveClipboardCallback(Glib::RefPtr<Gio::AsyncResult>& result, Glib::ustring required_target)
 {
     Glib::ustring best_target;
     if ( required_target == "" ) {
@@ -1517,7 +1568,9 @@ std::unique_ptr<SPDocument> ClipboardManagerImpl::_retrieveClipboard(Glib::ustri
     }
 
     if ( best_target == "" ) {
-        return nullptr;
+        _paste_success = 0;
+        _current_document = nullptr;
+        return;
     }
 
     // FIXME: Temporary hack until we add memory input.
@@ -1530,6 +1583,7 @@ std::unique_ptr<SPDocument> ClipboardManagerImpl::_retrieveClipboard(Glib::ustri
 #ifdef _WIN32
     if (best_target == "CF_ENHMETAFILE" || best_target == "WCF_ENHMETAFILE")
     {   // Try to save clipboard data as en emf file (using win32 api)
+        // not sure works with GTK4 clipboard        
         if (OpenClipboard(NULL)) {
             HGLOBAL hglb = GetClipboardData(CF_ENHMETAFILE);
             if (hglb) {
@@ -1546,20 +1600,28 @@ std::unique_ptr<SPDocument> ClipboardManagerImpl::_retrieveClipboard(Glib::ustri
 #endif
 
     if (!file_saved) {
-        if ( !_clipboard->wait_is_target_available(best_target) ) {
-            return nullptr;
+        std::shared_ptr<Gio::InputStream> data;
+        try
+        {
+            data = _clipboard->read_finish(result, best_target);
         }
-
-        // doing this synchronously makes better sense
-        // TODO: use another method because this one is badly broken imo.
-        // from documentation: "Returns: A SelectionData object, which will be invalid if retrieving the given target failed."
-        // I don't know how to check whether an object is 'valid' or not, unusable if that's not possible...
-        Gtk::SelectionData sel = _clipboard->wait_for_contents(best_target);
-        target = sel.get_target();  // this can crash if the result was invalid of last function. No way to check for this :(
-
-        // FIXME: Temporary hack until we add memory input.
-        // Save the clipboard contents to some file, then read it
-        g_file_set_contents(filename, (const gchar *) sel.get_data(), sel.get_length(), nullptr);
+        catch (const Glib::Error& err)
+        {
+            std::cout << "Pasting failed: " << err.what() << std::endl;
+            _paste_success = 0;
+            _current_document = nullptr;
+            return;
+        }
+        std::vector<char> buf;
+        size_t len = 0;
+        size_t lenbytes = 0;
+        if (data->read_all(buf.data(), len, lenbytes)) {
+            g_file_set_contents(filename,std::string(buf.data(),lenbytes).c_str(), lenbytes, nullptr);
+        } else {
+            _paste_success = 0;
+            _current_document = nullptr;
+            return;
+        }
     }
 
     // there is no specific plain SVG input extension, so if we can paste the Inkscape SVG format,
@@ -1578,7 +1640,9 @@ std::unique_ptr<SPDocument> ClipboardManagerImpl::_retrieveClipboard(Glib::ustri
     for (; in != inlist.end() && target != (*in)->get_mimetype() ; ++in) {
     };
     if ( in == inlist.end() ) {
-        return nullptr; // this shouldn't happen unless _getBestTarget returns something bogus
+        _paste_success = 0;
+        _current_document = nullptr;
+        return;
     }
 
     SPDocument *tempdoc = nullptr;
@@ -1588,8 +1652,21 @@ std::unique_ptr<SPDocument> ClipboardManagerImpl::_retrieveClipboard(Glib::ustri
     }
     g_unlink(filename);
     g_free(filename);
-
-    return std::unique_ptr<SPDocument>(tempdoc);
+    _paste_success = 1;
+    _current_document = tempdoc;
+}
+/**
+ * Retrieve the clipboard contents as a document.
+ * @return Clipboard contents converted to SPDocument, or NULL if no suitable content was present
+ */
+std::unique_ptr<SPDocument> ClipboardManagerImpl::_retrieveClipboard(Glib::ustring required_target)
+{
+    _paste_success = -1;
+    _current_document = nullptr;
+    _clipboard->read_async({required_target}, 0, sigc::bind(sigc::mem_fun(*this,&ClipboardManagerImpl::_retrieveClipboardCallback), required_target));
+    // not know a clean way to do await here
+    while (_paste_success == -1) {}
+    return std::unique_ptr<SPDocument>(_current_document);
 }
 
 #ifdef __APPLE__
@@ -1620,112 +1697,7 @@ static auto mime_uti = make_bimap<std::string, std::string>({
 
 #endif
 
-/**
- * Callback called when some other application requests data from Inkscape.
- *
- * Finds a suitable output extension to save the internal clipboard document,
- * then saves it to memory and sets the clipboard contents.
- */
-void ClipboardManagerImpl::_onGet(Gtk::SelectionData &sel, guint /*info*/)
-{
-    if (_clipboardSPDoc == nullptr)
-        return;
 
-    Glib::ustring target = sel.get_target();
-    g_info("Clipboard _onGet target: %s", target.c_str());
-
-    if (target == "") {
-        return; // this shouldn't happen
-    }
-
-    if (target == CLIPBOARD_TEXT_TARGET) {
-        target = "image/x-inkscape-svg";
-    }
-
-#ifdef __APPLE__
-    // translate UTI back to MIME
-    auto mime = mime_uti.right.find(target);
-    if (mime != mime_uti.right.end()) {
-        target = mime->get_left();
-    }
-#endif
-
-    // FIXME: Temporary hack until we add support for memory output.
-    // Save to a temporary file, read it back and then set the clipboard contents
-    gchar *filename = g_build_filename( g_get_user_cache_dir(), "inkscape-clipboard-export", nullptr );
-    gchar *data = nullptr;
-    gsize len;
-
-    // XXX This is a crude fix for clipboards accessing extensions
-    // Remove when gui is extracted from extension execute and uses exceptions.
-    bool previous_gui = INKSCAPE.use_gui();
-    INKSCAPE.use_gui(false);
-
-    try {
-        Inkscape::Extension::DB::OutputList outlist;
-        Inkscape::Extension::db.get_output_list(outlist);
-        Inkscape::Extension::DB::OutputList::const_iterator out = outlist.begin();
-        for ( ; out != outlist.end() && target != (*out)->get_mimetype() ; ++out) {
-        }
-        if (!(*out)->loaded()) {
-            // Need to load the extension.
-            (*out)->set_state(Inkscape::Extension::Extension::STATE_LOADED);
-        }
-
-        if ((*out)->is_raster())
-        {
-            gdouble dpi = Inkscape::Util::Quantity::convert(1, "in", "px");
-            guint32 bgcolor = 0x00000000;
-
-            Geom::Point origin (_clipboardSPDoc->getRoot()->x.computed, _clipboardSPDoc->getRoot()->y.computed);
-            Geom::Rect area = Geom::Rect(origin, origin + _clipboardSPDoc->getDimensions());
-
-            unsigned long int width = (unsigned long int) (area.width() + 0.5);
-            unsigned long int height = (unsigned long int) (area.height() + 0.5);
-
-            // read from namedview
-            Inkscape::XML::Node *nv = _clipboardSPDoc->getReprNamedView();
-            if (nv && nv->attribute("pagecolor")) {
-                bgcolor = sp_svg_read_color(nv->attribute("pagecolor"), 0xffffff00);
-            }
-            if (nv && nv->attribute("inkscape:pageopacity")) {
-                double opacity = nv->getAttributeDouble("inkscape:pageopacity", 1.0);
-                bgcolor |= SP_COLOR_F_TO_U(opacity);
-            }
-            gchar *raster_file = g_build_filename( g_get_user_cache_dir(), "inkscape-clipboard-export-raster", nullptr );
-            sp_export_png_file(_clipboardSPDoc.get(), raster_file, area, width, height, dpi, dpi, bgcolor, nullptr,
-                               nullptr, true, {});
-            (*out)->export_raster(_clipboardSPDoc.get(), raster_file, filename, true);
-            unlink(raster_file);
-            g_free(raster_file);
-        }
-        else
-        {
-            (*out)->save(_clipboardSPDoc.get(), filename, true);
-        }
-        g_file_get_contents(filename, &data, &len, nullptr);
-
-        sel.set(8, (guint8 const *) data, len);
-    } catch (...) {
-    }
-
-    INKSCAPE.use_gui(previous_gui);
-    g_unlink(filename); // delete the temporary file
-    g_free(filename);
-    g_free(data);
-}
-
-/**
- * Callback when someone else takes the clipboard.
- *
- * When the clipboard owner changes, this callback clears the internal clipboard document
- * to reduce memory usage.
- */
-void ClipboardManagerImpl::_onClear()
-{
-    // why is this called before _onGet???
-    //_discardInternalClipboard();
-}
 
 /**
  * Creates an internal clipboard document from scratch.
@@ -1805,8 +1777,7 @@ Geom::Scale ClipboardManagerImpl::_getScale(SPDesktop *desktop, Geom::Point cons
  */
 Glib::ustring ClipboardManagerImpl::_getBestTarget(SPDesktop *desktop)
 {
-    auto targets = _clipboard->wait_for_targets();
-
+    Glib::RefPtr<Gdk::ContentFormats> formats = _clipboard->get_formats();
     // clipboard target debugging snippet
     /*
     g_message("Begin clipboard targets");
@@ -1817,14 +1788,14 @@ Glib::ustring ClipboardManagerImpl::_getBestTarget(SPDesktop *desktop)
 
     // Prioritise text when the text tool is active
     if (desktop && dynamic_cast<Inkscape::UI::Tools::TextTool *>(desktop->getTool())) {
-        if (_clipboard->wait_is_text_available()) {
+        if (formats->contain_mime_type("text/plain")) {
             return CLIPBOARD_TEXT_TARGET;
         }
     }
 
     for (auto & _preferred_target : _preferred_targets)
     {
-        if ( std::find(targets.begin(), targets.end(), _preferred_target) != targets.end() ) {
+        if ( formats->contain_mime_type(_preferred_target) ) {
             return _preferred_target;
         }
     }
@@ -1852,10 +1823,10 @@ Glib::ustring ClipboardManagerImpl::_getBestTarget(SPDesktop *desktop)
         return "CF_ENHMETAFILE";
     }
 #endif
-    if (_clipboard->wait_is_image_available()) {
+    if (formats->contain_mime_type("image/")) {
         return CLIPBOARD_GDK_PIXBUF_TARGET;
     }
-    if (_clipboard->wait_is_text_available()) {
+    if (formats->contain_mime_type("text/plain")) {
         return CLIPBOARD_TEXT_TARGET;
     }
 
@@ -1869,7 +1840,7 @@ void ClipboardManagerImpl::_setClipboardTargets()
 {
     Inkscape::Extension::DB::OutputList outlist;
     Inkscape::Extension::db.get_output_list(outlist);
-    std::vector<Gtk::TargetEntry> target_list;
+    std::vector<std::string> target_list;
 
     bool plaintextSet = false;
     for (Inkscape::Extension::DB::OutputList::const_iterator out = outlist.begin() ; out != outlist.end() ; ++out) {
@@ -1894,10 +1865,6 @@ void ClipboardManagerImpl::_setClipboardTargets()
     // Add PNG export explicitly since there is no extension for this...
     // On Windows, GTK will also present this as a CF_DIB/CF_BITMAP
     target_list.emplace_back( "image/png" );
-
-    _clipboard->set(target_list,
-        sigc::mem_fun(*this, &ClipboardManagerImpl::_onGet),
-        sigc::mem_fun(*this, &ClipboardManagerImpl::_onClear));
 
 #ifdef _WIN32
     // If the "image/x-emf" target handled by the emf extension would be
