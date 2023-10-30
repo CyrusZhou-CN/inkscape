@@ -54,7 +54,6 @@ DashSelector::DashSelector()
     _dash_combo.set_visible(true);
     _dash_combo.signal_changed().connect( sigc::mem_fun(*this, &DashSelector::on_selection) );
     // show dashes in two columns to eliminate or minimize scrolling
-    _dash_combo.set_wrap_width(2);
 
     UI::pack_start(*this, _dash_combo, true, true);
 
@@ -62,7 +61,6 @@ DashSelector::DashSelector()
     _offset->signal_value_changed().connect(sigc::mem_fun(*this, &DashSelector::offset_value_changed));
     _sb = Gtk::make_managed<UI::Widget::SpinButton>(_offset, 0.1, 2);
     _sb->set_tooltip_text(_("Pattern offset"));
-    sp_dialog_defocus_on_enter_cpp(_sb);
     _sb->set_width_chars(4);
     _sb->set_visible(true);
 

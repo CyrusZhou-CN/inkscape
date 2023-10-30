@@ -150,17 +150,6 @@ ColorPalette::ColorPalette():
 
     set_vexpand_set(true);
     set_up_scrolling();
-
-    signal_size_allocate().connect([=](Gtk::Allocation& a){
-        if (_allocation == a) return;
-
-        _allocation = a;
-        _idle_resize = Glib::signal_idle().connect([=](){
-            // make size adjustments outside of the allocation cycle
-            set_up_scrolling();
-            return false; // disconnect
-        });
-    }, false);
 }
 
 ColorPalette::~ColorPalette() {
@@ -616,7 +605,7 @@ void ColorPalette::set_colors(std::vector<Dialog::ColorItem*> const &swatches)
 
 Gtk::Widget *ColorPalette::_get_widget(Dialog::ColorItem *item) {
     if (auto parent = item->get_parent()) {
-        parent->remove(*item);
+        item->unparent();
     }
     if (_show_labels) {
         item->set_valign(Gtk::Align::CENTER);
@@ -632,9 +621,7 @@ Gtk::Widget *ColorPalette::_get_widget(Dialog::ColorItem *item) {
 void ColorPalette::rebuild_widgets()
 {
     _normal_box.freeze_notify();
-    _normal_box.freeze_child_notify();
     _pinned_box.freeze_notify();
-    _pinned_box.freeze_child_notify();
 
     UI::remove_all_children(_normal_box);
     UI::remove_all_children(_pinned_box);
@@ -654,9 +641,7 @@ void ColorPalette::rebuild_widgets()
 
     set_up_scrolling();
 
-    _normal_box.thaw_child_notify();
     _normal_box.thaw_notify();
-    _pinned_box.thaw_child_notify();
     _pinned_box.thaw_notify();
 }
 

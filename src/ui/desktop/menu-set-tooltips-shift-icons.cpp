@@ -58,6 +58,7 @@
 bool
 set_tooltips_and_shift_icons(Gtk::Widget &menu, bool const shift_icons)
 {
+    /*
     int width{}, height{};
 
     if (shift_icons) {
@@ -131,6 +132,8 @@ set_tooltips_and_shift_icons(Gtk::Widget &menu, bool const shift_icons)
     });
 
     return shifted;
+*/
+    return false;
 }
 
 /*

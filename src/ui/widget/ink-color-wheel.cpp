@@ -93,9 +93,7 @@ ColorWheel::ColorWheel()
     _drawing_area->set_visible(true);
     _drawing_area->set_focusable(true);
     _drawing_area->set_expand(true);
-    _drawing_area->signal_size_allocate().connect(sigc::mem_fun(*this, &ColorWheel::on_drawing_area_size ));
     _drawing_area->set_draw_func(sigc::mem_fun(*this, &ColorWheel::on_drawing_area_draw ));
-    _drawing_area->signal_focus().connect(sigc::mem_fun(*this, &ColorWheel::on_drawing_area_focus));
     set_child(*_drawing_area);
 
     Controller::add_click(*_drawing_area, sigc::mem_fun(*this, &ColorWheel::on_click_pressed ),

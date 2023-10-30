@@ -88,18 +88,6 @@ FileDialogBaseGtk::FileDialogBaseGtk(Gtk::Window &parentWindow, Glib::ustring co
     if (auto const cell_renderer = filterComboBox->get_first_cell()) {
         filterComboBox->add_attribute(cell_renderer->property_sensitive(), FilterList.enabled);
     }
-
-    // Open executable file dialogs don't need the preview panel
-    if (_dialogType != EXE_TYPES) {
-
-        // Catch selection-changed events, so we can adjust the text widget
-        signal_update_preview().connect(sigc::mem_fun(*this, &FileDialogBaseGtk::_updatePreviewCallback));
-
-        //###### Add a preview widget
-        set_preview_widget(svgPreview);
-        set_preview_widget_active(true);
-        set_use_preview_label(false);
-    }
 }
 
 FileDialogBaseGtk::~FileDialogBaseGtk() = default;
@@ -109,23 +97,6 @@ FileDialogBaseGtk::~FileDialogBaseGtk() = default;
  */
 void FileDialogBaseGtk::_updatePreviewCallback()
 {
-    bool enabled = true;
-
-    set_preview_widget_active(enabled);
-
-    if (!enabled)
-        return;
-
-    Glib::ustring fileName = get_preview_filename();
-    if (fileName.empty()) {
-        fileName = get_preview_uri();
-    }
-
-    if (!fileName.empty()) {
-        svgPreview.set(fileName, _dialogType);
-    } else {
-        svgPreview.showNoPreview();
-    }
 }
 
 Glib::RefPtr<Gtk::FileFilter> FileDialogBaseGtk::addFilter(const Glib::ustring &name, Glib::ustring ext,
@@ -187,40 +158,8 @@ FileOpenDialogImplGtk::FileOpenDialogImplGtk(Gtk::Window &parentWindow, const Gl
         set_select_multiple(true);
     }
 
-    set_local_only(false);
-
     /* Set our dialog type (open, import, etc...)*/
     _dialogType = fileTypes;
-
-    /* Set the pwd and/or the filename */
-    if (dir.size() > 0) {
-        Glib::ustring udir(dir);
-        Glib::ustring::size_type len = udir.length();
-        // leaving a trailing backslash on the directory name leads to the infamous
-        // double-directory bug on win32
-        if (len != 0 && udir[len - 1] == '\\')
-            udir.erase(len - 1);
-        if (_dialogType == EXE_TYPES) {
-            set_filename(udir.c_str());
-        } else {
-            set_current_folder(udir.c_str());
-        }
-    }
-
-    //###### Add the file types menu
-    createFilterMenu();
-
-    add_button(_("_Cancel"), Gtk::ResponseType::CANCEL);
-    set_default(*add_button(_("_Open"), Gtk::ResponseType::OK));
-
-    //###### Allow easy access to our examples folder
-
-    using namespace Inkscape::IO::Resource;
-    auto examplesdir = get_path_string(SYSTEM, EXAMPLES);
-    if (Glib::file_test(examplesdir, Glib::FileTest::IS_DIR) && //
-        Glib::path_is_absolute(examplesdir)) {
-        add_shortcut_folder(examplesdir);
-    }
 }
 
 void FileOpenDialogImplGtk::createFilterMenu()
@@ -279,22 +218,6 @@ void FileOpenDialogImplGtk::createFilterMenu()
  */
 bool FileOpenDialogImplGtk::show()
 {
-    set_modal(true); // Window
-    sp_transientize(GTK_WIDGET(gobj())); // Make transient
-    int response = dialog_run(*this); // Dialog
-    svgPreview.showNoPreview();
-
-    if (response == Gtk::ResponseType::OK) {
-        if (auto iter = filterComboBox->get_active()) {
-            setExtension((*iter)[FilterList.extension]);
-        }
-
-        auto fn = get_filename();
-        setFilename(fn.empty() ? get_uri() : Glib::ustring(fn));
-
-        return true;
-    }
-
     return false;
 }
 
@@ -303,24 +226,12 @@ bool FileOpenDialogImplGtk::show()
  */
 std::vector<Glib::ustring> FileOpenDialogImplGtk::getFilenames()
 {
-    auto result_tmp = get_filenames();
-
-    // Copy filenames to a vector of type Glib::ustring
-    std::vector<Glib::ustring> result;
-
-    for (auto it : result_tmp)
-        result.emplace_back(it);
-
-    if (result.empty()) {
-        result = get_uris();
-    }
-
-    return result;
+    return {};
 }
 
 Glib::ustring FileOpenDialogImplGtk::getCurrentDirectory()
 {
-    return get_current_folder();
+    return {};
 }
 
 //########################################################################
@@ -344,8 +255,6 @@ FileSaveDialogImplGtk::FileSaveDialogImplGtk(Gtk::Window &parentWindow, const Gl
 
     /* One file at a time */
     set_select_multiple(false);
-
-    set_local_only(false);
 
     /* Set our dialog type (save, export, etc...)*/
     _dialogType = fileTypes;
@@ -385,19 +294,6 @@ FileSaveDialogImplGtk::FileSaveDialogImplGtk(Gtk::Window &parentWindow, const Gl
     if (_dialogType != CUSTOM_TYPE) {
         createFilterMenu();
     }
-
-    signal_selection_changed().connect(sigc::mem_fun(*this, &FileSaveDialogImplGtk::fileNameChanged));
-
-    // Allow easy access to the user's own templates folder.
-    using namespace Inkscape::IO::Resource;
-    char const *templates = Inkscape::IO::Resource::get_path(USER, TEMPLATES);
-    if (Inkscape::IO::file_test(templates, G_FILE_TEST_EXISTS) &&
-        Inkscape::IO::file_test(templates, G_FILE_TEST_IS_DIR) && g_path_is_absolute(templates)) {
-        add_shortcut_folder(templates);
-    }
-
-    add_button(_("_Cancel"), Gtk::ResponseType::CANCEL);
-    set_default(*add_button(_("_Save"), Gtk::ResponseType::OK));
 }
 
 /**
@@ -412,16 +308,6 @@ void FileSaveDialogImplGtk::filterChangedCallback()
 }
 
 void FileSaveDialogImplGtk::fileNameChanged() {
-    Glib::ustring name = get_filename();
-    Glib::ustring::size_type pos = name.rfind('.');
-    if ( pos == Glib::ustring::npos ) return;
-    Glib::ustring ext = name.substr( pos ).casefold();
-    if (auto output = dynamic_cast<Inkscape::Extension::Output *>(_extension))
-        if (Glib::ustring(output->get_extension()).casefold() == ext)
-            return;
-    if (knownExtensions.find(ext) == knownExtensions.end()) return;
-    fromCB = true;
-    filterComboBox->set_active_text(knownExtensions[ext]->get_filetypename(true));
 }
 
 void FileSaveDialogImplGtk::createFilterMenu()
@@ -460,7 +346,6 @@ bool FileSaveDialogImplGtk::show()
     sp_transientize(GTK_WIDGET(gobj())); // Make transient
     int response = dialog_run(*this); // Dialog
     svgPreview.showNoPreview();
-    set_preview_widget_active(false);
 
     if (response == Gtk::ResponseType::OK) {
         updateNameAndExtension();
@@ -508,7 +393,7 @@ void FileSaveDialogImplGtk::setExtension(Inkscape::Extension::Extension *key)
 
 Glib::ustring FileSaveDialogImplGtk::getCurrentDirectory()
 {
-    return get_current_folder();
+    return {};
 }
 
 /**
@@ -516,55 +401,10 @@ Glib::ustring FileSaveDialogImplGtk::getCurrentDirectory()
   */
 void FileSaveDialogImplGtk::change_path(const Glib::ustring &path)
 {
-    setFilename(path);
-
-    if (Glib::file_test(_filename, Glib::FileTest::IS_DIR)) {
-        // fprintf(stderr,"set_current_folder(%s)\n",_filename.c_str());
-        set_current_folder(_filename);
-    } else {
-        // fprintf(stderr,"set_filename(%s)\n",_filename.c_str());
-        if (Glib::file_test(_filename, Glib::FileTest::EXISTS)) {
-            set_filename(_filename);
-        } else {
-            std::string dirName = Glib::path_get_dirname(_filename);
-            if (dirName != get_current_folder()) {
-                set_current_folder(dirName);
-            }
-        }
-        Glib::ustring basename = Glib::path_get_basename(_filename);
-        // fprintf(stderr,"set_current_name(%s)\n",basename.c_str());
-        try
-        {
-            set_current_name(Glib::filename_to_utf8(basename));
-        }
-        catch (Glib::ConvertError &e)
-        {
-            g_warning("Error converting save filename to UTF-8.");
-            // try a fallback.
-            set_current_name(basename);
-        }
-    }
 }
 
 void FileSaveDialogImplGtk::updateNameAndExtension()
 {
-    // Pick up any changes the user has typed in.
-    Glib::ustring tmp = get_filename();
-
-    if (tmp.empty()) {
-        tmp = get_uri();
-    }
-
-    if (!tmp.empty()) {
-        setFilename(tmp);
-    }
-
-    auto output = dynamic_cast<Inkscape::Extension::Output *>(getExtension());
-    if (output && get_choice("Extension") == "true") {
-        // Append the file extension if it's not already present and display it in the file name entry field
-        appendExtension(_filename, output);
-        change_path(_filename);
-    }
 }
 
 } // namespace Inkscape::UI::Dialog

@@ -125,11 +125,6 @@ MarkerComboBox::MarkerComboBox(Glib::ustring id, int l) :
 
     prepend(_menu_btn);
 
-    _preview.signal_size_allocate().connect([=](Gtk::Allocation& a){
-        // refresh after preview widget has been finally resized/expanded
-        if (_preview_no_alloc) update_preview(find_marker_item(get_current()));
-    });
-
     _marker_store = Gio::ListStore<MarkerItem>::create();
     _marker_list.bind_list_store(_marker_store, [=](const Glib::RefPtr<MarkerItem>& item){
         auto const image = Gtk::make_managed<Gtk::Image>(to_texture(item->pix));

@@ -36,12 +36,8 @@ std::optional<window_position_t> dm_get_window_position(Gtk::Window &window)
     const int max = std::numeric_limits<int>::max();
     int x = max;
     int y = max;
-    int width = 0;
-    int height = 0;
-    // gravity NW to include window decorations
-    window.property_gravity() = Gdk::GRAVITY_NORTH_WEST;
-    window.get_position(x, y);
-    window.get_size(width, height);
+    int width = window.get_width();
+    int height = window.get_height();
 
     if (x != max && y != max && width > 0 && height > 0) {
         position = window_position_t{x, y, width, height};
@@ -53,12 +49,7 @@ std::optional<window_position_t> dm_get_window_position(Gtk::Window &window)
 void dm_restore_window_position(Gtk::Window &window, const window_position_t &position)
 {
     // note: Gtk window methods are recommended over low-level Gdk ones to resize and position window
-    window.property_gravity() = Gdk::GRAVITY_NORTH_WEST;
     window.set_default_size(position.width, position.height);
-    // move & resize positions window on the screen making sure it is not clipped
-    // (meaning it is visible; this works with two monitors too)
-    window.move(position.x, position.y);
-    window.resize(position.width, position.height);
 }
 
 DialogManager::~DialogManager() = default;
