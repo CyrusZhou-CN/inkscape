@@ -97,7 +97,7 @@ static void popup_at(Gtk::Popover &popover, Gtk::Widget &widget,
 }
 
 void popup_at(Gtk::Popover &popover, Gtk::Widget &widget,
-              int const x_offset, int const y_offset)
+              double const x_offset, double const y_offset)
 {
     popup_at(popover, widget, x_offset, y_offset, 0, 0);
 }

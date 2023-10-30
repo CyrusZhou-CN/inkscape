@@ -567,7 +567,9 @@ void Magnifier::snapshot_vfunc(Glib::RefPtr<Gtk::Snapshot> const &snapshot)
         snapshot->append_color(Gdk::RGBA{0, 0, 0}, Gdk::Rectangle{0, 0, get_width(), get_height()});
         return;
     }
-    auto node = gsk_texture_scale_node_new(_texture->gobj(), Gdk::Graphene::Rect{0, 0, 128, 128}.gobj(), GSK_SCALING_FILTER_NEAREST);
+
+    static auto const rect = GRAPHENE_RECT_INIT(0, 0, 128, 128);
+    auto const node = gsk_texture_scale_node_new(_texture->gobj(), &rect, GSK_SCALING_FILTER_NEAREST);
     gtk_snapshot_append_node(snapshot->gobj(), node);
     gsk_render_node_unref(node);
 }

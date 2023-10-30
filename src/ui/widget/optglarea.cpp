@@ -6,10 +6,11 @@
 #include <utility>
 #include <gdkmm/glcontext.h>
 #include <gdkmm/gltexture.h>
-#include <gdkmm/gltexturebuilder.h>
 #include <gtkmm/snapshot.h>
 #include <2geom/int-point.h>
 #include "ui/widget/canvas/texture.h"
+#include "util/gobjectptr.h"
+#include "util/scope_exit.h"
 
 namespace Inkscape::UI::Widget {
 namespace {
@@ -28,19 +29,22 @@ std::weak_ptr<T> weakify(std::shared_ptr<T> const &p)
     return p;
 }
 
-// Workaround for sigc not supporting move-only lambdas.
 template <typename F>
-auto share_lambda(F &&f)
+std::pair<GDestroyNotify, gpointer> make_destroynotify(F &&f)
 {
-    using Fd = std::decay_t<F>;
-
-    struct Result
-    {
-        auto operator()() { (*f)(); }
-        std::shared_ptr<Fd> f;
+    auto data = new scope_exit{std::forward<F>(f)};
+    auto destroy = +[] (gpointer data_c) {
+        delete reinterpret_cast<decltype(data)>(data_c);
     };
+    return {destroy, data};
+}
 
-    return Result{std::make_shared<Fd>(std::move(f))};
+template <typename F>
+Glib::RefPtr<Gdk::GLTexture> build_texture(GdkGLTextureBuilder *builder, F &&on_release)
+{
+    auto [destroy, data] = make_destroynotify(std::forward<F>(on_release));
+    auto tex = gdk_gl_texture_builder_build(builder, destroy, data);
+    return std::static_pointer_cast<Gdk::GLTexture>(Glib::wrap(tex));
 }
 
 } // namespace
@@ -52,7 +56,7 @@ struct OptGLArea::GLState
     GLuint const framebuffer = create_buffer<glGenFramebuffers>();
     GLuint const stencilbuffer = create_buffer<glGenRenderbuffers>();
 
-    Glib::RefPtr<Gdk::GLTextureBuilder> const builder = Gdk::GLTextureBuilder::create();
+    Util::GObjectPtr<GdkGLTextureBuilder> const builder{gdk_gl_texture_builder_new()};
 
     std::optional<Geom::IntPoint> size;
 
@@ -62,8 +66,8 @@ struct OptGLArea::GLState
     GLState(Glib::RefPtr<Gdk::GLContext> &&context_)
         : context{std::move(context_)}
     {
-        builder->set_context(context);
-        builder->set_format(Gdk::MemoryFormat::B8G8R8A8_PREMULTIPLIED);
+        gdk_gl_texture_builder_set_context(builder.get(), context->gobj());
+        gdk_gl_texture_builder_set_format(builder.get(), GDK_MEMORY_B8G8R8A8_PREMULTIPLIED);
     }
 
     ~GLState()
@@ -133,6 +137,9 @@ void OptGLArea::bind_framebuffer() const
 
 void OptGLArea::snapshot_vfunc(Glib::RefPtr<Gtk::Snapshot> const &snapshot)
 {
+    auto const rect = GRAPHENE_RECT_INIT(0, 0, static_cast<float>(get_width()),
+                                               static_cast<float>(get_height()));
+
     if (opengl_enabled) {
         auto const size = Geom::IntPoint(get_width(), get_height()) * get_scale_factor();
 
@@ -151,8 +158,8 @@ void OptGLArea::snapshot_vfunc(Glib::RefPtr<Gtk::Snapshot> const &snapshot)
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, size.x(), size.y());
 
             // Resize the texture builder.
-            gl->builder->set_width(size.x());
-            gl->builder->set_height(size.y());
+            gdk_gl_texture_builder_set_width (gl->builder.get(), size.x());
+            gdk_gl_texture_builder_set_height(gl->builder.get(), size.y());
         }
 
         // Discard wrongly-sized spare textures.
@@ -174,12 +181,9 @@ void OptGLArea::snapshot_vfunc(Glib::RefPtr<Gtk::Snapshot> const &snapshot)
         paint_widget({});
 
         // Wrap the OpenGL texture we've just drawn to in a Gdk::GLTexture.
-        gl->builder->set_id(gl->current_texture.id());
-        auto gdktexture = std::static_pointer_cast<Gdk::GLTexture>(gl->builder->build(
-            share_lambda([texture = std::move(gl->current_texture),
-                          context = gl->context,
-                          gl_weak = weakify(gl)] () mutable
-            {
+        gdk_gl_texture_builder_set_id(gl->builder.get(), gl->current_texture.id());
+        auto gdktexture = build_texture(gl->builder.get(),
+            [texture = std::move(gl->current_texture), context = gl->context, gl_weak = weakify(gl)] () mutable {
                 if (auto gl = gl_weak.lock()) {
                     // Return the texture to the texture pool.
                     gl->spare_textures.emplace_back(std::move(texture));
@@ -189,18 +193,19 @@ void OptGLArea::snapshot_vfunc(Glib::RefPtr<Gtk::Snapshot> const &snapshot)
                     texture.clear();
                     Gdk::GLContext::clear_current();
                 }
-            })
-        ));
+            }
+        );
 
         // Render the texture upside-down.
         // Todo: The canvas does the same, so both transformations can be removed.
         snapshot->save();
-        snapshot->translate({ 0.0f, (float)get_height() });
+        auto const point = GRAPHENE_POINT_INIT(0, static_cast<float>(get_height()));
+        gtk_snapshot_translate(snapshot->gobj(), &point);
         snapshot->scale(1, -1);
-        snapshot->append_texture(std::move(gdktexture), Gdk::Graphene::Rect(0, 0, get_width(), get_height()).gobj());
+        snapshot->append_texture(std::move(gdktexture), &rect);
         snapshot->restore();
     } else {
-        auto const cr = snapshot->append_cairo(Gdk::Graphene::Rect(0, 0, get_width(), get_height()).gobj());
+        auto const cr = snapshot->append_cairo(&rect);
         paint_widget(cr);
     }
 }

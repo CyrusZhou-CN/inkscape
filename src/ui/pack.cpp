@@ -100,7 +100,6 @@ static void add(Gtk::Box &box, PackType const pack_type, Gtk::Widget &child)
     auto const [it, inserted] = s_box_children.emplace(&box, BoxChildren{});
     // macOS runner errors if lambda captures structured binding. C++ Defect Report says this is OK
     auto &starts = it->second.starts;
-    auto &remove = it->second.remove;
 
     if (inserted) {
         box.signal_delete_event().connect([&](GdkEventAny *)

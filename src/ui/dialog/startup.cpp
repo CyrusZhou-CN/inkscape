@@ -545,7 +545,7 @@ StartScreen::refresh_theme(Glib::ustring theme_name)
         Gtk::CssProvider::create();
         Glib::ustring css_str = INKSCAPE.themecontext->get_symbolic_colors();
         try {
-            INKSCAPE.themecontext->getColorizeProvider()->load_from_string(css_str);
+            INKSCAPE.themecontext->getColorizeProvider()->load_from_data(css_str);
         } catch (Gtk::CssParserError const &ex) {
             g_critical("CSSProviderError::load_from_data(): failed to load '%s'\n(%s)", css_str.c_str(), ex.what());
         }
