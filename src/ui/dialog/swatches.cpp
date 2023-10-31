@@ -22,6 +22,7 @@
 #include <vector>
 #include <giomm/file.h>
 #include <giomm/inputstream.h>
+#include <glibmm/convert.h>
 #include <glibmm/i18n.h>
 #include <glibmm/ustring.h>
 #include <glibmm/utility.h>
@@ -114,7 +115,7 @@ SwatchesPanel::SwatchesPanel(bool compact, char const *prefsPath)
         _current_palette_id = auto_id; // Fall back to auto palette.
     }
     auto path = prefs->getString(_prefs_path + "/palette-path");
-    auto loaded = load_swatches(path);
+    auto loaded = load_swatches(Glib::filename_from_utf8(path));
 
     update_palettes(compact);
 
@@ -555,19 +556,20 @@ bool SwatchesPanel::load_swatches() {
     return loaded;
 }
 
-bool SwatchesPanel::load_swatches(Glib::ustring path) {
+bool SwatchesPanel::load_swatches(std::string const &path)
+{
     if (path.empty()) return false;
 
     // load colors
     auto res = load_palette(path);
-    if (res.palette.has_value()) {
+    if (res.palette) {
         // use loaded palette
-        _loaded_palette = *res.palette;
+        _loaded_palette = std::move(*res.palette);
         return true;
-    }
-    else if (auto desktop = getDesktop()) {
+    } else if (auto desktop = getDesktop()) {
         desktop->showNotice(res.error_message);
     }
+
     return false;
 }
 

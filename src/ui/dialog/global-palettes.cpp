@@ -14,7 +14,7 @@
 #include <giomm/fileinputstream.h>
 #include <giomm/inputstream.h>
 #include <glib/gi18n.h>
-#include <glibmm/exception.h>
+#include <glibmm/convert.h>
 #include <glibmm/refptr.h>
 #include <glibmm/ustring.h>
 #include <gtkmm/window.h>
@@ -38,10 +38,12 @@
 #include "hsluv.h"
 #include "io/resource.h"
 #include "io/sys.h"
+#include "util/delete-with.h"
+using Inkscape::Util::delete_with;
 
 namespace {
 
-Glib::ustring get_extension(const Glib::ustring name) {
+Glib::ustring get_extension(Glib::ustring const &name) {
     auto extpos = name.rfind('.');
     if (extpos != Glib::ustring::npos) {
         auto ext = name.substr(extpos).casefold();
@@ -108,7 +110,7 @@ void skip(const Glib::RefPtr<Gio::InputStream>& s, size_t bytes) {
 using namespace Inkscape::UI::Dialog;
 
 // Load Adobe ACB color book
-void load_acb_palette(PaletteFileData& palette, const Glib::ustring& fname) {
+void load_acb_palette(PaletteFileData& palette, std::string const &fname) {
     auto file = Gio::File::create_for_path(fname);
     auto stream = file->read();
     auto magic = read_string(stream, 4);
@@ -252,7 +254,7 @@ void load_acb_palette(PaletteFileData& palette, const Glib::ustring& fname) {
     }
 }
 
-void load_ase_swatches(PaletteFileData& palette, const Glib::ustring& fname) {
+void load_ase_swatches(PaletteFileData& palette, std::string const &fname) {
     auto file = Gio::File::create_for_path(fname);
     auto stream = file->read();
     auto magic = read_string(stream, 4);
@@ -355,11 +357,12 @@ void load_ase_swatches(PaletteFileData& palette, const Glib::ustring& fname) {
 }
 
 // Load GIMP color palette
-void load_gimp_palette(PaletteFileData& palette, const Glib::ustring& path) {
+void load_gimp_palette(PaletteFileData& palette, std::string const &path)
+{
     palette.name = Glib::path_get_basename(path);
     palette.columns = 1;
 
-    auto f = std::unique_ptr<FILE, void(*)(FILE*)>(Inkscape::IO::fopen_utf8name(path.c_str(), "r"), [] (FILE *f) {if (f) std::fclose(f);});
+    auto f = delete_with<std::fclose>(Inkscape::IO::fopen_utf8name(path.c_str(), "r"));
     if (!f) throw std::runtime_error(_("Failed to open file"));
 
     char buf[1024];
@@ -417,48 +420,48 @@ void load_gimp_palette(PaletteFileData& palette, const Glib::ustring& path) {
 
 namespace Inkscape::UI::Dialog {
 
-PaletteResult load_palette(Glib::ustring path) {
-    Glib::ustring msg;
+PaletteResult load_palette(std::string const &path)
+{
+    auto const utf8path = Glib::filename_to_utf8(path);
+
+    auto compose_error = [&] (char const *what) {
+        return Glib::ustring::compose(_("Error loading palette %1: %2"), utf8path, what);
+    };
+
     try {
         PaletteFileData p;
-        p.id = path;
-        auto ext = get_extension(path);
+        p.id = utf8path;
 
+        auto const ext = get_extension(utf8path);
         if (ext == ".acb") {
             load_acb_palette(p, path);
-        }
-        else if (ext == ".ase") {
+        } else if (ext == ".ase") {
             load_ase_swatches(p, path);
-        }
-        else {
+        } else {
             load_gimp_palette(p, path);
         }
 
-        return {p, msg};
+        return {std::move(p), {}};
 
     } catch (std::runtime_error const &e) {
-        msg = Glib::ustring::compose(_("Error loading palette %1: %2"), path, e.what());
+        return {{}, compose_error(e.what())};
     } catch (std::logic_error const &e) {
-        msg = Glib::ustring::compose(_("Error loading palette %1: %2"), path, e.what());
+        return {{}, compose_error(e.what())};
+    } catch (Glib::Error const &e) {
+        return {{}, compose_error(e.what().c_str())};
+    } catch (...) {
+        return {{}, Glib::ustring::compose(_("Unknown error loading palette %"), utf8path)};
     }
-    catch (Glib::Exception& ex) {
-        msg = Glib::ustring::compose(_("Error loading palette %1: %2"), path, ex.what());
-    }
-    catch (...) {
-        msg = Glib::ustring::compose(_("Unknown error loading palette %"), path);
-    }
-    return {std::nullopt, msg};
 }
 
 GlobalPalettes::GlobalPalettes()
 {
     // Load the palettes.
-    for (auto &path : Inkscape::IO::Resource::get_filenames(Inkscape::IO::Resource::PALETTES, {".gpl", ".acb", ".ase"})) {
+    for (auto const &path : Inkscape::IO::Resource::get_filenames(Inkscape::IO::Resource::PALETTES, {".gpl", ".acb", ".ase"})) {
         auto res = load_palette(path);
-        if (res.palette.has_value()) {
-            _palettes.push_back(std::move(*res.palette));
-        }
-        else {
+        if (res.palette) {
+            _palettes.emplace_back(std::move(*res.palette));
+        } else {
             g_warning("%s", res.error_message.c_str());
         }
     }

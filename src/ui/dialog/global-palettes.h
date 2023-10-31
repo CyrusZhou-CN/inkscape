@@ -134,7 +134,7 @@ struct PaletteResult { // todo: replace with std::expected when it becomes avail
     std::optional<PaletteFileData> palette;
     Glib::ustring error_message;
 };
-PaletteResult load_palette(Glib::ustring path);
+PaletteResult load_palette(std::string const &path);
 
 // Show file chooser and select color palette file
 std::string choose_palette_file(Gtk::Window* window);

@@ -24,6 +24,7 @@ set(util_SRC
 	cached_map.h
 	cast.h
 	const_char_ptr.h
+	delete-with.h
     document-fonts.h
 	enums.h
 	expression-evaluator.h

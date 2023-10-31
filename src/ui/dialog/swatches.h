@@ -74,7 +74,7 @@ private:
     void update_palettes(bool compact);
     void rebuild();
     bool load_swatches();
-    bool load_swatches(Glib::ustring path);
+    bool load_swatches(std::string const &path);
     void update_loaded_palette_entry();
     void setup_selector_menu();
     bool on_selector_key_pressed(GtkEventControllerKey const * controller,
