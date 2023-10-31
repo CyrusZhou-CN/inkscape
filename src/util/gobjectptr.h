@@ -12,6 +12,7 @@ namespace Inkscape::Util {
 
 /**
  * A smart pointer that shares ownership of a GObject.
+ * Fixme: Can't be self-moved or copied.
  */
 template <typename T>
 class GObjectPtr

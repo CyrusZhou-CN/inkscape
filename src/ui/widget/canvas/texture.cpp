@@ -6,17 +6,13 @@ namespace Inkscape::UI::Widget {
 
 static bool have_gltexstorage()
 {
-    static bool result = [] {
-        return epoxy_gl_version() >= 42 || epoxy_has_gl_extension("GL_ARB_texture_storage");
-    }();
+    static bool const result = epoxy_gl_version() >= 42 || epoxy_has_gl_extension("GL_ARB_texture_storage");
     return result;
 }
 
 static bool have_glinvalidateteximage()
 {
-    static bool result = [] {
-        return epoxy_gl_version() >= 43 || epoxy_has_gl_extension("ARB_invalidate_subdata");
-    }();
+    static bool const result = epoxy_gl_version() >= 43 || epoxy_has_gl_extension("ARB_invalidate_subdata");
     return result;
 }
 
