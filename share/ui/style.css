@@ -68,7 +68,7 @@
     */
 
 *{
-    font-feature-settings: "tnum=1";
+    font-feature-settings: "tnum";
 }
 
 /* Make icons in treeview etc use theme fg_color, not the stronger text_color */
@@ -452,19 +452,22 @@ SPCanvas {
 #ObjectsTreeView.view:focus {
     outline-style: double;
     outline-width: 5px;
-    outline-color: alpha (@theme_fg_color, 0.1);
+    outline-color: alpha(@theme_fg_color, 0.1);
+    /* TODO: GTK4: removed. Do we need to emulate?
     -gtk-outline-radius: 50%;
+    */
 }
 #ObjectsTreeView.view:hover {
-    border-color: alpha (@theme_fg_color, 0.1);
+    border-color: alpha(@theme_fg_color, 0.1);
     border-style: solid;
     border-width: 1px 0px;
 }
+/* TODO: GTK4: removed. Do we need to emulate?
 #ObjectsTreeView {
     -GtkTreeView-expander-size: 12;
     -GtkTreeView-horizontal-separator: 2;
     -GtkTreeView-vertical-separator: 2;
-}
+}*/
 #Objects .search {
   padding: 2px 4px;
   min-height: 16px;
@@ -538,7 +541,7 @@ button.close-button:hover{
 }
 
 button.link:hover image {
-    -gtk-icon-effect: dim;
+    -gtk-icon-filter: opacity(0.5);
 }
 
 .marker-item.box {
@@ -1228,7 +1231,7 @@ popover.menu.menuize > stack > box > modelbutton:first-child > * /* Affect child
     padding: 3px;
 }
 #GradientEdit:focus-within {
-    border-color: alpha(@theme_fg_color, 0.3)
+    border-color: alpha(@theme_fg_color, 0.3);
 }
 
 /* Canvas */
@@ -1259,14 +1262,9 @@ button.icon-preview {
     min-width : 0;
     min-height: 0;
     padding: 5px;
-
-/* GtkFrames that formerly had :shadow-type == NONE */
-frame,flat {
-    border: none;
 }
 
 /* GtkFrames that formerly had :shadow-type == NONE */
-/* TODO: GTK4: border submode is removed */
-frame.flat > border {
+frame.flat {
     border: none;
  }
