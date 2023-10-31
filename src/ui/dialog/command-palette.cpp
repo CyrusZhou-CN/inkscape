@@ -520,7 +520,7 @@ bool CommandPalette::operate_recent_file(Glib::ustring const &uri, bool const im
 
 static void set_hint_texts(Gtk::Entry &entry, Glib::ustring const &text)
 {
-    entry.set_placeholder_text(text);
+    // entry.set_placeholder_text(text);
     entry.set_tooltip_text    (text);
 }
 
@@ -1083,8 +1083,10 @@ int CommandPalette::on_sort(Gtk::ListBoxRow *row1, Gtk::ListBoxRow *row2)
 static void set_sensitive(Gtk::Entry &entry, bool const sensitive)
 {
     entry.set_editable(sensitive);
+    /* In GTK4, GtkSearchEntry is NOT a GtkEntry. Gtk::SearchEntry derives from Gtk::Entry WRONGLY!
     entry.set_icon_activatable(sensitive, Gtk::Entry::IconPosition::PRIMARY);
     entry.set_icon_activatable(sensitive, Gtk::Entry::IconPosition::SECONDARY);
+    */
 }
 
 void CommandPalette::set_mode(CPMode mode)
@@ -1097,7 +1099,7 @@ void CommandPalette::set_mode(CPMode mode)
         case CPMode::SEARCH:
             set_sensitive(_CPFilter, true);
             _CPFilter.set_text("");
-            _CPFilter.set_icon_from_icon_name("edit-find-symbolic");
+            //_CPFilter.set_icon_from_icon_name("edit-find-symbolic");
             set_hint_texts(_CPFilter, _("Search operation..."));
 
             show_suggestions();
@@ -1127,7 +1129,7 @@ void CommandPalette::set_mode(CPMode mode)
             set_sensitive(_CPFilter, true);
             _CPFilter.set_text("");
             _CPFilter.grab_focus();
-            _CPFilter.set_icon_from_icon_name("input-keyboard");
+            // _CPFilter.set_icon_from_icon_name("input-keyboard");
             set_hint_texts(_CPFilter, _("Enter action argument"));
 
             break;
@@ -1136,7 +1138,7 @@ void CommandPalette::set_mode(CPMode mode)
             hide_suggestions();
 
             set_sensitive(_CPFilter, true);
-            _CPFilter.set_icon_from_icon_name("gtk-search");
+            // _CPFilter.set_icon_from_icon_name("gtk-search");
 
             _cpfilter_search_connection.disconnect();
 
@@ -1153,7 +1155,7 @@ void CommandPalette::set_mode(CPMode mode)
             _CPHistoryScroll.set_visible(true);
 
             set_sensitive(_CPFilter, false);
-            _CPFilter.set_icon_from_icon_name("format-justify-fill");
+            // _CPFilter.set_icon_from_icon_name("format-justify-fill");
             set_hint_texts(_CPFilter, _("History mode"));
 
             _cpfilter_search_connection.disconnect();
