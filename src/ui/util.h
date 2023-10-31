@@ -196,7 +196,17 @@ Cairo::RefPtr<Cairo::LinearGradient> create_cubic_gradient(
     int steps = 8
 );
 
-void set_dark_tittlebar(Glib::RefPtr<Gdk::Window> win, bool is_dark);
+void set_dark_titlebar(Glib::RefPtr<Gdk::Window> const &win, bool is_dark);
+
+// Cover for Glib::wrap not passing through const.
+template <typename T>
+auto const_wrap(T const *p, bool take_copy = false)
+{
+    auto unconst_p = const_cast<T*>(p);
+    auto unconst_wrapped = Glib::wrap(unconst_p, take_copy);
+    using wrapped_T = decltype(unconst_wrapped)::element_type;
+    return std::shared_ptr<wrapped_T const>(std::move(unconst_wrapped));
+}
 
 #endif // UI_UTIL_SEEN
 

@@ -547,7 +547,7 @@ ThemeContext::themechangecallback() {
     }
     for (auto wnd : winds) {
         if (Glib::RefPtr<Gdk::Window> w = wnd->get_window()) {
-            set_dark_tittlebar(w, dark);
+            set_dark_titlebar(w, dark);
         }
         if (dark) {
             wnd->get_style_context()->add_class("dark");

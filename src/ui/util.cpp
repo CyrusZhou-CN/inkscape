@@ -381,7 +381,7 @@ uint32_t conv_gdk_color_to_rgba(const Gdk::RGBA& color, double replace_alpha) {
     return rgba;
 }
 
-void set_dark_tittlebar(Glib::RefPtr<Gdk::Window> win, bool is_dark){
+void set_dark_titlebar(Glib::RefPtr<Gdk::Window> const &win, bool is_dark){
 #if (defined (_WIN32) || defined (_WIN64))
     if (win->gobj()) {
         BOOL w32_darkmode = is_dark;
