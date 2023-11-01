@@ -144,11 +144,12 @@ build_menu()
 
         auto recent_files = recent_manager->get_items(); // all recent files not necessarily inkscape only
         // sort by "last modified" time, which puts the most recently opened files first
-        std::sort(begin(recent_files), end(recent_files),
+        // No idea why this crashes.
+        /*std::sort(begin(recent_files), end(recent_files),
             [](auto const &a, auto const &b) -> bool {
                 return a->get_modified().compare(b->get_modified()) < 0;
             }
-        );
+        );*/
 
         unsigned inserted_entries = 0;
         for (auto const &recent_file : recent_files) {

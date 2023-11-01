@@ -128,8 +128,13 @@ InkscapeWindow::InkscapeWindow(SPDocument* document)
     Inkscape::UI::pack_start(*_mainbox, *_desktop_widget, true, true);
 
     // ================== Callbacks ==================
-    get_toplevel().property_state().signal_changed().connect(
-        sigc::mem_fun(*this, &InkscapeWindow::on_toplevel_state_changed));
+    // On idle since toplevel only becomes non-null later
+    // Fixme: No connection tracking, race conditions.
+    Glib::signal_idle().connect_once([this] {
+        get_toplevel().property_state().signal_changed().connect(
+            sigc::mem_fun(*this, &InkscapeWindow::on_toplevel_state_changed)
+        );
+    });
     property_is_active().signal_changed().connect(sigc::mem_fun(*this, &InkscapeWindow::on_is_active_changed));
     signal_close_request().connect(sigc::mem_fun(*this, &InkscapeWindow::on_close_request), false); // before
     property_default_width ().signal_changed().connect(sigc::mem_fun(*this, &InkscapeWindow::on_size_changed));
@@ -201,7 +206,6 @@ InkscapeWindow::setup_view()
     // TODO: This does *not* work when called from 'change_document()', i.e. when the window is already visible.
     //       This can result in off-screen windows! We previously worked around this by hiding and re-showing
     //       the window, but a call to set_visible(false) causes Inkscape to just exit since the migration to Gtk::Application
-    set_visible(true);
     
     _desktop->schedule_zoom_from_document();
     sp_namedview_update_layers_from_document(_desktop);
