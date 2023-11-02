@@ -24,7 +24,7 @@ cd ..
 mkdir -p build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_BINRELOC=ON \
 -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_C_COMPILER_LAUNCHER=ccache \
--DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DWITH_INTERNAL_CAIRO=ON
+-DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 make -j$(nproc)
 make DESTDIR=$PWD/appdir -j$(nproc) install ; find appdir/
 cp ../packaging/appimage/AppRun appdir/AppRun ; chmod +x appdir/AppRun

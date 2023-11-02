@@ -184,7 +184,7 @@ inkscape:windows:build:
   extends: .windows
   retry: 2
   script:
-    - C:/msys64/msys2_shell.cmd -defterm -no-start -ucrt64 -here -c "cmake -Bbuild -G Ninja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DWITH_INTERNAL_CAIRO=OFF"
+    - C:/msys64/msys2_shell.cmd -defterm -no-start -ucrt64 -here -c "cmake -Bbuild -G Ninja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
     - C:/msys64/msys2_shell.cmd -defterm -no-start -ucrt64 -here -c "timeout -k 10s 70m ninja -C build"
     - 7z a build.7z build
   artifacts:
