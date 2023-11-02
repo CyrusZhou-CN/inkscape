@@ -211,7 +211,7 @@ void DialogManager::save_dialogs_state(DialogContainer *docking_container)
     try {
         keyfile->save_to_file(filename);
     } catch (Glib::FileError const &error) {
-        std::cerr << G_STRFUNC << ": " << error.what().raw() << std::endl;
+        std::cerr << G_STRFUNC << ": " << error.what() << std::endl;
     }
 }
 
@@ -224,7 +224,7 @@ void DialogManager::load_transient_state(Glib::KeyFile *file)
         auto dialogs = file->get_string_list(transient_group, "dialogs" + index);
         auto state = file->get_string(transient_group, "state" + index);
 
-        auto keyfile = std::make_shared<Glib::KeyFile>();
+        auto keyfile = Glib::KeyFile::create();
         if (!state.empty()) {
             keyfile->load_from_data(state);
         }
@@ -253,7 +253,7 @@ void DialogManager::restore_dialogs_state(DialogContainer *docking_container, bo
     if (save_state == PREFS_DIALOGS_STATE_NONE) return;
 
     try {
-        auto keyfile = std::make_unique<Glib::KeyFile>();
+        auto keyfile = Glib::KeyFile::create();
         std::string filename = Glib::build_filename(Inkscape::IO::Resource::profile_path(), dialogs_state);
 
         bool exists = file_exists(filename);
@@ -267,7 +267,7 @@ void DialogManager::restore_dialogs_state(DialogContainer *docking_container, bo
                 try {
                     load_transient_state(keyfile.get());
                 } catch (Glib::Error const &error) {
-                    std::cerr << G_STRFUNC << ": transient state not loaded - " << error.what().raw() << std::endl;
+                    std::cerr << G_STRFUNC << ": transient state not loaded - " << error.what() << std::endl;
                 }
             }
         }
@@ -276,7 +276,7 @@ void DialogManager::restore_dialogs_state(DialogContainer *docking_container, bo
             dialog_defaults(docking_container);
         }
     } catch (Glib::Error const &error) {
-        std::cerr << G_STRFUNC << ": dialogs state not loaded - " << error.what().raw() << std::endl;
+        std::cerr << G_STRFUNC << ": dialogs state not loaded - " << error.what() << std::endl;
     }
 }
 
@@ -290,7 +290,7 @@ void DialogManager::remove_dialog_floating_state(const Glib::ustring& dialog_typ
 // apply defaults when dialog state cannot be loaded / doesn't exist:
 // here we load defaults from dedicated ini file
 void DialogManager::dialog_defaults(DialogContainer* docking_container) {
-    auto keyfile = std::make_unique<Glib::KeyFile>();
+    auto keyfile = Glib::KeyFile::create();
     // default/initial state used when running Inkscape for the first time
     std::string filename = Inkscape::IO::Resource::get_filename(Inkscape::IO::Resource::UIS, "default-dialog-state.ini");
 
