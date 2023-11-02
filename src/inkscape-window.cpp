@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
  * @file
- * Inkview - An SVG file viewer.
+ * Inkscape - An SVG editor.
  */
 /*
  * Authors:
@@ -16,6 +16,7 @@
 #include "inkscape-window.h"
 
 #include <iostream>
+#include <gdkmm/surface.h>
 #include <gtkmm/box.h>
 #include <gtkmm/popovermenubar.h>
 #include <sigc++/functors/mem_fun.h>
@@ -129,9 +130,11 @@ InkscapeWindow::InkscapeWindow(SPDocument* document)
 
     // ================== Callbacks ==================
     // On idle since toplevel only becomes non-null later
-    // Fixme: No connection tracking, race conditions.
+    // Fixme: No connection tracking, race conditions. [?]
     Glib::signal_idle().connect_once([this] {
-        get_toplevel().property_state().signal_changed().connect(
+        auto const toplevel = get_toplevel();
+        g_assert(toplevel);
+        _toplevel_state_connection = toplevel->property_state().signal_changed().connect(
             sigc::mem_fun(*this, &InkscapeWindow::on_toplevel_state_changed)
         );
     });
@@ -286,19 +289,20 @@ static void retransientize_dialogs(Gtk::Window &parent)
     }
 }
 
-Gdk::Toplevel &
-InkscapeWindow::get_toplevel()
+Glib::RefPtr<Gdk::Toplevel const>
+InkscapeWindow::get_toplevel() const
 {
-    auto const toplevel = std::dynamic_pointer_cast<Gdk::Toplevel>(get_surface());
-    g_assert(toplevel);
-    return *toplevel;
+    return std::dynamic_pointer_cast<Gdk::Toplevel const>(get_surface());
 }
 
 void
 InkscapeWindow::on_toplevel_state_changed()
 {
-    auto const new_toplevel_state = get_toplevel().get_state();
-    auto const changed_mask = old_toplevel_state ^ new_toplevel_state;
+    // The initial old state is empty {}, as is the new state if we do not have a toplevel anymore.
+    Gdk::Toplevel::State new_toplevel_state{};
+    if (auto const toplevel = get_toplevel()) new_toplevel_state = toplevel->get_state();
+    auto const changed_mask = _old_toplevel_state ^ new_toplevel_state;
+    _old_toplevel_state = new_toplevel_state;
    _desktop->onWindowStateChanged(changed_mask, new_toplevel_state);
 }
 

@@ -17,8 +17,11 @@
 #ifndef INKSCAPE_WINDOW_H
 #define INKSCAPE_WINDOW_H
 
+#include <glibmm/refptr.h>
 #include <gdkmm/toplevel.h>
 #include <gtkmm/applicationwindow.h>
+
+#include "helper/auto-connection.h"
 
 namespace Gtk { class Box; }
 
@@ -54,9 +57,10 @@ public:
 #endif
 
 private:
-    Gdk::Toplevel::State old_toplevel_state{};
+    Inkscape::auto_connection _toplevel_state_connection;
+    Gdk::Toplevel::State _old_toplevel_state{};
 
-    Gdk::Toplevel &get_toplevel();
+    Glib::RefPtr<Gdk::Toplevel const> get_toplevel() const;
     void on_toplevel_state_changed();
     void on_is_active_changed();
     bool on_close_request();
