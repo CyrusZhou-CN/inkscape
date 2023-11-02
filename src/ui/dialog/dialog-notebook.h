@@ -33,7 +33,7 @@ class DragContext;
 
 namespace Gtk {
 class EventController;
-class GestureMultiPress;
+class GestureClick;
 } // namespace Gtk
 
 namespace Inkscape::UI {
