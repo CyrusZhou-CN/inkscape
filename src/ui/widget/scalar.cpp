@@ -167,9 +167,11 @@ void Scalar::hide_label() {
     }
 
     if (auto const widget = getWidget()) {
+        widget->reference(); // Fix another way if possible.
         remove(*widget);
         widget->set_hexpand();
         UI::pack_end(*this, *widget);
+        widget->unreference();
     }
 }
 

@@ -128,8 +128,9 @@ Transformation::Transformation()
     // make sure all spinbuttons activate Apply on pressing Enter
     auto const apply_on_activate = [this](UI::Widget::ScalarUnit &scalar)
     {
-        auto &entry = dynamic_cast<Gtk::Entry &>(*scalar.getWidget());
-        entry.signal_activate().connect(sigc::mem_fun(*this, &Transformation::_apply));
+        // Fixme: No longer an entry (quite a widespread problem).
+        // auto &entry = dynamic_cast<Gtk::Entry &>(*scalar.getWidget());
+        // entry.signal_activate().connect(sigc::mem_fun(*this, &Transformation::_apply));
     };
     apply_on_activate(_scalar_move_horizontal );
     apply_on_activate(_scalar_move_vertical   );
