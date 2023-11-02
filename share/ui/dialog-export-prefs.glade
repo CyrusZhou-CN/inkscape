@@ -5,7 +5,7 @@
     <property name="icon-name">gear</property>
   </object>
   <object class="GtkPopover" id="pref_popover">
-    <child>
+    <property name="child">
       <object class="GtkBox">
         <property name="orientation">vertical</property>
         <child>
@@ -23,11 +23,10 @@
         </child>
         <child>
           <object class="GtkViewport" id="pref_holder">
-            <property name="has-frame">false</property>
           </object>
         </child>
       </object>
-    </child>
+    </property>
   </object>
   <object class="GtkMenuButton" id="pref_button">
     <property name="focusable">True</property>
