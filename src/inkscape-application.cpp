@@ -625,6 +625,8 @@ InkscapeApplication::InkscapeApplication()
     } else if (Glib::getenv("SELF_CALL") == "") {
         // Version protection attempts to refuse to merge with inkscape version
         // that have a different build/revision hash. This is important for testing.
+        // TODO: GTK4: This causes a warning re: app not unregistered. Does app->run() suffice now?
+        //             See, e.g.: https://gitlab.gnome.org/GNOME/glib/-/issues/1857#note_984717
         auto test_app = Gio::Application::create(app_id, flags);
         test_app->register_application();
         if (test_app->get_default()->is_remote()) {
