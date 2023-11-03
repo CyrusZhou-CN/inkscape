@@ -97,11 +97,11 @@ DialogWindow::DialogWindow(InkscapeWindow *inkscape_window, Gtk::Widget *page)
     if (page) {
         // ============= Initial Column =============
         DialogMultipaned *column = _container->create_column();
-        columns->append(column);
+        columns->append(*column);
 
         // ============== New Notebook ==============
         auto const dialog_notebook = Gtk::make_managed<DialogNotebook>(_container);
-        column->append(dialog_notebook);
+        column->append(*dialog_notebook);
         column->set_dropzone_sizes(drop_size, drop_size);
         dialog_notebook->move_page(*page);
 

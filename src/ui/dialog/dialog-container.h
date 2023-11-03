@@ -94,6 +94,7 @@ private:
      */
     std::multimap<Glib::ustring, DialogBase *> dialogs;
 
+    void setup_drag_and_drop(DialogMultipaned *column);
     void new_dialog(const Glib::ustring& dialog_type, DialogNotebook* notebook);
     std::unique_ptr<DialogBase> dialog_factory(Glib::ustring const &dialog_type);
     Gtk::Widget *create_notebook_tab(Glib::ustring const &label, Glib::ustring const &image,
@@ -106,8 +107,11 @@ private:
     // Handlers
     void on_unrealize() override;
     DialogNotebook *prepare_drop(Gtk::SelectionData const &selection_data);
-    void prepend_drop           (Gtk::SelectionData const &selection_data, DialogMultipaned *column);
-    void append_drop            (Gtk::SelectionData const &selection_data, DialogMultipaned *column);
+    using PrependOrAppend = void (DialogMultipaned::*)(Gtk::Widget &child);
+    void take_drop   (PrependOrAppend prepend_or_append,
+                      Gtk::SelectionData const &selection_data, DialogMultipaned *column);
+    void prepend_drop(Gtk::SelectionData const &selection_data, DialogMultipaned *column);
+    void append_drop (Gtk::SelectionData const &selection_data, DialogMultipaned *column);
     void column_empty(DialogMultipaned *column);
     DialogBase* find_existing_dialog(const Glib::ustring& dialog_type);
     static bool recreate_dialogs_from_state(InkscapeWindow* inkscape_window, const Glib::KeyFile* keyfile);

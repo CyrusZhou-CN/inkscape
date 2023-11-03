@@ -507,12 +507,22 @@ DialogMultipaned::~DialogMultipaned()
     for (auto child : children) {
         if (dynamic_cast<Inkscape::UI::Widget::CanvasGrid*>(child)) {
             remove(*child);
+            break;
         }
     }
 }
 
-void DialogMultipaned::prepend(Gtk::Widget *child)
+void DialogMultipaned::insert(int const pos, Gtk::Widget &child)
 {
+    auto const parent = child.get_parent();
+    g_assert(!parent || parent == this);
+
+    // Zero/positive pos means insert @children[pos]. Negative means @children[children.size()-pos]
+    // We update children, so we must get iterator anew each time it is to be used. Check bound too
+    g_assert(pos >= 0 &&  pos <= children.size() || // (prepending) inserting at 1-past-end is A-OK
+             pos <  0 && -pos <= children.size());  // (appending) inserting@ 1-before-begin is NOT
+    auto const get_iter = [&]{ return (pos >= 0 ? children.begin() : children.end()) + pos; };
+
     remove_empty_widget(); // Will remove extra widget if existing
 
     // If there are MyMultipane children that are empty, they will be removed
@@ -524,54 +534,32 @@ void DialogMultipaned::prepend(Gtk::Widget *child)
         }
     }
 
-    if (child) {
-        // Add handle
-        if (children.size() > 2) {
-            auto const my_handle = Gtk::make_managed<MyHandle>(get_orientation());
-            my_handle->set_parent(*this);
-            children.insert(children.begin() + 1, my_handle); // After start dropzone
-        }
-
-        // Add child
-        children.insert(children.begin() + 1, child);
-        if (!child->get_parent())
-            child->set_parent(*this);
-
-        // Ideally, we would only call child->set_visible(true) here and assume that the
-        // child has already configured visibility of all its own children.
-        child->show_all();
+    // Add handle
+    if (children.size() > 2) {
+        auto const my_handle = Gtk::make_managed<MyHandle>(get_orientation());
+        my_handle->set_parent(*this);
+        children.insert(get_iter(), my_handle);
     }
+
+    // Add child
+    children.insert(get_iter(), &child);
+    if (!parent) {
+        child.set_parent(*this);
+    }
+
+    // Ideally, we would only call child->set_visible(true) here and assume that the
+    // child has already configured visibility of all its own children.
+    child.show_all();
 }
 
-void DialogMultipaned::append(Gtk::Widget *child)
+void DialogMultipaned::prepend(Gtk::Widget &child)
 {
-    remove_empty_widget(); // Will remove extra widget if existing
+    insert(+1, child); // After start dropzone
+}
 
-    // If there are MyMultipane children that are empty, they will be removed
-    for (auto const &child1 : children) {
-        DialogMultipaned *paned = dynamic_cast<DialogMultipaned *>(child1);
-        if (paned && paned->has_empty_widget()) {
-            remove(*child1);
-            remove_empty_widget();
-        }
-    }
-
-    if (child) {
-        // Add handle
-        if (children.size() > 2) {
-            auto const my_handle = Gtk::make_managed<MyHandle>(get_orientation());
-            my_handle->set_parent(*this);
-            children.insert(children.end() - 1, my_handle); // Before end dropzone
-        }
-
-        // Add child
-        children.insert(children.end() - 1, child);
-        if (!child->get_parent())
-            child->set_parent(*this);
-
-        // See comment in DialogMultipaned::prepend
-        child->show_all();
-    }
+void DialogMultipaned::append(Gtk::Widget &child)
+{
+    insert(-1, child); // Before end dropzone
 }
 
 void DialogMultipaned::add_empty_widget()
@@ -585,7 +573,7 @@ void DialogMultipaned::add_empty_widget()
     label->set_valign(Gtk::ALIGN_CENTER);
     label->set_vexpand();
 
-    append(label);
+    append(*label);
     _empty_widget = label;
 
     if (get_orientation() == Gtk::ORIENTATION_VERTICAL) {
@@ -991,9 +979,9 @@ void DialogMultipaned::forall_vfunc(gboolean, GtkCallback callback, gpointer cal
 
 void DialogMultipaned::on_add(Gtk::Widget *child)
 {
-    if (child) {
-        append(child);
-    }
+    g_assert(child);
+
+    append(*child);
 }
 
 /**
@@ -1002,47 +990,47 @@ void DialogMultipaned::on_add(Gtk::Widget *child)
  */
 void DialogMultipaned::on_remove(Gtk::Widget *child)
 {
-    if (child) {
-        MyDropZone *dropzone = dynamic_cast<MyDropZone *>(child);
-        if (dropzone) {
-            return;
-        }
-        MyHandle *my_handle = dynamic_cast<MyHandle *>(child);
-        if (my_handle) {
-            return;
-        }
+    g_assert(child);
 
-        const bool visible = child->get_visible();
-        if (children.size() > 2) {
-            auto it = std::find(children.begin(), children.end(), child);
-            if (it != children.end()) {         // child found
-                if (it + 2 != children.end()) { // not last widget
-                    my_handle = dynamic_cast<MyHandle *>(*(it + 1));
+    MyDropZone *dropzone = dynamic_cast<MyDropZone *>(child);
+    if (dropzone) {
+        return;
+    }
+    MyHandle *my_handle = dynamic_cast<MyHandle *>(child);
+    if (my_handle) {
+        return;
+    }
+
+    const bool visible = child->get_visible();
+    if (children.size() > 2) {
+        auto it = std::find(children.begin(), children.end(), child);
+        if (it != children.end()) {         // child found
+            if (it + 2 != children.end()) { // not last widget
+                my_handle = dynamic_cast<MyHandle *>(*(it + 1));
+                my_handle->unparent();
+                child->unparent();
+                children.erase(it, it + 2);
+            } else {                        // last widget
+                if (children.size() == 3) { // only widget
+                    child->unparent();
+                    children.erase(it);
+                } else { // not only widget, delete preceding handle
+                    my_handle = dynamic_cast<MyHandle *>(*(it - 1));
                     my_handle->unparent();
                     child->unparent();
-                    children.erase(it, it + 2);
-                } else {                        // last widget
-                    if (children.size() == 3) { // only widget
-                        child->unparent();
-                        children.erase(it);
-                    } else { // not only widget, delete preceding handle
-                        my_handle = dynamic_cast<MyHandle *>(*(it - 1));
-                        my_handle->unparent();
-                        child->unparent();
-                        children.erase(it - 1, it + 1);
-                    }
+                    children.erase(it - 1, it + 1);
                 }
             }
         }
-        if (visible) {
-            queue_resize();
-        }
+    }
+    if (visible) {
+        queue_resize();
+    }
 
-        if (children.size() == 2) {
-            add_empty_widget();
-            _empty_widget->set_size_request(300, -1);
-            _signal_now_empty.emit();
-        }
+    if (children.size() == 2) {
+        add_empty_widget();
+        _empty_widget->set_size_request(300, -1);
+        _signal_now_empty.emit();
     }
 }
 

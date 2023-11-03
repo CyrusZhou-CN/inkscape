@@ -179,7 +179,7 @@ SPDesktopWidget::SPDesktopWidget(InkscapeWindow *inkscape_window, SPDocument *do
 
     _canvas_grid->set_hexpand(true);
     _canvas_grid->set_vexpand(true);
-    _columns->append(_canvas_grid.get());
+    _columns->append(*_canvas_grid.get());
 
     // ------------------ Finish Up -------------------- //
     show_all();

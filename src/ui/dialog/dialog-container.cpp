@@ -91,18 +91,8 @@ DialogContainer::DialogContainer(InkscapeWindow* inkscape_window)
 
     get_style_context()->add_class("DialogContainer");
 
-    // Setup main column
     columns = std::make_unique<DialogMultipaned>(Gtk::ORIENTATION_HORIZONTAL);
-
-    connections.emplace_back(columns->signal_prepend_drag_data().connect(
-        sigc::bind(sigc::mem_fun(*this, &DialogContainer::prepend_drop), columns.get())));
-
-    connections.emplace_back(columns->signal_append_drag_data().connect(
-        sigc::bind(sigc::mem_fun(*this, &DialogContainer::append_drop), columns.get())));
-
-    // Setup drop targets.
-    columns->set_target_entries(get_target_entries());
-
+    setup_drag_and_drop(columns.get());
     add(*columns.get());
 
     show_all_children();
@@ -111,19 +101,19 @@ DialogContainer::DialogContainer(InkscapeWindow* inkscape_window)
 DialogMultipaned *DialogContainer::create_column()
 {
     auto const column = Gtk::make_managed<DialogMultipaned>(Gtk::ORIENTATION_VERTICAL);
-
-    connections.emplace_back(column->signal_prepend_drag_data().connect(
-        sigc::bind(sigc::mem_fun(*this, &DialogContainer::prepend_drop), column)));
-
-    connections.emplace_back(column->signal_append_drag_data().connect(
-        sigc::bind(sigc::mem_fun(*this, &DialogContainer::append_drop), column)));
-
+    setup_drag_and_drop(column);
     connections.emplace_back(column->signal_now_empty().connect(
         sigc::bind(sigc::mem_fun(*this, &DialogContainer::column_empty), column)));
-
-    column->set_target_entries(get_target_entries());
-
     return column;
+}
+
+void DialogContainer::setup_drag_and_drop(DialogMultipaned * const column)
+{
+    connections.emplace_back(column->signal_prepend_drag_data().connect(
+        sigc::bind(sigc::mem_fun(*this, &DialogContainer::prepend_drop), column)));
+    connections.emplace_back(column->signal_append_drag_data().connect(
+        sigc::bind(sigc::mem_fun(*this, &DialogContainer::append_drop), column)));
+    column->set_target_entries(get_target_entries());
 }
 
 /**
@@ -327,14 +317,14 @@ void DialogContainer::new_dialog(const Glib::ustring& dialog_type, DialogNoteboo
         DialogMultipaned *last_column = dynamic_cast<DialogMultipaned *>(columns->get_last_widget());
         if (!last_column) {
             last_column = create_column();
-            columns->append(last_column);
+            columns->append(*last_column);
         }
 
         // Look to see if first widget in column is notebook, if not add one.
         notebook = dynamic_cast<DialogNotebook *>(last_column->get_first_widget());
         if (!notebook) {
             notebook = Gtk::make_managed<DialogNotebook>(this);
-            last_column->prepend(notebook);
+            last_column->prepend(*notebook);
         }
     }
 
@@ -431,7 +421,7 @@ bool DialogContainer::recreate_dialogs_from_state(InkscapeWindow* inkscape_windo
             // Step 3.2.1: create the column
             DialogMultipaned *column = active_container->create_column();
 
-            before_canvas ? active_columns->prepend(column) : active_columns->append(column);
+            before_canvas ? active_columns->prepend(*column) : active_columns->append(*column);
 
             // Step 3.2.2: for each noteboook, load its dialogs
             for (int notebook_idx = 0; notebook_idx < notebook_count; ++notebook_idx) {
@@ -462,7 +452,7 @@ bool DialogContainer::recreate_dialogs_from_state(InkscapeWindow* inkscape_windo
                     if (dialog_data.find(type) != dialog_data.end()) {
                         if (!notebook) {
                             notebook = Gtk::make_managed<DialogNotebook>(active_container);
-                            column->append(notebook);
+                            column->append(*notebook);
                         }
                         active_container->new_dialog(type, notebook);
                     } else {
@@ -744,7 +734,7 @@ void DialogContainer::load_container_state(Glib::KeyFile *keyfile, bool include_
                     column->set_restored_width(width);
                 }
 
-                before_canvas ? active_columns->prepend(column) : active_columns->append(column);
+                before_canvas ? active_columns->prepend(*column) : active_columns->append(*column);
             }
 
             // Step 3.2.2: for each noteboook, load its dialogs
@@ -766,7 +756,7 @@ void DialogContainer::load_container_state(Glib::KeyFile *keyfile, bool include_
                 DialogNotebook *notebook = nullptr;
                 if (is_dockable) {
                     notebook = Gtk::make_managed<DialogNotebook>(active_container);
-                    column->append(notebook);
+                    column->append(*notebook);
                 }
 
                 auto const &dialog_data = get_dialog_data();
@@ -1066,52 +1056,39 @@ DialogNotebook *DialogContainer::prepare_drop(Gtk::SelectionData const &selectio
     return new_notebook;
 }
 
-// Notebook page dropped on prepend target. Call function to create new notebook and then insert.
-void DialogContainer::prepend_drop(Gtk::SelectionData const &selection_data,
-                                   DialogMultipaned * const multipane)
+void DialogContainer::take_drop(PrependOrAppend const prepend_or_append,
+                                Gtk::SelectionData const &selection_data,
+                                DialogMultipaned * const multipane)
 {
     auto const new_notebook = prepare_drop(selection_data); // Creates notebook, moves page.
     if (!new_notebook) {
-        std::cerr << "DialogContainer::prepend_drop: no new notebook!" << std::endl;
+        std::cerr << "DialogContainer::take_drop: no new notebook!" << std::endl;
         return;
     }
 
     if (multipane->get_orientation() == Gtk::ORIENTATION_HORIZONTAL) {
-        // Columns
-        // Create column
         DialogMultipaned *column = create_column();
-        column->prepend(new_notebook);
-        columns->prepend(column);
+        (column->*prepend_or_append)(*new_notebook);
+        (columns.get()->*prepend_or_append)(*column);
     } else {
-        // Column
-        multipane->prepend(new_notebook);
+        (multipane->*prepend_or_append)(*new_notebook);
     }
 
     update_dialogs(); // Always update dialogs on Notebook change
+}
+
+// Notebook page dropped on prepend target. Call function to create new notebook and then insert.
+void DialogContainer::prepend_drop(Gtk::SelectionData const &selection_data,
+                                   DialogMultipaned * const multipane)
+{
+    take_drop(&DialogMultipaned::prepend, selection_data, multipane);
 }
 
 // Notebook page dropped on append target. Call function to create new notebook and then insert.
 void DialogContainer::append_drop(Gtk::SelectionData const &selection_data,
                                   DialogMultipaned * const multipane)
 {
-    auto const new_notebook = prepare_drop(selection_data); // Creates notebook, moves page.
-    if (!new_notebook) {
-        std::cerr << "DialogContainer::append_drop: no new notebook!" << std::endl;
-        return;
-    }
-
-    if (multipane->get_orientation() == Gtk::ORIENTATION_HORIZONTAL) {
-        // Columns
-        // Create column
-        DialogMultipaned *column = create_column();
-        column->append(new_notebook);
-        columns->append(column);
-    } else {
-        // Column
-        multipane->append(new_notebook);
-    }
-
-    update_dialogs(); // Always update dialogs on Notebook change
+    take_drop(&DialogMultipaned::append, selection_data, multipane);
 }
 
 /**

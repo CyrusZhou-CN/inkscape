@@ -47,8 +47,8 @@ public:
     DialogMultipaned(Gtk::Orientation orientation = Gtk::ORIENTATION_HORIZONTAL);
     ~DialogMultipaned() final;
 
-    void prepend(Gtk::Widget *new_widget);
-    void append(Gtk::Widget *new_widget);
+    void prepend(Gtk::Widget &child);
+    void append (Gtk::Widget &child);
 
     // Getters and setters
     Gtk::Widget *get_first_widget();
@@ -56,7 +56,7 @@ public:
     void get_children() = delete; ///< We manage our own child list. Call get_multipaned_children()
     std::vector<Gtk::Widget *> const &get_multipaned_children() const { return children; }
     void set_target_entries(const std::vector<Gtk::TargetEntry> &target_entries);
-    bool has_empty_widget() { return (bool)_empty_widget; }
+    bool has_empty_widget() const { return static_cast<bool>(_empty_widget); }
 
     // Signals
     sigc::signal<void (Gtk::SelectionData const &)> signal_prepend_drag_data();
@@ -124,6 +124,7 @@ private:
 
     // Others
     Gtk::Widget *_empty_widget; // placeholder in an empty container
+    void insert(int pos, Gtk::Widget &child);
     void add_empty_widget();
     void remove_empty_widget();
     std::vector<auto_connection> _connections;
