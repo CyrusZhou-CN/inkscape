@@ -42,6 +42,7 @@
 #include "ui/builder-utils.h"
 #include "ui/svg-renderer.h"
 #include "ui/util.h"
+#include "ui/widget/bin.h"
 #include "util/object-renderer.h"
 
 #define noTIMING_INFO 1;
@@ -94,6 +95,7 @@ MarkerComboBox::MarkerComboBox(Glib::ustring id, int l) :
     _loc(l),
     _builder(create_builder("marker-popup.glade")),
     _marker_list(get_widget<Gtk::FlowBox>(_builder, "flowbox")),
+    _preview_bin(get_derived_widget<UI::Widget::Bin>(_builder, "preview-bin")),
     _preview(get_widget<Gtk::Image>(_builder, "preview")),
     _marker_name(get_widget<Gtk::Label>(_builder, "marker-id")),
     _link_scale(get_widget<Gtk::Button>(_builder, "link-scale")),
@@ -127,6 +129,11 @@ MarkerComboBox::MarkerComboBox(Glib::ustring id, int l) :
     }
 
     prepend(_menu_btn);
+
+    _preview_bin.connectAfterResize([this] (int, int, int) {
+        // refresh after preview widget has been finally resized/expanded
+        if (_preview_no_alloc) update_preview(find_marker_item(get_current()));
+    });
 
     _marker_store = Gio::ListStore<MarkerItem>::create();
     _marker_list.bind_list_store(_marker_store, [=](const Glib::RefPtr<MarkerItem>& item){
