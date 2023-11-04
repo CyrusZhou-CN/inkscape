@@ -1000,11 +1000,9 @@ SPDesktop::is_iconified() const
     return has_flag(toplevel_state, Gdk::Toplevel::State::MINIMIZED);
 }
 
-void
-SPDesktop::iconify()
-{
-    _widget->iconify();
-}
+// Fixme: Unused; remove.
+void SPDesktop::iconify() {}
+void SPDesktop::maximize() {}
 
 bool SPDesktop::is_darktheme() const
 {
@@ -1015,12 +1013,6 @@ bool
 SPDesktop::is_maximized() const
 {
     return has_flag(toplevel_state, Gdk::Toplevel::State::MAXIMIZED);
-}
-
-void
-SPDesktop::maximize()
-{
-    _widget->maximize();
 }
 
 bool

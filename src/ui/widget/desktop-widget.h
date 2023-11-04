@@ -169,8 +169,6 @@ public:
     void update_rotation();
     void repack_snaptoolbar();
 
-    void iconify();
-    void maximize();
     void fullscreen();
 
     void layoutWidgets();
@@ -185,9 +183,9 @@ public:
 
 private:
     Gtk::Widget *tool_toolbox;
-    Inkscape::UI::Toolbar::Toolbars *tool_toolbars;
-    Inkscape::UI::Toolbar::CommandToolbar *command_toolbar;
-    Inkscape::UI::Toolbar::SnapToolbar *snap_toolbar;
+    std::unique_ptr<Inkscape::UI::Toolbar::Toolbars> tool_toolbars;
+    std::unique_ptr<Inkscape::UI::Toolbar::CommandToolbar> command_toolbar;
+    std::unique_ptr<Inkscape::UI::Toolbar::SnapToolbar> snap_toolbar;
     Inkscape::PrefObserver _tb_snap_pos;
     Inkscape::PrefObserver _tb_icon_sizes1;
     Inkscape::PrefObserver _tb_icon_sizes2;
