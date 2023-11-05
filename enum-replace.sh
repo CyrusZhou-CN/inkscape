@@ -1,7 +1,5 @@
 #! /bin/bash
 
-cd src
-
 regex=''
 
 function replace() {
@@ -97,4 +95,10 @@ add "T" "OPTION_TYPE" "OptionType"
 
 replace "MOD1_MASK" "ALT_MASK"
 
-find . -name '*.cpp' -or -name '*.h' | xargs sed -i "$regex"
+function process_dir() {
+    local path="$1"
+    find "$path" -name '*.cpp' -or -name '*.h' | xargs sed -i "$regex"
+}
+
+process_dir "src"
+process_dir "testfiles/src"
