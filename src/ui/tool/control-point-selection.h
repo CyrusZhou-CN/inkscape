@@ -104,6 +104,7 @@ public:
 
     Geom::OptRect pointwiseBounds();
     Geom::OptRect bounds();
+    std::optional<Geom::Point> firstSelectedPoint() const;
 
     bool transformHandlesEnabled() { return _handles_visible; }
     void showTransformHandles(bool v, bool one_node);
@@ -153,6 +154,7 @@ private:
     std::unordered_map<SelectableControlPoint *, Geom::Affine> _last_trans;
     std::optional<double> _rot_radius;
     std::optional<double> _mouseover_rot_radius;
+    std::optional<Geom::Point> _first_point;
     Geom::OptRect _bounds;
     TransformHandleSet *_handles;
     SelectableControlPoint *_grabbed_point, *_farthest_point;

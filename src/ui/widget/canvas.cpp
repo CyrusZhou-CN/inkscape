@@ -299,7 +299,7 @@ public:
     void queue_draw_area(Geom::IntRect const &rect);
 
     // For tracking the last known mouse position. (The function Gdk::Window::get_device_position cannot be used because of slow X11 round-trips. Remove this workaround when X11 dies.)
-    std::optional<Geom::IntPoint> last_mouse;
+    std::optional<Geom::Point> last_mouse;
 
     // For tracking the old size in size_allocate_vfunc(). As of GTK4, we only have access to the new size.
     Geom::IntPoint old_dimensions;
@@ -307,9 +307,9 @@ public:
     // Auto-scrolling.
     std::optional<guint> tick_callback;
     std::optional<gint64> last_time;
-    Geom::IntPoint strain;
+    Geom::Point strain;
     Geom::Point displacement, velocity;
-    void autoscroll_begin(Geom::IntPoint const &to);
+    void autoscroll_begin(Geom::Point const &to);
     void autoscroll_end();
 };
 
@@ -653,7 +653,7 @@ void CanvasPrivate::launch_redraw()
     q->_drawing->snapshot();
 
     // Get the mouse position in screen space.
-    rd.mouse_loc = last_mouse.value_or((Geom::Point(q->get_dimensions()) / 2).round());
+    rd.mouse_loc = last_mouse.value_or(Geom::Point(q->get_dimensions()) / 2).round();
 
     // Map the mouse to canvas space.
     rd.mouse_loc += q->_pos;
@@ -823,16 +823,16 @@ static Geom::Point apply_profile(Geom::Point const &pt)
     return pt * profile(r) / r;
 }
 
-void CanvasPrivate::autoscroll_begin(Geom::IntPoint const &to)
+void CanvasPrivate::autoscroll_begin(Geom::Point const &to)
 {
     if (!q->_desktop) {
         return;
     }
 
-    auto const rect = expandedBy(Geom::IntRect({}, q->get_dimensions()), -(int)prefs.autoscrolldistance);
+    auto const rect = expandedBy(Geom::Rect({}, q->get_dimensions()), -(int)prefs.autoscrolldistance);
     strain = to - rect.clamp(to);
 
-    if (strain == Geom::IntPoint(0, 0) || tick_callback) {
+    if (strain == Geom::Point(0, 0) || tick_callback) {
         return;
     }
 
@@ -848,7 +848,7 @@ void CanvasPrivate::autoscroll_begin(Geom::IntPoint const &to)
         last_time = t;
         dt *= 60.0 / 1e6 * prefs.autoscrollspeed;
 
-        bool const strain_zero = strain == Geom::IntPoint(0, 0);
+        bool const strain_zero = strain == Geom::Point(0, 0);
 
         if (strain.x() * velocity.x() < 0) velocity.x() = 0;
         if (strain.y() * velocity.y() < 0) velocity.y() = 0;
@@ -919,7 +919,7 @@ Gtk::EventSequenceState Canvas::on_button_pressed(Gtk::GestureClick const &contr
                                                   int const n_press, double const x, double const y)
 {
     _state = (int)controller.get_current_event_state();
-    d->last_mouse = Geom::IntPoint(x, y);
+    d->last_mouse = Geom::Point(x, y);
     d->unreleased_presses |= 1 << controller.get_current_button();
 
     grab_focus();
@@ -965,7 +965,7 @@ Gtk::EventSequenceState Canvas::on_button_released(Gtk::GestureClick const &cont
                                                    int /*n_press*/, double const x, double const y)
 {
     _state = (int)controller.get_current_event_state();
-    d->last_mouse = Geom::IntPoint(x, y);
+    d->last_mouse = Geom::Point(x, y);
     d->unreleased_presses &= ~(1 << controller.get_current_button());
 
     // Drag the split view controller.
@@ -1041,7 +1041,7 @@ void Canvas::on_enter(GtkEventControllerMotion const *controller_c, double x, do
 
     auto controller = const_wrap(controller_c, true);
     _state = (int)controller->get_current_event_state();
-    d->last_mouse = Geom::IntPoint(x, y);
+    d->last_mouse = Geom::Point(x, y);
 
     auto event = EnterEvent();
     event.modifiers = _state;
@@ -1116,15 +1116,20 @@ bool Canvas::on_key_released(GtkEventControllerKey const *controller_c,
 
 void Canvas::on_motion(GtkEventControllerMotion const *controller_c, double x, double y)
 {
+    auto const mouse = Geom::Point{x, y};
+    if (mouse == d->last_mouse) {
+        return; // Scrolling produces spurious motion events; discard them.
+    }
+    d->last_mouse = mouse;
+
     auto controller = const_wrap(controller_c, true);
     _state = (int)controller->get_current_event_state();
-    d->last_mouse = Geom::IntPoint(x, y);
 
     // Handle interactions with the split view controller.
     if (_split_mode == SplitMode::XRAY) {
         queue_draw();
     } else if (_split_mode == SplitMode::SPLIT) {
-        auto cursor_position = Geom::IntPoint(x, y);
+        auto cursor_position = mouse.floor();
 
         // Move controller.
         if (_split_dragging) {

@@ -76,7 +76,7 @@ public:
     // Widget painting.
     struct PaintArgs
     {
-        std::optional<Geom::IntPoint> mouse;
+        std::optional<Geom::Point> mouse;
         RenderMode render_mode{};
         SplitMode splitmode{};
         Geom::Point splitfrac;

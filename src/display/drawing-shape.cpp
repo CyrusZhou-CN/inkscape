@@ -360,9 +360,10 @@ DrawingItem *DrawingShape::_pickItem(Geom::Point const &p, double delta, unsigne
     } else if (outline) {
         width = 0.5; // in outline mode, everything is stroked with the same 0.5px line width
     } else if (_nrstyle.data.stroke.type != NRStyleData::PaintType::NONE && (_nrstyle.data.stroke.opacity > 1e-3 || _drawing.selectZeroOpacity())) {
+        auto stroke_width = _nrstyle.data.hairline ? 1 : _nrstyle.data.stroke_width;
         // for normal picking calculate the distance corresponding top the stroke width
         float scale = max_expansion(_ctm);
-        width = std::max(0.125f, _nrstyle.data.stroke_width * scale) / 2;
+        width = std::max(0.125f, stroke_width * scale) / 2;
     } else {
         width = 0;
     }

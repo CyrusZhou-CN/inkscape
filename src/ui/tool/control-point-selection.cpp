@@ -167,7 +167,7 @@ void ControlPointSelection::selectArea(Geom::Path const &path, bool invert)
     for (auto _all_point : _all_points) {
         if (path.winding(_all_point->position()) % 2 != 0) {
             if (invert) {
-                erase(_all_point);
+                erase(_all_point, false);
             } else {
                 insert(_all_point, false, false);
             }
@@ -186,7 +186,7 @@ void ControlPointSelection::invertSelection()
     for (auto _all_point : _all_points) {
         if (_all_point->selected()) {
             in.push_back(_all_point);
-            erase(_all_point); 
+            erase(_all_point, false);
         }
         else {
             out.push_back(_all_point);
@@ -330,6 +330,15 @@ Geom::OptRect ControlPointSelection::pointwiseBounds()
 Geom::OptRect ControlPointSelection::bounds()
 {
     return size() == 1 ? (*_points.begin())->bounds() : _bounds;
+}
+
+/**
+ * The first selected point is the first selection a user makes, but only
+ * if they selected exactly one point. Selecting multiples at once does nothing.
+ */
+std::optional<Geom::Point> ControlPointSelection::firstSelectedPoint() const
+{
+    return _first_point;
 }
 
 void ControlPointSelection::showTransformHandles(bool v, bool one_node)
@@ -478,6 +487,13 @@ void ControlPointSelection::_update()
     _updateTransformHandles(false);
     if (_bounds) {
         _handles->rotationCenter().move(_bounds->midpoint());
+    }
+    // This records the first node's position, ONLY if it was individually selected
+    // Any clearing and this first position is cleared too. Any more and we remember it unchanged.
+    if (empty()) {
+        _first_point = {};
+    } else if (size() == 1) {
+        _first_point = (*begin())->position();
     }
 }
 

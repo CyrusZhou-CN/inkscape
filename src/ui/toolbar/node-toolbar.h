@@ -88,6 +88,8 @@ private:
 
     UI::Widget::SpinButton &_nodes_x_item;
     UI::Widget::SpinButton &_nodes_y_item;
+    UI::Widget::SpinButton &_nodes_d_item;
+    Gtk::Box &_nodes_d_box;
 
     bool _freeze;
 
@@ -95,7 +97,7 @@ private:
     sigc::connection c_selection_modified;
     sigc::connection c_subselection_changed;
 
-    void value_changed(Geom::Dim2 d);
+    void value_changed(Glib::ustring const &name, Glib::RefPtr<Gtk::Adjustment> &adj);
     void sel_changed(Inkscape::Selection *selection);
     void sel_modified(Inkscape::Selection *selection, guint /*flags*/);
     void coord_changed(Inkscape::UI::ControlPointSelection* selected_nodes);

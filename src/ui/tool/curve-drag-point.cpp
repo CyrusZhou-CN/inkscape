@@ -160,7 +160,7 @@ bool CurveDragPoint::clicked(ButtonReleaseEvent const &event)
     } else {
         // without Shift, take selection
         _pm._selection.clear();
-        _pm._selection.insert(first.ptr());
+        _pm._selection.insert(first.ptr(), false, false);
         _pm._selection.insert(second.ptr());
         if (held_ctrl(event)) {
             _pm.setSegmentType(Inkscape::UI::SEGMENT_STRAIGHT);

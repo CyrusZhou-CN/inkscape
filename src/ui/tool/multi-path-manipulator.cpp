@@ -517,6 +517,17 @@ void MultiPathManipulator::move(Geom::Point const &delta)
     _done("Move nodes");
 }
 
+void MultiPathManipulator::scale(Geom::Point const &center, Geom::Point const &scale)
+{
+    if (_selection.empty()) return;
+
+    Geom::Translate const n2d(-center);
+    Geom::Translate const d2n(center);
+    _selection.transform(n2d * Geom::Scale(scale) * d2n);
+
+    _done("Scale nodes");
+}
+
 void MultiPathManipulator::showOutline(bool show)
 {
     for (auto & i : _mmap) {
