@@ -204,8 +204,10 @@ if(WIN32)
   install(DIRECTORY ${MINGW_PATH}/share/glib-2.0/schemas
     DESTINATION share/glib-2.0)
 
-  install(DIRECTORY ${MINGW_PATH}/share/gtksourceview-5
-    DESTINATION share)
+  if(WITH_GSOURCEVIEW)
+    install(DIRECTORY ${MINGW_PATH}/share/gtksourceview-5
+      DESTINATION share)
+  endif()
 
   # fontconfig
   install(DIRECTORY ${MINGW_PATH}/etc/fonts
