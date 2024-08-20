@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# debian/rules for inkscape derived from a sample provided by Joey Hess via dh_make
+
+export DH_VERBOSE=1
+export DEB_BUILD_MAINT_OPTIONS=hardening=+all
+export DEB_BUILD_OPTIONS=parallel=64
+
+%:
+	dh $@ --buildsystem=cmake+ninja
+
+override_dh_gnome_clean:
+	dh_gnome_clean --no-control
+
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+
+override_dh_auto_test:
+	export CTEST_OUTPUT_ON_FAILURE=1
+	#make check

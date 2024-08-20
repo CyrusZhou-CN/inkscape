@@ -1,0 +1,32 @@
+Source: inkscape
+Maintainer: Marc Jeanmougin <marc.jeanmougin@telecom-paris.fr>
+Build-Depends: cmake (>=3.15), dh-cmake, dh-sequence-cpack, debhelper (>=11), debhelper-compat (=13), dh-cmake-compat (=1)
+
+Package: inkscape
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+
+Package: inkscape-extensions
+Architecture: any
+Depends: ${misc:Depends}
+
+Package: inkscape-extension-manager
+Architecture: any
+Depends: ${misc:Depends}
+
+Package: lib2geom1.5.0
+Architecture: any
+Depends: ${misc:Depends}
+
+Package: inkscape-themes
+Architecture: any
+Depends: ${misc:Depends}
+
+Package: inkscape-translations
+Architecture: any
+Depends: ${misc:Depends}
+
+Package: lib2geom-dev
+Architecture: any
+Depends: ${misc:Depends}
+
