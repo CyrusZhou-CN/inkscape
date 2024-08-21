@@ -7,15 +7,19 @@
 #define _ICONVIEWITEMFACTORY_H_
 
 #include <gdkmm/texture.h>
+#include <glibmm/objectbase.h>
 #include <glibmm/refptr.h>
 #include <glibmm/ustring.h>
+#include <gtkmm/binlayout.h>
 #include <gtkmm/centerbox.h>
 #include <gtkmm/image.h>
 #include <gtkmm/label.h>
 #include <gtkmm/overlay.h>
 #include <gtkmm/picture.h>
 #include <gtkmm/signallistitemfactory.h>
+#include <gtkmm/widget.h>
 #include <memory>
+#include <unordered_map>
 
 namespace Inkscape::UI {
 
@@ -33,6 +37,17 @@ public:
 
     Glib::RefPtr<Gtk::ListItemFactory> get_factory() { return _factory; }
 
+    // requests that labels are created (or not); gridview needs to be refreshed afterwards
+    void set_include_label(bool enable_labels) { _enable_labels = enable_labels; }
+
+    // keep track of bound items, so we can query them
+    void set_track_bindings(bool track) { _track_items = track; }
+
+    Glib::RefPtr<Glib::ObjectBase> find_item(Gtk::Widget& item_container) {
+        auto it = _bound_items.find(item_container.get_first_child());
+        return it != _bound_items.end() ? it->second : Glib::RefPtr<Glib::ObjectBase>();
+    }
+
     void set_use_tooltip_markup(bool use_markup = true) { _use_markup = use_markup; }
 
 private:
@@ -41,38 +56,36 @@ private:
 
         _factory = Gtk::SignalListItemFactory::create();
 
-        _factory->signal_setup().connect([=](const Glib::RefPtr<Gtk::ListItem>& list_item) {
+        _factory->signal_setup().connect([this](const Glib::RefPtr<Gtk::ListItem>& list_item) {
             auto box = Gtk::make_managed<Gtk::CenterBox>();
             box->add_css_class("item-box");
             box->set_orientation(Gtk::Orientation::VERTICAL);
-            // put picture in an overlay, so it doesn't propagete its size to the parent container;
-            // that way picture widget can be freely resized to desired dimensions and it will not grow beyond them
             auto image = Gtk::make_managed<Gtk::Picture>();
-            auto overlay = Gtk::make_managed<Gtk::Overlay>();
-            overlay->set_halign(Gtk::Align::CENTER);
-            overlay->set_valign(Gtk::Align::CENTER);
-            overlay->add_overlay(*image);
-            box->set_start_widget(*overlay);
+            // add bin layout manager, so picture doesn't propagete its size to the parent container;
+            // that way picture widget can be freely resized to desired dimensions and it will not grow beyond them
+            image->set_layout_manager(Gtk::BinLayout::create());
+            image->set_halign(Gtk::Align::CENTER);
+            image->set_valign(Gtk::Align::CENTER);
+            box->set_start_widget(*image);
             // add a label below the picture
-            auto label = Gtk::make_managed<Gtk::Label>();
-            label->set_vexpand();
-            label->set_valign(Gtk::Align::START);
-            box->set_end_widget(*label);
+            if (_enable_labels) {
+                auto label = Gtk::make_managed<Gtk::Label>();
+                label->set_vexpand();
+                label->set_valign(Gtk::Align::START);
+                box->set_end_widget(*label);
+            }
 
             list_item->set_child(*box);
         });
 
-        _factory->signal_bind().connect([=](const Glib::RefPtr<Gtk::ListItem>& list_item) {
+        _factory->signal_bind().connect([this](const Glib::RefPtr<Gtk::ListItem>& list_item) {
             auto item = list_item->get_item();
 
             auto box = dynamic_cast<Gtk::CenterBox*>(list_item->get_child());
             if (!box) return;
-            auto overlay = dynamic_cast<Gtk::Overlay*>(box->get_start_widget());
-            if (!overlay) return;
-            auto image = dynamic_cast<Gtk::Picture*>(overlay->get_first_child());
+            auto image = dynamic_cast<Gtk::Picture*>(box->get_start_widget());
             if (!image) return;
             auto label = dynamic_cast<Gtk::Label*>(box->get_end_widget());
-            if (!label) return;
 
             auto item_data = _get_item_data(item);
 
@@ -85,21 +98,30 @@ private:
             auto width = tex ? tex->get_intrinsic_width() / scale : 0;
             auto height = tex ? tex->get_intrinsic_height() / scale : 0;
             image->set_size_request(width, height);
-            overlay->set_size_request(width, height);
 
-            // label->set_text(effect->name);
-            //TODO: small labels?
-            // label->set_markup("<small>" + Glib::Markup::escape_text(effect->name) + "</small>");
-            label->set_markup(item_data.label_markup);
-            label->set_max_width_chars(12);
-            label->set_wrap();
-            label->set_justify(Gtk::Justification::CENTER);
-            label->set_valign(Gtk::Align::START);
+            if (label) {
+                label->set_markup(item_data.label_markup);
+                label->set_max_width_chars(std::min(5 + width / 10, 12));
+                label->set_wrap();
+                label->set_wrap_mode(Pango::WrapMode::WORD_CHAR);
+                label->set_natural_wrap_mode(Gtk::NaturalWrapMode::WORD);
+                label->set_justify(Gtk::Justification::CENTER);
+                label->set_valign(Gtk::Align::START);
+            }
 
             if (_use_markup) {
                 box->set_tooltip_markup(item_data.tooltip);
             } else {
                 box->set_tooltip_text(item_data.tooltip);
+            }
+
+            if (_track_items) _bound_items[box] = item;
+        });
+
+        _factory->signal_unbind().connect([this](const Glib::RefPtr<Gtk::ListItem>& list_item) {
+            if (_track_items) {
+                auto box = dynamic_cast<Gtk::CenterBox*>(list_item->get_child());
+                _bound_items.erase(box);
             }
         });
     }
@@ -107,6 +129,9 @@ private:
     std::function<ItemData (Glib::RefPtr<Glib::ObjectBase>&)> _get_item_data;
     Glib::RefPtr<Gtk::SignalListItemFactory> _factory;
     bool _use_markup = false;
+    bool _enable_labels = true;
+    bool _track_items = false;
+    std::unordered_map<Gtk::Widget*, Glib::RefPtr<Glib::ObjectBase>> _bound_items;
 };
 
 } // namespace

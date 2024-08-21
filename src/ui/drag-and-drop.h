@@ -15,12 +15,19 @@
  */
 
 #include <glibmm/ustring.h>
+#include <string>
 
 class SPDesktopWidget;
+class SPDocument;
 
 struct DnDSymbol
 {
+    // symbol's ID; may be reused in different symbol sets
     Glib::ustring id;
+    // symbol's unique key (across symbol sets known to Inkscape at runtime)
+    std::string unique_key;
+    // symbol's document
+    SPDocument* document = nullptr;
 };
 
 void ink_drag_setup(SPDesktopWidget *);

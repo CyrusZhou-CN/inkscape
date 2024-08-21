@@ -48,7 +48,7 @@ EvaluatorToken::EvaluatorToken()
 }
 
 ExpressionEvaluator::ExpressionEvaluator(const char *string, Unit const *unit) :
-    string(g_locale_to_utf8(string,-1,nullptr,nullptr,nullptr)),
+    string(string),
     unit(unit)
 {
     current_token.type  = TOKEN_END;

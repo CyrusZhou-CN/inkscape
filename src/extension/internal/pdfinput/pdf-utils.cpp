@@ -9,8 +9,8 @@
  */
 
 #include <glib.h>
-#include "pdf-utils.h"
 
+#include "pdf-utils.h"
 #include "poppler-utils.h"
 
 //------------------------------------------------------------------------
@@ -112,4 +112,3 @@ Geom::Rect getRect(_POPPLER_CONST PDFRectangle *box)
 {
     return Geom::Rect(box->x1, box->y1, box->x2, box->y2);
 }
-

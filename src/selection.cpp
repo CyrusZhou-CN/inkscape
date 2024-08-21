@@ -109,7 +109,7 @@ void Selection::_emitModified(guint flags)
         return;
     }
 
-    auto &pm = _desktop->getDocument()->getPageManager();
+    auto &pm = _document->getPageManager();
 
     // If the selected items have been moved to a new page...
     if (auto item = singleItem()) {
@@ -240,8 +240,8 @@ sigc::connection Selection::connectModifiedFirst(sigc::slot<void (Selection *, u
 
 SPObject *Selection::_objectForXMLNode(Inkscape::XML::Node *repr) const {
     g_return_val_if_fail(repr != nullptr, NULL);
-    SPObject *object = _desktop->getDocument()->getObjectByRepr(repr);
-    assert(object == _desktop->getDocument()->getObjectById(repr->attribute("id")));
+    auto object = _document->getObjectByRepr(repr);
+    assert(object == _document->getObjectById(repr->attribute("id")));
     return object;
 }
 

@@ -191,8 +191,8 @@ class ClipboardManagerImpl : public ClipboardManager
 public:
     void copy(ObjectSet *set) override;
     void copyPathParameter(Inkscape::LivePathEffect::PathParam *) override;
-    void copySymbol(Inkscape::XML::Node* symbol, gchar const* style, SPDocument *source, const char* symbol_set, Geom::Rect const &bbox) override;
-    void insertSymbol(SPDesktop *desktop, Geom::Point const &shift_dt) override;
+    void copySymbol(Inkscape::XML::Node* symbol, gchar const* style, SPDocument *source, const char* symbol_set, Geom::Rect const &bbox, bool set_clipboard) override;
+    void insertSymbol(SPDesktop *desktop, Geom::Point const &shift_dt, bool read_clipboard) override;
     bool paste(SPDesktop *desktop, bool in_place, bool on_page) override;
     bool pasteStyle(ObjectSet *set) override;
     bool pasteSize(ObjectSet *set, bool separately, bool apply_x, bool apply_y) override;
@@ -379,7 +379,7 @@ void ClipboardManagerImpl::copyPathParameter(Inkscape::LivePathEffect::PathParam
  * @param bbox The bounding box of the symbol, in desktop coordinates.
  */
 void ClipboardManagerImpl::copySymbol(Inkscape::XML::Node* symbol, gchar const* style, SPDocument *source, const char* symbol_set,
-                                      Geom::Rect const &bbox)
+                                      Geom::Rect const &bbox, bool set_clipboard)
 {
     if (!symbol)
         return;
@@ -451,7 +451,9 @@ void ClipboardManagerImpl::copySymbol(Inkscape::XML::Node* symbol, gchar const* 
         _clipnode->setAttributePoint("max", bbox.max());
         fit_canvas_to_drawing(_clipboardSPDoc.get());
     }
-    _setClipboardTargets();
+    if (set_clipboard) {
+        _setClipboardTargets();
+    }
 }
 
 /**
@@ -460,12 +462,14 @@ void ClipboardManagerImpl::copySymbol(Inkscape::XML::Node* symbol, gchar const* 
  * @param desktop The desktop onto which the symbol has been dropped.
  * @param shift_dt The vector by which the symbol position should be shifted, in desktop coordinates.
  */
-void ClipboardManagerImpl::insertSymbol(SPDesktop *desktop, Geom::Point const &shift_dt)
+void ClipboardManagerImpl::insertSymbol(SPDesktop *desktop, Geom::Point const &shift_dt, bool read_clipboard)
 {
     if (!desktop || !Inkscape::have_viable_layer(desktop, desktop->getMessageStack())) {
         return;
     }
-    _retrieveClipboard("image/x-inkscape-svg");
+    if (read_clipboard) {
+        _retrieveClipboard("text/plain;charset=utf-8");
+    }
     auto &symbol = _clipboardSPDoc;
     if (!symbol) {
         return;
@@ -1662,7 +1666,7 @@ void ClipboardManagerImpl::_retrieveClipboard(Glib::ustring best_target)
         try {
             data = _clipboard->read_finish(result, best_target);
         } catch (Glib::Error const &err) {
-            std::cout << "Pasting failed: " << err.what() << std::endl;
+            std::cout << "Pasting failed: " << best_target << ' ' << err.what() << std::endl;
             return;
         }
 

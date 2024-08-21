@@ -45,8 +45,8 @@ class ClipboardManager
 public:
     virtual void copy(ObjectSet *set) = 0;
     virtual void copyPathParameter(Inkscape::LivePathEffect::PathParam *) = 0;
-    virtual void copySymbol(Inkscape::XML::Node* symbol, gchar const* style, SPDocument *source, const char* symbol_set, Geom::Rect const &bbox) = 0;
-    virtual void insertSymbol(SPDesktop *desktop, Geom::Point const &shift_dt) = 0;
+    virtual void copySymbol(Inkscape::XML::Node* symbol, gchar const* style, SPDocument *source, const char* symbol_set, Geom::Rect const &bbox, bool set_clipboard) = 0;
+    virtual void insertSymbol(SPDesktop *desktop, Geom::Point const &shift_dt, bool read_clipboard) = 0;
     virtual bool paste(SPDesktop *desktop, bool in_place = false, bool on_page = false) = 0;
     virtual bool pasteStyle(ObjectSet *set) = 0;
     virtual bool pasteSize(ObjectSet *set, bool separately, bool apply_x, bool apply_y) = 0;

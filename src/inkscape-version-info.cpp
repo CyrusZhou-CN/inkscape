@@ -23,7 +23,7 @@
 #include <libxml2/libxml/xmlversion.h>
 #include <libxslt/xsltconfig.h>
 
-#ifdef HAVE_POPPLER
+#ifdef WITH_POPPLER
 #include <poppler-config.h>
 #endif
 
@@ -134,7 +134,7 @@ std::string debug_info() {
        << " (" << pango_version_string() << ")" << std::endl;
     ss << "    HarfBuzz version: " << HB_VERSION_MAJOR        << "." << HB_VERSION_MINOR        << "." << HB_VERSION_MICRO
        << " (" << hb_version_string() << ")" << std::endl;
-#ifdef HAVE_POPPLER
+#ifdef WITH_POPPLER
     ss << "    Poppler version:  " << POPPLER_VERSION << std::endl;
 #endif
     ss << std::endl;

@@ -15,7 +15,6 @@
 # include "config.h"  // only include where actually required!
 #endif
 
-#ifdef HAVE_POPPLER
 #include "poppler-transition-api.h"
 
 class SPDocument;
@@ -289,8 +288,6 @@ private:
 } // namespace Internal
 } // namespace Extension
 } // namespace Inkscape
-
-#endif // HAVE_POPPLER
 
 #endif // SEEN_EXTENSION_INTERNAL_PDFINPUT_SVGBUILDER_H
 

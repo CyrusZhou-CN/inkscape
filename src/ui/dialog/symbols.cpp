@@ -15,14 +15,19 @@
 #include <cassert>
 #include <cmath>
 #include <fstream>
+#include <glibmm/refptr.h>
+#include <gtkmm/gridview.h>
+#include <gtkmm/object.h>
+#include <gtkmm/widget.h>
 #include <iostream>
+#include <locale>
+#include <memory>
 #include <regex>
 #include <sstream>
 #include "libnrtype/font-factory.h"
 using namespace std::literals;
 
 #include <2geom/point.h>
-
 #include <cairo.h>
 #include <cairomm/refptr.h>
 #include <cairomm/surface.h>
@@ -56,6 +61,8 @@ using namespace std::literals;
 #include <gtkmm/treeiter.h>
 #include <pangomm/layout.h>
 #include <2geom/point.h>
+#include "ui/controller.h"
+#include "ui/util.h"
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"  // only include where actually required!
@@ -64,9 +71,9 @@ using namespace std::literals;
 #include "document.h"
 #include "document-undo.h"
 #include "desktop.h"
-#include "inkscape.h"
 #include "preferences.h"
 #include "selection.h"
+#include "include/gtkmm_version.h"
 
 #include "io/resource.h"
 #include "object/sp-defs.h"
@@ -121,44 +128,19 @@ struct SymbolSets : Util::EnableSingleton<SymbolSets, Util::Depends<FontFactory>
     std::map<std::string, SymbolSet> map;
 };
 
-struct SymbolColumns : public Gtk::TreeModel::ColumnRecord {
-    Gtk::TreeModelColumn<std::string> cache_key;
-    Gtk::TreeModelColumn<Glib::ustring> symbol_id;
-    Gtk::TreeModelColumn<Glib::ustring> symbol_title;
-    Gtk::TreeModelColumn<Glib::ustring> symbol_short_title;
-    Gtk::TreeModelColumn<Glib::ustring> symbol_search_title;
-    Gtk::TreeModelColumn<Cairo::RefPtr<Cairo::Surface>> symbol_image;
-    Gtk::TreeModelColumn<Geom::Point> doc_dimensions;
-    Gtk::TreeModelColumn<SPDocument*> symbol_document;
-
-    SymbolColumns() {
-        add(cache_key);
-        add(symbol_id);
-        add(symbol_title);
-        add(symbol_short_title);
-        add(symbol_search_title);
-        add(symbol_image);
-        add(doc_dimensions);
-        add(symbol_document);
-    }
-};
-SymbolColumns const g_columns;
-
-Cairo::RefPtr<Cairo::ImageSurface> g_dummy;
+static Cairo::RefPtr<Cairo::ImageSurface> g_dummy;
 
 struct SymbolSetsColumns : public Gtk::TreeModel::ColumnRecord {
     Gtk::TreeModelColumn<Glib::ustring> set_id;
     Gtk::TreeModelColumn<Glib::ustring> translated_title;
     Gtk::TreeModelColumn<std::string>   set_filename;
     Gtk::TreeModelColumn<SPDocument*>   set_document;
-    Gtk::TreeModelColumn<Cairo::RefPtr<Cairo::Surface>> set_image;
 
     SymbolSetsColumns() {
         add(set_id);
         add(translated_title);
         add(set_filename);
         add(set_document);
-        add(set_image);
     }
 };
 SymbolSetsColumns const g_set_columns;
@@ -169,6 +151,38 @@ const char *CURRENT_DOC = N_("Current document");
 const char *ALL_SETS = N_("All symbol sets");
 
 } // namespace
+
+struct SymbolItem : public Glib::Object {
+    std::string unique_key;
+    Glib::ustring symbol_id;
+    Glib::ustring symbol_title;
+    Glib::ustring symbol_label;
+    Glib::ustring symbol_search_title;
+    Cairo::RefPtr<Cairo::Surface> symbol_image;
+    Geom::Point doc_dimensions;
+    SPDocument* symbol_document;
+
+    static Glib::RefPtr<SymbolItem> create(
+        std::string unique_key,
+        Glib::ustring symbol_id,
+        Glib::ustring symbol_title,
+        Glib::ustring symbol_label,
+        Glib::ustring symbol_search_title,
+        Geom::Point doc_dimensions,
+        SPDocument* symbol_document
+    ) {
+        auto item = Glib::make_refptr_for_instance<SymbolItem>(new SymbolItem());
+        item->unique_key = unique_key;
+        item->symbol_id = symbol_id;
+        item->symbol_title = symbol_title;
+        item->symbol_label = symbol_label;
+        item->symbol_search_title = symbol_search_title;
+        // symbol_image is left empty
+        item->doc_dimensions = doc_dimensions;
+        item->symbol_document = symbol_document;
+        return item;
+    }
+};
 
 static SPDocument *load_symbol_set(std::string const &filename);
 static void scan_all_symbol_sets();
@@ -182,15 +196,12 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
     _search(          get_widget<Gtk::SearchEntry2>(_builder, "search")),
     _symbol_sets_view(get_widget<Gtk::IconView>   (_builder, "symbol-sets")),
     _cur_set_name(   get_widget<Gtk::Label>       (_builder, "cur-set")),
-    _store(Gtk::ListStore::create(g_columns)),
-    _image_cache(1000) // arbitrary limit for how many rendered symbols to keep around
+    _image_cache(1000), // arbitrary limit for how many rendered symbols to keep around
+    _gridview(get_widget<Gtk::GridView>(_builder, "icon-view"))
 {
     auto prefs = Inkscape::Preferences::get();
     Glib::ustring path = prefsPath;
     path += '/';
-
-    _symbols._filtered = Gtk::TreeModelFilter::create(_store);
-    _symbols._store = _store;
 
     _symbol_sets = Gtk::ListStore::create(g_set_columns);
     _sets._store = _symbol_sets;
@@ -224,7 +235,6 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
     _symbol_sets_view.set_model(_sets._sorted);
     _symbol_sets_view.set_text_column(g_set_columns.translated_title.index());
     _symbol_sets_view.pack_start(_renderer2);
-    _symbol_sets_view.add_attribute(_renderer2, "surface", g_set_columns.set_image);
 
     auto row = _symbol_sets->append();
     (*row)[g_set_columns.set_id] = CURRENT_DOC_ID;
@@ -245,7 +255,8 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
         }
         else if (auto set = get_current_set()) {
             // populate icon view
-            rebuild(*set);
+            rebuild_set(*set);
+            rebuild(false);
             _cur_set_name.set_text((**set)[g_set_columns.translated_title]);
             update_tool_buttons();
             Glib::ustring id = (**set)[g_set_columns.set_id];
@@ -275,22 +286,37 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
 
     tools = &get_widget<Gtk::Box>(_builder, "tools");
 
-    icon_view = &get_widget<Gtk::IconView>(_builder, "icon-view");
-    _symbols._filtered->set_visible_func([=, this](const Gtk::TreeModel::const_iterator& it){
-        if (_search.get_text().length() == 0) return true;
+    _symbol_store = Gio::ListStore<SymbolItem>::create();
+    _filter = Gtk::BoolFilter::create({});
+    _filtered_model = Gtk::FilterListModel::create(_symbol_store, _filter);
+    _selection_model = Gtk::SingleSelection::create(_filtered_model);
 
-        auto text = _search.get_text().lowercase();
-        Glib::ustring title = (*it)[g_columns.symbol_search_title];
-        return title.lowercase().find(text) != Glib::ustring::npos;
+    _factory = IconViewItemFactory::create([this](auto& ptr) -> IconViewItemFactory::ItemData {
+        auto symbol = std::dynamic_pointer_cast<SymbolItem>(ptr);
+        if (!symbol) return {};
+
+        auto tex = get_image(symbol->unique_key, symbol->symbol_document, symbol->symbol_id);
+        return { .label_markup = symbol->symbol_label, .image = tex, .tooltip = symbol->symbol_title };
     });
-    icon_view->set_model(_symbols._filtered);
-    icon_view->set_tooltip_column(g_columns.symbol_title.index());
+    _factory->set_track_bindings(true);
+
+    _gridview.set_min_columns(1);
+    // max columns impacts number of prerendered items requested by gridview (= maxcol * 32 + 1),
+    // so it needs to be artificially kept low to prevent gridview from rendering all items up front
+    _gridview.set_max_columns(5);
+    // gtk_list_base_set_anchor_max_widgets(0); - private method, no way to customize number of prerendered items
+    _gridview.set_model(_selection_model);
+    _gridview.set_factory(_factory->get_factory());
+    // handle item activation (double-click)
+    _gridview.signal_activate().connect([this](auto pos){
+        // TODO: insert symbol into document
+    });
 
     _search.signal_search_changed().connect([this](){
         int delay = _search.get_text().length() == 0 ? 0 : 300;
         _idle_search = Glib::signal_timeout().connect([this](){
             auto scoped(_update.block());
-            _symbols.refilter();
+            refilter();
             set_info();
             return false; // disconnect
         }, delay);
@@ -300,28 +326,72 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
     auto names = prefs->getBool(path + "show-names", true);
     show_names->set_active(names);
     if (names) {
-        icon_view->set_markup_column(g_columns.symbol_short_title);
+        _factory->set_include_label(names);
     }
     show_names->signal_toggled().connect([=, this](){
         bool show = show_names->get_active();
-        icon_view->set_markup_column(show ? g_columns.symbol_short_title.index() : -1);
+        _factory->set_include_label(show);
+        rebuild(false);
         prefs->setBool(path + "show-names", show);
     });
 
-    auto source = Gtk::DragSource::create();
-    source->set_actions(Gdk::DragAction::COPY);
-    source->signal_prepare().connect([this, source] (double, double) -> Glib::RefPtr<Gdk::ContentProvider> {
-        auto const selected = get_selected_symbol();
-        if (!selected) {
-            return nullptr;
+    // find symbol list widget under the mouse cursor (x, y) as reported by d&d prepare call
+    auto find_item = [this](double x, double y) {
+        // iterate from last to first to avoid too large a bounding box trap reported by get_bounds
+        for (auto child = _gridview.get_last_child(); child; child = child->get_prev_sibling()) {
+            if (!child->get_child_visible()) continue;
+
+            int bx, by, w, h;
+            child->get_bounds(bx, by, w, h);
+            if (x >= bx && x < bx+w && y >= by && y < by+h) {
+                if (auto item = _factory->find_item(*child)) {
+                    return std::dynamic_pointer_cast<SymbolItem>(item);
+                }
+            }
         }
-        Glib::Value<DnDSymbol> value;
-        value.init(value.value_type());
-        value.set(DnDSymbol{(**selected)[g_columns.symbol_id]});
-        return Gdk::ContentProvider::create(value);
-    }, false);
-    icon_view->add_controller(source);
-    icon_view->signal_selection_changed().connect(sigc::mem_fun(*this, &SymbolsDialog::iconChanged));
+        return std::shared_ptr<SymbolItem>();
+    };
+
+    Controller::add_drag_source(_gridview, {
+        .button  = Controller::Button::left,
+        .actions = Gdk::DragAction::COPY,
+        .prepare = [=, this](Gtk::DragSource& source, double x , double y) -> Glib::RefPtr<Gdk::ContentProvider> {
+            auto dragged = find_item(x, y);
+            if (!dragged) {
+                return nullptr;
+            }
+
+            auto const dims = getSymbolDimensions(dragged);
+            sendToClipboard(*dragged, Geom::Rect(-0.5 * dims, 0.5 * dims), false);
+
+            Glib::Value<DnDSymbol> value;
+            value.init(value.value_type());
+            value.set(DnDSymbol{dragged->symbol_id, dragged->unique_key, dragged->symbol_document});
+            auto content = Gdk::ContentProvider::create(value);
+            source.set_content(content);
+            return content;
+        },
+        .begin = [this](Gtk::DragSource& source, const Glib::RefPtr<Gdk::Drag>& drag) {
+            auto c = source.get_content();
+            if (!c) return;
+
+            Glib::Value<DnDSymbol> value;
+            value.init(value.value_type());
+            c->get_value(value);
+            const auto& symbol = value.get();
+            auto tex = get_image(symbol.unique_key, symbol.document, symbol.id);
+            // TODO: scale for high dpi display (somehow)
+            int x = 0, y = 0;
+            if (tex) {
+                x = tex->get_intrinsic_width() / 2;
+                y = tex->get_intrinsic_height() / 2;
+            }
+            //TODO: use x AND y; right now setting Y cancels d&d, b/c icon gets in the way of d&d, so target cannot be found!
+            source.set_icon(tex, x, 0);
+
+            // drag->set_hotspot(x, y); what's that do?
+        }
+    });
 
     scroller = &get_widget<Gtk::ScrolledWindow>(_builder, "scroller");
 
@@ -365,10 +435,13 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
     /******************** Tools *******************************/
 
     add_symbol = &get_widget<Gtk::Button>(_builder, "add-symbol");
-    add_symbol->signal_clicked().connect(sigc::mem_fun(*this, &SymbolsDialog::insertSymbol));
+    add_symbol->signal_clicked().connect([this](){ convert_object_to_symbol(); });
 
     remove_symbol = &get_widget<Gtk::Button>(_builder, "remove-symbol");
-    remove_symbol->signal_clicked().connect(sigc::mem_fun(*this, &SymbolsDialog::revertSymbol));
+    remove_symbol->signal_clicked().connect([this](){ revertSymbol(); });
+
+    _copy_symbol = &get_widget<Gtk::Button>(_builder, "copy-symbol");
+    _copy_symbol->signal_clicked().connect([this](){ copy_symbol(); });
 
     // Pack size (controls display area)
     pack_size = prefs->getIntLimited(path + "tile-size", 12, 0, SIZES);
@@ -379,7 +452,7 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
         pack_size = scale->get_value();
         assert(pack_size >= 0 && pack_size < SIZES);
         _image_cache.clear();
-        rebuild();
+        rebuild(true);
         prefs->setInt(path + "tile-size", pack_size);
     });
 
@@ -388,28 +461,8 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
     _zoom.set_value(scale_factor);
     _zoom.signal_value_changed().connect([=, this](){
         scale_factor = _zoom.get_value();
-        rebuild();
+        rebuild(true);
         prefs->setInt(path + "scale-factor", scale_factor);
-    });
-
-    icon_view->set_columns(-1);
-    icon_view->pack_start(_renderer);
-    icon_view->add_attribute(_renderer, "surface", g_columns.symbol_image);
-    icon_view->set_cell_data_func(_renderer, [=, this](Gtk::TreeModel::const_iterator const &const_it){
-        Gdk::Rectangle rect;
-        // https://gitlab.gnome.org/GNOME/gtkmm/-/issues/145
-        auto it = const_cast<Gtk::TreeIter<Gtk::TreeConstRow> *>(&const_it);
-        auto const path = icon_view->get_model()->get_path(*it);
-        if (icon_view->get_cell_rect(path, rect)) {
-            auto height = icon_view->get_allocated_height();
-            bool visible = !(rect.get_x() < 0 && rect.get_y() < 0);
-            // cell rect coordinates are not affected by scrolling
-            if (visible && (rect.get_y() + rect.get_height() < 0 || rect.get_y() > 0 + height)) {
-                visible = false;
-            }
-            Gtk::TreeModel::Row row = *(icon_view->get_model()->get_iter(path.to_string()));
-            get_cell_data_func(&_renderer, row, visible);
-        }
     });
 
     // Toggle scale to fit on/off
@@ -417,7 +470,7 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
     auto fit = prefs->getBool(path + "zoom-to-fit", true);
     fit_symbol->set_active(fit);
     fit_symbol->signal_toggled().connect([=, this](){
-        rebuild();
+        rebuild(true);
         prefs->setBool(path + "zoom-to-fit", fit_symbol->get_active());
     });
 
@@ -455,6 +508,40 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
 SymbolsDialog::~SymbolsDialog()
 {
     preview_document->getRoot()->invoke_hide(key);
+}
+
+bool SymbolsDialog::is_item_visible(const Glib::RefPtr<Glib::ObjectBase>& item) const {
+    auto symbol_ptr = std::dynamic_pointer_cast<SymbolItem>(item);
+    if (!symbol_ptr) return false;
+
+    const auto& symbol = *symbol_ptr;
+
+    // filter by name
+    auto str = _search.get_text().lowercase();
+    if (str.empty()) return true;
+
+    Glib::ustring text = symbol.symbol_search_title;
+    return text.lowercase().find(str) != Glib::ustring::npos;
+}
+
+void SymbolsDialog::refilter() {
+    // When a new expression is set in the BoolFilter, it emits signal_changed(),
+    // and the FilterListModel re-evaluates the filter.
+    auto expression = Gtk::ClosureExpression<bool>::create([this](auto& item){ return is_item_visible(item); });
+    // filter results
+    _filter->set_expression(expression);
+}
+
+void SymbolsDialog::rebuild(bool clear_image_cache) {
+    // empty cache, so item will get re-rendered at new size
+    if (clear_image_cache) {
+        _image_cache.clear();
+    }
+    // remove all
+    auto none = Gtk::ClosureExpression<bool>::create([this](auto& item){ return false; });
+    _filter->set_expression(none);
+    // restore
+    refilter();
 }
 
 void collect_symbols(SPObject* object, std::vector<SPSymbol*>& symbols) {
@@ -503,17 +590,14 @@ std::map<std::string, SymbolSetView> get_all_symbols(Glib::RefPtr<Gtk::ListStore
     return map;
 }
 
-void SymbolsDialog::rebuild(Gtk::TreeModel::iterator current) {
+void SymbolsDialog::rebuild_set(Gtk::TreeModel::iterator current) {
     if (!sensitive || !current) {
         return;
     }
 
     auto pending = _update.block();
 
-    // remove model first, or else IconView will update N times as N rows get deleted...
-    icon_view->unset_model();
-
-    _symbols._store->clear();
+    _symbol_store->remove_all();
 
     auto it = current;
 
@@ -556,43 +640,21 @@ void SymbolsDialog::rebuild(Gtk::TreeModel::iterator current) {
         n += set.symbols.size();
     }
 
-    for (auto r : icon_view->get_cells()) {
-        if (auto t = dynamic_cast<Gtk::CellRendererText*>(r)) {
-            // sizable boost in layout speed at the cost of showing only part of the title...
-            if (n > 1000) {
-                t->set_fixed_height_from_font(1);
-                t->property_ellipsize() = Pango::EllipsizeMode::END;
-            }
-            else {
-                t->set_fixed_height_from_font(-1);
-                t->property_ellipsize() = Pango::EllipsizeMode::NONE;
-                // t->property_wrap_mode() = Pango::WrapMode::CHAR;
-            }
-        }
-    }
-
-    // reattach the model, have IconView content rebuilt
-    icon_view->set_model(_symbols._filtered);
-
-// layout speed test:
-// Gtk::Allocation alloc;
-// alloc.set_width(200);
-// alloc.set_height(500);
-// alloc.set_x(0);
-// alloc.set_y(0);
-// auto old_time =  std::chrono::high_resolution_clock::now();
-// icon_view->size_allocate(alloc);
-// auto current_time =  std::chrono::high_resolution_clock::now();
-// auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - old_time);
-// g_warning("size time: %d ms", static_cast<int>(elapsed.count()));
+#if false
+    // layout speed test:
+    Gtk::Allocation alloc;
+    alloc.set_width(200);
+    alloc.set_height(500);
+    alloc.set_x(0);
+    alloc.set_y(0);
+    auto old_time =  std::chrono::high_resolution_clock::now();
+    icon_view->size_allocate(alloc);
+    auto current_time =  std::chrono::high_resolution_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - old_time);
+    g_warning("size time: %d ms", static_cast<int>(elapsed.count()));
+#endif
 
     set_info();
-}
-
-void SymbolsDialog::rebuild() {
-    if (auto set = get_current_set()) {
-        rebuild(*set);
-    }
 }
 
 void SymbolsDialog::showOverlay() {
@@ -675,16 +737,19 @@ void SymbolsDialog::hideOverlay() {
     overlay_desc->set_visible(false);
 }
 
-void SymbolsDialog::insertSymbol() {
+// Convert selection to <symbol>
+void SymbolsDialog::convert_object_to_symbol() {
     getDesktop()->getSelection()->toSymbol();
 }
 
 void SymbolsDialog::revertSymbol() {
     if (auto document = getDocument()) {
-        if (auto symbol = cast<SPSymbol>(document->getObjectById(getSymbolId(get_selected_symbol())))) {
-            symbol->unSymbol();
+        if (auto current = SymbolsDialog::get_selected_symbol()) {
+            if (auto symbol = cast<SPSymbol>(document->getObjectById(current->symbol_id))) {
+                symbol->unSymbol();
+                Inkscape::DocumentUndo::done(document, _("Group from symbol"), "");
+            }
         }
-        Inkscape::DocumentUndo::done(document, _("Group from symbol"), "");
     }
 }
 
@@ -715,7 +780,7 @@ void SymbolsDialog::refresh_on_idle(int delay) {
     if (get_current_set_id() == CURRENT_DOC_ID) {
         // refresh them on idle; delay here helps to coalesce consecutive requests into one
         _idle_refresh = Glib::signal_timeout().connect([this](){
-            rebuild(*get_current_set());
+            rebuild_set(*get_current_set());
             return false; // disconnect
         }, delay, Glib::PRIORITY_DEFAULT_IDLE);
     }
@@ -767,48 +832,19 @@ std::optional<Gtk::TreeModel::iterator> SymbolsDialog::get_current_set() const {
     return _sets.path_to_child_iter(selected.front());
 }
 
-SPDocument* SymbolsDialog::get_symbol_document(const std::optional<Gtk::TreeModel::iterator>& it) const {
-    if (!it) {
-        return nullptr;
-    }
-    SPDocument* doc = (**it)[g_columns.symbol_document];
-
-    return doc;
-}
-
-/** Return the path to the selected symbol, or an empty optional if nothing is selected. */
-std::optional<Gtk::TreeModel::Path> SymbolsDialog::get_selected_symbol_path() const {
-    auto selected = icon_view->get_selected_items();
-    if (selected.empty()) {
-        return std::nullopt;
-    }
-    return selected.front();
-}
-
-std::optional<Gtk::TreeModel::iterator> SymbolsDialog::get_selected_symbol() const {
-    auto selected = get_selected_symbol_path();
-    if (!selected) {
-        return std::nullopt;
-    }
-    return _symbols.path_to_child_iter(*selected);
+std::shared_ptr<SymbolItem> SymbolsDialog::get_selected_symbol() const {
+    auto item = _selection_model->get_selected_item();
+    auto symbol = std::dynamic_pointer_cast<SymbolItem>(item);
+    return symbol;
 }
 
 /** Return the dimensions of the symbol at the given path, in document units. */
-Geom::Point SymbolsDialog::getSymbolDimensions(const std::optional<Gtk::TreeModel::iterator>& it) const
+Geom::Point SymbolsDialog::getSymbolDimensions(const std::shared_ptr<SymbolItem>& symbol) const
 {
-    if (!it) {
+    if (!symbol) {
         return Geom::Point();
     }
-    return (**it)[g_columns.doc_dimensions];
-}
-
-/** Return the ID of the symbol at the given path, with empty string fallback. */
-Glib::ustring SymbolsDialog::getSymbolId(const std::optional<Gtk::TreeModel::iterator>& it) const
-{
-    if (!it) {
-        return "";
-    }
-    return (**it)[g_columns.symbol_id];
+    return symbol->doc_dimensions;
 }
 
 /** Store the symbol in the clipboard for further manipulation/insertion into document.
@@ -816,13 +852,13 @@ Glib::ustring SymbolsDialog::getSymbolId(const std::optional<Gtk::TreeModel::ite
  * @param symbol_path The path to the symbol in the tree model.
  * @param bbox The bounding box to set on the clipboard document's clipnode.
  */
-void SymbolsDialog::sendToClipboard(const Gtk::TreeModel::iterator& symbol_iter, Geom::Rect const &bbox)
-{
-    auto symbol_id = getSymbolId(symbol_iter);
+void SymbolsDialog::sendToClipboard(const SymbolItem& symbol, Geom::Rect const &bbox, bool set_clipboard) {
+    auto symbol_id = symbol.symbol_id;// getSymbolId(symbol_iter);
     if (symbol_id.empty()) return;
 
+    auto symbol_document = symbol.symbol_document;
     const char* doc_name = nullptr;
-    auto symbol_document = get_symbol_document(symbol_iter);
+    // auto symbol_document = get_symbol_document(symbol_iter);
     if (symbol_document) {
         doc_name = symbol_document->getDocumentName();
     }
@@ -831,6 +867,7 @@ void SymbolsDialog::sendToClipboard(const Gtk::TreeModel::iterator& symbol_iter,
         symbol_document = getDocument();
     }
     if (!symbol_document) {
+        g_message("Cannot copy onto a clipboard symbol without document");
         return;
     }
     if (SPObject* symbol = symbol_document->getObjectById(symbol_id)) {
@@ -845,17 +882,17 @@ void SymbolsDialog::sendToClipboard(const Gtk::TreeModel::iterator& symbol_iter,
                 style = symbol_document->getReprRoot()->attribute("style");
             }
         }
-        ClipboardManager::get()->copySymbol(symbol->getRepr(), style, symbol_document, doc_name, bbox);
+        ClipboardManager::get()->copySymbol(symbol->getRepr(), style, symbol_document, doc_name, bbox, set_clipboard);
     }
 }
 
-void SymbolsDialog::iconChanged()
+void SymbolsDialog::copy_symbol() // handler for symbol double-click
 {
     if (_update.pending()) return;
 
     if (auto selected = get_selected_symbol()) {
         auto const dims = getSymbolDimensions(selected);
-        sendToClipboard(*selected, Geom::Rect(-0.5 * dims, 0.5 * dims));
+        sendToClipboard(*selected, Geom::Rect(-0.5 * dims, 0.5 * dims), true);
     }
 }
 
@@ -1078,11 +1115,14 @@ gchar const* SymbolsDialog::styleFromUse( gchar const* id, SPDocument* document)
 }
 
 size_t SymbolsDialog::total_symbols() const {
-    return _symbols._store->children().size();
+    return _symbol_store->get_n_items();
+    // return _symbols._store->children().size();
 }
 
 size_t SymbolsDialog::visible_symbols() const {
-    return _symbols._filtered->children().size();
+    return _selection_model->get_n_items();
+    // return _filtered_model->get_n_items();
+    // return _symbols._filtered->children().size();
 }
 
 void SymbolsDialog::set_info() {
@@ -1176,19 +1216,21 @@ void SymbolsDialog::addSymbol(SPSymbol* symbol, Glib::ustring doc_title, SPDocum
     }
     auto set = symbol->document ? symbol->document->getDocumentFilename() : "null";
     if (!set) set = "noname";
-    Gtk::ListStore::iterator row = _store->append();
     std::ostringstream key;
     key << set << '\n' << id;
-    (*row)[g_columns.cache_key] = key.str();
-    (*row)[g_columns.symbol_id] = Glib::ustring(id);
-    // symbol title and document name - used in a tooltip
-    (*row)[g_columns.symbol_title]     = Glib::Markup::escape_text(symbol_title);
-    // symbol title shown below image
-    (*row)[g_columns.symbol_short_title] = "<small>" + Glib::Markup::escape_text(short_title) + "</small>";
-    // symbol title verbatim, used for searching/filtering
-    (*row)[g_columns.symbol_search_title] = short_title;
-    (*row)[g_columns.doc_dimensions]   = dimensions;
-    (*row)[g_columns.symbol_document]  = document;
+
+    _symbol_store->append(SymbolItem::create(
+        key.str(),
+        id,
+        // symbol title and document name - used in a tooltip
+        Glib::Markup::escape_text(symbol_title),
+        // symbol title shown below image
+        "<small>" + Glib::Markup::escape_text(short_title) + "</small>",
+        // symbol title verbatim, used for searching/filtering
+        short_title,
+        dimensions,
+        document
+    ));
 }
 
 Cairo::RefPtr<Cairo::Surface> SymbolsDialog::draw_symbol(SPSymbol* symbol) {
@@ -1322,41 +1364,31 @@ std::unique_ptr<SPDocument> SymbolsDialog::symbolsPreviewDoc()
     return SPDocument::createNewDocFromMem(buffer, false);
 }
 
-void SymbolsDialog::get_cell_data_func(Gtk::CellRenderer* cell_renderer, Gtk::TreeModel::Row row, bool visible)
-{
-    std::string cache_key = (row)[g_columns.cache_key];
-    Glib::ustring id = (row)[g_columns.symbol_id];
-    Cairo::RefPtr<Cairo::Surface> surface;
-
-    if (!visible) {
-        // cell is not visible, so this is layout pass; return empty image of the right size
-        int device_scale = get_scale_factor();
-        unsigned psize = SYMBOL_ICON_SIZES[pack_size] * device_scale;
-        if (!g_dummy || g_dummy->get_width() != psize) {
-            g_dummy = std::dynamic_pointer_cast<Cairo::ImageSurface>(draw_symbol(nullptr));
-            g_assert(g_dummy);
-        }
+Cairo::RefPtr<Cairo::Surface> SymbolsDialog::render_icon(SPDocument* document, const std::string& symbol_id, Geom::Point icon_size, int device_scale) {
+    // render
+    if (!document) document = getDocument();
+    SPSymbol* symbol = document ? cast<SPSymbol>(document->getObjectById(symbol_id)) : nullptr;
+    auto surface = draw_symbol(symbol);
+    if (!surface) {
         surface = g_dummy;
     }
-    else {
-        // cell is visible, so we need to return correct symbol image and render it if it's missing
-        if (auto image = _image_cache.get(cache_key)) {
-            // cache hit
-            surface = *image;
-        }
-        else {
-            // render
-            SPDocument* doc = row[g_columns.symbol_document];
-            if (!doc) doc = getDocument();
-            SPSymbol* symbol = doc ? cast<SPSymbol>(doc->getObjectById(id)) : nullptr;
-            surface = draw_symbol(symbol);
-            if (!surface) {
-                surface = g_dummy;
-            }
-            _image_cache.insert(cache_key, surface);
-        }
+    return surface;
+}
+
+Glib::RefPtr<Gdk::Texture> SymbolsDialog::get_image(const std::string& key, SPDocument* document, const std::string& id) {
+    if (auto image = _image_cache.get(key)) {
+        // cache hit
+        return *image;
     }
-    cell_renderer->set_property("surface", surface);
+    else {
+        // render
+        auto psize = SYMBOL_ICON_SIZES[pack_size];
+        auto icon_size = Geom::Point(psize, psize);
+        auto surface = render_icon(document, id, icon_size, get_scale_factor());
+        auto tex = to_texture(surface);
+        _image_cache.insert(key, tex);
+        return tex;
+    }
 }
 
 } // namespace Inkscape::UI::Dialog

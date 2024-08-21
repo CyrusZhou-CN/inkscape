@@ -96,7 +96,10 @@ TEST(UtilTest, ParseIntRangeTest)
     // Comma seperated in various orders
     ASSERT_EQ(Inkscape::parseIntRange("1,3,5"), std::set<unsigned int>({1, 3, 5}));
     ASSERT_EQ(Inkscape::parseIntRange("3,1,4"), std::set<unsigned int>({1, 3, 4}));
-    ASSERT_EQ(Inkscape::parseIntRange("3 ,2,9,"), std::set<unsigned int>({2, 3, 9}));
+    ASSERT_EQ(Inkscape::parseIntRange("3,2,9,"), std::set<unsigned int>({2, 3, 9}));
+
+    // Including whitespace
+    ASSERT_EQ(Inkscape::parseIntRange(" 5 , 2 -  3,   9  , "), std::set<unsigned int>({2, 3, 5, 9}));
 
     // Range of numbers using a dash
     ASSERT_EQ(Inkscape::parseIntRange("1-4"), std::set<unsigned int>({1, 2, 3, 4}));
@@ -111,6 +114,9 @@ TEST(UtilTest, ParseIntRangeTest)
 
     // Mixeed formats
     ASSERT_EQ(Inkscape::parseIntRange("2-4,7-9", 1, 10), std::set<unsigned int>({2,3,4,7,8,9}));
+
+    // Huge range of mostly invalid numbers
+    ASSERT_EQ(Inkscape::parseIntRange("1-4294967295", 2000000000, 2000000001), std::set<unsigned int>({2000000000, 2000000001}));
 }
 
 namespace {

@@ -1336,6 +1336,10 @@ popover.popup-menu contents {
     min-height: 256px;
 }
 
+#Symbols .item-box {
+    /* symbol items should be tightly packed */
+    margin: 1px;
+}
 
 /* IconPreview */
 frame.icon-preview {

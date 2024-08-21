@@ -24,8 +24,6 @@
 #include <locale>
 #include <codecvt>
 
-#ifdef HAVE_POPPLER
-
 #include <poppler/Function.h>
 #include <poppler/GfxFont.h>
 #include <poppler/GfxState.h>
@@ -2435,8 +2433,6 @@ FontStrategies SvgBuilder::autoFontStrategies(FontStrategy s, FontList fonts)
     return ret;
 }
 } } } /* namespace Inkscape, Extension, Internal */
-
-#endif /* HAVE_POPPLER */
 
 /*
   Local Variables:

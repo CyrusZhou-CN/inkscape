@@ -22,6 +22,7 @@
 #include <gtkmm/droptarget.h>
 
 #include "desktop-style.h"
+#include "desktop.h"
 #include "document.h"
 #include "document-undo.h"
 #include "gradient-drag.h"
@@ -230,7 +231,7 @@ std::vector<GType> const &get_drop_types()
             register_serializer<Colors::Paint>(mime_type);
         }
 
-        register_serializer<DnDSymbol>("text/plain");
+        register_serializer<DnDSymbol>("text/plain;charset=utf-8");
 
         return {
             Glib::Value<Colors::Paint>::value_type(),
@@ -251,7 +252,7 @@ bool on_drop(Glib::ValueBase const &value, double x, double y, SPDesktopWidget *
     auto const doc = desktop->doc();
     auto const prefs = Inkscape::Preferences::get();
 
-    auto const canvas_pos = Geom::Point{x, y};
+    auto const canvas_pos = Geom::Point{std::round(x), std::round(y)};
     auto const world_pos = canvas->canvas_to_world(canvas_pos);
     auto const dt_pos = desktop->w2d(world_pos);
 
@@ -381,7 +382,7 @@ bool on_drop(Glib::ValueBase const &value, double x, double y, SPDesktopWidget *
         return true;
     } else if (holds(value, Glib::Value<DnDSymbol>::value_type())) {
         auto cm = Inkscape::UI::ClipboardManager::get();
-        cm->insertSymbol(desktop, dt_pos);
+        cm->insertSymbol(desktop, dt_pos, false);
         DocumentUndo::done(doc, _("Drop Symbol"), "");
         return true;
     } else if (holds(value, GDK_TYPE_TEXTURE)) {

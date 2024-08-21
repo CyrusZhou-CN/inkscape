@@ -17,6 +17,12 @@
 #define INKSCAPE_UI_DIALOG_SYMBOLS_H
 
 #include <cstddef>
+#include <giomm/liststore.h>
+#include <gtkmm/boolfilter.h>
+#include <gtkmm/filterlistmodel.h>
+#include <gtkmm/gridview.h>
+#include <gtkmm/singleselection.h>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -37,6 +43,7 @@
 #include "display/drawing.h"
 #include "helper/auto-connection.h"
 #include "ui/dialog/dialog-base.h"
+#include "ui/iconview-item-factory.h"
 #include "ui/operation-blocker.h"
 
 namespace Gtk {
@@ -64,6 +71,8 @@ class Selection;
 } // namespace Inkscape
 
 namespace Inkscape::UI::Dialog {
+
+struct SymbolItem;
 
 /**
  * A dialog that displays selectable symbols and allows users to drag or paste
@@ -93,14 +102,12 @@ public:
 private:
     void documentReplaced() override;
     void selectionChanged(Inkscape::Selection *selection) override;
-    void rebuild();
-    void rebuild(Gtk::TreeModel::iterator current);
-    void insertSymbol();
+    void rebuild_set(Gtk::TreeModel::iterator current);
+    void convert_object_to_symbol();
     void revertSymbol();
-    void iconChanged();
-    void sendToClipboard(const Gtk::TreeModel::iterator& symbol_iter, Geom::Rect const &bbox);
-    Glib::ustring getSymbolId(const std::optional<Gtk::TreeModel::iterator>& it) const;
-    Geom::Point getSymbolDimensions(const std::optional<Gtk::TreeModel::iterator>& it) const;
+    void copy_symbol();
+    void sendToClipboard(const SymbolItem& symbol, Geom::Rect const &bbox, bool set_clipboard);
+    Geom::Point getSymbolDimensions(const std::shared_ptr<SymbolItem>& symbol) const;
     SPDocument* get_symbol_document(const std::optional<Gtk::TreeModel::iterator>& it) const;
     void onDragStart();
     void addSymbol(SPSymbol* symbol, Glib::ustring doc_title, SPDocument* document);
@@ -118,8 +125,7 @@ private:
     void set_info(const Glib::ustring& text);
     std::optional<Gtk::TreeModel::iterator> get_current_set() const;
     Glib::ustring get_current_set_id() const;
-    std::optional<Gtk::TreeModel::Path> get_selected_symbol_path() const;
-    std::optional<Gtk::TreeModel::iterator> get_selected_symbol() const;
+    std::shared_ptr<SymbolItem> get_selected_symbol() const;
     void load_all_symbols();
     void update_tool_buttons();
     size_t total_symbols() const;
@@ -138,15 +144,14 @@ private:
     OperationBlocker _update;
     double previous_height;
     double previous_width;
-    Glib::RefPtr<Gtk::ListStore> _store;
     Gtk::MenuButton& _symbols_popup;
     Gtk::SearchEntry2& _set_search;
     Gtk::IconView& _symbol_sets_view;
     Gtk::Label& _cur_set_name;
     Gtk::SearchEntry2& _search;
-    Gtk::IconView* icon_view;
     Gtk::Button* add_symbol;
     Gtk::Button* remove_symbol;
+    Gtk::Button* _copy_symbol;
     Gtk::Box* tools;
     Gtk::Overlay* overlay;
     Gtk::Image* overlay_icon;
@@ -159,6 +164,13 @@ private:
     Gtk::CellRendererPixbuf _renderer2;
     std::unique_ptr<SPDocument> preview_document; // Document to render single symbol
     Glib::RefPtr<Gtk::ListStore> _symbol_sets;
+    Gtk::GridView& _gridview;
+
+    Cairo::RefPtr<Cairo::Surface> render_icon(SPDocument* document, const std::string& symbol_id, Geom::Point icon_size, int device_scale);
+    Glib::RefPtr<Gdk::Texture> get_image(const std::string& key, SPDocument* document, const std::string& id);
+    bool is_item_visible(const Glib::RefPtr<Glib::ObjectBase>& item) const;
+    void refilter();
+    void rebuild(bool clear_image_cache);
 
     struct Store {
         Glib::RefPtr<Gtk::ListStore> _store;
@@ -174,7 +186,7 @@ private:
             if (_filtered) _filtered->refilter();
         }
     };
-    Store _symbols, _sets;
+    Store _sets;
 
     /* For rendering the template drawing */
     unsigned key;
@@ -183,7 +195,12 @@ private:
     auto_connection _doc_resource_changed;
     auto_connection _idle_refresh;
     auto_connection _selection_changed;
-    boost::compute::detail::lru_cache<std::string, Cairo::RefPtr<Cairo::Surface>> _image_cache;
+    boost::compute::detail::lru_cache<std::string, Glib::RefPtr<Gdk::Texture>> _image_cache;
+    Glib::RefPtr<Gtk::BoolFilter> _filter;
+    Glib::RefPtr<Gtk::FilterListModel> _filtered_model;
+    Glib::RefPtr<Gtk::SingleSelection> _selection_model;
+    std::unique_ptr<IconViewItemFactory> _factory;
+    Glib::RefPtr<Gio::ListStore<SymbolItem>> _symbol_store;
 };
 
 } // namespace Inkscape::UI::Dialog

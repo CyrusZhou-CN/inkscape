@@ -167,7 +167,7 @@ if(WIN32)
 	)
 endif()
 
-if(ENABLE_POPPLER)
+if(WITH_POPPLER)
     list(APPEND extension_SRC
         internal/pdfinput/pdf-utils.cpp
         internal/pdfinput/pdf-input.cpp

@@ -9,14 +9,13 @@
 #ifndef INKSCAPE_UTIL_PARSE_INT_RANGE_H
 #define INKSCAPE_UTIL_PARSE_INT_RANGE_H
 
-#include <regex>
-#include <string>
 #include <set>
+#include <string>
 
 namespace Inkscape {
 
 /**
- * Parse integer ranges out of a string using regex.
+ * Parse integer ranges out of a string.
  *
  * @param input - A string containing number ranges that can either be comma
  *                separated or dash separated for non and continuous ranges.
@@ -25,41 +24,11 @@ namespace Inkscape {
  *
  * @returns a sorted set of unique numbers.
  */
-inline std::set<unsigned int> parseIntRange(const std::string &input, unsigned int start=1, unsigned int end=0)
-{
-    // Special word based translations go here:
-    if (input == "all") {
-        return parseIntRange("-", start, end);
-    }
-
-    std::set<unsigned int> out;
-    auto add = [=](std::set<unsigned int> &to, unsigned int val) {
-        if (start <= val && (!end || val <= end))
-            to.insert(val);
-    };
-
-    std::regex re("((\\d+|)\\s?(-)\\s?(\\d+|)|,?(\\d+)([^-]|$))");
-
-    std::string::const_iterator sit = input.cbegin(), fit = input.cend();
-    for (std::smatch match; std::regex_search(sit, fit, match, re); sit = match[0].second)
-    {
-        if (match.str(3) == "") {
-            add(out, std::stoul(match.str(5)));
-        } else {
-            auto r1 = match.str(2).empty() ? start : std::stoul(match.str(2));
-            auto r2 = match.str(4).empty() ? (end ? end : r1) : std::stoul(match.str(4));
-            for (auto i = std::min(r1, r2); i <= std::max(r1, r2); i++) {
-                add(out, i);
-            }
-        }
-    }
-
-   return out;
-}
+std::set<unsigned> parseIntRange(std::string const &input, unsigned start = 1, unsigned end = 0);
 
 } // namespace Inkscape
 
-#endif
+#endif // INKSCAPE_UTIL_PARSE_INT_RANGE_H
 
 /*
   Local Variables:

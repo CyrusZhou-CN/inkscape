@@ -38,7 +38,7 @@
 #include "internal/wmf-print.h"
 #include "system.h"
 
-#ifdef HAVE_POPPLER
+#ifdef WITH_POPPLER
 #include "internal/pdfinput/pdf-input.h"
 #endif
 #include <cairo.h>
@@ -173,7 +173,7 @@ init()
     Internal::CairoPsOutput::init();
     Internal::CairoEpsOutput::init();
 #endif
-#ifdef HAVE_POPPLER
+#ifdef WITH_POPPLER
     Internal::PdfInput::init();
 #endif
     Internal::PrintEmf::init();

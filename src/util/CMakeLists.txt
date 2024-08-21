@@ -11,8 +11,9 @@ set(util_SRC
 	font-tags.cpp
 	funclog.cpp
 	share.cpp
-    object-renderer.cpp
+	object-renderer.cpp
 	paper.cpp
+	parse-int-range.cpp
 	preview.cpp
 	source_date_epoch.cpp
 	statics.cpp

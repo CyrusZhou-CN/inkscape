@@ -275,7 +275,7 @@ void SwatchesPanel::track_gradients()
     conn_gradients.disconnect();
     conn_gradients = doc->connectResourcesChanged("gradient", [this] {
         gradients_changed = true;
-        queue_resize();
+        _scheduleUpdate();
     });
 
     // Subscribe to child modifications of the defs section. We will use this to monitor
@@ -284,7 +284,7 @@ void SwatchesPanel::track_gradients()
     conn_defs = doc->getDefs()->connectModified([this] (SPObject*, unsigned flags) {
         if (flags & SP_OBJECT_CHILD_MODIFIED_FLAG) {
             defs_changed = true;
-            queue_resize();
+            _scheduleUpdate();
         }
     });
 
@@ -308,21 +308,34 @@ void SwatchesPanel::untrack_gradients()
 void SwatchesPanel::selectionChanged(Selection*)
 {
     selection_changed = true;
-    queue_resize();
+    _scheduleUpdate();
 }
 
 void SwatchesPanel::selectionModified(Selection*, guint flags)
 {
     if (flags & SP_OBJECT_STYLE_MODIFIED_FLAG) {
         selection_changed = true;
-        queue_resize();
+        _scheduleUpdate();
     }
 }
 
-// Document updates are handled asynchronously by setting a flag and queuing a resize. This results in
-// the following function being run at the last possible moment before the widget will be repainted.
-// This ensures that multiple document updates only result in a single UI update.
-void SwatchesPanel::size_allocate_vfunc(int const width, int const height, int const baseline)
+void SwatchesPanel::_scheduleUpdate()
+{
+    if (_tick_callback) {
+        return;
+    }
+
+    _tick_callback = add_tick_callback([this] (auto &&) {
+        _tick_callback = 0;
+        _update();
+        return false;
+    });
+}
+
+// Document updates are handled asynchronously by setting a flag and queuing a tick callback.
+// This results in the following function being run just before the widget is relayouted,
+// so that multiple document updates only result in a single UI update.
+void SwatchesPanel::_update()
 {
     if (gradients_changed) {
         assert(_current_palette_id == auto_id);
@@ -347,9 +360,6 @@ void SwatchesPanel::size_allocate_vfunc(int const width, int const height, int c
     selection_changed = false;
     gradients_changed = false;
     defs_changed = false;
-
-    // Necessary to perform *after* the above widget modifications, so GTK can process the new layout.
-    DialogBase::size_allocate_vfunc(width, height, baseline);
 }
 
 void SwatchesPanel::rebuild_isswatch()

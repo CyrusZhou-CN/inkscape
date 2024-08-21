@@ -18,7 +18,6 @@
 # include "config.h"  // only include where actually required!
 #endif
 
-#ifdef HAVE_POPPLER
 #include "poppler-transition-api.h"
 
 #ifdef USE_GCC_PRAGMAS
@@ -324,8 +323,6 @@ private:
   void pushResources(Dict *resDict);
   void popResources();
 };
-
-#endif /* HAVE_POPPLER */
 
 #endif /* PDF_PARSER_H */
 

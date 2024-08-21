@@ -15,8 +15,6 @@
 # include "config.h"  // only include where actually required!
 #endif
 
-#ifdef HAVE_POPPLER
-
 #include <glibmm/refptr.h>
 #include <gtkmm/dialog.h>
 #include <unordered_map>
@@ -150,8 +148,6 @@ private:
 } // namespace Inkscape::Extension::Internal
 
 } // namespace Inkscape
-
-#endif // HAVE_POPPLER
 
 #endif // SEEN_EXTENSION_INTERNAL_PDFINPUT_H
 

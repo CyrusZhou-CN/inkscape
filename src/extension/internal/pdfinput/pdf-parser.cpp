@@ -14,8 +14,6 @@
 # include "config.h"  // only include where actually required!
 #endif
 
-#ifdef HAVE_POPPLER
-
 #include "pdf-parser.h"
 
 #ifdef USE_GCC_PRAGMAS
@@ -3182,8 +3180,6 @@ void PdfParser::loadColorProfile()
     builder->addColorProfile(profBuf, length);
 #endif
 }
-
-#endif /* HAVE_POPPLER */
 
 void PdfParser::build_annots(const Object &annot, int page_num)
 {

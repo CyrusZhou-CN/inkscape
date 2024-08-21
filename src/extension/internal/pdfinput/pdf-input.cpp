@@ -18,7 +18,6 @@
 
 #include "pdf-input.h"
 
-#ifdef HAVE_POPPLER
 #include <poppler/Catalog.h>
 #include <poppler/ErrorCodes.h>
 #include <poppler/FontInfo.h>
@@ -869,8 +868,6 @@ void PdfInput::init() {
 } // init
 
 } } }  /* namespace Inkscape, Extension, Implementation */
-
-#endif /* HAVE_POPPLER */
 
 /*
   Local Variables:

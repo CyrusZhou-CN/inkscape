@@ -75,7 +75,9 @@ private:
     void selectionChanged(Selection *selection) final;
     void selectionModified(Selection *selection, guint flags) final;
 
-    void size_allocate_vfunc(int width, int height, int baseline) final;
+    unsigned _tick_callback = 0;
+    void _scheduleUpdate();
+    void _update();
 
     void update_palettes(bool compact);
     void rebuild();
