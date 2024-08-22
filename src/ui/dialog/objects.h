@@ -15,35 +15,35 @@
 #ifndef SEEN_OBJECTS_PANEL_H
 #define SEEN_OBJECTS_PANEL_H
 
+#include <glibmm/refptr.h>
+#include <gtk/gtk.h> // GtkEventControllerKey
 #include <gtkmm/box.h>
-#include <gtkmm/builder.h>
-#include <gtkmm/dialog.h>
-#include <gtkmm/modelbutton.h>
-#include <gtkmm/popover.h>
-#include <gtkmm/scale.h>
+#include <gtkmm/gesture.h> // Gtk::EventSequenceState
 
+#include "color-rgba.h"
 #include "helper/auto-connection.h"
-#include "xml/node-observer.h"
-
+#include "selection.h"
+#include "style-enums.h"
 #include "ui/dialog/dialog-base.h"
 #include "ui/widget/color-picker.h"
 #include "ui/widget/preferences-widget.h"
+#include "xml/node-observer.h"
 
-#include "selection.h"
-#include "style-enums.h"
-#include "color-rgba.h"
+namespace Gtk {
+class Builder;
+class GestureMultiPress;
+class ModelButton;
+class Popover;
+class Scale;
+} // namespace Gtk
 
-using Inkscape::XML::Node;
-using namespace Inkscape::UI::Widget;
-
+class SPItem;
 class SPObject;
-class SPGroup;
-// struct SPColorSelector;
 
-namespace Inkscape {
-namespace UI {
+namespace Inkscape::UI {
 
 namespace Widget { class ImageToggler; }
+
 namespace Dialog {
 
 class ObjectsPanel;
@@ -78,12 +78,12 @@ protected:
     ObjectWatcher *unpackToObject(SPObject *item);
 
     // Accessed by ObjectWatcher directly (friend class)
-    SPObject* getObject(Node *node);
-    ObjectWatcher* getWatcher(Node *node);
+    SPObject* getObject(Inkscape::XML::Node *node);
+    ObjectWatcher* getWatcher(Inkscape::XML::Node *node);
     ObjectWatcher *getRootWatcher() const { return root_watcher; };
     bool showChildInTree(SPItem *item);
 
-    Node *getRepr(Gtk::TreeModel::Row const &row) const;
+    Inkscape::XML::Node *getRepr(Gtk::TreeModel::Row const &row) const;
     SPItem *getItem(Gtk::TreeModel::Row const &row) const;
     std::optional<Gtk::TreeRow> getRow(SPItem *item) const;
 
@@ -96,8 +96,8 @@ protected:
     ModelColumns* _model;
 
     void setRootWatcher();
-private:
 
+private:
     Glib::RefPtr<Gtk::Builder> _builder;
     Inkscape::PrefObserver _watch_object_mode;
     ObjectWatcher* root_watcher;
@@ -111,6 +111,7 @@ private:
     bool _show_contextmenu_icons;
     bool _is_editing;
     bool _scroll_lock = false;
+    bool _alt_pressed = false;
 
     std::vector<Gtk::Widget*> _watching;
     std::vector<Gtk::Widget*> _watchingNonTop;
@@ -136,14 +137,23 @@ private:
 
     Gtk::Button *_addBarButton(char const* iconName, char const* tooltip, char const *action_name);
 
-    bool blendModePopup(GdkEventButton* event, Gtk::TreeModel::Row row);
+    void _activateAction(const std::string& layerAction, const std::string& selectionAction);
+
+    bool blendModePopup(int x, int y, Gtk::TreeModel::Row row);
     bool toggleVisible(unsigned int state, Gtk::TreeModel::Row row);
     bool toggleLocked(unsigned int state, Gtk::TreeModel::Row row);
 
-    bool _handleButtonEvent(GdkEventButton *event);
-    bool _handleKeyPress(GdkEventKey *event);
-    bool _handleKeyEvent(GdkEventKey *event);
-    bool _handleMotionEvent(GdkEventMotion* motion_event);
+    enum class ButtonEventType {pressed, released};
+    Gtk::EventSequenceState on_click(Gtk::GestureMultiPress const &gesture,
+                                     int n_press, double x, double y,
+                                     ButtonEventType);
+    bool on_key_pressed  (GtkEventControllerKey const *controller,
+                          unsigned keyval, unsigned keycode, GdkModifierType state);
+    bool on_key_modifiers(GtkEventControllerKey const *controller, GdkModifierType state);
+    void on_motion_enter (GtkEventControllerMotion const *controller, double x, double y);
+    void on_motion_motion(GtkEventControllerMotion const *controller, double x, double y);
+    void on_motion_leave (GtkEventControllerMotion const *controller);
+
     void _searchActivated();
     void _searchChanged();
     
@@ -174,21 +184,17 @@ private:
     Inkscape::UI::Widget::ImageToggler* _item_state_toggler;
     // Special column dragging mode
     Gtk::TreeViewColumn* _drag_column = nullptr;
-    PrefCheckButton& _setting_layers;
-    PrefCheckButton& _setting_track;
+    UI::Widget::PrefCheckButton& _setting_layers;
+    UI::Widget::PrefCheckButton& _setting_track;
     bool _drag_flip;
 
     bool _selectionChanged();
     auto_connection _idle_connection;
 };
 
+} //namespace Dialog
 
-
-} //namespace Dialogs
-} //namespace UI
-} //namespace Inkscape
-
-
+} //namespace Inkscape::UI
 
 #endif // SEEN_OBJECTS_PANEL_H
 

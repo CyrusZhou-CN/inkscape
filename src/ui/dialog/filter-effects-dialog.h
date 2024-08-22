@@ -15,19 +15,22 @@
 #ifndef INKSCAPE_UI_DIALOG_FILTER_EFFECTS_H
 #define INKSCAPE_UI_DIALOG_FILTER_EFFECTS_H
 
+#include <memory>
+#include <sigc++/connection.h>
+#include <sigc++/signal.h>
 #include <glibmm/property.h>
 #include <glibmm/propertyproxy.h>
 #include <glibmm/refptr.h>
 #include <glibmm/ustring.h>
+#include <gtk/gtk.h> // GtkEventControllerMotion
 #include <gtkmm/box.h>
 #include <gtkmm/builder.h>
-#include <gtkmm/checkbutton.h>
-#include <gtkmm/notebook.h>
-#include <gtkmm/paned.h>
-#include <gtkmm/scrolledwindow.h>
+#include <gtkmm/cellrenderertoggle.h>
+#include <gtkmm/gesture.h> // Gtk::EventSequenceState
+#include <gtkmm/liststore.h>
 #include <gtkmm/treeiter.h>
-#include <memory>
-#include <sigc++/connection.h>
+#include <gtkmm/treemodelcolumn.h>
+#include <gtkmm/treeview.h>
 
 #include "attributes.h"
 #include "display/nr-filter-types.h"
@@ -35,8 +38,20 @@
 #include "ui/dialog/dialog-base.h"
 #include "ui/widget/combo-enums.h"
 #include "ui/widget/completion-popup.h"
-#include "ui/widget/spin-scale.h"
 #include "xml/helper-observer.h"
+
+namespace Gtk {
+class Button;
+class CheckButton;
+class GestureMultiPress;
+class Grid;
+class Label;
+class ListStore;
+class Menu;
+class Paned;
+class ScrolledWindow;
+class Widget;
+}
 
 class SPFilter;
 class SPFilterPrimitive;
@@ -117,7 +132,8 @@ private:
         void selection_toggled(Gtk::TreeIter iter, bool toggle);
 
         void update_counts();
-        void filter_list_button_release(GdkEventButton*);
+        Gtk::EventSequenceState filter_list_click_released(Gtk::GestureMultiPress &click,
+                                                           int n_press, double x, double y);
         void remove_filter();
         void duplicate_filter();
         void rename_filter();
@@ -167,22 +183,22 @@ private:
 
     protected:
         void get_preferred_width_vfunc(Gtk::Widget& widget,
-                                               int& minimum_width,
-                                               int& natural_width) const override;
+                                       int& minimum_width,
+                                       int& natural_width) const override;
 
         void get_preferred_width_for_height_vfunc(Gtk::Widget& widget,
-                                                          int height,
-                                                          int& minimum_width,
-                                                          int& natural_width) const override;
+                                                  int height,
+                                                  int& minimum_width,
+                                                  int& natural_width) const override;
 
         void get_preferred_height_vfunc(Gtk::Widget& widget,
-                                                int& minimum_height,
-                                                int& natural_height) const override;
+                                        int& minimum_height,
+                                        int& natural_height) const override;
 
         void get_preferred_height_for_width_vfunc(Gtk::Widget& widget,
-                                                          int width,
-                                                          int& minimum_height,
-                                                          int& natural_height) const override;
+                                                  int width,
+                                                  int& minimum_height,
+                                                  int& natural_height) const override;
     private:
         // void* should be SPFilterPrimitive*, some weirdness with properties prevents this
         Glib::Property<void*> _primitive;
@@ -210,13 +226,16 @@ private:
 
     protected:
         bool on_draw_signal(const Cairo::RefPtr<Cairo::Context> &cr);
-
-
-        bool on_button_press_event(GdkEventButton*) override;
-        bool on_motion_notify_event(GdkEventMotion*) override;
-        bool on_button_release_event(GdkEventButton*) override;
         void on_drag_end(const Glib::RefPtr<Gdk::DragContext>&) override;
+
     private:
+        Gtk::EventSequenceState on_click_pressed (Gtk::GestureMultiPress &click,
+                                                  int n_press, double x, double y);
+        Gtk::EventSequenceState on_click_released(Gtk::GestureMultiPress &click,
+                                                  int n_press, double x, double y);
+        void on_motion_motion(GtkEventControllerMotion const *motion,
+                              double x, double y);
+
         void init_text();
 
         bool do_connection_node(const Gtk::TreeIter& row, const int input, std::vector<Gdk::Point>& points,
@@ -302,8 +321,9 @@ private:
     class ColorMatrixValues;
     class ComponentTransferValues;
     class LightSourceControl;
-    Settings* _settings;
-    Settings* _filter_general_settings;
+
+    std::unique_ptr<Settings> _settings;
+    std::unique_ptr<Settings> _filter_general_settings;
 
     // General settings
     MultiSpinButton *_region_pos, *_region_size;

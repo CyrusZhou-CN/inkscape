@@ -11,12 +11,11 @@
 #include <glib/gi18n.h>
 #include "desktop.h"
 #include "ui/tool/control-point-selection.h"
-#include "ui/tool/event-utils.h"
 #include "ui/tool/multi-path-manipulator.h"
 #include "ui/tool/path-manipulator.h"
+#include "ui/widget/events/canvas-event.h"
 
 #include "object/sp-namedview.h"
-#include "object/sp-path.h"
 
 namespace Inkscape {
 namespace UI {
@@ -35,7 +34,7 @@ CurveDragPoint::CurveDragPoint(PathManipulator &pm) :
     setVisible(false);
 }
 
-bool CurveDragPoint::_eventHandler(Inkscape::UI::Tools::ToolBase *event_context, GdkEvent *event)
+bool CurveDragPoint::_eventHandler(Inkscape::UI::Tools::ToolBase *event_context, CanvasEvent const &event)
 {
     // do not process any events when the manipulator is empty
     if (_pm.empty()) {
@@ -45,7 +44,7 @@ bool CurveDragPoint::_eventHandler(Inkscape::UI::Tools::ToolBase *event_context,
     return ControlPoint::_eventHandler(event_context, event);
 }
 
-bool CurveDragPoint::grabbed(GdkEventMotion */*event*/)
+bool CurveDragPoint::grabbed(MotionEvent const &/*event*/)
 {
     _pm._selection.hideTransformHandles();
     NodeList::iterator second = first.next();
@@ -68,7 +67,7 @@ bool CurveDragPoint::grabbed(GdkEventMotion */*event*/)
     return false;
 }
 
-void CurveDragPoint::dragged(Geom::Point &new_pos, GdkEventMotion *event)
+void CurveDragPoint::dragged(Geom::Point &new_pos, MotionEvent const &event)
 {
     if (!first || !first.next()) return;
     NodeList::iterator second = first.next();
@@ -81,7 +80,7 @@ void CurveDragPoint::dragged(Geom::Point &new_pos, GdkEventMotion *event)
         return;
     }
 
-    if (_drag_initiated && !(event->state & GDK_SHIFT_MASK)) {
+    if (_drag_initiated && !(event.modifiers() & GDK_SHIFT_MASK)) {
         SnapManager &m = _desktop->namedview->snap_manager;
         SPItem *path = static_cast<SPItem *>(_pm._path);
         m.setup(_desktop, true, path); // We will not try to snap to "path" itself
@@ -109,13 +108,13 @@ void CurveDragPoint::dragged(Geom::Point &new_pos, GdkEventMotion *event)
         first->front()->move(first->front()->position() + offset0);
         second->back()->move(second->back()->position() + offset1);
     }else if(weight>=0.8){
-        if(held_shift(*event)){
+        if(held_shift(event)){
             second->back()->move(new_pos);
         } else {
             second->move(second->position() + delta);
         }
     }else if(weight<=0.2){
-        if(held_shift(*event)){
+        if(held_shift(event)){
             first->back()->move(new_pos);
         } else {
             first->move(first->position() + delta);
@@ -127,28 +126,28 @@ void CurveDragPoint::dragged(Geom::Point &new_pos, GdkEventMotion *event)
     _pm.update();
 }
 
-void CurveDragPoint::ungrabbed(GdkEventButton *)
+void CurveDragPoint::ungrabbed(ButtonReleaseEvent const *)
 {
     _pm._updateDragPoint(_desktop->d2w(position()));
     _pm._commit(_("Drag curve"));
     _pm._selection.restoreTransformHandles();
 }
 
-bool CurveDragPoint::clicked(GdkEventButton *event)
+bool CurveDragPoint::clicked(ButtonReleaseEvent const &event)
 {
     // This check is probably redundant
-    if (!first || event->button != 1) return false;
+    if (!first || event.button() != 1) return false;
     // the next iterator can be invalid if we click very near the end of path
     NodeList::iterator second = first.next();
     if (!second) return false;
 
     // insert nodes on Ctrl+Alt+click
-    if (held_control(*event) && held_alt(*event)) {
+    if (held_control(event) && held_alt(event)) {
         _insertNode(false);
         return true;
     }
 
-    if (held_shift(*event)) {
+    if (held_shift(event)) {
         // if both nodes of the segment are selected, deselect;
         // otherwise add to selection
         if (first->selected() && second->selected())  {
@@ -163,7 +162,7 @@ bool CurveDragPoint::clicked(GdkEventButton *event)
         _pm._selection.clear();
         _pm._selection.insert(first.ptr());
         _pm._selection.insert(second.ptr());
-        if (held_control(*event)) {
+        if (held_control(event)) {
             _pm.setSegmentType(Inkscape::UI::SEGMENT_STRAIGHT);
             _pm.update(true);
             _pm._commit(_("Straighten segments"));
@@ -172,10 +171,10 @@ bool CurveDragPoint::clicked(GdkEventButton *event)
     return true;
 }
 
-bool CurveDragPoint::doubleclicked(GdkEventButton *event)
+bool CurveDragPoint::doubleclicked(ButtonReleaseEvent const &event)
 {
-    if (event->button != 1 || !first || !first.next()) return false;
-    if (held_control(*event)) {
+    if (event.button() != 1 || !first || !first.next()) return false;
+    if (held_control(event)) {
         _pm.deleteSegments();
         _pm.update(true);
         _pm._commit(_("Remove segment"));

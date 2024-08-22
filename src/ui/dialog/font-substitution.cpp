@@ -38,6 +38,7 @@
 #include "libnrtype/font-instance.h"
 
 #include "ui/dialog-events.h"
+#include "ui/dialog-run.h"
 
 namespace Inkscape {
 namespace UI {
@@ -56,7 +57,7 @@ void show(std::vector<SPItem*> const &list, Glib::ustring const &out)
    Gtk::TextView textview;
    textview.set_editable(false);
    textview.set_wrap_mode(Gtk::WRAP_WORD);
-   textview.show();
+   textview.set_visible(true);
    textview.get_buffer()->set_text(_(out.c_str()));
 
    Gtk::ScrolledWindow scrollwindow;
@@ -64,16 +65,16 @@ void show(std::vector<SPItem*> const &list, Glib::ustring const &out)
    scrollwindow.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
    scrollwindow.set_shadow_type(Gtk::SHADOW_IN);
    scrollwindow.set_size_request(0, 100);
-   scrollwindow.show();
+   scrollwindow.set_visible(true);
 
    Gtk::CheckButton cbSelect;
    cbSelect.set_label(_("Select all the affected items"));
    cbSelect.set_active(true);
-   cbSelect.show();
+   cbSelect.set_visible(true);
 
    Gtk::CheckButton cbWarning;
    cbWarning.set_label(_("Don't show this warning again"));
-   cbWarning.show();
+   cbWarning.set_visible(true);
 
    auto box = warning.get_content_area();
    box->set_border_width(5);
@@ -82,7 +83,7 @@ void show(std::vector<SPItem*> const &list, Glib::ustring const &out)
    box->pack_start(cbSelect, false, false, 0);
    box->pack_start(cbWarning, false, false, 0);
 
-   warning.run();
+   Inkscape::UI::dialog_run(warning);
 
    if (cbWarning.get_active()) {
        Inkscape::Preferences::get()->setBool("/options/font/substitutedlg", false);

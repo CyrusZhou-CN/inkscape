@@ -105,7 +105,7 @@ static const Util::EnumDataConverter<unsigned> TaperShapeTypeConverter(TaperShap
 
 LPETaperStroke::LPETaperStroke(LivePathEffectObject *lpeobject) :
     Effect(lpeobject),
-    subpath(_("Control Sub-path:"), _("This allows you to control which sub-path are you controlling "), "subpath", &wr, this, 1.),
+    subpath(_("Select subpath:"), _("Select the subpath you want to modify"), "subpath", &wr, this, 1.),
     line_width(_("Stroke width:"), _("The (non-tapered) width of the path"), "stroke_width", &wr, this, 1.),
     attach_start(_("Start offset:"), _("Taper distance from path start"), "attach_start", &wr, this, 0.2),
     attach_end(_("End offset:"), _("The ending position of the taper"), "end_offset", &wr, this, 0.2),

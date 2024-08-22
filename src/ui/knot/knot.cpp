@@ -31,15 +31,17 @@
 #include "ui/tools/tool-base.h"
 #include "ui/tools/node-tool.h"
 #include "ui/widget/canvas.h" // autoscroll
+#include "ui/widget/events/canvas-event.h"
 
 using Inkscape::DocumentUndo;
+using Inkscape::EventType;
 
-Gdk::EventMask KNOT_EVENT_MASK (
-    Gdk::BUTTON_PRESS_MASK   |
-    Gdk::BUTTON_RELEASE_MASK |
-    Gdk::POINTER_MOTION_MASK |
-    Gdk::KEY_PRESS_MASK      |
-    Gdk::KEY_RELEASE_MASK);
+static constexpr auto KNOT_EVENT_MASK =
+    EventType::BUTTON_PRESS   |
+    EventType::BUTTON_RELEASE |
+    EventType::MOTION |
+    EventType::KEY_PRESS      |
+    EventType::KEY_RELEASE;
 
 const gchar *nograbenv = getenv("INKSCAPE_NO_GRAB");
 static bool nograb = (nograbenv && *nograbenv && (*nograbenv != '0'));
@@ -91,14 +93,6 @@ SPKnot::SPKnot(SPDesktop *desktop, gchar const *tip, Inkscape::CanvasItemCtrlTyp
 }
 
 SPKnot::~SPKnot() {
-    auto display = gdk_display_get_default();
-    auto seat    = gdk_display_get_default_seat(display);
-    auto device  = gdk_seat_get_pointer(seat);
-
-    if ((this->flags & SP_KNOT_GRABBED) && gdk_display_device_is_grabbed(display, device)) {
-        // This happens e.g. when deleting a node in node tool while dragging it
-        gdk_seat_ungrab(seat);
-    }
 
     // Make sure the knot is not grabbed, as it's destructing can be deferred causing
     // issues like https://gitlab.com/inkscape/inkscape/-/issues/4239
@@ -137,8 +131,10 @@ void SPKnot::selectKnot(bool select)
     setFlag(SP_KNOT_SELECTED, select);
 }
 
-bool SPKnot::eventHandler(GdkEvent *event)
+bool SPKnot::eventHandler(Inkscape::CanvasEvent const &canvas_event)
 {
+    auto event = canvas_event.original();
+
     /* Run client universal event handler, if present */
     bool consumed = event_signal.emit(this, event);
     if (consumed) {
@@ -259,7 +255,7 @@ bool SPKnot::eventHandler(GdkEvent *event)
                 grabbed_signal.emit(this, event->button.state);
             }
 
-            desktop->event_context->snap_delay_handler(nullptr, this, reinterpret_cast<GdkEventMotion*>(event),
+            desktop->event_context->snap_delay_handler(nullptr, this, static_cast<Inkscape::MotionEvent const &>(canvas_event),
                                                        Inkscape::UI::Tools::DelayedSnapEvent::KNOT_HANDLER);
             sp_knot_handler_request_position(event, this);
             moved = true;

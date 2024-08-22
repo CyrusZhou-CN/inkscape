@@ -160,7 +160,7 @@ void PatternKnotHolderEntity::on_created()
 {
     // Setup an initial pattern transformation in the center
     if (auto rect = item->documentGeometricBounds()) {
-        set_offset(rect->midpoint());
+        _cell = offset_to_cell(rect->midpoint());
     }
 }
 
@@ -177,15 +177,12 @@ Geom::Point PatternKnotHolderEntity::_get_pos(gdouble x, gdouble y, bool transfo
 
 bool PatternKnotHolderEntity::set_item_clickpos(Geom::Point loc)
 {
-    set_offset(loc);
+    _cell = offset_to_cell(loc);
     update_knot();
     return true;
 }
 
 void PatternKnotHolderEntity::update_knot() {
-    if (_location) {
-        _cell = offset_to_cell(*_location);
-    }
     KnotHolderEntity::update_knot();
 }
 
@@ -201,10 +198,6 @@ Geom::IntPoint PatternKnotHolderEntity::offset_to_cell(Geom::Point loc) const {
     return (loc * d2i * i2p * scale.inverse()).floor();
 }
 
-void PatternKnotHolderEntity::set_offset(Geom::Point loc)
-{
-    _location = loc;
-}
 
 SPPattern *PatternKnotHolderEntity::_pattern() const
 {

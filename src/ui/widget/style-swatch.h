@@ -11,40 +11,40 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef INKSCAPE_UI_CURRENT_STYLE_H
-#define INKSCAPE_UI_CURRENT_STYLE_H
+#ifndef SEEN_INKSCAPE_UI_STYLE_SWATCH_H
+#define SEEN_INKSCAPE_UI_STYLE_SWATCH_H
 
+#include <memory>
 #include <gtkmm/box.h>
-#include <gtkmm/label.h>
 #include <gtkmm/eventbox.h>
-#include <gtkmm/enums.h>
+#include <gtkmm/gesture.h> // Gtk::EventSequenceState
+#include <gtkmm/label.h>
 
 #include "desktop.h"
 #include "preferences.h"
-
-constexpr int STYLE_SWATCH_WIDTH = 135;
 
 class SPStyle;
 class SPCSSAttr;
 
 namespace Gtk {
+class GestureMultiPress;
 class Grid;
-}
+} // namespace Gtk
 
 namespace Inkscape {
 
 namespace Util {
-    class Unit;
-}
+class Unit;
+} // namespace Util
 
-namespace UI {
-namespace Widget {
+namespace UI::Widget {
+
+class ColorPreview;
 
 class StyleSwatch : public Gtk::Box
 {
 public:
     StyleSwatch (SPCSSAttr *attr, gchar const *main_tip, Gtk::Orientation orient = Gtk::ORIENTATION_VERTICAL);
-
     ~StyleSwatch() override;
 
     void setStyle(SPStyle *style);
@@ -54,46 +54,42 @@ public:
     void setWatchedTool (const char *path, bool synthesize);
     void setToolName(const Glib::ustring& tool_name);
     void setDesktop(SPDesktop *desktop);
-    bool on_click(GdkEventButton *event);
 
 private:
-    class ToolObserver;
-    class StyleObserver;
+    Gtk::EventSequenceState on_click(Gtk::GestureMultiPress const &click,
+                                     int n_press, double x, double y);
+
+    using PrefObs = Preferences::PreferencesObserver;
 
     SPDesktop *_desktop;
     Glib::ustring _tool_name;
     SPCSSAttr *_css;
-    ToolObserver *_tool_obs;
-    StyleObserver *_style_obs;
+    std::unique_ptr<PrefObs> _tool_obs;
+    std::unique_ptr<PrefObs> _style_obs;
     Glib::ustring _tool_path;
-
     Gtk::EventBox _swatch;
-
     Gtk::Grid *_table;
-
     Gtk::Label _label[2];
     Gtk::Box _empty_space;
     Gtk::EventBox _place[2];
     Gtk::EventBox _opacity_place;
     Gtk::Label _value[2];
     Gtk::Label _opacity_value;
-    Gtk::Widget *_color_preview[2];
+    std::unique_ptr<ColorPreview> _color_preview[2];
     Glib::ustring __color[2];
     Gtk::Box _stroke;
     Gtk::EventBox _stroke_width_place;
     Gtk::Label _stroke_width;
+    Util::Unit *_sw_unit;
 
-    Inkscape::Util::Unit *_sw_unit;
-
-friend class ToolObserver;
+    friend void tool_obs_callback(StyleSwatch &, Preferences::Entry const &);
 };
 
+} // namespace UI::Widget
 
-} // namespace Widget
-} // namespace UI
 } // namespace Inkscape
 
-#endif // INKSCAPE_UI_WIDGET_BUTTON_H
+#endif // SEEN_INKSCAPE_UI_STYLE_SWATCH_H
 
 /*
   Local Variables:

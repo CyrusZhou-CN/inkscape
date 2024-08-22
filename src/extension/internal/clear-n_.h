@@ -21,6 +21,12 @@
 #endif
 #define N_(x) x
 
+#ifdef NC_
+#undef NC_
+#endif
+#define NC_(c, x) x
+
+
 /*
   Local Variables:
   mode:c++

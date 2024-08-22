@@ -26,11 +26,7 @@
 
 #include "message.h"
 #include "preferences.h"
-#include "ui/view/view-widget.h"
 #include "display/control/canvas-item-ptr.h"
-
-// forward declaration
-typedef struct _EgeColorProfTracker EgeColorProfTracker;
 
 class InkscapeWindow;
 struct SPCanvasItem;
@@ -42,11 +38,18 @@ class SPObject;
 namespace Inkscape {
   class CanvasItemGuideLine;
 namespace UI {
+
 namespace Dialog {
 class DialogContainer;
 class DialogMultipaned;
 class SwatchesPanel;
 } // namespace Dialog
+
+namespace Toolbar {
+  class  Toolbars;
+  class  CommandToolbar;
+  class  SnapToolbar;
+} // namespace Toolbars
 
 namespace Widget {
   class Button;
@@ -58,6 +61,7 @@ namespace Widget {
   class SpinButton;
   class Ruler;
 } // namespace Widget
+
 } // namespace UI
 } // namespace Inkscape
 
@@ -72,8 +76,8 @@ void sp_desktop_widget_update_vruler (SPDesktopWidget *dtw);
 void sp_desktop_widget_update_scrollbars (SPDesktopWidget *dtw, double scale);
 
 /// A GtkEventBox on an SPDesktop.
-class SPDesktopWidget : public SPViewWidget {
-    using parent_type = SPViewWidget;
+class SPDesktopWidget : public Gtk::EventBox {
+  using parent_type = Gtk::EventBox;
 
     SPDesktopWidget(InkscapeWindow *inkscape_window);
 
@@ -86,7 +90,6 @@ public:
 
     Gio::ActionMap* get_action_map();
 
-    void on_size_allocate(Gtk::Allocation &) override;
     void on_realize() override;
     void on_unrealize() override;
 
@@ -111,13 +114,13 @@ private:
     // The root vbox of the window layout.
     Gtk::Box *_vbox;
 
-    Gtk::Paned *_tbbox;
-    Gtk::Box *_hbox;
+    Gtk::Paned *_tbbox = nullptr;
+    Gtk::Box *_hbox = nullptr;
     Inkscape::UI::Dialog::DialogContainer *_container = nullptr;
-    Inkscape::UI::Dialog::DialogMultipaned *_columns;
-    Gtk::Grid* _top_toolbars;
+    Inkscape::UI::Dialog::DialogMultipaned *_columns = nullptr;
+    Gtk::Grid* _top_toolbars = nullptr;
 
-    Gtk::Box     *_statusbar;
+    Gtk::Box     *_statusbar = nullptr;
 
     Inkscape::UI::Dialog::SwatchesPanel *_panels;
 
@@ -163,8 +166,6 @@ private:
     Inkscape::UI::Widget::PageSelector* _page_selector;
 
 public:
-    EgeColorProfTracker* _tracker;
-
     void setMessage(Inkscape::MessageType type, gchar const *message);
     void viewSetPosition (Geom::Point p);
     void letZoomGrabFocus();
@@ -193,9 +194,6 @@ public:
     void update_guides_lock();
 
     // Canvas Grid Widget
-    void cms_adjust_set_sensitive(bool enabled);
-    bool get_color_prof_adj_enabled() const;
-    void toggle_color_prof_adj();
     void update_zoom();
     void update_rotation();
     void update_rulers();
@@ -212,17 +210,21 @@ public:
     void toggle_command_palette();
     void toggle_rulers();
     void sticky_zoom_toggled();
+    void sticky_zoom_updated();
 
-    Gtk::Widget *get_tool_toolbox() const { return Glib::wrap(tool_toolbox); }
+    Gtk::Widget *get_tool_toolbox() const { return tool_toolbox; }
+    Gtk::Widget *get_hbox() const { return _hbox; }
+
 private:
-    GtkWidget *tool_toolbox;
-    GtkWidget *aux_toolbox;
-    GtkWidget *commands_toolbox;
-    GtkWidget *snap_toolbox;
+    Gtk::Widget *tool_toolbox;
+    Inkscape::UI::Toolbar::Toolbars *tool_toolbars;
+    Inkscape::UI::Toolbar::CommandToolbar *command_toolbar;
+    Inkscape::UI::Toolbar::SnapToolbar *snap_toolbar;
     Inkscape::PrefObserver _tb_snap_pos;
     Inkscape::PrefObserver _tb_icon_sizes1;
     Inkscape::PrefObserver _tb_icon_sizes2;
     Inkscape::PrefObserver _tb_visible_buttons;
+    Inkscape::PrefObserver _ds_sticky_zoom;
 
     void namedviewModified(SPObject *obj, guint flags);
     int zoom_input(double *new_val);
@@ -237,12 +239,7 @@ private:
     void update_statusbar_visibility();
     void apply_ctrlbar_settings();
 
-public:
-    void cms_adjust_toggled();
-private:
-    static void color_profile_event(EgeColorProfTracker *tracker, SPDesktopWidget *dtw);
     static void ruler_snap_new_guide(SPDesktop *desktop, Geom::Point &event_dt, Geom::Point &normal);
-    static gint event(GtkWidget *widget, GdkEvent *event, SPDesktopWidget *dtw);
 
 public: // Move to CanvasGrid
     bool on_ruler_box_button_press_event(GdkEventButton *event, Gtk::Widget *widget, bool horiz);

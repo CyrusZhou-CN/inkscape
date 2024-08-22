@@ -9,6 +9,7 @@
 
 #include "page-manager.h"
 
+#include <glibmm/i18n.h>
 #include "attributes.h"
 #include "desktop.h"
 #include "display/control/canvas-page.h"
@@ -514,13 +515,18 @@ void PageManager::centerToPage(SPDesktop *desktop, SPPage *page)
 
 void PageManager::resizePage(double width, double height)
 {
-    if (pages.empty() || _selected_page) {
+    resizePage(_selected_page, width, height);
+}
+
+void PageManager::resizePage(SPPage *page, double width, double height)
+{
+    if (pages.empty() || page) {
         // Resizing the Viewport, means the page gets updated automatically
-        if (pages.empty() || _selected_page->isViewportPage()) {
+        if (pages.empty() || (page && page->isViewportPage())) {
             auto rect = Geom::Rect(Geom::Point(0, 0), Geom::Point(width, height));
             _document->fitToRect(rect, false);
-        } else {
-            _selected_page->setSize(width, height);
+        } else if (page) {
+            page->setSize(width, height);
         }
     }
 }
@@ -546,18 +552,18 @@ void PageManager::fitToSelection(ObjectSet *selection, bool add_margins)
         // This means there aren't any pages, so revert to the default assumption
         // that the viewport is resized around ALL objects.
         if (!_selected_page) {
-            fitToRect(_document->getRoot()->documentVisualBounds(), _selected_page, add_margins);
+            fitToRect(_document->getRoot()->documentPreferredBounds(), _selected_page, add_margins);
         } else {
             // This allows the pages to be resized around the items related to the page only.
             auto contents = ObjectSet();
             contents.setList(getOverlappingItems(desktop, _selected_page));
             if (contents.isEmpty()) {
-                fitToRect(_document->getRoot()->documentVisualBounds(), _selected_page, add_margins);
+                fitToRect(_document->getRoot()->documentPreferredBounds(), _selected_page, add_margins);
             } else {
                 fitToSelection(&contents, add_margins);
             }
         }
-    } else if (auto rect = selection->documentBounds(SPItem::VISUAL_BBOX)) {
+    } else if (auto rect = selection->preferredBounds()) {
         fitToRect(rect, _selected_page, add_margins);
     }
 }
@@ -587,13 +593,13 @@ void PageManager::fitToRect(Geom::OptRect rect, SPPage *page, bool add_margins)
 /**
  * Return a list of objects touching this page, or viewbox (of single page document)
  */
-std::vector<SPItem *> PageManager::getOverlappingItems(SPDesktop *desktop, SPPage *page)
+std::vector<SPItem *> PageManager::getOverlappingItems(SPDesktop *desktop, SPPage *page, bool hidden, bool in_bleed, bool in_layers)
 {
     if (page) {
-        return page->getOverlappingItems();
+        return page->getOverlappingItems(hidden, in_bleed, in_layers);
     }
     auto doc_rect = _document->preferredBounds();
-    return _document->getItemsPartiallyInBox(desktop->dkey, *doc_rect, true, true, true, false);
+    return _document->getItemsPartiallyInBox(desktop->dkey, *doc_rect, true, true, true, false, in_layers);
 }
 
 /**
@@ -669,7 +675,7 @@ std::string PageManager::getSizeLabel(SPPage *page)
         box = page->getDesktopRect();
         auto label = page->getSizeLabel();
         if (!label.empty())
-            return label;
+            return _(label.c_str());
     }
     return getSizeLabel(box.width(), box.height());
 }
@@ -685,7 +691,7 @@ std::string PageManager::getSizeLabel(double width, double height)
     using namespace Inkscape::Util;
 
     if (auto preset = Inkscape::Extension::Template::get_any_preset(width, height)) {
-        return preset->get_name();
+        return _(preset->get_name().c_str());
     }
 
     static auto px = Inkscape::Util::unit_table.getUnit("px");

@@ -49,7 +49,8 @@ namespace Inkscape {
 namespace UI {
 namespace Tools {
 
-enum {
+enum
+{
     SPRAY_MODE_COPY,
     SPRAY_MODE_CLONE,
     SPRAY_MODE_SINGLE_PATH,
@@ -57,14 +58,14 @@ enum {
     SPRAY_OPTION,
 };
 
-class SprayTool : public ToolBase {
+class SprayTool : public ToolBase
+{
 public:
     SprayTool(SPDesktop *desktop);
     ~SprayTool() override;
 
-    //ToolBase event_context;
     /* extended input data */
-    gdouble pressure;
+    double pressure;
 
     /* attributes */
     bool dragging;           /* mouse state: mouse is dragging */
@@ -84,9 +85,9 @@ public:
     double mean;
     double standard_deviation;
 
-    gint distrib;
+    int distrib;
 
-    gint mode;
+    int mode;
 
     bool is_drawing;
 
@@ -115,15 +116,13 @@ public:
     double rand_picked;
     sigc::connection style_set_connection;
 
-    void set(const Inkscape::Preferences::Entry& val) override;
+    void set(Preferences::Entry const &val) override;
     virtual void setCloneTilerPrefs();
-    bool root_handler(GdkEvent* event) override;
+    bool root_handler(CanvasEvent const &event) override;
     void update_cursor(bool /*with_shift*/);
 
-    ObjectSet* objectSet() {
-        return &object_set;
-    }
-    SPItem* single_path_output = nullptr;
+    ObjectSet *objectSet() { return &object_set; }
+    SPItem *single_path_output = nullptr;
 
 private:
     ObjectSet object_set;

@@ -21,16 +21,7 @@
 #include <glibmm/ustring.h>
 
 typedef struct _GtkWidget GtkWidget;
-
-namespace Inkscape {
-class Verb;
-
-namespace UI {
-namespace View {
-class View;
-} // namespace View
-} // namespace UI
-} // namespace Inkscape
+class SPDesktop;
 
 /**
  * \param widget unused
@@ -41,7 +32,7 @@ void sp_ui_new_view ();
 
 void sp_ui_import_files(gchar *buffer);
 
-Glib::ustring getLayoutPrefPath( Inkscape::UI::View::View *view );
+Glib::ustring getLayoutPrefPath(SPDesktop* desktop);
 
 /**
  *

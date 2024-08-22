@@ -78,8 +78,9 @@ LineSnapper::LineList GridSnapper::_getSnapLines(Geom::Point const &p) const
     }
 
     switch (_grid->getType()) {
-        case GridType::RECTANGULAR: return getSnapLinesXY(p);
+        case GridType::RECTANGULAR: return get_snap_lines(p, 0);
         case GridType::AXONOMETRIC: return getSnapLinesAxonom(p);
+        case GridType::MODULAR: return get_snap_lines(p, 4);
         default: g_assert_not_reached(); return {};
     }
 }
@@ -107,25 +108,30 @@ bool GridSnapper::ThisSnapperMightSnap() const
     return _snap_enabled && _snapmanager->snapprefs.isTargetSnappable(SNAPTARGET_GRID);
 }
 
-LineSnapper::LineList GridSnapper::getSnapLinesXY(Geom::Point const &p) const
-{
+LineSnapper::LineList GridSnapper::get_snap_lines(const Geom::Point& p, int limit) const {
     LineList s;
 
-    auto const *desktop = _snapmanager->getDesktop();
-    auto const [origin, spacing] = _grid->getEffectiveOriginAndSpacing();
+    const auto desktop = _snapmanager->getDesktop();
+    const int start = limit > 0 ? 0 : -1;
 
-    for (int i = 0; i < 2; ++i) {
-        double scaled_spacing = spacing[i];
+    for (int index = start; index < limit; ++index) {
+        const auto [origin, spacing] = _grid->getEffectiveOriginAndSpacing(index);
+        // empty spacing - skip this element
+        if (spacing.isZero()) continue;;
 
-        if (getSnapVisibleOnly() && desktop) {
-            // Only snap to visible grid lines.
-            auto const sw = proj(spacing, i) * desktop->d2w().withoutTranslation();
-            int const mult = calculate_scaling_factor(sw.length(), _grid->getMajorLineInterval());
-            scaled_spacing *= mult;
+        for (int i = 0; i < 2; ++i) {
+            double scaled_spacing = spacing[i];
+
+            if (getSnapVisibleOnly() && desktop) {
+                // Only snap to visible grid lines.
+                auto const sw = proj(spacing, i) * desktop->d2w().withoutTranslation();
+                int const mult = calculate_scaling_factor(sw.length(), _grid->getMajorLineInterval());
+                scaled_spacing *= mult;
+            }
+
+            s.emplace_back(basis(i), basis(i) * Util::round_to_upper_multiple_plus(p[i], scaled_spacing, origin[i]));
+            s.emplace_back(basis(i), basis(i) * Util::round_to_lower_multiple_plus(p[i], scaled_spacing, origin[i]));
         }
-
-        s.emplace_back(basis(i), basis(i) * Util::round_to_upper_multiple_plus(p[i], scaled_spacing, origin[i]));
-        s.emplace_back(basis(i), basis(i) * Util::round_to_lower_multiple_plus(p[i], scaled_spacing, origin[i]));
     }
 
     return s;

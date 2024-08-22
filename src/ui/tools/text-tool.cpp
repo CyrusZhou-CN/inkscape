@@ -58,8 +58,9 @@
 #include "ui/icon-names.h"
 #include "ui/shape-editor.h"
 #include "ui/widget/canvas.h"
-#include "ui/event-debug.h"
+#include "ui/widget/events/canvas-event.h"
 
+#include "ui/widget/events/debug.h"
 #include "xml/attribute-record.h"
 #include "xml/sp-css-attr.h"
 
@@ -94,25 +95,25 @@ TextTool::TextTool(SPDesktop *desktop)
 
     cursor = make_canvasitem<CanvasItemCurve>(desktop->getCanvasControls());
     cursor->set_stroke(0x000000ff);
-    cursor->hide();
+    cursor->set_visible(false);
 
     // The rectangle box tightly wrapping text object when selected or under cursor.
     indicator = make_canvasitem<CanvasItemRect>(desktop->getCanvasControls());
     indicator->set_stroke(0x0000ff7f);
     indicator->set_shadow(0xffffff7f, 1);
-    indicator->hide();
+    indicator->set_visible(false);
 
     // The shape that the text is flowing into
     frame = make_canvasitem<CanvasItemBpath>(desktop->getCanvasControls());
     frame->set_fill(0x00 /* zero alpha */, SP_WIND_RULE_NONZERO);
     frame->set_stroke(0x0000ff7f);
-    frame->hide();
+    frame->set_visible(false);
 
     // A second frame for showing the padding of the above frame
     padding_frame = make_canvasitem<CanvasItemBpath>(desktop->getCanvasControls());
     padding_frame->set_fill(0x00 /* zero alpha */, SP_WIND_RULE_NONZERO);
     padding_frame->set_stroke(0xccccccdf);
-    padding_frame->hide();
+    padding_frame->set_visible(false);
 
     this->timeout = g_timeout_add(timeout, (GSourceFunc) sp_text_context_timeout, this);
 
@@ -173,6 +174,7 @@ TextTool::TextTool(SPDesktop *desktop)
 TextTool::~TextTool()
 {
     if (_desktop) {
+        #define sp_signal_disconnect_by_data(o,d) g_signal_handlers_disconnect_matched(o, G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, d)
         sp_signal_disconnect_by_data(_desktop->getCanvas()->gobj(), this);
     }
 
@@ -215,7 +217,9 @@ void TextTool::deleteSelected()
     DocumentUndo::done(_desktop->getDocument(), _("Delete text"), INKSCAPE_ICON("draw-text"));
 }
 
-bool TextTool::item_handler(SPItem* item, GdkEvent* event) {
+bool TextTool::item_handler(SPItem *item, CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     SPItem *item_ungrouped;
 
     gint ret = FALSE;
@@ -290,7 +294,7 @@ bool TextTool::item_handler(SPItem* item, GdkEvent* event) {
     }
 
     if (!ret) {
-        ret = ToolBase::item_handler(item, event);
+        ret = ToolBase::item_handler(item, canvas_event);
     }
 
     return ret;
@@ -410,13 +414,14 @@ static void show_curr_uni_char(TextTool *const tc)
     }
 }
 
-bool TextTool::root_handler(GdkEvent* event) {
+bool TextTool::root_handler(CanvasEvent const &canvas_event)
+{
+    if constexpr (DEBUG_EVENTS) {
+        dump_event(canvas_event, "TextTool::root_handler");
+    }
 
-#if EVENT_DEBUG
-    ui_dump_event(reinterpret_cast<GdkEvent *>(event), "TextTool::root_handler");
-#endif
-
-    indicator->hide();
+    auto event = canvas_event.original();
+    indicator->set_visible(false);
 
     sp_text_context_validate_cursor_iterators(this);
 
@@ -431,8 +436,7 @@ bool TextTool::root_handler(GdkEvent* event) {
                 }
 
                 // save drag origin
-                this->xp = (gint) event->button.x;
-                this->yp = (gint) event->button.y;
+                this->xyp = { (gint) event->button.x, (gint) event->button.y };
                 this->within_tolerance = true;
 
                 Geom::Point const button_pt(event->button.x, event->button.y);
@@ -456,9 +460,9 @@ bool TextTool::root_handler(GdkEvent* event) {
             break;
         case GDK_MOTION_NOTIFY: {
             if (this->creating && (event->motion.state & GDK_BUTTON1_MASK)) {
-                if ( this->within_tolerance
-                     && ( abs( (gint) event->motion.x - this->xp ) < this->tolerance )
-                     && ( abs( (gint) event->motion.y - this->yp ) < this->tolerance ) ) {
+                if (within_tolerance
+                    && ( abs( (gint) event->motion.x - this->xyp.x() ) < this->tolerance )
+                    && ( abs( (gint) event->motion.y - this->xyp.y() ) < this->tolerance ) ) {
                     break; // do not drag if we're within tolerance from origin
                 }
                 // Once the user has moved farther than tolerance from the original location
@@ -537,7 +541,7 @@ bool TextTool::root_handler(GdkEvent* event) {
                 if (ibbox) {
                     indicator->set_rect(*ibbox);
                 }
-                indicator->show();
+                indicator->set_visible(true);
 
                 this->set_cursor("text-insert.svg");
                 sp_text_context_update_text_selection(this);
@@ -583,7 +587,7 @@ bool TextTool::root_handler(GdkEvent* event) {
                     this->nascent_object = true; // new object was just created
 
                     /* Cursor */
-                    cursor->show();
+                    cursor->set_visible(true);
                     // Cursor height is defined by the new text object's font size; it needs to be set
                     // artificially here, for the text object does not exist yet:
                     double cursor_height = sp_desktop_get_font_size_tool(_desktop);
@@ -1232,7 +1236,7 @@ bool TextTool::root_handler(GdkEvent* event) {
 //    } else {
 //        return FALSE; // return "I did nothing" value so that global shortcuts can be activated
 //    }
-    return ToolBase::root_handler(event);
+    return ToolBase::root_handler(canvas_event);
 
 }
 
@@ -1618,7 +1622,7 @@ static void sp_text_context_update_cursor(TextTool *tc,  bool scroll_to_see)
         }
 
         tc->cursor->set_coords(d0, d1);
-        tc->cursor->show();
+        tc->cursor->set_visible(true);
 
         /* fixme: ... need another transformation to get canvas widget coordinate space? */
         if (tc->imc) {
@@ -1745,26 +1749,26 @@ static void sp_text_context_update_cursor(TextTool *tc,  bool scroll_to_see)
 
                 uncross->ConvertToForme(temp);
                 tc->padding_frame->set_bpath(temp->MakePathVector() * tc->text->i2dt_affine());
-                tc->padding_frame->show();
+                tc->padding_frame->set_visible(true);
 
                 delete temp;
                 delete uncross;
             } else {
-                tc->padding_frame->hide();
+                tc->padding_frame->set_visible(false);
             }
 
             // Transform curve after doing padding.
             curve.transform(tc->text->i2dt_affine());
             tc->frame->set_bpath(&curve);
-            tc->frame->show();
+            tc->frame->set_visible(true);
         } else {
-            tc->frame->hide();
-            tc->padding_frame->hide();
+            tc->frame->set_visible(false);
+            tc->padding_frame->set_visible(false);
         }
 
     } else {
-        tc->cursor->hide();
-        tc->frame->hide();
+        tc->cursor->set_visible(false);
+        tc->frame->set_visible(false);
         tc->show = FALSE;
         if (!tc->nascent_object) {
             tc->message_context->set(Inkscape::NORMAL_MESSAGE, _("<b>Click</b> to select or create text, <b>drag</b> to create flowed text; then type.")); // FIXME: this is a copy of string from tools-switch, do not desync
@@ -1788,7 +1792,7 @@ static void sp_text_context_update_text_selection(TextTool *tc)
     for (unsigned i = 0 ; i < quads.size() ; i += 4) {
         auto quad = new CanvasItemQuad(tc->getDesktop()->getCanvasControls(), quads[i], quads[i+1], quads[i+2], quads[i+3]);
         quad->set_fill(0x00777777); // Semi-transparent blue as Cairo cannot do inversion.
-        quad->show();
+        quad->set_visible(true);
         tc->text_selection_quads.emplace_back(quad);
     }
 
@@ -1809,7 +1813,7 @@ static gint sp_text_context_timeout(TextTool *tc)
             tc->phase = true;
             tc->cursor->set_stroke(0xffffffff);
         }
-        tc->cursor->show();
+        tc->cursor->set_visible(true);
     }
 
     return TRUE;

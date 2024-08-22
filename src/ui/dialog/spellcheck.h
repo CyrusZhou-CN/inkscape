@@ -19,7 +19,6 @@
 
 #include <gtkmm/box.h>
 #include <gtkmm/button.h>
-#include <gtkmm/buttonbox.h>
 #include <gtkmm/comboboxtext.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/scrolledwindow.h>
@@ -230,7 +229,7 @@ private:
      *  Dialogs widgets
      */
     Gtk::Label          banner_label;
-    Gtk::ButtonBox      banner_hbox;
+    Gtk::Button         banner_hbox;
     Gtk::ScrolledWindow scrolled_window;
     Gtk::TreeView       tree_view;
     Glib::RefPtr<Gtk::ListStore> model;
@@ -249,7 +248,7 @@ private:
     Gtk::Separator  action_sep;
     Gtk::Button     stop_button;
     Gtk::Button     start_button;
-    Gtk::ButtonBox  actionbutton_hbox;
+    Gtk::Box        actionbutton_hbox;
 
     class TreeColumns : public Gtk::TreeModel::ColumnRecord
     {

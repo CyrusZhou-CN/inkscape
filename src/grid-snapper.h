@@ -38,8 +38,9 @@ protected:
 private:
     SPGrid const *_grid;
 
-    LineList getSnapLinesXY(Geom::Point const &p) const;
     LineList getSnapLinesAxonom(Geom::Point const &p) const;
+
+    LineList get_snap_lines(const Geom::Point& p, int limit) const;
 };
 
 } // namepsace Inkscape

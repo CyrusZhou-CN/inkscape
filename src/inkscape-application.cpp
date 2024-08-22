@@ -74,6 +74,8 @@
 #include "debug/logger.h"           // INKSCAPE_DEBUG_LOG support
 
 #include "extension/init.h"
+#include "extension/db.h"
+#include "extension/effect.h"
 
 #include "io/file.h"                // File open (command line).
 #include "io/resource.h"            // TEMPLATE
@@ -88,6 +90,7 @@
 #include "ui/dialog/font-substitution.h"  // Warn user about font substitution.
 #include "ui/dialog/startup.h"
 #include "ui/shortcuts.h"           // Shortcuts... init
+#include "ui/dialog-run.h"
 
 #include "util/units.h"           // Redimension window
 #include "util/statics.h"
@@ -290,7 +293,7 @@ InkscapeApplication::document_swap(InkscapeWindow* window, SPDocument* document)
 
     _active_document  = document;
     _active_selection = desktop->getSelection();
-    _active_view      = desktop;
+    _active_desktop   = desktop;
     _active_window    = window;
     return true;
 }
@@ -461,7 +464,7 @@ InkscapeApplication::window_open(SPDocument* document)
     INKSCAPE.add_document(document);
 
     _active_window    = window;
-    _active_view      = window->get_desktop();
+    _active_desktop   = window->get_desktop();
     _active_selection = window->get_desktop()->getSelection();
     _active_document  = document;
 
@@ -495,7 +498,7 @@ InkscapeApplication::window_close(InkscapeWindow* window)
 
             // Leave active document alone (maybe should find new active window and reset variables).
             _active_selection = nullptr;
-            _active_view      = nullptr;
+            _active_desktop   = nullptr;
             _active_window    = nullptr;
 
             // Remove window from document map.
@@ -845,7 +848,7 @@ InkscapeApplication::create_window(SPDocument *document, bool replace)
     } else {
         window = window_open (document);
     }
-    window->show();
+    window->set_visible(true);
 
     return window;
 }
@@ -999,10 +1002,10 @@ InkscapeApplication::process_document(SPDocument* document, std::string output_p
     _active_document  = document;
     if (_with_gui) {
         _active_window = create_window(document, replace);
-        _active_view = _active_window->get_desktop();
+        _active_desktop = _active_window->get_desktop();
     } else {
         _active_window = nullptr;
-        _active_view = nullptr;
+        _active_desktop = nullptr;
         _active_selection = document->getSelection();
     }
 
@@ -1041,6 +1044,9 @@ InkscapeApplication::on_startup()
 
     // Extensions
     Inkscape::Extension::init();
+
+    // After extensions are loaded query effects to construct action data
+    init_extension_action_data();
 
     // Command line execution. Must be after Extensions are initialized.
     parse_actions(_command_line_actions_input, _command_line_actions);
@@ -1090,7 +1096,7 @@ InkscapeApplication::on_activate()
         // add start window to gtk_app to ensure proper closing on quit
         gtk_app()->add_window(start_screen);
 
-        start_screen.run();
+        Inkscape::UI::dialog_run(start_screen);
         document = start_screen.get_document();
     } else {
 
@@ -1890,6 +1896,87 @@ int InkscapeApplication::get_number_of_windows() const {
           [&](int sum, auto& v){ return sum + static_cast<int>(v.second.size()); });
     }
     return 0;
+}
+
+/**
+ * Adds effect to Gio::Actions
+ *
+ *  \c effect is Filter or Extension
+ *  \c show_prefs is used to show preferences dialog
+*/
+void action_effect(Inkscape::Extension::Effect* effect, bool show_prefs) {
+    auto desktop = InkscapeApplication::instance()->get_active_desktop();
+    if (effect->_workingDialog && show_prefs) {
+        effect->prefs(desktop);
+    } else {
+        effect->effect(desktop);
+    }
+}
+
+// Modifying string to get submenu id
+std::string action_menu_name(std::string menu) {
+    transform(menu.begin(), menu.end(), menu.begin(), ::tolower);
+    for (auto &x:menu) {
+        if (x==' ') {
+            x = '-';
+        }
+    }
+    return menu;
+}
+
+void InkscapeApplication::init_extension_action_data() {
+    for (auto effect : Inkscape::Extension::db.get_effect_list()) {
+
+        std::string aid = effect->get_sanitized_id();
+        std::string action_id = "app." + aid;
+
+        auto app = this;
+        if (auto gapp = gtk_app()) {
+            auto action = gapp->add_action(aid, [effect](){ action_effect(effect, true); });
+            auto action_noprefs = gapp->add_action(aid + ".noprefs", [effect](){ action_effect(effect, false); });
+            _effect_actions.emplace_back(action);
+            _effect_actions.emplace_back(action_noprefs);
+        }
+
+        if (effect->hidden_from_menu()) continue;
+
+        // Submenu retrieval as a list of strings (to handle nested menus).
+        auto sub_menu_list = effect->get_menu_list();
+
+        // Setting initial value of description to name of action in case there is no description
+        auto description = effect->get_menu_tip();
+        if (description.empty()) description = effect->get_name();
+
+        if (effect->is_filter_effect()) {
+            std::vector<std::vector<Glib::ustring>>raw_data_filter =
+                {{ action_id, effect->get_name(), "Filters", description },
+                { action_id + ".noprefs", Glib::ustring(effect->get_name()) + " " + _("(No preferences)"), "Filters (no prefs)", description }};
+            app->get_action_extra_data().add_data(raw_data_filter);
+        } else {
+            std::vector<std::vector<Glib::ustring>>raw_data_effect =
+                {{ action_id, effect->get_name(), "Extensions", description },
+                { action_id + ".noprefs", Glib::ustring(effect->get_name()) + " " + _("(No preferences)"), "Extensions (no prefs)", description }};
+            app->get_action_extra_data().add_data(raw_data_effect);
+        }
+
+#if false // enable to see all the loaded effects
+        std::cout << " Effect: name:  " << effect->get_name();
+        std::cout << "  id: " << aid.c_str();
+        std::cout << "  menu: ";
+        for (auto sub_menu : sub_menu_list) {
+            std::cout << "|" << sub_menu.raw(); // Must use raw() as somebody has messed up encoding.
+        }
+        std::cout << "|  icon: " << effect->find_icon_file();
+        std::cout << std::endl;
+#endif
+
+        // Add submenu to effect data
+        gchar *ellipsized_name = effect->takes_input() ? g_strdup_printf(_("%s..."), effect->get_name()) : nullptr;
+        Glib::ustring menu_name = ellipsized_name ? ellipsized_name : effect->get_name();
+        bool is_filter = effect->is_filter_effect();
+        app->get_action_effect_data().add_data(aid, is_filter, sub_menu_list, menu_name);
+        g_free(ellipsized_name);
+    }
 }
 
 /*

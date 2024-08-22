@@ -35,21 +35,21 @@ OriginalSatelliteParam::OriginalSatelliteParam(const Glib::ustring &label, const
 
 Gtk::Widget *OriginalSatelliteParam::param_newWidget()
 {
-    Gtk::Box *_widget = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL));
+    auto const _widget = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
 
     { // Label
-        Gtk::Label *pLabel = Gtk::manage(new Gtk::Label(param_label));
+        auto const pLabel = Gtk::make_managed<Gtk::Label>(param_label);
         _widget->pack_start(*pLabel, true, true);
         pLabel->set_tooltip_text(param_tooltip);
     }
 
     { // Paste item to link button
         Gtk::Image *pIcon = Gtk::manage(sp_get_icon_image("edit-paste", Gtk::ICON_SIZE_BUTTON));
-        Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
+        auto const pButton = Gtk::make_managed<Gtk::Button>();
         pButton->set_relief(Gtk::RELIEF_NONE);
-        pIcon->show();
+        pIcon->set_visible(true);
         pButton->add(*pIcon);
-        pButton->show();
+        pButton->set_visible(true);
         pButton->signal_clicked().connect(sigc::mem_fun(*this, &OriginalSatelliteParam::on_link_button_click));
         _widget->pack_start(*pButton, true, true);
         pButton->set_tooltip_text(_("Link to item"));
@@ -57,11 +57,11 @@ Gtk::Widget *OriginalSatelliteParam::param_newWidget()
 
     { // Select original button
         Gtk::Image *pIcon = Gtk::manage(sp_get_icon_image("edit-select-original", Gtk::ICON_SIZE_BUTTON));
-        Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
+        auto const pButton = Gtk::make_managed<Gtk::Button>();
         pButton->set_relief(Gtk::RELIEF_NONE);
-        pIcon->show();
+        pIcon->set_visible(true);
         pButton->add(*pIcon);
-        pButton->show();
+        pButton->set_visible(true);
         pButton->signal_clicked().connect(
             sigc::mem_fun(*this, &OriginalSatelliteParam::on_select_original_button_click));
         _widget->pack_start(*pButton, true, true);
@@ -70,7 +70,7 @@ Gtk::Widget *OriginalSatelliteParam::param_newWidget()
 
     _widget->show_all_children();
 
-    return dynamic_cast<Gtk::Widget *> (_widget);
+    return _widget;
 }
 
 void OriginalSatelliteParam::on_select_original_button_click()

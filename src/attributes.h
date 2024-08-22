@@ -141,7 +141,7 @@ enum class SPAttr {
     /* SPPage */
     PAGE_MARGIN,
     PAGE_BLEED,
-    PAGE_SIZE,
+    PAGE_SIZE_NAME,
     /* SPGrid */
     ORIGINX,
     ORIGINY,
@@ -149,6 +149,10 @@ enum class SPAttr {
     SPACINGY,
     ANGLE_X,
     ANGLE_Z,
+    GAP_X,
+    GAP_Y,
+    MARGIN_X,
+    MARGIN_Y,
     VISIBLE,
     ENABLED,
     EMPOPACITY,
@@ -592,6 +596,7 @@ enum class SPAttr {
     INKSCAPE_DESK_CHECKERBOARD,
     // Inkscape-specific mode: clip content rendering to pages' boundaries
     INKSCAPE_CLIP_TO_PAGE_RENDERING,
+    INKSCAPE_ANTIALIAS_RENDERING,
 
     // sentinel
     SPAttr_SIZE

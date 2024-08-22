@@ -22,6 +22,7 @@
 
 #include "svg/svg-color.h"
 #include "svg/stringstream.h"
+#include "util/safe-printf.h"
 
 #include <glibmm/i18n.h>
 
@@ -396,7 +397,7 @@ RegisteredColorPicker::on_changed (guint32 rgba)
     }
     gchar c[32];
     if (_akey == _ckey + "_opacity_LPE") { //For LPE parameter we want stored with alpha
-        sprintf(c, "#%08x", rgba);
+        safeprintf(c, "#%08x", rgba);
     } else {
         sp_svg_write_color(c, sizeof(c), rgba);
     }
@@ -478,11 +479,11 @@ RegisteredRadioButtonPair::RegisteredRadioButtonPair (const Glib::ustring& label
     setProgrammatically = false;
 
     set_orientation(Gtk::ORIENTATION_HORIZONTAL);
-    add(*Gtk::manage(new Gtk::Label(label)));
-    _rb1 = Gtk::manage(new Gtk::RadioButton(label1, true));
+    add(*Gtk::make_managed<Gtk::Label>(label));
+    _rb1 = Gtk::make_managed<Gtk::RadioButton>(label1, true);
     add (*_rb1);
     Gtk::RadioButtonGroup group = _rb1->get_group();
-    _rb2 = Gtk::manage(new Gtk::RadioButton(group, label2, true));
+    _rb2 = Gtk::make_managed<Gtk::RadioButton>(group, label2, true);
     add (*_rb2);
     _rb2->set_active();
     _rb1->set_tooltip_text(tip1);

@@ -11,16 +11,18 @@
 #ifndef INKSCAPE_EXTENSION_DIALOG_H__
 #define INKSCAPE_EXTENSION_DIALOG_H__
 
+#include <memory>
 #include <gtkmm/dialog.h>
 #include <glibmm/value.h>
 #include <glibmm/ustring.h>
 
 namespace Gtk {
 class CheckButton;
-}
+class Widget;
+} // namespace Gtk;
 
-namespace Inkscape {
-namespace Extension {
+namespace Inkscape::Extension {
+
 class Effect;
 class ExecutionEnv;
 class InxParameter;
@@ -41,7 +43,7 @@ class PrefDialog : public Gtk::Dialog {
     Gtk::CheckButton *_checkbox_preview;
 
     /** \brief  Parameter to control live preview */
-    InxParameter *_param_preview;
+    std::unique_ptr<InxParameter> _param_preview;
 
     /** \brief  XML to define the live effects parameter on the dialog */
     static const char * live_param_xml;
@@ -54,9 +56,10 @@ class PrefDialog : public Gtk::Dialog {
     /** \brief  If this is the preferences for an effect, the effect
                 that we're working with. */
     Effect *_effect;
+
     /** \brief  If we're executing in preview mode here is the execution
                 environment for the effect. */
-    ExecutionEnv *_exEnv;
+    std::unique_ptr<ExecutionEnv> _exEnv;
 
     /** \brief  The timer used to make it so that parameters don't respond
                 directly and allows for changes. */
@@ -75,7 +78,7 @@ public:
 };
 
 
-};}; /* namespace Inkscape, Extension */
+} // namespace Inkscape::Extension
 
 #endif /* INKSCAPE_EXTENSION_DIALOG_H__ */
 

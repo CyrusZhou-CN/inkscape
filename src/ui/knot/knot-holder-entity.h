@@ -114,7 +114,6 @@ class PatternKnotHolderEntity : public KnotHolderEntity {
     bool knot_missing() const override;
     void knot_ungrabbed(Geom::Point const &p, Geom::Point const &origin, guint state) override{};
     bool set_item_clickpos(Geom::Point loc) override;
-    void set_offset(Geom::Point loc);
     void update_knot() override;
 
 protected:
@@ -124,7 +123,6 @@ protected:
     Geom::Point _get_pos(gdouble x, gdouble y, bool transform = true) const;
     Geom::IntPoint offset_to_cell(Geom::Point loc) const;
     Geom::IntPoint _cell;
-    std::optional<Geom::Point> _location;
 };
 
 class PatternKnotHolderEntityXY : public PatternKnotHolderEntity {

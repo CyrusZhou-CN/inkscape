@@ -366,7 +366,7 @@ bool Export::exportVector(
             page_ids.insert(std::string(_id));
         }
         // If page then our item set is limited to the overlapping items
-        auto page_items = page->getOverlappingItems();
+        auto page_items = page->getOverlappingItems(true, true);
 
         if (items.empty()) {
             // Items is page_items, remove all items not in this page.

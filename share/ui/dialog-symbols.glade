@@ -237,7 +237,7 @@
                   <object class="GtkLabel" id="cur-set">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="label" translatable="yes">name of the current symbol set</property>
+                    <property name="label" translatable="no">name of the current symbol set</property>
                     <property name="ellipsize">end</property>
                     <property name="single-line-mode">True</property>
                     <property name="xalign">0</property>
@@ -301,7 +301,7 @@
         <property name="can-focus">False</property>
         <property name="margin-end">15</property>
         <property name="margin-top">3</property>
-        <property name="label" translatable="yes">label</property>
+        <property name="label" translatable="no">label</property>
         <property name="xalign">1</property>
       </object>
       <packing>
@@ -357,7 +357,7 @@
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="receives-default">True</property>
-            <property name="tooltip-text" translatable="yes">Add symbol from the current document</property>
+            <property name="tooltip-text" translatable="yes">Convert selected object(s) to symbol</property>
             <property name="image">image1</property>
             <property name="relief">none</property>
           </object>
@@ -372,7 +372,7 @@
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="receives-default">True</property>
-            <property name="tooltip-text" translatable="yes">Remove symbol from the current document</property>
+            <property name="tooltip-text" translatable="yes">Convert selected symbol to object, and all symbols of this type to clones of this object</property>
             <property name="image">image2</property>
             <property name="relief">none</property>
           </object>

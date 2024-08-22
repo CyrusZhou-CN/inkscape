@@ -77,8 +77,8 @@ path_simplify(SPItem *item, float threshold, bool justCoalesce, double size)
     // SPLivarot: Start  -----------------
 
     // Get path to simplify (note that the path *before* LPE calculation is needed)
-    Path *orig = Path_for_item_before_LPE(item, false);
-    if (orig == nullptr) {
+    auto orig = Path_for_item_before_LPE(item, false);
+    if (!orig) {
         return 0;
     }
 
@@ -107,9 +107,6 @@ path_simplify(SPItem *item, float threshold, bool justCoalesce, double size)
 
     // remove irrelevant old nodetypes attibute
     item->removeAttribute("sodipodi:nodetypes");
-
-    // clean up
-    if (orig) delete orig;
 
     return 1;
 }

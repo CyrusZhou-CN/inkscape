@@ -22,6 +22,7 @@
 #include <sigc++/connection.h>
 
 #include "ui/tools/tool-base.h"
+#include "object/weakptr.h"
 
 class SPItem;
 class SPGenericEllipse;
@@ -37,23 +38,25 @@ namespace Inkscape {
 namespace UI {
 namespace Tools {
 
-class ArcTool : public ToolBase {
+class ArcTool : public ToolBase
+{
 public:
     ArcTool(SPDesktop *desktop);
     ~ArcTool() override;
 
-	bool root_handler(GdkEvent* event) override;
-	bool item_handler(SPItem* item, GdkEvent* event) override;
+    bool root_handler(CanvasEvent const &event) override;
+    bool item_handler(SPItem *item, CanvasEvent const &event) override;
+
 private:
-	SPGenericEllipse *arc;
+    SPWeakPtr<SPGenericEllipse> arc;
 
     Geom::Point center;
 
     sigc::connection sel_changed_connection;
 
-	void selection_changed(Inkscape::Selection* selection);
+    void selection_changed(Selection *selection);
 
-	void drag(Geom::Point pt, guint state);
+    void drag(Geom::Point pt, unsigned state);
 	void finishItem();
 	void cancel();
 };

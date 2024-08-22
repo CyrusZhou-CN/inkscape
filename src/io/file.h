@@ -11,6 +11,7 @@
 #ifndef INK_FILE_IO_H
 #define INK_FILE_IO_H
 
+#include <glibmm/refptr.h>
 #include <string>
 
 namespace Gio {
@@ -19,9 +20,6 @@ class File;
 
 namespace Glib {
 class ustring;
-
-template <class T>
-class RefPtr;
 }
 
 class SPDocument;

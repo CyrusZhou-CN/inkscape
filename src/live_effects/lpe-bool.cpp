@@ -63,14 +63,14 @@ static const Util::EnumData<LPEBool::bool_op_ex> BoolOpData[LPEBool::bool_op_ex_
 
 static const Util::EnumDataConverter<LPEBool::bool_op_ex> BoolOpConverter(BoolOpData, sizeof(BoolOpData) / sizeof(*BoolOpData));
 
-static const Util::EnumData<fill_typ> FillTypeData[] = {
+static const Util::EnumData<FillRule> FillTypeData[] = {
     { fill_oddEven, N_("even-odd"), "oddeven" },
     { fill_nonZero, N_("non-zero"), "nonzero" },
     { fill_positive, N_("positive"), "positive" },
     { fill_justDont, N_("take from object"), "from-curve" }
 };
 
-static const Util::EnumDataConverter<fill_typ> FillTypeConverter(FillTypeData, sizeof(FillTypeData) / sizeof(*FillTypeData));
+static const Util::EnumDataConverter<FillRule> FillTypeConverter(FillTypeData, sizeof(FillTypeData) / sizeof(*FillTypeData));
 
 LPEBool::LPEBool(LivePathEffectObject *lpeobject)
     : Effect(lpeobject)
@@ -129,7 +129,7 @@ bool cmp_cut_position(const Path::cut_position &a, const Path::cut_position &b)
 }
 
 Geom::PathVector
-sp_pathvector_boolop_slice_intersect(Geom::PathVector const &pathva, Geom::PathVector const &pathvb, bool inside, fill_typ fra, fill_typ frb)
+sp_pathvector_boolop_slice_intersect(Geom::PathVector const &pathva, Geom::PathVector const &pathvb, bool inside, FillRule fra, FillRule frb)
 {
     // This is similar to sp_pathvector_boolop/bool_op_slice, but keeps only edges inside the cutter area.
     // The code is also based on sp_pathvector_boolop_slice.
@@ -161,8 +161,8 @@ sp_pathvector_boolop_slice_intersect(Geom::PathVector const &pathva, Geom::PathV
     // extract the livarot Paths from the source objects
     // also get the winding rule specified in the style
     // Livarot's outline of arcs is broken. So convert the path to linear and cubics only, for which the outline is created correctly.
-    Path *contour_path = Path_for_pathvector(pathv_to_linear_and_cubic_beziers(pathva));
-    Path *area_path = Path_for_pathvector(pathv_to_linear_and_cubic_beziers(pathvb));
+    auto contour_path = Path_for_pathvector(pathv_to_linear_and_cubic_beziers(pathva));
+    auto area_path = Path_for_pathvector(pathv_to_linear_and_cubic_beziers(pathvb));
 
     // Shapes from above paths
     Shape *area_shape = new Shape;
@@ -279,7 +279,7 @@ sp_pathvector_boolop_slice_intersect(Geom::PathVector const &pathva, Geom::PathV
     }
 
     // Copy the original path to result and cut at the intersection points
-    result_path->Copy(contour_path);
+    result_path->Copy(contour_path.get());
     result_path->ConvertPositionsToMoveTo(toCut.size(), toCut.data());   // cut where you found intersections
 
     // Create an array of bools which states which pieces are in
@@ -329,13 +329,8 @@ sp_pathvector_boolop_slice_intersect(Geom::PathVector const &pathva, Geom::PathV
     delete combined_inters;
     delete combined_shape;
     delete area_shape;
-    delete contour_path;
-    delete area_path;
 
-    gchar *result_str = result_path->svg_dump_path();
-    Geom::PathVector outres =  Geom::parse_svg_path(result_str);
-    // CONCEPT TESTING g_warning( "%s", result_str );
-    g_free(result_str);
+    auto outres = result_path->MakePathVector();
     delete result_path;
 
     return outres;
@@ -343,10 +338,10 @@ sp_pathvector_boolop_slice_intersect(Geom::PathVector const &pathva, Geom::PathV
 
 // remove inner contours
 Geom::PathVector
-sp_pathvector_boolop_remove_inner(Geom::PathVector const &pathva, fill_typ fra)
+sp_pathvector_boolop_remove_inner(Geom::PathVector const &pathva, FillRule fra)
 {
     Geom::PathVector patht;
-    Path *patha = Path_for_pathvector(pathv_to_linear_and_cubic_beziers(pathva));
+    auto patha = Path_for_pathvector(pathv_to_linear_and_cubic_beziers(pathva));
 
     Shape *shape = new Shape;
     Shape *shapeshape = new Shape;
@@ -356,21 +351,19 @@ sp_pathvector_boolop_remove_inner(Geom::PathVector const &pathva, fill_typ fra)
     patha->ConvertWithBackData(0.1);
     patha->Fill(shape, 0);
     shapeshape->ConvertToShape(shape, fra);
-    shapeshape->ConvertToForme(resultp, 1, &patha);
+    Path *paths[] = { patha.get() };
+    shapeshape->ConvertToForme(resultp, 1, paths);
 
     delete shape;
     delete shapeshape;
-    delete patha;
 
-    gchar *result_str = resultp->svg_dump_path();
-    Geom::PathVector resultpv =  Geom::parse_svg_path(result_str);
-    g_free(result_str);
+    auto resultpv = resultp->MakePathVector();
 
     delete resultp;
     return resultpv;
 }
 
-static fill_typ GetFillTyp(SPItem *item)
+static FillRule GetFillTyp(SPItem *item)
 {
     SPCSSAttr *css = sp_repr_css_attr(item->getRepr(), "style");
     gchar const *val = sp_repr_css_property(css, "fill-rule", nullptr);
@@ -618,7 +611,7 @@ Geom::PathVector LPEBool::get_union(SPObject *root, SPObject *object, bool _from
         }
     }
     if (auto shape = cast<SPShape>(object)) {
-        fill_typ originfill = fill_oddEven;
+        FillRule originfill = fill_oddEven;
         auto curve = _from_original_d
                    ? shape->curveForEdit()
                    : shape->curve();
@@ -682,12 +675,12 @@ void LPEBool::doEffect(SPCurve *curve)
         _hp.insert(_hp.end(), path_b.begin(), path_b.end());
         _hp *= current_affine.inverse();
         auto item = cast<SPItem>(operand_item.getObject());
-        fill_typ fill_this    = fill_type_this.get_value() != fill_justDont ? fill_type_this.get_value() : GetFillTyp(current_shape);
-        fill_typ fill_operand =
+        FillRule fill_this    = fill_type_this.get_value() != fill_justDont ? fill_type_this.get_value() : GetFillTyp(current_shape);
+        FillRule fill_operand =
             fill_type_operand.get_value() != fill_justDont ? fill_type_operand.get_value() : GetFillTyp(item);
 
-        fill_typ fill_a = swap ? fill_this : fill_operand;
-        fill_typ fill_b = swap ? fill_operand : fill_this;
+        FillRule fill_a = swap ? fill_this : fill_operand;
+        FillRule fill_b = swap ? fill_operand : fill_this;
 
         if (rmv_inner.get_value()) {
             path_b = sp_pathvector_boolop_remove_inner(path_b, fill_b);
@@ -698,7 +691,7 @@ void LPEBool::doEffect(SPCurve *curve)
             if (onremove) {
                 path_out = sp_pathvector_boolop(path_a, path_b, to_bool_op(bool_op_ex_diff), fill_a, fill_b, legacytest_livarotonly);
             } else {
-                int error = 0;
+                bool error = false;
                 Geom::PathVector path_tmp = sp_pathvector_boolop(path_a, path_b, to_bool_op(op), fill_a, fill_b, legacytest_livarotonly, true, error);
                 for (auto pathit : path_tmp) {
                     if (pathit.size() != 2 || !error) {
@@ -772,8 +765,8 @@ void LPEBool::fractureit(SPObject * operandit, Geom::PathVector unionpv)
     auto operandit_item = cast<SPItem>(operandit);
     auto operandit_g = cast<SPGroup>(operandit);
     auto operandit_shape = cast<SPShape>(operandit);
-    fill_typ fill_a = fill_type_this.get_value() != fill_justDont ? fill_type_this.get_value() : GetFillTyp(operandit_item);
-    fill_typ fill_b = fill_type_operand.get_value() != fill_justDont ? fill_type_operand.get_value() : GetFillTyp(operandit_item);
+    FillRule fill_a = fill_type_this.get_value() != fill_justDont ? fill_type_this.get_value() : GetFillTyp(operandit_item);
+    FillRule fill_b = fill_type_operand.get_value() != fill_justDont ? fill_type_operand.get_value() : GetFillTyp(operandit_item);
     //unionpv *= sp_lpe_item->transform;
     auto divisionit = cast<SPItem>(getSPDoc()->getObjectById(division_id)); 
     if (operandit_g) {
@@ -843,8 +836,8 @@ void LPEBool::divisionit(SPObject * operand_a, SPObject * operand_b, Geom::PathV
     auto operand_b_item = cast<SPItem>(operand_b);
     auto operand_b_g = cast<SPGroup>(operand_b);
     auto operand_b_shape = cast<SPShape>(operand_b);
-    fill_typ fill_a = fill_type_this.get_value() != fill_justDont ? fill_type_this.get_value() : GetFillTyp(operand_a_item);
-    fill_typ fill_b = fill_type_operand.get_value() != fill_justDont ? fill_type_operand.get_value() : GetFillTyp(operand_b_item);
+    FillRule fill_a = fill_type_this.get_value() != fill_justDont ? fill_type_this.get_value() : GetFillTyp(operand_a_item);
+    FillRule fill_b = fill_type_operand.get_value() != fill_justDont ? fill_type_operand.get_value() : GetFillTyp(operand_b_item);
     if (operand_b_g) {
         Inkscape::XML::Node *dest = dupleNode(operand_b, "svg:g");
         dest->setAttribute("transform", nullptr);

@@ -453,8 +453,22 @@ static void sp_anchor_render(SPAnchor *a, CairoRenderContext *ctx)
     CairoRenderer *renderer = ctx->getRenderer();
 
     std::vector<SPObject*> l(a->childList(false));
-    if (a->href)
-        ctx->tagBegin(a->href);
+    if (a->href) {
+        // Raw linking, whatever the user said they wanted
+        char* link = g_strdup_printf("uri='%s'", a->href);
+        if (a->local_link) {
+            if (auto obj = a->local_link->getObject()) {
+                g_free(link);
+                // We wanted to use the syntax page=%d here to link to pages, but
+                // cairo has an odd bug that only allows linking to previous pages
+                // So we link everything with a dest link instead.
+                link = g_strdup_printf("dest='%s'", obj->getId());
+            }
+        }
+        ctx->tagBegin(link);
+        g_free(link);
+    }
+
     for(auto x : l){
         auto item = cast<SPItem>(x);
         if (item) {
@@ -596,6 +610,16 @@ static void sp_asbitmap_render(SPItem *item, CairoRenderContext *ctx, SPPage *pa
 
 static void sp_item_invoke_render(SPItem *item, CairoRenderContext *ctx, SPItem *origin, SPPage *page)
 {
+    std::vector<SPObject *> links;
+    item->getLinked(links, true);
+    bool is_linked = false;
+    for (auto link : links) {
+        is_linked |= is<SPAnchor>(link);
+    }
+
+    if (is_linked)
+        ctx->destBegin(item->getId());
+
     if (auto root = cast<SPRoot>(item)) {
         TRACE(("root\n"));
         sp_root_render(root, ctx);
@@ -623,11 +647,13 @@ static void sp_item_invoke_render(SPItem *item, CairoRenderContext *ctx, SPItem 
         sp_image_render(image, ctx);
     } else if (is<SPMarker>(item)) {
         // Marker contents shouldn't be rendered, even outside of <defs>.
-        return;
     } else if (auto group = cast<SPGroup>(item)) {
         TRACE(("<g>\n"));
         sp_group_render(group, ctx, origin, page);
     }
+
+    if (is_linked)
+        ctx->destEnd();
 }
 
 void
@@ -820,6 +846,10 @@ CairoRenderer::renderPages(CairoRenderContext *ctx, SPDocument *doc, bool stretc
         if (!renderPage(ctx, doc, page, stretch_to_fit)) {
             return false;
         }
+        // Create a page dest for any anchor tags that link to this page.
+        ctx->destBegin(page->getId());
+        ctx->destEnd();
+
         if (!ctx->finishPage()) {
             g_warning("Couldn't render page in output!");
             return false;
@@ -860,7 +890,7 @@ CairoRenderer::renderPage(CairoRenderContext *ctx, SPDocument *doc, SPPage *page
     // Set up page transformation which pushes objects back into the 0,0 location
     ctx->transform(Geom::Translate(rect.corner(0)).inverse());
 
-    for (auto &child : page->getOverlappingItems(false)) {
+    for (auto &child : page->getOverlappingItems(false, true, false)) {
         ctx->pushState();
 
         // This process does not return layers, so those affines are added manually.

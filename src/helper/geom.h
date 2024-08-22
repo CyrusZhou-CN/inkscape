@@ -135,6 +135,16 @@ inline auto roundedOutwards(Geom::OptRect const &rect)
     return rect ? rect->roundOutwards() : Geom::OptIntRect();
 }
 
+/**
+ * Compute the maximum factor by which @a affine can increase a vector's length.
+ */
+inline double max_expansion(Geom::Affine const &affine)
+{
+    auto const t = (Geom::sqr(affine[0]) + Geom::sqr(affine[1]) + Geom::sqr(affine[2]) + Geom::sqr(affine[3])) / 2;
+    auto const d = std::abs(affine.det());
+    return std::sqrt(t + std::sqrt(std::max(t - d, 0.0) * (t + d)));
+}
+
 #endif // INKSCAPE_HELPER_GEOM_H
 
 /*

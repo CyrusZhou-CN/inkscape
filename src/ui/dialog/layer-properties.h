@@ -13,18 +13,25 @@
 #ifndef INKSCAPE_DIALOG_LAYER_PROPERTIES_H
 #define INKSCAPE_DIALOG_LAYER_PROPERTIES_H
 
+#include <gdk/gdk.h> // GdkModifierType
+#include <gtk/gtk.h> // GtkEventControllerKey
+#include <glibmm/refptr.h>
+#include <gtkmm/combobox.h>
 #include <gtkmm/dialog.h>
 #include <gtkmm/entry.h>
-#include <gtkmm/label.h>
+#include <gtkmm/gesture.h> // Gtk::EventSequenceState
 #include <gtkmm/grid.h>
-
-#include <gtkmm/combobox.h>
+#include <gtkmm/label.h>
 #include <gtkmm/liststore.h>
-#include <gtkmm/treeview.h>
-#include <gtkmm/treestore.h>
 #include <gtkmm/scrolledwindow.h>
+#include <gtkmm/treestore.h>
+#include <gtkmm/treeview.h>
 
 #include "layer-manager.h"
+
+namespace Gtk {
+class GestureMultiPress;
+}
 
 class SPDesktop;
 
@@ -86,7 +93,6 @@ private:
     class ModelColumns : public Gtk::TreeModel::ColumnRecord
     {
     public:
-
         ModelColumns()
         {
             add(_colObject);
@@ -106,7 +112,6 @@ private:
     ModelColumns* _model;
     Glib::RefPtr<Gtk::TreeStore> _store;
     Gtk::ScrolledWindow _scroller;
-
 
     PositionDropdownColumns _dropdown_columns;
     Gtk::CellRendererText _label_renderer;
@@ -130,8 +135,12 @@ private:
 
     void _addLayer(SPObject* layer, Gtk::TreeModel::Row* parentRow, SPObject* target, int level);
     SPObject* _selectedLayer();
-    bool _handleKeyEvent(GdkEventKey *event);
-    void _handleButtonEvent(GdkEventButton* event);
+
+    bool on_key_pressed(GtkEventControllerKey const *controller,
+                        unsigned keyval, unsigned keycode,
+                        GdkModifierType state);
+    Gtk::EventSequenceState on_click_pressed(Gtk::GestureMultiPress const &click,
+                                             int n_press, double x, double y);
 
     void _doCreate();
     void _doMove();
@@ -139,10 +148,9 @@ private:
     void _setup();
 };
 
-} // namespace
-} // namespace
-} // namespace
-
+} // namespace Dialogs
+} // namespace UI
+} // namespace Inkscape
 
 #endif //INKSCAPE_DIALOG_LAYER_PROPERTIES_H
 

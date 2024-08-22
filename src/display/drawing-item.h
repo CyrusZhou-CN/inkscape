@@ -16,6 +16,7 @@
 #include <memory>
 #include <list>
 #include <exception>
+#include <optional>
 
 #include <boost/operators.hpp>
 #include <boost/utility.hpp>
@@ -40,9 +41,15 @@ class DrawingPattern;
 class DrawingContext;
 namespace Filters { class Filter; }
 
+enum class Antialiasing : unsigned char
+{
+    None, Fast, Good, Best
+};
+
 struct RenderContext
 {
     uint32_t outline_color;
+    std::optional<Antialiasing> antialiasing_override;
 };
 
 struct UpdateContext
@@ -115,6 +122,7 @@ public:
     DrawingItem *parent() const { return _parent; }
     bool isAncestorOf(DrawingItem const *item) const;
     int getUpdateComplexity() const { return _update_complexity; }
+    bool unisolatedBlend() const;
 
     void appendChild(DrawingItem *item);
     void prependChild(DrawingItem *item);
@@ -128,8 +136,7 @@ public:
     virtual void setStyle(SPStyle const *style, SPStyle const *context_style = nullptr);
     virtual void setChildrenStyle(SPStyle const *context_style);
     void setOpacity(float opacity);
-    void setAntialiasing(unsigned antialias);
-    unsigned antialiasing() const { return _antialias; }
+    void setAntialiasing(Antialiasing antialias);
     void setIsolation(bool isolation); // CSS Compositing and Blending
     void setBlendMode(SPBlendMode blend_mode);
     void setTransform(Geom::Affine const &trans);
@@ -220,6 +227,7 @@ protected:
     std::unique_ptr<Inkscape::Filters::Filter> _filter;
     std::unique_ptr<CacheData> _cache;
     int _update_complexity = 0;
+    bool _contains_unisolated_blend : 1;
 
     CacheList::iterator _cache_iterator;
 
@@ -239,7 +247,7 @@ protected:
     unsigned _has_cache_iterator : 1; ///< If set, _cache_iterator is valid
     unsigned _pick_children : 1; ///< For groups: if true, children are returned from pick(),
                                  ///  otherwise the group is returned
-    unsigned _antialias : 2; ///< antialiasing level (NONE/FAST/GOOD(DEFAULT)/BEST)
+    Antialiasing _antialias : 2; ///< antialiasing level (default is Good)
 
     bool _isolation : 1;
     SPBlendMode _blend_mode;
@@ -256,7 +264,10 @@ protected:
 };
 
 /// Apply antialias setting to Cairo.
-void apply_antialias(DrawingContext &dc, int antialias);
+void apply_antialias(DrawingContext &dc, Antialiasing antialias);
+
+/// Propagate element's shape rendering attribute into internal anti-aliasing setting of DrawingItem.
+void propagate_antialias(SPShapeRendering shape_rendering, DrawingItem &item);
 
 } // namespace Inkscape
 

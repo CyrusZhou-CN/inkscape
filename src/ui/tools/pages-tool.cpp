@@ -17,17 +17,13 @@
 
 #include "desktop.h"
 #include "display/control/canvas-item-bpath.h"
-#include "display/control/canvas-item-curve.h"
 #include "display/control/canvas-item-group.h"
 #include "display/control/canvas-item-rect.h"
 #include "display/control/snap-indicator.h"
 #include "document-undo.h"
-#include "include/macros.h"
 #include "object/sp-page.h"
 #include "path/path-outline.h"
 #include "pure-transform.h"
-#include "rubberband.h"
-#include "selection-chemistry.h"
 #include "selection.h"
 #include "snap-preferences.h"
 #include "snap.h"
@@ -35,14 +31,14 @@
 #include "ui/knot/knot.h"
 #include "ui/modifiers.h"
 #include "ui/widget/canvas.h"
+#include "ui/widget/events/canvas-event.h"
 
 using Inkscape::Modifiers::Modifier;
 
-#define INDEX_OF(v, k) (std::distance(v.begin(), std::find(v.begin(), v.end(), k)));
+template <typename Tv, typename Tk>
+static auto INDEX_OF(Tv const &v, Tk const &k) { return std::distance(v.begin(), std::find(v.begin(), v.end(), k)); }
 
-namespace Inkscape {
-namespace UI {
-namespace Tools {
+namespace Inkscape::UI::Tools {
 
 PagesTool::PagesTool(SPDesktop *desktop)
     : ToolBase(desktop, "/tools/pages", "select.svg")
@@ -79,10 +75,10 @@ PagesTool::PagesTool(SPDesktop *desktop)
             margin_knots.push_back(m_knot);
 
             if (auto window = desktop->getCanvas()->get_window()) {
-                knot->setCursor(SP_KNOT_STATE_DRAGGING, this->get_cursor(window, "page-resizing.svg"));
-                knot->setCursor(SP_KNOT_STATE_MOUSEOVER, this->get_cursor(window, "page-resize.svg"));
-                m_knot->setCursor(SP_KNOT_STATE_DRAGGING, this->get_cursor(window, "page-resizing.svg"));
-                m_knot->setCursor(SP_KNOT_STATE_MOUSEOVER, this->get_cursor(window, "page-resize.svg"));
+                knot->setCursor(SP_KNOT_STATE_DRAGGING, get_cursor(window, "page-resizing.svg"));
+                knot->setCursor(SP_KNOT_STATE_MOUSEOVER, get_cursor(window, "page-resize.svg"));
+                m_knot->setCursor(SP_KNOT_STATE_DRAGGING, get_cursor(window, "page-resizing.svg"));
+                m_knot->setCursor(SP_KNOT_STATE_MOUSEOVER, get_cursor(window, "page-resize.svg"));
             }
         }
     }
@@ -230,7 +226,6 @@ void PagesTool::resizeKnotFinished(SPKnot *knot, guint state)
     mouse_is_pressed = false;
 }
 
-
 bool PagesTool::marginKnotMoved(SPKnot *knot, Geom::Point *ppointer, guint state)
 {
     auto document = _desktop->getDocument();
@@ -270,38 +265,36 @@ void PagesTool::marginKnotFinished(SPKnot *knot, guint state)
     // Margins are updated in real time.
 }
 
-bool PagesTool::root_handler(GdkEvent *event)
+bool PagesTool::root_handler(CanvasEvent const &event)
 {
     bool ret = false;
     auto &page_manager = _desktop->getDocument()->getPageManager();
 
-    switch (event->type) {
-        case GDK_BUTTON_PRESS: {
-            if (event->button.button == 1) {
+    inspect_event(event,
+        [&] (ButtonPressEvent const &event) {
+            if (event.numPress() == 1 && event.button() == 1) {
                 mouse_is_pressed = true;
-                drag_origin_w = Geom::Point(event->button.x, event->button.y);
+                drag_origin_w = event.eventPos();
                 drag_origin_dt = _desktop->w2d(drag_origin_w);
                 ret = true;
                 if (auto page = pageUnder(drag_origin_dt, false)) {
                     // Select the clicked on page. Manager ignores the same-page.
                     _desktop->getDocument()->getPageManager().selectPage(page);
-                    this->set_cursor("page-dragging.svg");
+                    set_cursor("page-dragging.svg");
                 } else if (viewboxUnder(drag_origin_dt)) {
                     dragging_viewbox = true;
-                    this->set_cursor("page-dragging.svg");
+                    set_cursor("page-dragging.svg");
                 } else {
-                    drag_origin_dt = getSnappedResizePoint(drag_origin_dt, event->button.state, Geom::Point(0, 0));
+                    drag_origin_dt = getSnappedResizePoint(drag_origin_dt, event.modifiers(), {});
                 }
             }
-            break;
-        }
-        case GDK_MOTION_NOTIFY: {
-
-            auto point_w = Geom::Point(event->motion.x, event->motion.y);
+        },
+        [&] (MotionEvent const &event) {
+            auto point_w = event.eventPos();
             auto point_dt = _desktop->w2d(point_w);
-            bool snap = !(event->motion.state & GDK_SHIFT_MASK);
+            bool snap = !(event.modifiers() & GDK_SHIFT_MASK);
 
-            if (event->motion.state & GDK_BUTTON1_MASK) {
+            if (event.modifiers() & GDK_BUTTON1_MASK) {
                 if (!mouse_is_pressed) {
                     // this sometimes happens if the mouse was off the edge when the event started
                     drag_origin_w = point_w;
@@ -319,7 +312,7 @@ bool PagesTool::root_handler(GdkEvent *event)
                     _desktop->getCanvas()->enable_autoscroll();
                 } else if (on_screen_rect) {
                     // Continue to drag new box
-                    point_dt = getSnappedResizePoint(point_dt, event->motion.state, drag_origin_dt);
+                    point_dt = getSnappedResizePoint(point_dt, event.modifiers(), drag_origin_dt);
                     on_screen_rect = Geom::Rect(drag_origin_dt, point_dt);
                 } else if (Geom::distance(drag_origin_w, point_w) < drag_tolerance) {
                     // do not start dragging anything new if we're within tolerance from origin.
@@ -338,21 +331,20 @@ bool PagesTool::root_handler(GdkEvent *event)
                     // Start making a new page.
                     dragging_item = nullptr;
                     on_screen_rect = Geom::Rect(drag_origin_dt, drag_origin_dt);
-                    this->set_cursor("page-draw.svg");
+                    set_cursor("page-draw.svg");
                 }
             } else {
                 mouse_is_pressed = false;
                 drag_origin_dt = point_dt;
             }
-            break;
-        }
-        case GDK_BUTTON_RELEASE: {
-            if (event->button.button != 1) {
-                break;
+        },
+        [&] (ButtonReleaseEvent const &event) {
+            if (event.button() != 1) {
+                return;
             }
-            auto point_w = Geom::Point(event->button.x, event->button.y);
+            auto point_w = event.eventPos();
             auto point_dt = _desktop->w2d(point_w);
-            bool snap = !(event->button.state & GDK_SHIFT_MASK);
+            bool snap = !(event.modifiers() & GDK_SHIFT_MASK);
             auto document = _desktop->getDocument();
 
             if (dragging_viewbox || dragging_item) {
@@ -360,8 +352,8 @@ bool PagesTool::root_handler(GdkEvent *event)
                     // Move the document's viewport first
                     auto page_items = page_manager.getOverlappingItems(_desktop, dragging_item);
                     auto rect = document->preferredBounds();
-                    auto affine = moveTo(point_dt, snap) * document->dt2doc();
-                    document->fitToRect(*rect * affine, false);
+                    auto affine = moveTo(point_dt, snap);
+                    document->fitToRect(*rect * affine * document->dt2doc(), false);
                     // Now move the page back to where we expect it.
                     if (dragging_item) {
                         dragging_item->movePage(affine, false);
@@ -387,23 +379,21 @@ bool PagesTool::root_handler(GdkEvent *event)
 
             // Clear snap indication on mouse up.
             _desktop->snapindicator->remove_snaptarget();
-            break;
-        }
-        case GDK_KEY_PRESS: {
-            if (event->key.keyval == GDK_KEY_Escape) {
+        },
+        [&] (KeyPressEvent const &event) {
+            if (event.keyval() == GDK_KEY_Escape) {
                 mouse_is_pressed = false;
                 ret = true;
             }
-            if (event->key.keyval == GDK_KEY_Delete) {
+            if (event.keyval() == GDK_KEY_Delete) {
                 page_manager.deletePage(page_manager.move_objects());
 
                 Inkscape::DocumentUndo::done(_desktop->getDocument(), "Delete Page", INKSCAPE_ICON("tool-pages"));
                 ret = true;
             }
-        }
-        default:
-            break;
-    }
+        },
+        [&] (CanvasEvent const &event) {}
+    );
 
     // Clean up any finished dragging, doesn't matter how it ends
     if (!mouse_is_pressed && (dragging_item || on_screen_rect || dragging_viewbox)) {
@@ -421,18 +411,18 @@ bool PagesTool::root_handler(GdkEvent *event)
     if (!mouse_is_pressed) {
         if (pageUnder(drag_origin_dt) || viewboxUnder(drag_origin_dt)) {
             // This page under uses the current mouse position (unlike the above)
-            this->set_cursor("page-mouseover.svg");
+            set_cursor("page-mouseover.svg");
         } else {
-            this->set_cursor("page-draw.svg");
+            set_cursor("page-draw.svg");
         }
     }
 
-
-    return ret ? true : ToolBase::root_handler(event);
+    return ret || ToolBase::root_handler(event);
 }
 
-void PagesTool::menu_popup(GdkEvent *event, SPObject *obj)
+void PagesTool::menu_popup(CanvasEvent const &canvas_event, SPObject *obj)
 {
+    auto event = canvas_event.original();
     auto &page_manager = _desktop->getDocument()->getPageManager();
     SPPage *page = page_manager.getSelected();
     if (event->type != GDK_KEY_PRESS) {
@@ -441,7 +431,7 @@ void PagesTool::menu_popup(GdkEvent *event, SPObject *obj)
         page = pageUnder(drag_origin_dt);
     }
     if (page) {
-        ToolBase::menu_popup(event, page);
+        ToolBase::menu_popup(canvas_event, page);
     }
 }
 
@@ -604,8 +594,6 @@ void PagesTool::connectDocument(SPDocument *doc)
     }
 }
 
-
-
 void PagesTool::selectionChanged(SPDocument *doc, SPPage *page)
 {
     if (_page_modified_connection) {
@@ -643,7 +631,6 @@ void PagesTool::selectionChanged(SPDocument *doc, SPPage *page)
     }
 }
 
-
 void PagesTool::pageModified(SPObject *object, guint /*flags*/)
 {
     if (auto page = cast<SPPage>(object)) {
@@ -652,9 +639,7 @@ void PagesTool::pageModified(SPObject *object, guint /*flags*/)
     }
 }
 
-} // namespace Tools
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Tools
 
 /*
   Local Variables:

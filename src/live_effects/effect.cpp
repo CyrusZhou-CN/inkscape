@@ -1831,7 +1831,7 @@ Gtk::Widget *
 Effect::newWidget()
 {
     // use manage here, because after deletion of Effect object, others might still be pointing to this widget.
-    Gtk::Box * vbox = Gtk::manage( new Gtk::Box(Gtk::ORIENTATION_VERTICAL) );
+    auto const vbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
 
     vbox->set_border_width(5);
 
@@ -1859,7 +1859,7 @@ Effect::newWidget()
 
         ++it;
     }
-    return dynamic_cast<Gtk::Widget *>(vbox);
+    return vbox;
 }
 
 bool sp_enter_tooltip(GdkEventCrossing *evt, Gtk::Widget *widg)

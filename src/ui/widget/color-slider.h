@@ -13,8 +13,14 @@
 #ifndef SEEN_COLOR_SLIDER_H
 #define SEEN_COLOR_SLIDER_H
 
+#include <gtk/gtk.h> // GtkEventController*
+#include <gtkmm/gesture.h> // Gtk::EventSequenceState
 #include <gtkmm/widget.h>
 #include <sigc++/signal.h>
+
+namespace Gtk {
+class GestureMultiPress;
+} // namespace Gtk
 
 namespace Inkscape {
 namespace UI {
@@ -45,9 +51,6 @@ protected:
     void on_size_allocate(Gtk::Allocation &allocation) override;
     void on_realize() override;
     void on_unrealize() override;
-    bool on_button_press_event(GdkEventButton *event) override;
-    bool on_button_release_event(GdkEventButton *event) override;
-    bool on_motion_notify_event(GdkEventMotion *event) override;
     bool on_draw(const Cairo::RefPtr<Cairo::Context> &cr) override;
     void get_preferred_width_vfunc(int &minimum_width, int &natural_width) const override;
     void get_preferred_width_for_height_vfunc(int height, int &minimum_width, int &natural_width) const override;
@@ -55,6 +58,12 @@ protected:
     void get_preferred_height_for_width_vfunc(int width, int &minimum_height, int &natural_height) const override;
 
 private:
+    Gtk::EventSequenceState on_click_pressed (Gtk::GestureMultiPress const &click,
+                                              int n_press, double x, double y);
+    Gtk::EventSequenceState on_click_released(Gtk::GestureMultiPress const &click,
+                                              int n_press, double x, double y);
+    void on_motion(GtkEventControllerMotion const *motion, double x, double y);
+
     void _onAdjustmentChanged();
     void _onAdjustmentValueChanged();
 

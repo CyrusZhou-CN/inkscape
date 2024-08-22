@@ -103,9 +103,9 @@ void SelCue::_updateItemBboxes(gint mode, int prefs_bbox)
                 } else if (auto rect = dynamic_cast<CanvasItemRect *>(canvas_item)) {
                     rect->set_rect(*b);
                 }
-                canvas_item->show();
+                canvas_item->set_visible(true);
             } else { // no bbox
-                canvas_item->hide();
+                canvas_item->set_visible(false);
             }
         }
     }
@@ -153,7 +153,7 @@ void SelCue::_newItemBboxes()
             if (canvas_item) {
                 canvas_item->set_pickable(false);
                 canvas_item->lower_to_bottom(); // Just low enough to not get in the way of other draggable knots.
-                canvas_item->show();
+                canvas_item->set_visible(true);
                 _item_bboxes.emplace_back(std::move(canvas_item));
             }
         }
@@ -179,7 +179,7 @@ void SelCue::_newItemLines()
         for (bool horz : {false, true}) {
             auto line = make_canvasitem<CanvasItemGuideLine>(_desktop->getCanvasGuides(), "", point, Geom::Point(!horz, horz));
             line->lower_to_bottom();
-            line->show();
+            line->set_visible(true);
             line->set_stroke(0xddddaa11);
             line->set_inverted(true);
             _item_lines.emplace_back(std::move(line));
@@ -205,7 +205,7 @@ void SelCue::_newTextBaselines()
             canvas_item->set_stroke(0x000000ff);
             canvas_item->set_fill(0x00000000);
             canvas_item->lower_to_bottom();
-            canvas_item->show();
+            canvas_item->set_visible(true);
             _text_baselines.emplace_back(std::move(canvas_item));
         }
     }

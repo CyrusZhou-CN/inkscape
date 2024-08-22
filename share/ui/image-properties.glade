@@ -65,7 +65,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="margin-top">1</property>
-                <property name="label" translatable="yes">&lt;small&gt;#label&lt;/small&gt;</property>
+                <property name="label" translatable="no">&lt;small&gt;#label&lt;/small&gt;</property>
                 <property name="use-markup">True</property>
                 <property name="ellipsize">end</property>
               </object>
@@ -165,11 +165,11 @@ Linked&lt;/small&gt;</property>
         </child>
         <child>
           <object class="GtkButton" id="export">
-            <property name="label" translatable="yes">Extract...</property>
+            <property name="label" translatable="yes">Save copy...</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
-            <property name="tooltip-text" translatable="yes">Save image into a file</property>
+            <property name="tooltip-text" translatable="yes">Save a copy of this image to a file</property>
             <property name="image">image3</property>
             <property name="always-show-image">True</property>
           </object>

@@ -16,32 +16,30 @@
 # include "config.h"  // only include where actually required!
 #endif
 
+#include "svg-color.h"
+
 #include <cstdlib>
 #include <cstdio> // sprintf
 #include <cstring>
 #include <string>
 #include <cmath>
-#include <glib.h> // g_assert
 #include <cerrno>
-
 #include <map>
+#include <vector>
 
-#include "colorspace.h"
-#include "strneq.h"
-#include "preferences.h"
-#include "svg-color.h"
-#include "svg-icc-color.h"
+#include <glib.h> // g_assert
 
 #include "color.h"
-
-#include <vector>
-#include "object/color-profile.h"
-
+#include "colorspace.h"
 #include "document.h"
 #include "inkscape.h"
+#include "preferences.h"
 #include "profile-manager.h"
+#include "strneq.h"
+#include "svg-icc-color.h"
 
-#include "cms-system.h"
+#include "color/cms-system.h"
+#include "object/color-profile.h"
 
 struct SPSVGColor {
     unsigned long rgb;
@@ -422,7 +420,7 @@ guint32 sp_svg_read_color(gchar const *str, gchar const **end_ptr, guint32 dfl)
  * Converts an RGB colour expressed in form 0x00rrggbb to a CSS/SVG representation of that colour.
  * The result is valid even in SVG Tiny or non-SVG CSS.
  */
-static void rgb24_to_css(char *const buf, unsigned const rgb24)
+static void rgb24_to_css(char *const buf, size_t buflen, unsigned const rgb24)
 {
     g_assert(rgb24 < (1u << 24));
 
@@ -457,12 +455,12 @@ static void rgb24_to_css(char *const buf, unsigned const rgb24)
         default: {
             if ((rgb24 & 0xf0f0f) * 0x11 == rgb24) {
                 /* Can use the shorter three-digit form #rgb instead of #rrggbb. */
-                std::sprintf(buf, "#%x%x%x",
+                std::snprintf(buf, buflen, "#%x%x%x",
                         (rgb24 >> 16) & 0xf,
                         (rgb24 >> 8) & 0xf,
                         rgb24 & 0xf);
             } else {
-                std::sprintf(buf, "#%06x", rgb24);
+                std::snprintf(buf, buflen, "#%06x", rgb24);
             }
             break;
         }
@@ -489,7 +487,7 @@ void sp_svg_write_color(gchar *buf, unsigned const buflen, guint32 const rgba32)
     unsigned const rgb24 = rgba32 >> 8;
     if ( prefs->getBool("/options/svgoutput/usenamedcolors") &&
         !prefs->getBool("/options/svgoutput/disable_optimizations" )) {
-        rgb24_to_css(buf, rgb24);
+        rgb24_to_css(buf, buflen, rgb24);
     } else {
         g_snprintf(buf, buflen, "#%06x", rgb24);
     }
@@ -517,7 +515,7 @@ void icc_color_to_sRGB(SVGICCColor const* icc, guchar* r, guchar* g, guchar* b)
             if ( trans ) {
                 std::vector<colorspace::Component> comps = colorspace::getColorSpaceInfo( prof );
 
-                size_t count = Inkscape::CMSSystem::getChannelCount( prof );
+                size_t count = prof->getChannelCount();
                 size_t cap = std::min(count, comps.size());
                 guchar color_in[4];
                 for (size_t i = 0; i < cap; i++) {
@@ -525,8 +523,8 @@ void icc_color_to_sRGB(SVGICCColor const* icc, guchar* r, guchar* g, guchar* b)
                     g_message("input[%d]: %d", (int)i, (int)color_in[i]);
                 }
 
-                Inkscape::CMSSystem::doTransform( trans, color_in, color_out, 1 );
-g_message("transform to sRGB done");
+                Inkscape::CMSSystem::do_transform( trans, color_in, color_out, 1 );
+                g_message("transform to sRGB done");
             }
             *r = color_out[0];
             *g = color_out[1];

@@ -44,6 +44,7 @@ using librevenge::RVNGStringVector;
 #include "inkscape.h"
 
 #include "ui/dialog-events.h"
+#include "ui/dialog-run.h"
 #include <glibmm/i18n.h>
 
 #include "ui/view/svg-view-widget.h"
@@ -109,15 +110,15 @@ VsdImportDialog::VsdImportDialog(const std::vector<RVNGString> &vec)
      this->property_destroy_with_parent().set_value(false);
 
      // Preview area
-     vbox1 = Gtk::manage(new class Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+     vbox1 = Gtk::make_managed<class Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
      this->get_content_area()->pack_start(*vbox1);
 
      // CONTROLS
-     _page_selector_box = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL));
+     _page_selector_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
 
      // Labels
-     _labelSelect = Gtk::manage(new class Gtk::Label(_("Select page:")));
-     _labelTotalPages = Gtk::manage(new class Gtk::Label());
+     _labelSelect = Gtk::make_managed<class Gtk::Label>(_("Select page:"));
+     _labelTotalPages = Gtk::make_managed<class Gtk::Label>();
      _labelSelect->set_line_wrap(false);
      _labelSelect->set_use_markup(false);
      _labelSelect->set_selectable(false);
@@ -125,7 +126,7 @@ VsdImportDialog::VsdImportDialog(const std::vector<RVNGString> &vec)
 
      // Adjustment + spinner
      auto _pageNumberSpin_adj = Gtk::Adjustment::create(1, 1, _vec.size(), 1, 10, 0);
-     _pageNumberSpin = Gtk::manage(new Gtk::SpinButton(_pageNumberSpin_adj, 1, 0));
+     _pageNumberSpin = Gtk::make_managed<Gtk::SpinButton>(_pageNumberSpin_adj, 1, 0);
      _pageNumberSpin->set_can_focus();
      _pageNumberSpin->set_update_policy(Gtk::UPDATE_ALWAYS);
      _pageNumberSpin->set_numeric(true);
@@ -143,8 +144,8 @@ VsdImportDialog::VsdImportDialog(const std::vector<RVNGString> &vec)
      vbox1->pack_end(*_page_selector_box, Gtk::PACK_SHRINK);
 
      // Buttons
-     cancelbutton = Gtk::manage(new Gtk::Button(_("_Cancel"), true));
-     okbutton     = Gtk::manage(new Gtk::Button(_("_OK"),     true));
+     cancelbutton = Gtk::make_managed<Gtk::Button>(_("_Cancel"), true);
+     okbutton     = Gtk::make_managed<Gtk::Button>(_("_OK"),     true);
      this->add_action_widget(*cancelbutton, Gtk::RESPONSE_CANCEL);
      this->add_action_widget(*okbutton, Gtk::RESPONSE_OK);
 
@@ -163,9 +164,7 @@ VsdImportDialog::~VsdImportDialog() = default;
 
 bool VsdImportDialog::showDialog()
 {
-     show();
-     gint b = run();
-     hide();
+     gint b = UI::dialog_run(*this);
      if (b == Gtk::RESPONSE_OK || b == Gtk::RESPONSE_ACCEPT) {
           return TRUE;
      } else {
@@ -228,7 +227,7 @@ void VsdImportDialog::_setPreviewPage()
     if (_previewArea) {
         _previewArea->setDocument(doc);
     } else {
-        _previewArea = Gtk::manage(new Inkscape::UI::View::SVGViewWidget(doc));
+        _previewArea = Gtk::make_managed<Inkscape::UI::View::SVGViewWidget>(doc);
         vbox1->pack_start(*_previewArea, Gtk::PACK_EXPAND_WIDGET, 0);
     }
 

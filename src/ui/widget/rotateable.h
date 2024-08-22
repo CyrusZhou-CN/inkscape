@@ -11,13 +11,15 @@
 #ifndef INKSCAPE_UI_ROTATEABLE_H
 #define INKSCAPE_UI_ROTATEABLE_H
 
-#include <gtkmm/box.h>
+#include <gtk/gtk.h> // GtkEventController*
 #include <gtkmm/eventbox.h>
-#include <glibmm/i18n.h>
+#include <gtkmm/gesture.h> // Gtk::EventSequenceState
 
-namespace Inkscape {
-namespace UI {
-namespace Widget {
+namespace Gtk {
+class GestureMultiPress;
+} // namespace Gtk
+
+namespace Inkscape::UI::Widget {
 
 /**
  * Widget adjustable by dragging it to rotate away from a zero-change axis.
@@ -26,13 +28,7 @@ class Rotateable: public Gtk::EventBox
 {
 public:
     Rotateable();
-
     ~Rotateable() override;
-
-    bool on_click(GdkEventButton *event);
-    bool on_motion(GdkEventMotion *event);
-    bool on_release(GdkEventButton *event);
-    bool on_scroll(GdkEventScroll* event);
 
     double axis;
     double current_axis;
@@ -42,20 +38,25 @@ public:
 private:
     double drag_started_x;
     double drag_started_y;
-    guint modifier;
+    unsigned modifier;
     bool dragging;
     bool working;
 
-  guint get_single_modifier(guint old, guint state);
+    unsigned get_single_modifier(unsigned old, unsigned state);
 
-    virtual void do_motion (double /*by*/, guint /*state*/) {}
-    virtual void do_release (double /*by*/, guint /*state*/) {}
-    virtual void do_scroll (double /*by*/, guint /*state*/) {}
+    Gtk::EventSequenceState on_click  (Gtk::GestureMultiPress const &click,
+                                       int n_press, double x, double y);
+    Gtk::EventSequenceState on_release(Gtk::GestureMultiPress const &click,
+                                       int n_press, double x, double y);
+    bool on_motion(GtkEventControllerMotion const *motion, double  x, double  y);
+    bool on_scroll(GtkEventControllerScroll const *scroll, double dx, double dy);
+
+    virtual void do_motion (double /*by*/, unsigned /*state*/) {}
+    virtual void do_release(double /*by*/, unsigned /*state*/) {}
+    virtual void do_scroll (double /*by*/, unsigned /*state*/) {}
 };
 
-} // namespace Widget
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Widget
 
 #endif // INKSCAPE_UI_ROTATEABLE_H
 

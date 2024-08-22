@@ -44,6 +44,7 @@
 #include "ui/draw-anchor.h"
 #include "ui/shortcuts.h"
 #include "ui/tools/pen-tool.h"
+#include "ui/widget/events/canvas-event.h"
 
 // we include the necessary files for BSpline & Spiro
 #include "live_effects/lpeobject.h"
@@ -82,8 +83,8 @@ namespace Tools {
 static Geom::Point pen_drag_origin_w(0, 0);
 static bool pen_within_tolerance = false;
 
-PenTool::PenTool(SPDesktop *desktop, std::string prefs_path, const std::string &cursor_filename)
-    : FreehandBase(desktop, prefs_path, cursor_filename)
+PenTool::PenTool(SPDesktop *desktop, std::string &&prefs_path, std::string &&cursor_filename)
+    : FreehandBase(desktop, std::move(prefs_path), std::move(cursor_filename))
     , _undo{"doc.undo"}
     , _redo{"doc.redo"}
 {
@@ -94,13 +95,13 @@ PenTool::PenTool(SPDesktop *desktop, std::string prefs_path, const std::string &
     for (int i = 0; i < 4; i++) {
         ctrl[i] = make_canvasitem<CanvasItemCtrl>(canvas, ctrl_types[i]);
         ctrl[i]->set_fill(0x0);
-        ctrl[i]->hide();
+        ctrl[i]->set_visible(false);
     }
 
     cl0 = make_canvasitem<CanvasItemCurve>(canvas);
     cl1 = make_canvasitem<CanvasItemCurve>(canvas);
-    cl0->hide();
-    cl1->hide();
+    cl0->set_visible(false);
+    cl1->set_visible(false);
 
     sp_event_context_read(this, "mode");
 
@@ -159,10 +160,10 @@ void PenTool::_cancel() {
     this->state = PenTool::STOP;
     this->_resetColors();
     for (auto &c : ctrl) {
-        c->hide();
+        c->set_visible(false);
     }
-    cl0->hide();
-    cl1->hide();
+    cl0->set_visible(false);
+    cl1->set_visible(false);
     this->message_context->clear();
     this->message_context->flash(Inkscape::NORMAL_MESSAGE, _("Drawing cancelled"));
     _redo_stack.clear();
@@ -235,7 +236,9 @@ void PenTool::_endpointSnapHandle(Geom::Point &p, guint const state) {
     }
 }
 
-bool PenTool::item_handler(SPItem* item, GdkEvent* event) {
+bool PenTool::item_handler(SPItem *item, CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     bool ret = false;
 
     switch (event->type) {
@@ -250,7 +253,7 @@ bool PenTool::item_handler(SPItem* item, GdkEvent* event) {
     }
 
     if (!ret) {
-        ret = FreehandBase::item_handler(item, event);
+        ret = FreehandBase::item_handler(item, canvas_event);
     }
 
     return ret;
@@ -259,7 +262,9 @@ bool PenTool::item_handler(SPItem* item, GdkEvent* event) {
 /**
  * Callback to handle all pen events.
  */
-bool PenTool::root_handler(GdkEvent* event) {
+bool PenTool::root_handler(CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     bool ret = false;
 
     switch (event->type) {
@@ -288,7 +293,7 @@ bool PenTool::root_handler(GdkEvent* event) {
     }
 
     if (!ret) {
-        ret = FreehandBase::root_handler(event);
+        ret = FreehandBase::root_handler(canvas_event);
     }
 
     return ret;
@@ -691,7 +696,7 @@ bool PenTool::_handleButtonRelease(GdkEventButton const &revent) {
                         this->_finishSegment(p, revent.state);
                         // hude the guide of the penultimate node when closing the curve
                         if(this->spiro){
-                            ctrl[1]->hide();
+                            ctrl[1]->set_visible(false);
                         }
                         this->_finish(true);
                         this->state = PenTool::POINT;
@@ -716,7 +721,7 @@ bool PenTool::_handleButtonRelease(GdkEventButton const &revent) {
                         this->_finishSegment(p, revent.state);
                         // hide the penultimate node guide when closing the curve
                         if(this->spiro){
-                            ctrl[1]->hide();
+                            ctrl[1]->set_visible(false);
                         }
                         if (this->green_closed) {
                             // finishing at the start anchor, close curve
@@ -798,24 +803,24 @@ void PenTool::_redrawAll() {
     red_bpath->set_bpath(&red_curve, true);
 
     for (auto &c : ctrl) {
-        c->hide();
+        c->set_visible(false);
     }
     // handles
     // hide the handlers in bspline and spiro modes
     if (this->npoints == 5) {
         ctrl[0]->set_position(p[0]);
-        ctrl[0]->show();
+        ctrl[0]->set_visible(true);
         ctrl[3]->set_position(p[3]);
-        ctrl[3]->show();
+        ctrl[3]->set_visible(true);
     }
 
     if (this->p[0] != this->p[1] && !this->spiro && !this->bspline) {
         ctrl[1]->set_position(p[1]);
-        ctrl[1]->show();
+        ctrl[1]->set_visible(true);
         cl1->set_coords(p[0], p[1]);
-        cl1->show();
+        cl1->set_visible(true);
     } else {
-        cl1->hide();
+        cl1->set_visible(false);
     }
 
     Geom::Curve const * last_seg = this->green_curve->last_segment();
@@ -827,11 +832,11 @@ void PenTool::_redrawAll() {
         {
             Geom::Point p2 = (*cubic)[2];
             ctrl[2]->set_position(p2);
-            ctrl[2]->show();
+            ctrl[2]->set_visible(true);
             cl0->set_coords(p2, p[0]);
-            cl0->show();
+            cl0->set_visible(true);
         } else {
-            cl0->hide();
+            cl0->set_visible(false);
         }
     }
 
@@ -1253,7 +1258,7 @@ void PenTool::_bsplineSpiroColor()
         } else {
             this->green_color = this->highlight_color;
         }
-        blue_bpath->hide();
+        blue_bpath->set_visible(false);
     }
 
     //We erase all the "green_bpaths" to recreate them after with the colour
@@ -1649,22 +1654,22 @@ void PenTool::_bsplineSpiroBuild()
 
         blue_bpath->set_bpath(&curve, true);
         blue_bpath->set_stroke(blue_color);
-        blue_bpath->show();
+        blue_bpath->set_visible(true);
 
         blue_curve.reset();
         //We hide the holders that doesn't contribute anything
         for (auto &c : ctrl) {
-            c->hide();
+            c->set_visible(false);
         }
         if (spiro){
             ctrl[1]->set_position(p[0]);
-            ctrl[1]->show();
+            ctrl[1]->set_visible(true);
         }
-        cl0->hide();
-        cl1->hide();
+        cl0->set_visible(false);
+        cl1->set_visible(false);
     } else {
         //if the curve is empty
-        blue_bpath->hide();
+        blue_bpath->set_visible(false);
     }
 }
 
@@ -1726,22 +1731,22 @@ void PenTool::_setCtrl(Geom::Point const q, guint const state)
 {
     // use 'q' as 'p' shadows member variable.
     for (auto &c : ctrl) {
-        c->hide();
+        c->set_visible(false);
     }
 
-    ctrl[1]->show();
-    cl1->show();
+    ctrl[1]->set_visible(true);
+    cl1->set_visible(true);
 
     if ( this->npoints == 2 ) {
         this->p[1] = q;
-        cl0->hide();
+        cl0->set_visible(false);
         ctrl[1]->set_position(p[1]);
-        ctrl[1]->show();
+        ctrl[1]->set_visible(true);
         cl1->set_coords(p[0], p[1]);
         this->_setAngleDistanceStatusMessage(q, 0, _("<b>Curve handle</b>: angle %3.2f&#176;, length %s; with <b>Ctrl</b> to snap angle"));
     } else if ( this->npoints == 5 ) {
         this->p[4] = q;
-        cl0->show();
+        cl0->set_visible(true);
         bool is_symm = false;
         if ( ( ( this->mode == PenTool::MODE_CLICK ) && ( state & GDK_CONTROL_MASK ) ) ||
              ( ( this->mode == PenTool::MODE_DRAG ) &&  !( state & GDK_SHIFT_MASK  ) ) ) {
@@ -1756,14 +1761,14 @@ void PenTool::_setCtrl(Geom::Point const q, guint const state)
         // Avoid conflicting with initial point ctrl
         if (green_curve->get_segment_count() > 0) {
             ctrl[0]->set_position(this->p[0]);
-            ctrl[0]->show();
+            ctrl[0]->set_visible(true);
         }
         ctrl[3]->set_position(this->p[3]);
-        ctrl[3]->show();
+        ctrl[3]->set_visible(true);
         ctrl[2]->set_position(this->p[2]);
-        ctrl[2]->show();
+        ctrl[2]->set_visible(true);
         ctrl[1]->set_position(this->p[4]);
-        ctrl[1]->show();
+        ctrl[1]->set_visible(true);
 
         cl0->set_coords(this->p[3], this->p[2]);
         cl1->set_coords(this->p[3], this->p[4]);
@@ -1878,10 +1883,10 @@ bool PenTool::_undoLastPoint(bool user_undo) {
         }
 
         for (auto &c : ctrl) {
-            c->hide();
+            c->set_visible(false);
         }
-        cl0->hide();
-        cl1->hide();
+        cl0->set_visible(false);
+        cl1->set_visible(false);
         this->state = PenTool::POINT;
 
         if(this->polylines_paraxial) {
@@ -1956,11 +1961,11 @@ void PenTool::_finish(gboolean const closed) {
     this->state = PenTool::POINT;
 
     for (auto &c : ctrl) {
-        c->hide();
+        c->set_visible(false);
     }
 
-    cl0->hide();
-    cl1->hide();
+    cl0->set_visible(false);
+    cl1->set_visible(false);
 
     this->green_anchor.reset();
     _redo_stack.clear();

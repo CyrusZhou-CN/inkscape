@@ -54,6 +54,9 @@ void SPGrid::create_new(SPDocument *document, Inkscape::XML::Node *parent, GridT
     if (type == GridType::AXONOMETRIC) {
         new_node->setAttribute("type", "axonomgrid");
     }
+    else if (type == GridType::MODULAR) {
+        new_node->setAttribute("type", "modular");
+    }
 
     parent->appendChild(new_node);
 
@@ -61,6 +64,9 @@ void SPGrid::create_new(SPDocument *document, Inkscape::XML::Node *parent, GridT
     if (new_grid)
         new_grid->setPrefValues();
 
+    new_grid->setEnabled(true);
+    new_grid->setVisible(true);
+    new_grid->setUnit(document->getDisplayUnit()->abbr);
     Inkscape::GC::release(new_node);
 }
 
@@ -78,6 +84,10 @@ void SPGrid::build(SPDocument *doc, Inkscape::XML::Node *repr)
     readAttr(SPAttr::SPACINGY);
     readAttr(SPAttr::ANGLE_X);
     readAttr(SPAttr::ANGLE_Z);
+    readAttr(SPAttr::GAP_X);
+    readAttr(SPAttr::GAP_Y);
+    readAttr(SPAttr::MARGIN_X);
+    readAttr(SPAttr::MARGIN_Y);
     readAttr(SPAttr::COLOR);
     readAttr(SPAttr::EMPCOLOR);
     readAttr(SPAttr::VISIBLE);
@@ -118,6 +128,8 @@ static std::optional<GridType> readGridType(char const *value)
         return GridType::RECTANGULAR;
     } else if (!std::strcmp(value, "axonomgrid")) {
         return GridType::AXONOMETRIC;
+    } else if (!std::strcmp(value, "modular")) {
+        return GridType::MODULAR;
     } else {
         return {};
     }
@@ -131,12 +143,19 @@ void SPGrid::set(SPAttr key, const gchar* value)
             if (grid_type != _grid_type) {
                 _grid_type = grid_type;
                 _recreateViews();
+                requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
             }
             break;
         }
         case SPAttr::UNITS:
-            _display_unit = unit_table.getUnit(value);
+        {
+            auto unit = unit_table.getUnit(value);
+            if (_display_unit != unit) {
+                _display_unit = unit;
+                requestModified(SP_OBJECT_MODIFIED_FLAG);
+            }
             break;
+        }
         case SPAttr::ORIGINX:
             _origin_x.read(value);
             requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
@@ -159,6 +178,22 @@ void SPGrid::set(SPAttr key, const gchar* value)
             break;
         case SPAttr::ANGLE_Z: // only meaningful for axonomgrid
             _angle_z.read(value);
+            requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+            break;
+        case SPAttr::GAP_X: // only meaningful for modular
+            _gap_x.read(value);
+            requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+            break;
+        case SPAttr::GAP_Y: // only meaningful for modular
+            _gap_y.read(value);
+            requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+            break;
+        case SPAttr::MARGIN_X: // only meaningful for modular
+            _margin_x.read(value);
+            requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+            break;
+        case SPAttr::MARGIN_Y: // only meaningful for modular
+            _margin_y.read(value);
             requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
             break;
         case SPAttr::COLOR:
@@ -311,6 +346,8 @@ void SPGrid::_checkOldGrid(SPDocument *doc, Inkscape::XML::Node *repr)
                 fix(SPAttr::ANGLE_X, "30");
                 fix(SPAttr::ANGLE_Z, "30");
                 break;
+            case GridType::MODULAR:
+                break;
             default:
                 break;
         }
@@ -343,8 +380,11 @@ void SPGrid::setPrefValues()
     switch (getType()) {
         case GridType::RECTANGULAR: prefix = "/options/grids/xy"; break;
         case GridType::AXONOMETRIC: prefix = "/options/grids/axonom"; break;
+        case GridType::MODULAR: prefix = "/options/grids/modular"; break;
         default: g_assert_not_reached(); break;
     }
+
+    const auto modular = _grid_type == GridType::MODULAR;
 
     auto display_unit = document->getDisplayUnit();
     auto unit_pref = prefs->getString(prefix + "/units", display_unit->abbr);
@@ -361,18 +401,42 @@ void SPGrid::setPrefValues()
                 Quantity::convert(prefs->getDouble(prefix + "/origin_x"), _display_unit, "px"),
                 Quantity::convert(prefs->getDouble(prefix + "/origin_y"), _display_unit, "px")) * scale);
 
+    auto default_spacing = modular ? 100.0 : 1.0;
     setSpacing(Geom::Point(
-                Quantity::convert(prefs->getDouble(prefix + "/spacing_x"), _display_unit, "px"),
-                Quantity::convert(prefs->getDouble(prefix + "/spacing_y"), _display_unit, "px")) * scale);
+                Quantity::convert(prefs->getDouble(prefix + "/spacing_x", default_spacing), _display_unit, "px"),
+                Quantity::convert(prefs->getDouble(prefix + "/spacing_y", default_spacing), _display_unit, "px")) * scale);
 
-    setMajorColor(prefs->getColor(prefix + "/empcolor", GRID_DEFAULT_MAJOR_COLOR));
+    setMajorColor(prefs->getColor(prefix + "/empcolor", modular ? GRID_DEFAULT_BLOCK_COLOR : GRID_DEFAULT_MAJOR_COLOR));
     setMinorColor(prefs->getColor(prefix + "/color", GRID_DEFAULT_MINOR_COLOR));
     setMajorLineInterval(prefs->getInt(prefix + "/empspacing"));
 
     // these prefs are bound specifically to one type of grid
-    setDotted(prefs->getBool("/options/grids/xy/dotted"));
-    setAngleX(prefs->getDouble("/options/grids/axonom/angle_x"));
-    setAngleZ(prefs->getDouble("/options/grids/axonom/angle_z"));
+    if (_grid_type == GridType::AXONOMETRIC) {
+        setDotted(prefs->getBool("/options/grids/xy/dotted"));
+        setAngleX(prefs->getDouble("/options/grids/axonom/angle_x"));
+        setAngleZ(prefs->getDouble("/options/grids/axonom/angle_z"));
+    }
+
+    // modular grid properties
+    if (_grid_type == GridType::MODULAR) {
+        auto m = prefix + "/";
+
+        auto margin = Geom::Point(
+            Quantity::convert(prefs->getDouble(m + "marginx", 0), _display_unit, "px"),
+            Quantity::convert(prefs->getDouble(m + "marginy", 0), _display_unit, "px")
+        ) * scale;
+        auto gap = Geom::Point(
+            Quantity::convert(prefs->getDouble(m + "gapx", 20), _display_unit, "px"),
+            Quantity::convert(prefs->getDouble(m + "gapy", 20), _display_unit, "px")
+        ) * scale;
+
+        getRepr()->setAttributeSvgDouble("marginx", margin.x());
+        getRepr()->setAttributeSvgDouble("marginy", margin.y());
+        getRepr()->setAttributeSvgDouble("gapx", gap.x());
+        getRepr()->setAttributeSvgDouble("gapy", gap.y());
+
+        requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+    }
 }
 
 static CanvasItemPtr<Inkscape::CanvasItemGrid> create_view(GridType grid_type, Inkscape::CanvasItemGroup *canvasgrids)
@@ -380,6 +444,7 @@ static CanvasItemPtr<Inkscape::CanvasItemGrid> create_view(GridType grid_type, I
     switch (grid_type) {
         case GridType::RECTANGULAR: return make_canvasitem<Inkscape::CanvasItemGridXY>    (canvasgrids); break;
         case GridType::AXONOMETRIC: return make_canvasitem<Inkscape::CanvasItemGridAxonom>(canvasgrids); break;
+        case GridType::MODULAR:     return make_canvasitem<Inkscape::CanvasItemGridTiles> (canvasgrids); break;
         default: g_assert_not_reached(); return {};
     }
 }
@@ -418,6 +483,15 @@ void SPGrid::update(SPCtx *ctx, unsigned int flags)
             if (auto axonom = dynamic_cast<Inkscape::CanvasItemGridAxonom *>(view.get())) {
                 axonom->set_angle_x(_angle_x.computed);
                 axonom->set_angle_z(_angle_z.computed);
+            }
+
+            if (auto modular = dynamic_cast<Inkscape::CanvasItemGridTiles*>(view.get())) {
+                const auto scale = document->getDocumentScale();
+                // "set_spacing" above sets block size; add gaps:
+                auto gap = Geom::Point(_gap_x.computed,_gap_y.computed) * scale;
+                auto margin = Geom::Point(_margin_x.computed, _margin_y.computed) * scale;
+                modular->set_gap_size(gap);
+                modular->set_margin_size(margin);
             }
         }
     }
@@ -473,24 +547,56 @@ Inkscape::Snapper *SPGrid::snapper()
     return _snapper.get();
 }
 
-static auto ensure_min(double s)
-{
-    return std::max(s, 0.00001); // clamping, spacing must be > 0
-}
-
-static auto ensure_min(Geom::Point const &s)
-{
-    return Geom::Point(ensure_min(s.x()), ensure_min(s.y()));
-}
-
-std::pair<Geom::Point, Geom::Point> SPGrid::getEffectiveOriginAndSpacing() const
+std::pair<Geom::Point, Geom::Point> SPGrid::getEffectiveOriginAndSpacing(int index) const
 {
     auto origin = getOrigin();
-    auto spacing = ensure_min(getSpacing());
+    auto spacing = getSpacing();
+    auto pitch = Geom::Point(_spacing_x.computed + _gap_x.computed, _spacing_y.computed + _gap_y.computed);
+    if (index >= 0) {
+        spacing = pitch;
+    }
 
-    auto const scale = document->getDocumentScale();
-    origin *= scale;
-    spacing *= scale;
+    // modular grid snapping can be supported by making it look like a series of rectangular grids (up to 4)
+    switch (index) {
+        case -1: // rectangular grid case
+            break;
+        case 0: // modular: left/top edge
+            origin += Geom::Point(_gap_x.computed, _gap_y.computed) / 2;
+            break;
+        case 1: // modular: right/bottom edge
+            origin += Geom::Point(_gap_x.computed, _gap_y.computed) / 2 + Geom::Point(_spacing_x.computed, _spacing_y.computed);
+            break;
+        case 2: // modular: left/top with margin
+            if (_margin_x.computed || _margin_y.computed) {
+                origin += Geom::Point(_gap_x.computed, _gap_y.computed) / 2 - Geom::Point(_margin_x.computed, _margin_y.computed);
+            }
+            else {
+                spacing = Geom::Point();
+            }
+            break;
+        case 3: // modular: right/bottom with margin
+            if (_margin_x.computed || _margin_y.computed) {
+                origin += Geom::Point(_gap_x.computed, _gap_y.computed) / 2 + Geom::Point(_spacing_x.computed, _spacing_y.computed) + Geom::Point(_margin_x.computed, _margin_y.computed);
+            }
+            else {
+                spacing = Geom::Point();
+            }
+            break;
+        default: // end of sequence
+            spacing = Geom::Point();
+            break;
+    }
+
+    constexpr auto MIN_VAL = 0.00001;
+    if (spacing.x() < MIN_VAL || spacing.y() < MIN_VAL) {
+        // too small a spacing can choke snapping; skip
+        spacing = Geom::Point();
+    }
+    else {
+        auto const scale = document->getDocumentScale();
+        origin *= scale;
+        spacing *= scale;
+    }
 
     auto prefs = Inkscape::Preferences::get();
     if (prefs->getBool("/options/origincorrection/page", true))
@@ -504,6 +610,7 @@ const char *SPGrid::displayName() const
     switch (_grid_type) {
         case GridType::RECTANGULAR: return _("Rectangular Grid");
         case GridType::AXONOMETRIC: return _("Axonometric Grid");
+        case GridType::MODULAR:     return _("Modular Grid");
         default: g_assert_not_reached();
     }
 }
@@ -513,6 +620,7 @@ const char *SPGrid::getSVGType() const
     switch (_grid_type) {
         case GridType::RECTANGULAR: return "xygrid";
         case GridType::AXONOMETRIC: return "axonomgrid";
+        case GridType::MODULAR:     return "modular";
         default: g_assert_not_reached();
     }
 }
@@ -659,6 +767,7 @@ const char *SPGrid::typeName() const
     switch (_grid_type) {
         case GridType::RECTANGULAR: return "grid-rectangular";
         case GridType::AXONOMETRIC: return "grid-axonometric";
+        case GridType::MODULAR:     return "grid-modular";
         default: g_assert_not_reached(); return "grid";
     }
 }

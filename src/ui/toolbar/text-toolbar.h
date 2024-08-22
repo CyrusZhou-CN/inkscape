@@ -145,6 +145,8 @@ private:
     Inkscape::XML::Node *unindent_node(Inkscape::XML::Node *repr, Inkscape::XML::Node *before);
     bool mergeDefaultStyle(SPCSSAttr *css);
 
+    Inkscape::auto_connection _fonts_updated_signal;
+
   protected:
     TextToolbar(SPDesktop *desktop);
 

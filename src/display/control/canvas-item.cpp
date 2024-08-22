@@ -183,7 +183,7 @@ void CanvasItem::_mark_net_invisible()
 }
 
 // Grab all events!
-void CanvasItem::grab(Gdk::EventMask event_mask, Glib::RefPtr<Gdk::Cursor> const &cursor)
+void CanvasItem::grab(EventMask event_mask, Glib::RefPtr<Gdk::Cursor> const &cursor)
 {
     if constexpr (DEBUG_LOGGING) std::cout << "CanvasItem::grab: " << _name << std::endl;
 
@@ -193,8 +193,6 @@ void CanvasItem::grab(Gdk::EventMask event_mask, Glib::RefPtr<Gdk::Cursor> const
     if (canvas->get_grabbed_canvas_item()) {
         return;
     }
-
-    gtk_grab_add(GTK_WIDGET(canvas->gobj()));
 
     canvas->set_grabbed_canvas_item(this, event_mask);
     canvas->set_current_canvas_item(this); // So that all events go to grabbed item.
@@ -210,9 +208,7 @@ void CanvasItem::ungrab()
         return; // Sanity check
     }
 
-    canvas->set_grabbed_canvas_item(nullptr, (Gdk::EventMask)0); // Zero mask
-
-    gtk_grab_remove(GTK_WIDGET(canvas->gobj()));
+    canvas->set_grabbed_canvas_item(nullptr, {}); // Zero mask
 }
 
 void CanvasItem::render(CanvasItemBuffer &buf) const

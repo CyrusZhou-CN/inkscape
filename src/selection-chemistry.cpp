@@ -2108,13 +2108,18 @@ std::vector<SPItem*> sp_get_same_fill_or_stroke_color(SPItem *sel, std::vector<S
                 SPPaintServer *iter_server =
                     (type == SP_FILL_COLOR) ? iter->style->getFillPaintServer() : iter->style->getStrokePaintServer();
 
+                auto check_gradient = [] (SPGradient const *g) {
+                    return is<SPLinearGradient>(g) || is<SPRadialGradient>(g) || g->getVector()->isSwatch();
+                };
+
                 SPGradient *sel_gradient, *iter_gradient;
                 SPPattern *sel_pattern, *iter_pattern;
 
                 if ((sel_gradient = cast<SPGradient>(sel_server)) &&
                     (iter_gradient = cast<SPGradient>(iter_server)) &&
-                    sel_gradient->getVector()->isSwatch() && //
-                    iter_gradient->getVector()->isSwatch()) {
+                    check_gradient(sel_gradient) &&
+                    check_gradient(iter_gradient))
+                {
                     SPGradient *sel_vector = sel_gradient->getVector();
                     SPGradient *iter_vector = iter_gradient->getVector();
                     if (sel_vector == iter_vector) {
@@ -3018,7 +3023,7 @@ void ObjectSet::cloneOriginal()
                 auto canvas_item_bpath = new Inkscape::CanvasItemBpath(desktop()->getCanvasTemp(), curve.get_pathvector());
                 canvas_item_bpath->set_stroke(0x0000ddff);
                 canvas_item_bpath->set_dashes({5.0, 3.0});
-                canvas_item_bpath->show();
+                canvas_item_bpath->set_visible(true);
                 desktop()->add_temporary_canvasitem(canvas_item_bpath, 1000);
             }
         }

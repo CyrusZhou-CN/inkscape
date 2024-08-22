@@ -241,28 +241,28 @@ add_actions_canvas_transform(InkscapeWindow* win)
     }
 
     // clang-format off
-    win->add_action( "canvas-zoom-in",         sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_IN));
-    win->add_action( "canvas-zoom-out",        sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_OUT));
-    win->add_action( "canvas-zoom-1-1",        sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_1_1));
-    win->add_action( "canvas-zoom-1-2",        sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_1_2));
-    win->add_action( "canvas-zoom-2-1",        sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_2_1));
-    win->add_action( "canvas-zoom-selection",  sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_SELECTION));
-    win->add_action( "canvas-zoom-drawing",    sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_DRAWING));
-    win->add_action( "canvas-zoom-page",       sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_PAGE));
-    win->add_action( "canvas-zoom-page-width", sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_PAGE_WIDTH));
-    win->add_action( "canvas-zoom-center-page",sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_CENTER_PAGE));
-    win->add_action( "canvas-zoom-prev",       sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_PREV));
-    win->add_action( "canvas-zoom-next",       sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_NEXT));
+    win->add_action( "canvas-zoom-in",         sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_IN));
+    win->add_action( "canvas-zoom-out",        sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_OUT));
+    win->add_action( "canvas-zoom-1-1",        sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_1_1));
+    win->add_action( "canvas-zoom-1-2",        sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_1_2));
+    win->add_action( "canvas-zoom-2-1",        sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_2_1));
+    win->add_action( "canvas-zoom-selection",  sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_SELECTION));
+    win->add_action( "canvas-zoom-drawing",    sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_DRAWING));
+    win->add_action( "canvas-zoom-page",       sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_PAGE));
+    win->add_action( "canvas-zoom-page-width", sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_PAGE_WIDTH));
+    win->add_action( "canvas-zoom-center-page",sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_CENTER_PAGE));
+    win->add_action( "canvas-zoom-prev",       sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_PREV));
+    win->add_action( "canvas-zoom-next",       sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ZOOM_NEXT));
 
-    win->add_action( "canvas-rotate-cw",       sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ROTATE_CW));
-    win->add_action( "canvas-rotate-ccw",      sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ROTATE_CCW));
-    win->add_action( "canvas-rotate-reset",    sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ROTATE_RESET));
+    win->add_action( "canvas-rotate-cw",       sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ROTATE_CW));
+    win->add_action( "canvas-rotate-ccw",      sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ROTATE_CCW));
+    win->add_action( "canvas-rotate-reset",    sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_ROTATE_RESET));
 
-    win->add_action( "canvas-flip-horizontal", sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_FLIP_HORIZONTAL));
-    win->add_action( "canvas-flip-vertical",   sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_FLIP_VERTICAL));
-    win->add_action( "canvas-flip-reset",      sigc::bind<InkscapeWindow*, int>(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_FLIP_RESET));
+    win->add_action( "canvas-flip-horizontal", sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_FLIP_HORIZONTAL));
+    win->add_action( "canvas-flip-vertical",   sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_FLIP_VERTICAL));
+    win->add_action( "canvas-flip-reset",      sigc::bind(sigc::ptr_fun(&canvas_transform), win, INK_CANVAS_FLIP_RESET));
 
-    win->add_action_bool( "canvas-rotate-lock",sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&canvas_rotate_lock),    win), rotate_lock);
+    win->add_action_bool( "canvas-rotate-lock",sigc::bind(sigc::ptr_fun(&canvas_rotate_lock),    win), rotate_lock);
     // clang-format on
 
     auto app = InkscapeApplication::instance();

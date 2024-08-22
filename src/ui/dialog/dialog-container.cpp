@@ -32,6 +32,7 @@
 #include "ui/dialog/document-properties.h"
 #include "ui/dialog/document-resources.h"
 #include "ui/dialog/export.h"
+#include "ui/dialog/extensions-gallery.h"
 #include "ui/dialog/fill-and-stroke.h"
 #include "ui/dialog/filter-effects-dialog.h"
 #include "ui/dialog/find.h"
@@ -39,7 +40,6 @@
 #include "ui/dialog/glyphs.h"
 #include "ui/dialog/icon-preview.h"
 #include "ui/dialog/inkscape-preferences.h"
-#include "ui/dialog/input.h"
 #include "ui/dialog/livepatheffect-editor.h"
 #include "ui/dialog/memory.h"
 #include "ui/dialog/messages.h"
@@ -82,13 +82,13 @@ DialogContainer::DialogContainer(InkscapeWindow* inkscape_window)
     get_style_context()->add_class("DialogContainer");
 
     // Setup main column
-    columns = Gtk::manage(new DialogMultipaned(Gtk::ORIENTATION_HORIZONTAL));
+    columns = Gtk::make_managed<DialogMultipaned>(Gtk::ORIENTATION_HORIZONTAL);
 
     connections.emplace_back(columns->signal_prepend_drag_data().connect(
-        sigc::bind<DialogMultipaned *>(sigc::mem_fun(*this, &DialogContainer::prepend_drop), columns)));
+        sigc::bind(sigc::mem_fun(*this, &DialogContainer::prepend_drop), columns)));
 
     connections.emplace_back(columns->signal_append_drag_data().connect(
-        sigc::bind<DialogMultipaned *>(sigc::mem_fun(*this, &DialogContainer::append_drop), columns)));
+        sigc::bind(sigc::mem_fun(*this, &DialogContainer::append_drop), columns)));
 
     // Setup drop targets.
     target_entries.emplace_back(Gtk::TargetEntry("GTK_NOTEBOOK_TAB"));
@@ -104,16 +104,16 @@ DialogContainer::DialogContainer(InkscapeWindow* inkscape_window)
 
 DialogMultipaned *DialogContainer::create_column()
 {
-    DialogMultipaned *column = Gtk::manage(new DialogMultipaned(Gtk::ORIENTATION_VERTICAL));
+    auto const column = Gtk::make_managed<DialogMultipaned>(Gtk::ORIENTATION_VERTICAL);
 
     connections.emplace_back(column->signal_prepend_drag_data().connect(
-        sigc::bind<DialogMultipaned *>(sigc::mem_fun(*this, &DialogContainer::prepend_drop), column)));
+        sigc::bind(sigc::mem_fun(*this, &DialogContainer::prepend_drop), column)));
 
     connections.emplace_back(column->signal_append_drag_data().connect(
-        sigc::bind<DialogMultipaned *>(sigc::mem_fun(*this, &DialogContainer::append_drop), column)));
+        sigc::bind(sigc::mem_fun(*this, &DialogContainer::append_drop), column)));
 
     connections.emplace_back(column->signal_now_empty().connect(
-        sigc::bind<DialogMultipaned *>(sigc::mem_fun(*this, &DialogContainer::column_empty), column)));
+        sigc::bind(sigc::mem_fun(*this, &DialogContainer::column_empty), column)));
 
     column->set_target_entries(target_entries);
 
@@ -131,13 +131,14 @@ std::unique_ptr<DialogBase> DialogContainer::dialog_factory(Glib::ustring const 
     else if (dialog_type == "DocumentProperties") return std::make_unique<DocumentProperties>();
     else if (dialog_type == "DocumentResources")  return std::make_unique<DocumentResources>();
     else if (dialog_type == "Export")             return std::make_unique<Export>();
+    else if (dialog_type == "ExtensionsGallery")  return std::make_unique<ExtensionsGallery>(ExtensionsGallery::Effects);
     else if (dialog_type == "FillStroke")         return std::make_unique<FillAndStroke>();
     else if (dialog_type == "FilterEffects")      return std::make_unique<FilterEffectsDialog>();
+    else if (dialog_type == "FilterGallery")      return std::make_unique<ExtensionsGallery>(ExtensionsGallery::Filters);
     else if (dialog_type == "Find")               return std::make_unique<Find>();
     else if (dialog_type == "FontCollections")    return std::make_unique<FontCollectionsManager>();
     else if (dialog_type == "Glyphs")             return std::make_unique<GlyphsPanel>();
     else if (dialog_type == "IconPreview")        return std::make_unique<IconPreviewPanel>();
-    else if (dialog_type == "Input")              return InputDialog::create();
     else if (dialog_type == "LivePathEffect")     return std::make_unique<LivePathEffectEditor>();
     else if (dialog_type == "Memory")             return std::make_unique<Memory>();
     else if (dialog_type == "Messages")           return std::make_unique<Messages>();
@@ -171,11 +172,11 @@ std::unique_ptr<DialogBase> DialogContainer::dialog_factory(Glib::ustring const 
 // Create the notebook tab
 Gtk::Widget *DialogContainer::create_notebook_tab(Glib::ustring label_str, Glib::ustring image_str, const Glib::ustring shortcut)
 {
-    Gtk::Label *label = Gtk::manage(new Gtk::Label(label_str));
-    Gtk::Image *image = Gtk::manage(new Gtk::Image());
-    Gtk::Button *close = Gtk::manage(new Gtk::Button());
+    auto const label = Gtk::make_managed<Gtk::Label>(label_str);
+    auto const image = Gtk::make_managed<Gtk::Image>();
+    auto const close = Gtk::make_managed<Gtk::Button>();
     image->set_from_icon_name(image_str, Gtk::ICON_SIZE_MENU);
-    Gtk::Box *tab = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, 2));
+    auto const tab = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 2);
     close->set_image_from_icon_name("window-close");
     close->set_halign(Gtk::ALIGN_END);
     close->set_tooltip_text(_("Close Tab"));
@@ -189,7 +190,7 @@ Gtk::Widget *DialogContainer::create_notebook_tab(Glib::ustring label_str, Glib:
     tab->show_all();
 
     // Workaround to the fact that Gtk::Box doesn't receive on_button_press event
-    Gtk::EventBox *cover = Gtk::manage(new Gtk::EventBox());
+    auto const cover = Gtk::make_managed<Gtk::EventBox>();
     cover->add(*tab);
 
     // Add shortcut tooltip
@@ -199,9 +200,9 @@ Gtk::Widget *DialogContainer::create_notebook_tab(Glib::ustring label_str, Glib:
         if (pos >= 0 && pos < tlabel.length()) {
             tlabel.replace(pos, 1, "&amp;");
         }
-        tab->set_tooltip_markup(label_str + " (<b>" + tlabel + "</b>)");
+        cover->set_tooltip_markup(label_str + " (<b>" + tlabel + "</b>)");
     } else {
-        tab->set_tooltip_text(label_str);
+        cover->set_tooltip_text(label_str);
     }
 
     return cover;
@@ -271,7 +272,7 @@ void DialogContainer::new_dialog(const Glib::ustring& dialog_type, DialogNoteboo
     if (DialogBase* existing_dialog = find_existing_dialog(dialog_type)) {
         // make sure parent window is not hidden/collapsed
         if (auto panel = get_dialog_parent(existing_dialog)) {
-            panel->show();
+            panel->set_visible(true);
         }
         // found existing dialog; blink & exit
         existing_dialog->blink();
@@ -322,7 +323,7 @@ void DialogContainer::new_dialog(const Glib::ustring& dialog_type, DialogNoteboo
         // Look to see if first widget in column is notebook, if not add one.
         notebook = dynamic_cast<DialogNotebook *>(last_column->get_first_widget());
         if (!notebook) {
-            notebook = Gtk::manage(new DialogNotebook(this));
+            notebook = Gtk::make_managed<DialogNotebook>(this);
             last_column->prepend(notebook);
         }
     }
@@ -445,7 +446,7 @@ bool DialogContainer::recreate_dialogs_from_state(InkscapeWindow* inkscape_windo
 
                     if (dialog_data.find(type) != dialog_data.end()) {
                         if (!notebook) {
-                            notebook = Gtk::manage(new DialogNotebook(active_container));
+                            notebook = Gtk::make_managed<DialogNotebook>(active_container);
                             column->append(notebook);
                         }
                         active_container->new_dialog(type, notebook);
@@ -531,7 +532,7 @@ DialogWindow *DialogContainer::create_new_floating_dialog(const Glib::ustring& d
         create_notebook_tab(dialog->get_name(), image ? Glib::ustring(image) : INKSCAPE_ICON("inkscape-logo"), label);
 
     // New temporary noteboook
-    DialogNotebook *notebook = Gtk::manage(new DialogNotebook(this));
+    auto const notebook = Gtk::make_managed<DialogNotebook>(this);
     notebook->add_page(*dialog, *tab, dialog->get_name());
 
     return notebook->pop_tab_callback();
@@ -762,7 +763,7 @@ void DialogContainer::load_container_state(Glib::KeyFile *keyfile, bool include_
 
                 DialogNotebook *notebook = nullptr;
                 if (is_dockable) {
-                    notebook = Gtk::manage(new DialogNotebook(active_container));
+                    notebook = Gtk::make_managed<DialogNotebook>(active_container);
                     column->append(notebook);
                 }
 
@@ -1042,6 +1043,11 @@ void DialogContainer::on_unrealize() {
     parent_type::on_unrealize();
 }
 
+#ifdef __APPLE__
+DialogNotebook* DialogContainer::new_nb = 0;
+Gtk::Widget* DialogContainer::page_move = 0;
+#endif
+
 // Create a new notebook and move page.
 DialogNotebook *DialogContainer::prepare_drop(const Glib::RefPtr<Gdk::DragContext> context)
 {
@@ -1062,8 +1068,14 @@ DialogNotebook *DialogContainer::prepare_drop(const Glib::RefPtr<Gdk::DragContex
     }
 
     // Create new notebook and move page.
-    DialogNotebook *new_notebook = Gtk::manage(new DialogNotebook(this));
+    auto const new_notebook = Gtk::make_managed<DialogNotebook>(this);
+#ifdef __APPLE__
+    // moving current page during d&d is a sure way to crash on macos
+    new_nb = new_notebook;
+    page_move = page;
+#else
     new_notebook->move_page(*page);
+#endif
 
     // move_page() takes care of updating dialog lists.
     INKSCAPE.themecontext->getChangeThemeSignal().emit();

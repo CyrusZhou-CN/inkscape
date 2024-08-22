@@ -40,7 +40,8 @@ namespace Inkscape {
 enum class GridType
 {
     RECTANGULAR,
-    AXONOMETRIC
+    AXONOMETRIC,
+    MODULAR
 };
 
 class SPGrid final : public SPObject {
@@ -89,6 +90,9 @@ public:
     double getAngleZ() const { return _angle_z.computed; }
     void setAngleZ(double deg);
 
+    Geom::Point get_gap() const { return Geom::Point(_gap_x.computed, _gap_y.computed); }
+    Geom::Point get_margin() const { return Geom::Point(_margin_x.computed, _margin_y.computed); }
+
     const char *typeName() const;
     const char *displayName() const;
 
@@ -107,7 +111,7 @@ public:
 
     Inkscape::Snapper *snapper();
 
-    std::pair<Geom::Point, Geom::Point> getEffectiveOriginAndSpacing() const;
+    std::pair<Geom::Point, Geom::Point> getEffectiveOriginAndSpacing(int index = -1) const;
 
     std::vector<CanvasItemPtr<Inkscape::CanvasItemGrid>> views;
 
@@ -132,11 +136,15 @@ private:
     SVGLength _spacing_y;
     SVGAngle _angle_x; // only for axonomgrid, stored in degrees
     SVGAngle _angle_z; // only for axonomgrid, stored in degrees
+    SVGLength _gap_x; // only for modular grid
+    SVGLength _gap_y;
+    SVGLength _margin_x; // only for modular grid
+    SVGLength _margin_y;
 
-    guint32 _major_line_interval;
+    guint32 _major_line_interval = 0;
 
-    guint32 _major_color;
-    guint32 _minor_color;
+    guint32 _major_color = 0;
+    guint32 _minor_color = 0;
 
     bool _pixel;        // is in user units
     bool _legacy;       // a grid from versions prior to inkscape 0.98

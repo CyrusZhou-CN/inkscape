@@ -34,8 +34,8 @@ namespace Inkscape {
 namespace UI {
 namespace Tools {
 
-DynamicBase::DynamicBase(SPDesktop *desktop, std::string prefs_path, const std::string &cursor_filename)
-    : ToolBase(desktop, prefs_path, cursor_filename)
+DynamicBase::DynamicBase(SPDesktop *desktop, std::string &&prefs_path, std::string &&cursor_filename)
+    : ToolBase(desktop, std::move(prefs_path), std::move(cursor_filename))
     , point1()
     , point2()
     , npoints(0)

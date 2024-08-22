@@ -36,13 +36,6 @@
       </attributes>
     </child>
   </object>
-  <object class="GtkMenu" id="popup">
-    <property name="visible">True</property>
-    <property name="can-focus">False</property>
-    <property name="halign">end</property>
-    <property name="reserve-toggle-size">False</property>
-    <property name="menu-type-hint">combo</property>
-  </object>
   <object class="GtkBox" id="main-box">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
@@ -58,7 +51,7 @@
         <property name="primary-icon-name">edit-find-symbolic</property>
         <property name="primary-icon-activatable">False</property>
         <property name="primary-icon-sensitive">False</property>
-        <property name="placeholder-text" translatable="yes">add item</property>
+        <property name="placeholder-text" translatable="yes">Add item</property>
         <property name="completion">completion</property>
       </object>
       <packing>
@@ -73,8 +66,6 @@
         <property name="can-focus">True</property>
         <property name="focus-on-click">False</property>
         <property name="receives-default">True</property>
-        <property name="popup">popup</property>
-        <property name="use-popover">False</property>
         <child>
           <placeholder/>
         </child>

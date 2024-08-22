@@ -17,38 +17,36 @@
 #define INKSCAPE_UI_DIALOG_INKSCAPE_PREFERENCES_H
 
 // checking if cairo supports dithering
-#include <gtkmm/sizegroup.h>
 #ifdef  WITH_PATCHED_CAIRO
 #include "3rdparty/cairo/src/cairo.h"
 #else
 #include <cairo.h>
 #endif
 
-
-
-#include <gtkmm/treerowreference.h>
 #include <iostream>
 #include <iterator>
 #include <vector>
-#include "ui/widget/preferences-widget.h"
 #include <cstddef>
+
+#include <glibmm/regex.h>
 #include <gtkmm/colorbutton.h>
 #include <gtkmm/comboboxtext.h>
-#include <gtkmm/treestore.h>
-#include <gtkmm/treeview.h>
-#include <gtkmm/treemodelfilter.h>
-#include <gtkmm/treemodelsort.h>
 #include <gtkmm/frame.h>
-#include <gtkmm/notebook.h>
-#include <gtkmm/textview.h>
-#include <gtkmm/searchentry.h>
-#include <gtkmm/scrolledwindow.h>
 #include <gtkmm/liststore.h>
+#include <gtkmm/notebook.h>
+#include <gtkmm/scrolledwindow.h>
+#include <gtkmm/searchentry.h>
+#include <gtkmm/sizegroup.h>
+#include <gtkmm/textview.h>
 #include <gtkmm/treemodel.h>
 #include <gtkmm/treemodelfilter.h>
-#include <glibmm/regex.h>
+#include <gtkmm/treemodelsort.h>
+#include <gtkmm/treerowreference.h>
+#include <gtkmm/treestore.h>
+#include <gtkmm/treeview.h>
 
 #include "ui/dialog/dialog-base.h"
+#include "ui/widget/preferences-widget.h"
 
 // UPDATE THIS IF YOU'RE ADDING PREFS PAGES.
 // Otherwise the commands that open the dialog with the new page will fail.
@@ -214,7 +212,7 @@ protected:
     UI::Widget::DialogPage _page_spellcheck;
 
     UI::Widget::DialogPage _page_keyshortcuts;
-
+    Glib::RefPtr<Gtk::SizeGroup> _keyboard_sizegroup;
     UI::Widget::PrefSpinButton _mouse_sens;
     UI::Widget::PrefSpinButton _mouse_thres;
     UI::Widget::PrefSlider      _mouse_grabsize;
@@ -505,7 +503,7 @@ protected:
     UI::Widget::PrefSpinButton  _save_autosave_max;
 
     Gtk::ComboBoxText   _cms_display_profile;
-    UI::Widget::PrefCheckButton     _cms_from_display;
+    UI::Widget::PrefCheckButton     _cms_from_user;
     UI::Widget::PrefCombo           _cms_intent;
 
     UI::Widget::PrefCheckButton     _cms_softproof;
@@ -645,6 +643,8 @@ protected:
 
     static void AddSelcueCheckbox(UI::Widget::DialogPage& p, Glib::ustring const &prefs_path, bool def_value);
     static void AddGradientCheckbox(UI::Widget::DialogPage& p, Glib::ustring const &prefs_path, bool def_value);
+    static void AddLayerChangeCheckbox(UI::Widget::DialogPage &p, Glib::ustring const &prefs_path, bool def_value);
+    static void AddPageChangeCheckbox(UI::Widget::DialogPage &p, Glib::ustring const &prefs_path, bool def_value);
     static void AddConvertGuidesCheckbox(UI::Widget::DialogPage& p, Glib::ustring const &prefs_path, bool def_value);
     static void AddFirstAndLastCheckbox(UI::Widget::DialogPage& p, Glib::ustring const &prefs_path, bool def_value);
     static void AddDotSizeSpinbutton(UI::Widget::DialogPage& p, Glib::ustring const &prefs_path, double def_value);
@@ -711,7 +711,6 @@ private:
   void changeIconsColors();
   void resetIconsColors(bool themechange = false);
   void resetIconsColorsWrapper();
-  void changeIconsColor(guint32 /*color*/);
   void get_highlight_colors(guint32 &colorsetbase, guint32 &colorsetsuccess, guint32 &colorsetwarning,
                             guint32 &colorseterror);
 

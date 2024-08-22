@@ -20,13 +20,14 @@
 #endif
 
 #include <cstddef>
-#include <gtkmm/buttonbox.h>
 #include <gtkmm/comboboxtext.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/notebook.h>
 #include <gtkmm/textview.h>
 #include <sigc++/sigc++.h>
 
+#include "helper/auto-connection.h"
+#include "object/sp-grid.h"
 #include "ui/dialog/dialog-base.h"
 #include "ui/widget/licensor.h"
 #include "ui/widget/registered-widget.h"
@@ -44,6 +45,52 @@ class AlignmentSelector;
 class EntityEntry;
 class NotebookPage;
 class PageProperties;
+
+class GridWidget : public Gtk::Box
+{
+public:
+    GridWidget(SPGrid *obj);
+    ~GridWidget() override;
+
+    void update();
+    SPGrid *getGrid() { return grid; }
+    XML::Node *getGridRepr() { return repr; }
+    Gtk::Box *getTabWidget() { return _tab; }
+private:
+    SPGrid *grid = nullptr;
+    XML::Node *repr = nullptr;
+
+    Gtk::Box *_tab = nullptr;
+    Gtk::Image *_tab_img = nullptr;
+    Gtk::Label *_tab_lbl = nullptr;
+
+    Gtk::Label *_name_label = nullptr;
+
+    UI::Widget::Registry _wr;
+    RegisteredCheckButton *_grid_rcb_enabled = nullptr;
+    RegisteredCheckButton *_grid_rcb_snap_visible_only = nullptr;
+    RegisteredCheckButton *_grid_rcb_visible = nullptr;
+    RegisteredCheckButton *_grid_rcb_dotted = nullptr;
+    AlignmentSelector     *_grid_as_alignment = nullptr;
+
+    RegisteredUnitMenu *_rumg = nullptr;
+    RegisteredScalarUnit *_rsu_ox = nullptr;
+    RegisteredScalarUnit *_rsu_oy = nullptr;
+    RegisteredScalarUnit *_rsu_sx = nullptr;
+    RegisteredScalarUnit *_rsu_sy = nullptr;
+    RegisteredScalar *_rsu_ax = nullptr;
+    RegisteredScalar *_rsu_az = nullptr;
+    RegisteredColorPicker *_rcp_gcol = nullptr;
+    RegisteredColorPicker *_rcp_gmcol = nullptr;
+    RegisteredSuffixedInteger *_rsi = nullptr;
+    RegisteredScalarUnit* _rsu_gx = nullptr;
+    RegisteredScalarUnit* _rsu_gy = nullptr;
+    RegisteredScalarUnit* _rsu_mx = nullptr;
+    RegisteredScalarUnit* _rsu_my = nullptr;
+
+    Inkscape::auto_connection _modified_signal;
+};
+
 } // namespace Widget
 
 namespace Dialog {
@@ -63,7 +110,7 @@ public:
     void documentReplaced() override;
 
     void update() override;
-    void update_gridspage();
+    void rebuild_gridspage();
 
 protected:
     void  build_page();
@@ -75,6 +122,9 @@ protected:
     void  build_cms();
     void  build_scripting();
     void  build_metadata();
+
+    void add_grid_widget(SPGrid *grid, bool select = false);
+    void remove_grid_widget(XML::Node &node);
 
     virtual void  on_response (int);
     void  populate_available_profiles();
@@ -169,7 +219,7 @@ protected:
     Gtk::Button         _external_remove_btn;
     Gtk::Button         _embed_new_btn;
     Gtk::Button         _embed_remove_btn;
-    Gtk::ButtonBox      _embed_button_box;
+    Gtk::Box            _embed_button_box;
 
     class ExternalScriptsColumns : public Gtk::TreeModel::ColumnRecord
         {
@@ -203,11 +253,8 @@ protected:
     Gtk::Notebook   _grids_notebook;
     Gtk::Box        _grids_hbox_crea;
     Gtk::Label      _grids_label_crea;
-    Gtk::Button     _grids_button_new;
     Gtk::Button     _grids_button_remove;
-    Gtk::ComboBoxText _grids_combo_gridtype;
     Gtk::Label      _grids_label_def;
-    Gtk::Box        _grids_space;
     //---------------------------------------------------------------
 
     RDEList _rdflist;
@@ -217,21 +264,11 @@ protected:
 
 private:
     // callback methods for buttons on grids page.
-    void onNewGrid();
+    void onNewGrid(GridType type);
     void onRemoveGrid();
 
     // callback for display unit change
     void display_unit_change(const Inkscape::Util::Unit* unit);
-
-    Gtk::Widget *createNewGridWidget(SPGrid *grid);
-    Gtk::Widget *createRightGridColumn(SPGrid *grid);
-    static void *notifyGridWidgetsDestroyed(void *data);
-
-    UI::Widget::RegisteredCheckButton *_grid_rcb_enabled = nullptr;
-    UI::Widget::RegisteredCheckButton *_grid_rcb_snap_visible_only = nullptr;
-    UI::Widget::RegisteredCheckButton *_grid_rcb_visible = nullptr;
-    UI::Widget::RegisteredCheckButton *_grid_rcb_dotted = nullptr;
-    UI::Widget::AlignmentSelector     *_grid_as_alignment = nullptr;
 
     class WatchConnection : private XML::NodeObserver
     {

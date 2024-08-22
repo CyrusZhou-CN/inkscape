@@ -8,27 +8,20 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#include "parameter-color.h"
-
-#include <iostream>
-#include <sstream>
-
+#include <cstdio>
 #include <gtkmm/box.h>
 #include <gtkmm/colorbutton.h>
 #include <gtkmm/label.h>
 
+#include "parameter-color.h"
+
 #include "color.h"
-#include "preferences.h"
-
 #include "extension/extension.h"
-
+#include "preferences.h"
 #include "ui/widget/color-notebook.h"
-
 #include "xml/node.h"
 
-
-namespace Inkscape {
-namespace Extension {
+namespace Inkscape::Extension {
 
 ParamColor::ParamColor(Inkscape::XML::Node *xml, Inkscape::Extension::Extension *ext)
     : InxParameter(xml, ext)
@@ -82,13 +75,13 @@ Gtk::Widget *ParamColor::get_widget(sigc::signal<void ()> *changeSignal)
     }
 
     if (changeSignal) {
-        _changeSignal = new sigc::signal<void ()>(*changeSignal);
+        _changeSignal = std::make_unique<sigc::signal<void ()>>(*changeSignal);
     }
 
-    Gtk::Box *hbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, GUI_PARAM_WIDGETS_SPACING));
+    auto const hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, GUI_PARAM_WIDGETS_SPACING);
     if (_mode == COLOR_BUTTON) {
-        Gtk::Label *label = Gtk::manage(new Gtk::Label(_text, Gtk::ALIGN_START));
-        label->show();
+        auto const label = Gtk::make_managed<Gtk::Label>(_text, Gtk::ALIGN_START);
+        label->set_visible(true);
         hbox->pack_start(*label, true, true);
 
         Gdk::RGBA rgba;
@@ -99,19 +92,20 @@ Gtk::Widget *ParamColor::get_widget(sigc::signal<void ()> *changeSignal)
 
         // TODO: It would be nicer to have a custom Gtk::ColorButton() implementation here,
         //       that wraps an Inkscape::UI::Widget::ColorNotebook into a new dialog
-        _color_button = Gtk::manage(new Gtk::ColorButton(rgba));
+        _color_button = Gtk::make_managed<Gtk::ColorButton>(rgba);
         _color_button->set_title(_text);
         _color_button->set_use_alpha();
-        _color_button->show();
+        _color_button->set_visible(true);
         hbox->pack_end(*_color_button, false, false);
 
         _color_button->signal_color_set().connect(sigc::mem_fun(*this, &ParamColor::_onColorButtonChanged));
     } else {
-        Gtk::Widget *selector = Gtk::manage(new Inkscape::UI::Widget::ColorNotebook(_color));
+        Gtk::Widget *selector = Gtk::make_managed<Inkscape::UI::Widget::ColorNotebook>(_color);
         hbox->pack_start(*selector, true, true, 0);
-        selector->show();
+        selector->set_visible(true);
     }
-    hbox->show();
+
+    hbox->set_visible(true);
     return hbox;
 
 }
@@ -138,14 +132,13 @@ void ParamColor::_onColorButtonChanged()
 std::string ParamColor::value_to_string() const
 {
     char value_string[16];
-    snprintf(value_string, 16, "%u", _color.value());
+    std::snprintf(value_string, 16, "%u", _color.value());
     return value_string;
 }
 
 void ParamColor::string_to_value(const std::string &in)
 {
-    _color.setValue(strtoul(in.c_str(), nullptr, 0));
+    _color.setValue(std::stoul(in, nullptr, 0));
 }
 
-};  /* namespace Extension */
-};  /* namespace Inkscape */
+} // namespace Inkscape::Extension

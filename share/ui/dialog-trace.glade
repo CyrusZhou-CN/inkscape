@@ -1459,12 +1459,12 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <child>
-                  <object class="GtkButtonBox">
+                  <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="no-show-all">True</property>
                     <property name="spacing">3</property>
-                    <property name="layout-style">center</property>
+                    <property name="halign">center</property>
                     <child>
                       <object class="GtkButton" id="B_RESET">
                         <property name="label">gtk-revert-to-saved</property>
@@ -1534,7 +1534,6 @@
               </object>
               <packing>
                 <property name="name">page0</property>
-                <property name="title" translatable="yes">page0</property>
                 <property name="position">1</property>
               </packing>
             </child>

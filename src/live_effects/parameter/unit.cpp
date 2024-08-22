@@ -82,17 +82,15 @@ UnitParam::get_abbreviation() const
 Gtk::Widget *
 UnitParam::param_newWidget()
 {
-    Inkscape::UI::Widget::RegisteredUnitMenu* unit_menu = Gtk::manage(
-        new Inkscape::UI::Widget::RegisteredUnitMenu(param_label,
-                                                     param_key,
-                                                     *param_wr,
-                                                     param_effect->getRepr(),
-                                                     param_effect->getSPDoc()));
+    auto const unit_menu = Gtk::make_managed<UI::Widget::RegisteredUnitMenu>( param_label,
+                                                                              param_key,
+                                                                             *param_wr,
+                                                                              param_effect->getRepr(),
+                                                                              param_effect->getSPDoc() );
 
     unit_menu->setUnit(unit->abbr);
     unit_menu->set_undo_parameters(_("Change unit parameter"), INKSCAPE_ICON("dialog-path-effects"));
-    
-    return dynamic_cast<Gtk::Widget *> (unit_menu);
+    return unit_menu;
 }
 
 } /* namespace LivePathEffect */

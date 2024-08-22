@@ -56,7 +56,7 @@ ComboToolItem::ComboToolItem(Glib::ustring group_label,
     _icon_size ( Gtk::ICON_SIZE_LARGE_TOOLBAR ),
     _combobox (nullptr),
     _group_label_widget(nullptr),
-    _container(Gtk::manage(new Gtk::Box())),
+    _container(Gtk::make_managed<Gtk::Box>()),
     _menuitem (nullptr)
 {
     add(*_container);
@@ -84,7 +84,7 @@ ComboToolItem::ComboToolItem(Glib::ustring group_label,
 
 
     // Create combobox
-    _combobox = Gtk::manage (new Gtk::ComboBox(has_entry));
+    _combobox = Gtk::make_managed<Gtk::ComboBox>(has_entry);
     _combobox->set_model(_store);
 
     populate_combobox();
@@ -132,7 +132,7 @@ ComboToolItem::use_group_label(bool use_group_label)
     }
     if (use_group_label) {
         _container->remove(*_combobox);
-        _group_label_widget = Gtk::manage(new Gtk::Label(_group_label + ": "));
+        _group_label_widget = Gtk::make_managed<Gtk::Label>(_group_label + ": ");
         _container->pack_start(*_group_label_widget);
         _container->pack_start(*_combobox);
     } else {
@@ -161,14 +161,13 @@ ComboToolItem::populate_combobox()
                 row[columns.col_icon] = icon;
             }
         }
-        Gtk::CellRendererPixbuf *renderer = new Gtk::CellRendererPixbuf;
+        auto const renderer = Gtk::make_managed<Gtk::CellRendererPixbuf>();
         renderer->set_property ("stock_size", Gtk::ICON_SIZE_LARGE_TOOLBAR);
-        _combobox->pack_start (*Gtk::manage(renderer), false);
+        _combobox->pack_start (*renderer, false);
         _combobox->add_attribute (*renderer, "icon_name", columns.col_icon );
     } else if (_use_pixbuf) {
-        Gtk::CellRendererPixbuf *renderer = new Gtk::CellRendererPixbuf;
-        //renderer->set_property ("stock_size", Gtk::ICON_SIZE_LARGE_TOOLBAR);
-        _combobox->pack_start (*Gtk::manage(renderer), false);
+        auto const renderer = Gtk::make_managed<Gtk::CellRendererPixbuf>();
+        _combobox->pack_start (*renderer, false);
         _combobox->add_attribute (*renderer, "pixbuf", columns.col_pixbuf   );
     }
 
@@ -215,8 +214,8 @@ ComboToolItem::on_create_menu_proxy()
 {
     if (_menuitem == nullptr) {
 
-        _menuitem = Gtk::manage (new Gtk::MenuItem(_group_label));
-        Gtk::Menu *menu = Gtk::manage (new Gtk::Menu);
+        _menuitem = Gtk::make_managed<Gtk::MenuItem>(_group_label);
+        auto const menu = Gtk::make_managed<Gtk::Menu>();
 
         Gtk::RadioButton::Group group;
         int index = 0;
@@ -228,12 +227,12 @@ ComboToolItem::on_create_menu_proxy()
             Glib::ustring tooltip   = row[columns.col_tooltip   ];
             bool          sensitive = row[columns.col_sensitive ];
 
-            Gtk::RadioMenuItem* button = Gtk::manage(new Gtk::RadioMenuItem(group));
+            auto const button = Gtk::make_managed<Gtk::RadioMenuItem>(group);
             button->set_label (label);
             button->set_tooltip_text( tooltip );
             button->set_sensitive( sensitive );
 
-            button->signal_toggled().connect( sigc::bind<0>(
+            button->signal_toggled().connect( sigc::bind(
               sigc::mem_fun(*this, &ComboToolItem::on_toggled_radiomenu), index++)
                 );
 

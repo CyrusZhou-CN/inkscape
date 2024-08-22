@@ -28,14 +28,15 @@ class Selection;
 namespace UI {
 namespace Tools {
 
-class MarkerTool : public ToolBase {
+class MarkerTool : public ToolBase
+{
 public:
     MarkerTool(SPDesktop *desktop);
     ~MarkerTool() override;
 
     void selection_changed(Inkscape::Selection *selection);
 
-    bool root_handler(GdkEvent *event) override;
+    bool root_handler(CanvasEvent const &event) override;
     std::map<SPItem *, std::unique_ptr<ShapeEditor>> _shape_editors;
 
     int editMarkerMode = -1;

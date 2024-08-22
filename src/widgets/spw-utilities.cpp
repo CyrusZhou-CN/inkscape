@@ -18,9 +18,9 @@
 #include <gtkmm/label.h>
 #include <gtkmm/grid.h>
 
-#include "selection.h"
-
 #include "spw-utilities.h"
+#include "selection.h"
+#include "ui/util.h"
 
 /**
  * Creates a label widget with the given text, at the given col, row
@@ -36,7 +36,7 @@ Gtk::Label * spw_label(Gtk::Grid *table, const gchar *label_text, int col, int r
   } else {
     label_widget->set_text(label_text);
   }
-  label_widget->show();
+  label_widget->set_visible(true);
 
   label_widget->set_halign(Gtk::ALIGN_START);
   label_widget->set_valign(Gtk::ALIGN_CENTER);
@@ -55,38 +55,15 @@ Gtk::Label * spw_label(Gtk::Grid *table, const gchar *label_text, int col, int r
 Gtk::Box * spw_hbox(Gtk::Grid * table, int width, int col, int row)
 {
   /* Create a new hbox with a 4-pixel spacing between children */
-  Gtk::Box *hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, 4));
+  auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 4);
   g_assert(hb != nullptr);
-  hb->show();
+  hb->set_visible(true);
   hb->set_hexpand();
   hb->set_halign(Gtk::ALIGN_FILL);
   hb->set_valign(Gtk::ALIGN_CENTER);
   table->attach(*hb, col, row, width, 1);
 
   return hb;
-}
-
-/**
- * Finds the descendant of w which has the data with the given key and returns the data, or NULL if there's none.
- */
-gpointer sp_search_by_data_recursive(GtkWidget *w, gpointer key)
-{
-    gpointer r = nullptr;
-
-    if (w && G_IS_OBJECT(w)) {
-        r = g_object_get_data(G_OBJECT(w), (gchar *) key);
-    }
-    if (r) return r;
-
-    if (GTK_IS_CONTAINER(w)) {
-            std::vector<Gtk::Widget*> children = Glib::wrap(GTK_CONTAINER(w))->get_children();
-        for (auto i:children) {
-            r = sp_search_by_data_recursive(GTK_WIDGET(i->gobj()), key);
-            if (r) return r;
-        }
-    }
-
-    return nullptr;
 }
 
 /**
@@ -100,52 +77,8 @@ gpointer sp_search_by_data_recursive(GtkWidget *w, gpointer key)
 Gtk::Widget *
 sp_search_by_name_recursive(Gtk::Widget *parent, const Glib::ustring& name)
 {
-    auto parent_bin = dynamic_cast<Gtk::Bin *>(parent);
-    auto parent_container = dynamic_cast<Gtk::Container *>(parent);
-
-    if (parent && parent->get_name() == name) {
-        return parent;
-    }
-    else if (parent_bin) {
-        auto child = parent_bin->get_child();
-        return sp_search_by_name_recursive(child, name);
-    }
-    else if (parent_container) {
-        auto children = parent_container->get_children();
-
-        for (auto child : children) {
-            auto tmp = sp_search_by_name_recursive(child, name);
-
-            if (tmp) {
-                return tmp;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
-/**
- * Returns the descendant of w which has the given key and value pair, or NULL if there's none.
- */
-GtkWidget *sp_search_by_value_recursive(GtkWidget *w, gchar *key, gchar *value)
-{
-    gchar *r = nullptr;
-
-    if (w && G_IS_OBJECT(w)) {
-        r = (gchar *) g_object_get_data(G_OBJECT(w), key);
-    }
-    if (r && !strcmp (r, value)) return w;
-
-    if (GTK_IS_CONTAINER(w)) {
-                std::vector<Gtk::Widget*> children = Glib::wrap(GTK_CONTAINER(w))->get_children();
-        for (auto i:children) {
-            GtkWidget *child = sp_search_by_value_recursive(GTK_WIDGET(i->gobj()), key, value);
-            if (child) return child;
-        }
-    }
-
-    return nullptr;
+    return sp_traverse_widget_tree(parent, [&](Gtk::Widget* widget)
+                                           { return widget->get_name() == name; });
 }
 
 /**
@@ -158,6 +91,8 @@ GtkWidget *sp_search_by_value_recursive(GtkWidget *w, gchar *key, gchar *value)
  *
  * \return The widget for which 'eval' returned true, or nullptr otherwise.
  * Note: it could be a starting widget too.
+ *
+ * See ui/util:for_each_child(), a generalisation of this and used as its basis.
  */
 Gtk::Widget* sp_traverse_widget_tree(Gtk::Widget* widget, const std::function<bool (Gtk::Widget*)>& eval) {
     if (!widget) return nullptr;
@@ -168,12 +103,16 @@ Gtk::Widget* sp_traverse_widget_tree(Gtk::Widget* widget, const std::function<bo
         return sp_traverse_widget_tree(bin->get_child(), eval);
     }
     else if (auto container = dynamic_cast<Gtk::Container*>(widget)) {
-        auto&& children = container->get_children();
-        for (auto child : children) {
-            if (auto found = sp_traverse_widget_tree(child, eval)) {
-                return found;
+        using namespace Inkscape::UI;
+        Gtk::Widget *result = nullptr;
+        for_each_child(*container, [&](Gtk::Widget &child){
+            if (auto const found = sp_traverse_widget_tree(&child, eval)) {
+                result = found;
+                return ForEachResult::_break;
             }
-        }
+            return ForEachResult::_continue;
+        });
+        return result;
     }
 
     return nullptr;

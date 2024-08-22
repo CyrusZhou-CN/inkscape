@@ -534,9 +534,9 @@ void TraceDialogImpl::adjustParamsVisible()
         for (int col = 0; col < 4; ++col) {
             if (auto widget = _param_grid->get_child_at(col, row)) {
                 if (row == show1 || row == show2) {
-                    widget->show();
+                    widget->set_visible(true);
                 } else {
-                    widget->hide();
+                    widget->set_visible(false);
                 }
             }
         }

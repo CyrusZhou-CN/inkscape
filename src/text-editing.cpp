@@ -911,7 +911,7 @@ static void sp_te_get_ustring_multiline(SPObject const *root, Glib::ustring *str
     for (auto& child: root->children) {
         if (is<SPString>(&child)) {
             *string += cast<SPString>(&child)->string;
-        } else if (is_part_of_text_subtree(&child)) {
+        } else if (is_part_of_text_subtree(&child) || is<SPTextPath>(&child)) {
             sp_te_get_ustring_multiline(&child, string, pending_line_break);
         }
     }

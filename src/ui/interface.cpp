@@ -41,8 +41,6 @@
 #include "ui/dialog/layer-properties.h"
 #include "ui/interface.h"
 
-#include "ui/view/svg-view-widget.h"
-
 #include "widgets/desktop-widget.h"
 
 static void sp_ui_import_one_file(char const *filename);
@@ -72,13 +70,13 @@ sp_ui_close_view(GtkWidget */*widget*/)
 }
 
 
-Glib::ustring getLayoutPrefPath( Inkscape::UI::View::View *view )
+Glib::ustring getLayoutPrefPath(SPDesktop *desktop)
 {
     Glib::ustring prefPath;
 
-    if (reinterpret_cast<SPDesktop*>(view)->is_focusMode()) {
+    if (desktop->is_focusMode()) {
         prefPath = "/focus/";
-    } else if (reinterpret_cast<SPDesktop*>(view)->is_fullscreen()) {
+    } else if (desktop->is_fullscreen()) {
         prefPath = "/fullscreen/";
     } else {
         prefPath = "/window/";

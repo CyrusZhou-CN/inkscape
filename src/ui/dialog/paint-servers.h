@@ -111,8 +111,6 @@ private:
     void selectionChanged(Selection *selection) final;
 
     bool _targetting_fill; ///< whether setting fill (true) or stroke (false)
-    const Glib::ustring ALLDOCS;
-    const Glib::ustring CURRENTDOC;
     std::map<Glib::ustring, Glib::RefPtr<Gtk::ListStore>> store;
     Glib::ustring current_store;
     std::vector<std::unique_ptr<SPDocument>> _stock_documents;

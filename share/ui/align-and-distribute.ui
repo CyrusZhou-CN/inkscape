@@ -522,7 +522,7 @@
                             <property name="image">image-align-horizontal-baseline</property>
                             <property name="relief">none</property>
                             <property name="always-show-image">True</property>
-                            <property name="tooltip-text" translatable="yes">Align baseline anchors of texts horizontally</property>
+                            <property name="tooltip-text" translatable="yes">Align text anchors horizontally</property>
                           </object>
                           <packing>
                             <property name="left-attach">5</property>
@@ -612,7 +612,7 @@
                             <property name="image">image-align-vertical-baseline</property>
                             <property name="relief">none</property>
                             <property name="always-show-image">True</property>
-                            <property name="tooltip-text" translatable="yes">Align baselines of texts</property>
+                            <property name="tooltip-text" translatable="yes">Align text anchors vertically</property>
                           </object>
                           <packing>
                             <property name="left-attach">5</property>
@@ -743,7 +743,7 @@
                         <property name="image">image-distribute-horizontal-baseline</property>
                         <property name="relief">none</property>
                         <property name="always-show-image">True</property>
-                        <property name="tooltip-text" translatable="yes">Distribute text alignment points horizontally</property>
+                        <property name="tooltip-text" translatable="yes">Distribute text anchors horizontally</property>
                       </object>
                       <packing>
                         <property name="left-attach">4</property>
@@ -828,7 +828,7 @@
                         <property name="image">image-distribute-vertical-baseline</property>
                         <property name="relief">none</property>
                         <property name="always-show-image">True</property>
-                        <property name="tooltip-text" translatable="yes">Distribute text alignment points vertically</property>
+                        <property name="tooltip-text" translatable="yes">Distribute text anchors vertically</property>
                       </object>
                       <packing>
                         <property name="left-attach">4</property>

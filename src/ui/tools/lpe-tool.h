@@ -50,7 +50,8 @@ class CanvasItemRect;
 namespace UI {
 namespace Tools {
 
-class LpeTool : public PenTool {
+class LpeTool : public PenTool
+{
 public:
     LpeTool(SPDesktop *desktop);
     ~LpeTool() override;
@@ -63,10 +64,11 @@ public:
 
     sigc::connection sel_changed_connection;
     sigc::connection sel_modified_connection;
+
 protected:
-    void set(const Inkscape::Preferences::Entry& val) override;
-    bool root_handler(GdkEvent* event) override;
-    bool item_handler(SPItem* item, GdkEvent* event) override;
+    void set(Preferences::Entry const &val) override;
+    bool root_handler(CanvasEvent const &event) override;
+    bool item_handler(SPItem *item, CanvasEvent const &event) override;
 };
 
 int lpetool_mode_to_index(Inkscape::LivePathEffect::EffectType const type);

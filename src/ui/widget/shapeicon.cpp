@@ -44,8 +44,11 @@ void CellRendererItemIcon::render_vfunc(const Cairo::RefPtr<Cairo::Context>& cr,
     std::string highlight;
     auto color = _property_color.get_value();
     if (color == 0) {
+#if 0 // In GTK4, we will not be able to specify the flags for the fg color, so…
         auto style_context = widget.get_style_context();
         Gdk::RGBA fg = style_context->get_color(cell_flags_to_state_flags(flags));
+#endif
+        auto const fg = get_foreground_color(widget.get_style_context());
         highlight = fg.to_string();
     }
     else {
@@ -76,12 +79,18 @@ void CellRendererItemIcon::render_vfunc(const Cairo::RefPtr<Cairo::Context>& cr,
         if (!_mask_overlay) {
             _mask_overlay = sp_get_icon_pixbuf("overlay-mask", Gtk::ICON_SIZE_MENU, scale);
         }
+        if (!_both_overlay) {
+            _both_overlay = sp_get_icon_pixbuf("overlay-clipmask", Gtk::ICON_SIZE_MENU, scale);
+        }
 
         if (clipmask == OVERLAY_CLIP && _clip_overlay) {
             paint_icon(cr, widget, _clip_overlay, x, y);
         }
         if (clipmask == OVERLAY_MASK && _mask_overlay) {
             paint_icon(cr, widget, _mask_overlay, x, y);
+        }
+        if (clipmask == OVERLAY_BOTH && _both_overlay) {
+            paint_icon(cr, widget, _both_overlay, x, y);
         }
     }
 

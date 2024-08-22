@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifndef INKSCAPE_UI_DIALOG_MULTIPANED_H
-#define INKSCAPE_UI_DIALOG_MULTIPANED_H
-
 /** @file
  * @brief A widget with multiple panes. Agnostic to type what kind of widgets panes contain.
  *
@@ -14,12 +11,29 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#ifndef INKSCAPE_UI_DIALOG_MULTIPANED_H
+#define INKSCAPE_UI_DIALOG_MULTIPANED_H
+
 #include <glibmm/refptr.h>
+#include <gtk/gtk.h> // GtkEventControllerMotion
 #include <gtkmm/enums.h>
 #include <gtkmm/eventbox.h>
-#include <gtkmm/gesturedrag.h>
+#include <gtkmm/gesture.h> // Gtk::EventSequenceState
 #include <gtkmm/orientable.h>
 #include <gtkmm/widget.h>
+
+namespace Cairo {
+class Context;
+}
+
+namespace Gdk {
+class DragContext;
+}
+
+namespace Gtk {
+class GestureDrag;
+class GestureMultiPress;
+}
 
 namespace Inkscape {
 namespace UI {
@@ -69,25 +83,36 @@ public:
     MyHandle(Gtk::Orientation orientation, int size);
     ~MyHandle() override = default;
 
-    bool on_enter_notify_event(GdkEventCrossing *crossing_event) override;
-    void set_dragging(bool dragging);
+    void set_dragging    (bool dragging);
+    void set_drag_updated(bool updated );
+
 private:
-    bool on_leave_notify_event(GdkEventCrossing* crossing_event) override;
-    bool on_button_press_event(GdkEventButton* button_event) override;
-    bool on_button_release_event(GdkEventButton *event) override;
-    bool on_motion_notify_event(GdkEventMotion* motion_event) override;
+    Gtk::EventSequenceState on_motion_enter (GtkEventControllerMotion const *motion,
+                                             double x, double y);
+    Gtk::EventSequenceState on_motion_motion(GtkEventControllerMotion const *motion,
+                                             double x, double y);
+    Gtk::EventSequenceState on_motion_leave (GtkEventControllerMotion const *motion);
+
+    Gtk::EventSequenceState on_click_pressed (Gtk::GestureMultiPress const &gesture,
+                                              int n_press, double x, double y);
+    Gtk::EventSequenceState on_click_released(Gtk::GestureMultiPress &gesture,
+                                              int n_press, double x, double y);
+
     void toggle_multipaned();
     void update_click_indicator(double x, double y);
     void show_click_indicator(bool show);
     bool on_draw(const Cairo::RefPtr<Cairo::Context>& cr) override;
     Cairo::Rectangle get_active_click_zone();
+
     int _cross_size;
     Gtk::Widget *_child;
     void resize_handler(Gtk::Allocation &allocation);
     bool is_click_resize_active() const;
     bool _click = false;
     bool _click_indicator = false;
+
     bool _dragging = false;
+    bool _drag_updated = false;
 };
 
 /* ============ MULTIPANE ============ */
@@ -165,11 +190,11 @@ private:
     Gtk::Allocation allocationh;
     Gtk::Allocation allocation2;
 
-    Glib::RefPtr<Gtk::GestureDrag> gesture;
-    // Signal callbacks
-    void on_drag_begin(double start_x, double start_y);
-    void on_drag_end(double offset_x, double offset_y);
-    void on_drag_update(double offset_x, double offset_y);
+    // drag on handle/separator
+    Gtk::EventSequenceState on_drag_begin (Gtk::GestureDrag const &gesture, double  start_x, double  start_y);
+    Gtk::EventSequenceState on_drag_end   (Gtk::GestureDrag const &gesture, double offset_x, double offset_y);
+    Gtk::EventSequenceState on_drag_update(Gtk::GestureDrag const &gesture, double offset_x, double offset_y);
+    // drag+drop data
     void on_drag_data(const Glib::RefPtr<Gdk::DragContext> context, int x, int y,
                       const Gtk::SelectionData &selection_data, guint info, guint time);
     void on_prepend_drag_data(const Glib::RefPtr<Gdk::DragContext> context, int x, int y,

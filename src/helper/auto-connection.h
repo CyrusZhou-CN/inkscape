@@ -3,23 +3,25 @@
 #ifndef SEEN_AUTO_CONNECTION_H
 #define SEEN_AUTO_CONNECTION_H
 
+#include <utility>
 #include <sigc++/connection.h>
 
 namespace Inkscape {
 
 // Class to simplify re-subscribing to connections; automates disconnecting
+// TODO: GTK4: Migrate to sigc++ 3.6ʼs scoped_connection, which I wrote! —dboles
 
 class auto_connection
 {
 public:
-    auto_connection(sigc::connection const &c)
+    auto_connection(sigc::connection const &c) noexcept
         : _connection(c)
     {}
 
-    auto_connection() = default;
-
+    auto_connection() noexcept = default;
     ~auto_connection() { _connection.disconnect(); }
 
+    // Disable copying, otherwise which copy should disconnect()?
     auto_connection(auto_connection const &) = delete;
     auto_connection &operator=(auto_connection const &) = delete;
 
@@ -29,6 +31,24 @@ public:
         _connection.disconnect();
         _connection = c;
         return *this;
+    }
+
+    // Allow moving to support use in containers / transfer ‘ownership’
+    auto_connection(auto_connection &&that) noexcept
+        : _connection(std::exchange(that._connection, sigc::connection{}))
+    {}
+    auto_connection &operator=(auto_connection &&that)
+    {
+        _connection.disconnect();
+        _connection = std::exchange(that._connection, sigc::connection{});
+        return *this;
+    }
+
+    // Provide swap() for 2 instances, in which case neither need/can disconnect
+    friend void swap(auto_connection &l, auto_connection &r) noexcept
+    {
+        using std::swap;
+        swap(l._connection, r._connection);
     }
 
     /** Returns whether the connection is still active
@@ -72,4 +92,3 @@ private:
   End:
 */
 // vim: filetype=cpp:expandtab:shiftwidth=4:tabstop=8:softtabstop=4:fileencoding=utf-8:textwidth=99 :
-

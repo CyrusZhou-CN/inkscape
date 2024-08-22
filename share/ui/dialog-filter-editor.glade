@@ -521,6 +521,7 @@
                             <property name="margin-start">5</property>
                             <property name="relief">none</property>
                             <property name="popover">info-popover</property>
+                            <property name="tooltip-text">View information about the effect</property>
                             <child>
                               <object class="GtkImage">
                                 <property name="visible">True</property>

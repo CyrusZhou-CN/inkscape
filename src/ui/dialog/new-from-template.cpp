@@ -20,6 +20,7 @@
 #include "inkscape.h"
 #include "object/sp-namedview.h"
 #include "ui/widget/template-list.h"
+#include "ui/dialog-run.h"
 
 namespace Inkscape {
 namespace UI {
@@ -31,7 +32,7 @@ NewFromTemplate::NewFromTemplate()
     set_title(_("New From Template"));
     resize(750, 500);
 
-    templates = Gtk::manage(new Inkscape::UI::Widget::TemplateList());
+    templates = Gtk::make_managed<Inkscape::UI::Widget::TemplateList>();
     get_content_area()->pack_start(*templates);
     templates->init(Inkscape::Extension::TEMPLATE_NEW_FROM);
 
@@ -83,7 +84,7 @@ void NewFromTemplate::_onClose()
 void NewFromTemplate::load_new_from_template()
 {
     NewFromTemplate dl;
-    dl.run();
+    Inkscape::UI::dialog_run(dl);
 }
 
 }

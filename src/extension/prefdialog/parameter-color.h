@@ -1,6 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_INK_EXTENSION_PARAMCOLOR_H__
-#define SEEN_INK_EXTENSION_PARAMCOLOR_H__
 /*
  * Copyright (C) 2005-2007 Authors:
  *   Ted Gould <ted@gould.cx>
@@ -9,18 +7,25 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#ifndef SEEN_INK_EXTENSION_PARAMCOLOR_H
+#define SEEN_INK_EXTENSION_PARAMCOLOR_H
+
+#include <memory>
+#include <string>
+#include <sigc++/signal.h>
 #include "parameter.h"
 #include "ui/selected-color.h"
 
 namespace Gtk {
-class Widget;
 class ColorButton;
-}
+class Widget;
+} // namespace Gtk
 
 namespace Inkscape {
+
 namespace XML {
 class Node;
-}
+} // namespace XML
 
 namespace Extension {
 
@@ -42,7 +47,7 @@ public:
     std::string value_to_string() const override;
     void string_to_value(const std::string &in) override;
 
-    sigc::signal<void ()> *_changeSignal;
+    std::unique_ptr<sigc::signal<void ()>> _changeSignal;
 
 private:
     void _onColorChanged();
@@ -61,9 +66,10 @@ private:
 }; // class ParamColor
 
 }  // namespace Extension
+
 }  // namespace Inkscape
 
-#endif // SEEN_INK_EXTENSION_PARAMCOLOR_H__
+#endif // SEEN_INK_EXTENSION_PARAMCOLOR_H
 
 /*
   Local Variables:

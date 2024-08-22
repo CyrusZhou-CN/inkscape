@@ -91,6 +91,7 @@ set(object_SRC
   box3d.h
   color-profile.h
   object-set.h
+  object-view.h
   persp3d-reference.h
   persp3d.h
   sp-anchor.h

@@ -286,7 +286,7 @@
             <property name="margin-top">5</property>
             <property name="margin-bottom">5</property>
             <property name="overwrite-mode">True</property>
-            <property name="placeholder-text" translatable="yes">0px</property>
+            <property name="placeholder-text" translatable="no">0px</property>
             <property name="adjustment">adjust_margin_right</property>
             <property name="numeric">True</property>
           </object>
@@ -301,7 +301,7 @@
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="valign">center</property>
-            <property name="placeholder-text" translatable="yes">0px</property>
+            <property name="placeholder-text" translatable="no">0px</property>
             <property name="adjustment">adjust_margin_top</property>
             <property name="numeric">True</property>
           </object>
@@ -337,7 +337,7 @@
             <property name="margin-end">5</property>
             <property name="margin-top">5</property>
             <property name="margin-bottom">5</property>
-            <property name="placeholder-text" translatable="yes">0px</property>
+            <property name="placeholder-text" translatable="no">0px</property>
             <property name="adjustment">adjust_margin_bottom</property>
             <property name="numeric">True</property>
           </object>
@@ -362,14 +362,14 @@
                 <property name="margin-end">5</property>
                 <property name="margin-top">5</property>
                 <property name="margin-bottom">5</property>
-                <property name="placeholder-text" translatable="yes">i.e. 1.2mm 2mm</property>
+                <property name="placeholder-text" translatable="yes">e.g. 1.2mm 2mm</property>
               </object>
             </child>
             <child type="label">
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Page Bleed (Advanced)</property>
+                <property name="label" translatable="yes">Page Bleed</property>
               </object>
             </child>
           </object>

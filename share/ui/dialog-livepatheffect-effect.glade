@@ -154,14 +154,13 @@
           </packing>
         </child>
         <child>
-          <object class="GtkButtonBox" id="LPESelectorButtonBox">
+          <object class="GtkBox" id="LPESelectorButtonBox">
             <property name="name">LPESelectorButtonBox</property>
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="halign">center</property>
             <property name="valign">start</property>
             <property name="baseline-position">top</property>
-            <property name="layout-style">center</property>
             <child>
               <object class="GtkEventBox" id="LPESelectorEffectEventInfo">
                 <property name="name">LPESelectorEffectEventInfo</property>
@@ -190,7 +189,6 @@
                 <property name="fill">True</property>
                 <property name="pack-type">end</property>
                 <property name="position">0</property>
-                <property name="non-homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -221,7 +219,6 @@
                 <property name="fill">True</property>
                 <property name="pack-type">end</property>
                 <property name="position">1</property>
-                <property name="non-homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -251,7 +248,6 @@
                 <property name="fill">True</property>
                 <property name="pack-type">end</property>
                 <property name="position">2</property>
-                <property name="non-homogeneous">True</property>
               </packing>
             </child>
           </object>
@@ -265,7 +261,7 @@
           <object class="GtkLabel" id="LPEUntranslatedName">
             <property name="can-focus">False</property>
             <property name="no-show-all">True</property>
-            <property name="label" translatable="yes">LPEUntranslatedName</property>
+            <property name="label" translatable="no">LPEUntranslatedName</property>
             <property name="justify">center</property>
             <property name="wrap">True</property>
             <property name="ellipsize">end</property>

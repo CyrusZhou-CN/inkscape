@@ -15,9 +15,16 @@
 #include "actions/actions-undo-document.h"
 #include "display/control/canvas-item-group.h"
 #include "display/control/canvas-item-bpath.h"
+#include "display/control/canvas-item-drawing.h"
+#include "display/drawing.h"
 #include "object/object-set.h"
 #include "object/sp-item.h"
+#include "object/sp-image.h"
+#include "object/sp-use.h"
+#include "object/sp-clippath.h"
 #include "object/sp-namedview.h"
+#include "object/sp-defs.h"
+#include "object/sp-root.h"
 #include "style.h"
 #include "ui/widget/canvas.h"
 #include "svg/svg.h"
@@ -36,6 +43,13 @@ BooleanBuilder::BooleanBuilder(ObjectSet *set, bool flatten)
     auto root = _set->desktop()->getCanvas()->get_canvas_item_root();
     _group = make_canvasitem<CanvasItemGroup>(root);
 
+    // Build some image screen items
+    for (auto &subitem : _work_items) {
+        if (!subitem->is_image())
+            continue;
+        // Somehow show the image to the user.
+    }
+
     auto nv = _set->desktop()->getNamedView();
     desk_modified_connection = nv->connectModified([=](SPObject *obj, guint flags) {
         redraw_items();
@@ -48,10 +62,15 @@ BooleanBuilder::~BooleanBuilder() = default;
 /**
  * Control the visual appearence of this particular bpath
  */
-void BooleanBuilder::redraw_item(CanvasItemBpath &bpath, bool selected, TaskType task)
+void BooleanBuilder::redraw_item(CanvasItemBpath &bpath, bool selected, TaskType task, bool image)
 {
     int i = (int)task * 2 + (int)selected;
-    bpath.set_fill(_dark ? fill_dark[i] : fill_lite[i], SP_WIND_RULE_POSITIVE);
+    auto fill = _dark ? fill_dark[i] : fill_lite[i];
+    if (image) {
+        // Make image items less opaque
+        fill = (fill | 0xff) - 0xcc;
+    }
+    bpath.set_fill(fill, SP_WIND_RULE_POSITIVE);
     bpath.set_stroke(task == TaskType::NONE ? 0x000000dd : 0xffffffff);
     bpath.set_stroke_width(task == TaskType::NONE ? 1.0 : 3.0);
 }
@@ -69,7 +88,7 @@ void BooleanBuilder::redraw_items()
     for (auto &subitem : _work_items) {
         // Construct BPath from each subitem!
         auto bpath = make_canvasitem<Inkscape::CanvasItemBpath>(_group.get(), subitem->get_pathv(), false);
-        redraw_item(*bpath, subitem->getSelected(), TaskType::NONE);
+        redraw_item(*bpath, subitem->getSelected(), TaskType::NONE, subitem->is_image());
         _screen_items.push_back({ subitem, std::move(bpath), true });
     }
 
@@ -97,12 +116,25 @@ bool BooleanBuilder::highlight(const Geom::Point &point, bool add)
     bool done = false;
     for (auto &si : _screen_items) {
         bool hover = !done && si.vis->contains(point, 2.0);
-        redraw_item(*si.vis, si.work->getSelected(), hover ? (add ? TaskType::ADD : TaskType::DELETE) : TaskType::NONE);
+        redraw_item(*si.vis, si.work->getSelected(), hover ? (add ? TaskType::ADD : TaskType::DELETE) : TaskType::NONE, si.work->is_image());
         if (hover)
             si.vis->raise_to_top();
         done = done || hover;
     }
     return done;
+}
+
+/**
+ * Returns true if this root item contains an image work item.
+ */
+bool BooleanBuilder::contains_image(SPItem *root) const
+{
+    for (auto &subitem : _work_items) {
+        if (subitem->get_root() == root && subitem->is_image()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -117,10 +149,10 @@ bool BooleanBuilder::task_select(const Geom::Point &point, bool add_task)
         _work_task = std::make_shared<SubItem>(*si->work);
         _work_task->setSelected(true);
         _screen_task = make_canvasitem<Inkscape::CanvasItemBpath>(_group.get(), _work_task->get_pathv(), false);
-        redraw_item(*_screen_task, true, add_task ? TaskType::ADD : TaskType::DELETE);
-        si->vis->hide();
+        redraw_item(*_screen_task, true, add_task ? TaskType::ADD : TaskType::DELETE, _work_task->is_image());
+        si->vis->set_visible(false);
         si->visible = false;
-        redraw_item(*si->vis, false, TaskType::NONE);
+        redraw_item(*si->vis, false, TaskType::NONE, _work_task->is_image());
         return true;
     }
     return false;
@@ -133,7 +165,7 @@ bool BooleanBuilder::task_add(const Geom::Point &point)
     if (auto si = get_item(point)) {
         // Invisible items are already processed.
         if (si->visible) {
-            si->vis->hide();
+            si->vis->set_visible(false);
             si->visible = false;
             *_work_task += *si->work;
             _screen_task->set_bpath(_work_task->get_pathv(), false);
@@ -148,7 +180,7 @@ void BooleanBuilder::task_cancel()
     _work_task.reset();
     _screen_task.reset();
     for (auto &si : _screen_items) {
-        si.vis->show();
+        si.vis->set_visible(true);
         si.visible = true;
     }
 }
@@ -185,9 +217,15 @@ void BooleanBuilder::task_commit()
  */
 std::vector<SPObject *> BooleanBuilder::shape_commit(bool all)
 {
+    auto prefs = Inkscape::Preferences::get();
+    bool replace = prefs->getBool("/tools/booleans/replace", true);
+
     std::vector<SPObject *> ret;
+    std::map<SPItem *, SPItem *> used_images;
     auto doc = _set->document();
     auto items = _set->items_vector();
+    auto defs = doc->getDefs();
+    auto xml_doc = doc->getReprDoc();
 
     // Only commit anything if we have changes, return selection.
     if (!has_changes() && !all) {
@@ -205,31 +243,90 @@ std::vector<SPObject *> BooleanBuilder::shape_commit(bool all)
         // Either this object is selected, or no objects are selected at all.
         if (!subitem->getSelected() && selected)
             continue;
+        auto root = subitem->get_root();
         auto item = subitem->get_item();
         auto style = subitem->getStyle();
         // For the rare occasion the user generates from a hole (no item)
-        if (!item) {
-            item = *items.begin();
-            style = item->style;
+        if (!root) {
+            root = *items.begin();
+            style = root->style;
         }
-        if (!item) {
+        if (!root) {
             g_warning("Can't generate itemless object in boolean-builder.");
             continue;
         }
-        auto parent = cast<SPItem>(item->parent);
+        auto parent = cast<SPItem>(root->parent);
 
-        Inkscape::XML::Node *repr = doc->getReprDoc()->createElement("svg:path");
+        Inkscape::XML::Node *repr = xml_doc->createElement("svg:path");
         repr->setAttribute("d", sp_svg_write_path(subitem->get_pathv() * parent->dt2i_affine()));
         repr->setAttribute("style", style->writeIfDiff(parent->style));
-        parent->getRepr()->addChild(repr, item->getRepr());
+
+        // Images and clipped clones are re/clipped instead of path-constructs
+        if ((is<SPImage>(item) || is<SPUse>(item)) && item->getId()) {
+            if (is<SPImage>(item)) {
+                // An image may have been contained without groups or layers with transforms
+                // moving it to the defs would lose this information. So we add it in now.
+                auto tr = i2anc_affine(item, parent);
+
+                // Make a copy of the image when not replacing it
+                if (!used_images.count(item)) {
+                    auto orig = item;
+                    if (item->parent != defs && !replace) {
+                        auto copy_repr = item->getRepr()->duplicate(xml_doc);
+                        item = cast<SPItem>(defs->appendChildRepr(copy_repr));
+                    }
+                    item->setAttributeOrRemoveIfEmpty("transform", sp_svg_transform_write(tr));
+                    used_images[orig] = item;
+                } else {
+                    // Make sure the id we use below is the copy, or the original dependiong on replace
+                    item = used_images[item];
+                }
+            }
+
+            // Consume existing repr as the clipPath and replace with clone of image
+            Geom::Affine clone_tr = Geom::identity();
+            std::vector<Inkscape::XML::Node *> paths = {repr};
+            std::string clip_id = SPClipPath::create(paths, doc);
+            std::string href_id = std::string("#") + item->getId();
+
+            if (is<SPUse>(item)) {
+                href_id = item->getAttribute("xlink:href");
+                clone_tr = i2anc_affine(item, parent);
+                // Remove the original clone's transform from the new clip object
+                repr->setAttribute("transform", sp_svg_transform_write(clone_tr.inverse()));
+            }
+
+            repr = xml_doc->createElement("svg:use");
+            repr->setAttribute("x", "0");
+            repr->setAttribute("y", "0");
+            repr->setAttribute("xlink:href", href_id);
+            repr->setAttribute("clip-path", std::string("url(#") + clip_id + ")");
+            repr->setAttribute("transform", sp_svg_transform_write(clone_tr));
+        }
+
+        parent->getRepr()->addChild(repr, root->getRepr());
         ret.emplace_back(doc->getObjectByRepr(repr));
     }
     _work_items.clear();
 
+    for (auto &[orig, item] : used_images) {
+        // Images that are used in a fragment are moved,
+        if (item->parent != defs && replace) {
+            auto img_repr = item->getRepr();
+            sp_repr_unparent(img_repr);
+            defs->getRepr()->appendChild(img_repr);
+        }
+    }
+
     for (auto item : items) {
-        sp_object_ref(item, nullptr);
-        item->deleteObject(true, true);
-        sp_object_unref(item, nullptr);
+        // Apart from the used images, everything else it to be deleted.
+        if (!used_images.count(item) && replace) {
+            sp_object_ref(item, nullptr);
+            // We must not signal the deletions as some of these objects
+            // could be linked together (for example clones)
+            item->deleteObject(false, false);
+            sp_object_unref(item, nullptr);
+        }
     }
     return ret;
 }

@@ -455,7 +455,7 @@ Shape::ConvertToShape (Shape * a, FillRule directed, bool invert)
       {
         upNo = -1;
       }
-      if (upNo >= 0 && (SweepTree *) ptSh->swsData[upNo].misc == nullptr)
+      if (upNo >= 0 && ptSh->swsData[upNo].misc == nullptr)
       {
         upNo = -1;
       }
@@ -479,8 +479,7 @@ Shape::ConvertToShape (Shape * a, FillRule directed, bool invert)
           {
             if (cb != upNo) // if this is not the last edge that ended at this point
             {
-              SweepTree *node =
-                (SweepTree *) ptSh->swsData[cb].misc; // get the sweepline node for this edge
+              SweepTree *node = ptSh->swsData[cb].misc; // get the sweepline node for this edge
               if (node == nullptr)
               {
               }
@@ -518,9 +517,7 @@ Shape::ConvertToShape (Shape * a, FillRule directed, bool invert)
                 // test if they interesect with each other (since now this edge just go removed and they are side to side)
                 if (onLeftS && onRightS)
                 {
-                  SweepTree *onLeft =
-                    (SweepTree *) onLeftS->swsData[onLeftB].
-                    misc;
+                  SweepTree *onLeft = onLeftS->swsData[onLeftB].misc;
                   if (onLeftS == ptSh
                       && (onLeftS->getEdge(onLeftB).en == nPt
                         || onLeftS->getEdge(onLeftB).st ==
@@ -1277,7 +1274,7 @@ Shape::Booleen (Shape * a, Shape * b, BooleanOp mod,int cutPathID)
 	    {
 	      upNo = -1;
 	    }
-	  if (upNo >= 0 && (SweepTree *) ptSh->swsData[upNo].misc == nullptr)
+      if (upNo >= 0 && !ptSh->swsData[upNo].misc)
 	    {
 	      upNo = -1;
 	    }
@@ -1298,8 +1295,7 @@ Shape::Booleen (Shape * a, Shape * b, BooleanOp mod,int cutPathID)
 		    {
 		      if (cb != upNo)
 			{
-			  SweepTree *node =
-			    (SweepTree *) ptSh->swsData[cb].misc;
+              SweepTree *node = ptSh->swsData[cb].misc;
 			  if (node == nullptr)
 			    {
 			    }
@@ -1335,9 +1331,7 @@ Shape::Booleen (Shape * a, Shape * b, BooleanOp mod,int cutPathID)
 			      node->Remove (*sTree, *sEvts, true);
 			      if (onLeftS && onRightS)
 				{
-				  SweepTree *onLeft =
-				    (SweepTree *) onLeftS->swsData[onLeftB].
-				    misc;
+                  SweepTree *onLeft = onLeftS->swsData[onLeftB].misc;
 //                                                                      SweepTree* onRight=(SweepTree*)onRightS->swsData[onRightB].misc;
 				  if (onLeftS == ptSh
 				      && (onLeftS->getEdge(onLeftB).en == nPt
@@ -1373,7 +1367,7 @@ Shape::Booleen (Shape * a, Shape * b, BooleanOp mod,int cutPathID)
 	    {
 	      if (upNo >= 0)
 		{
-		  SweepTree *node = (SweepTree *) ptSh->swsData[upNo].misc;
+          SweepTree *node = ptSh->swsData[upNo].misc;
 
 		  AddChgt (lastPointNo, lastChgtPt, shapeHead, edgeHead, EDGE_REMOVED,
 			   node->src, node->bord, nullptr, -1);
@@ -2534,7 +2528,7 @@ Shape::GetWindings (Shape * /*a*/, Shape * /*b*/, BooleanOp /*mod*/, bool brutal
   // preparation du parcours
   for (int i = 0; i < numberOfEdges(); i++)
   {
-    swdData[i].misc = nullptr;
+    swdData[i].misc = 0;
     swdData[i].precParc = swdData[i].suivParc = -1;
   }
 
@@ -2563,7 +2557,7 @@ Shape::GetWindings (Shape * /*a*/, Shape * /*b*/, BooleanOp /*mod*/, bool brutal
 			// ignore all points that don't have any edges attached
       for (fi = lastPtUsed; fi < numberOfPoints(); fi++)
       {
-        if (getPoint(fi).incidentEdge[FIRST] >= 0 && swdData[getPoint(fi).incidentEdge[FIRST]].misc == nullptr)
+        if (getPoint(fi).incidentEdge[FIRST] >= 0 && swdData[getPoint(fi).incidentEdge[FIRST]].misc == 0)
           break;
       }
       lastPtUsed = fi + 1;
@@ -2618,7 +2612,7 @@ Shape::GetWindings (Shape * /*a*/, Shape * /*b*/, BooleanOp /*mod*/, bool brutal
     {
 			// now start from this edge
       // parcours en profondeur pour mettre les leF et riF a leurs valeurs
-      swdData[startBord].misc = (void *) 1;
+      swdData[startBord].misc = 1;
 			// setting the winding numbers for this edge
 			// one question I had was, would these values for the first edge will always be valid?
 			// The answer is yes. Due to the fact that edges are sorted clockwise, and that
@@ -2674,7 +2668,7 @@ Shape::GetWindings (Shape * /*a*/, Shape * /*b*/, BooleanOp /*mod*/, bool brutal
           }
           nb = nnb;
         } // you can break for three reasons from this loop: having no other edge, we got the same one we started on, edge hasn't been visited yet
-        while (nb >= 0 && nb != curBord && swdData[nb].misc != nullptr);
+        while (nb >= 0 && nb != curBord && swdData[nb].misc != 0);
         // in the beginning, you'd break from the upper loop due to the misc condition and later on, you'll break due to nb != curBord which
         // means we need to start backtracking
         if (nb < 0 || nb == curBord) // backtracking block
@@ -2702,7 +2696,7 @@ Shape::GetWindings (Shape * /*a*/, Shape * /*b*/, BooleanOp /*mod*/, bool brutal
         }
         else // okay we have new edge to compute windings
         {
-          swdData[nb].misc = (void *) 1; // we visited this edge, so mark that
+          swdData[nb].misc = 1; // we visited this edge, so mark that
           swdData[nb].ind = searchInd++; // probably for use later on?
           if (cPt == getEdge(nb).st) // this outsideW is the winding stored before, see the diagram in header file
           {
@@ -3081,8 +3075,7 @@ Shape::CheckAdjacencies (int lastPointNo, int lastChgtPt, Shape * /*shapeHead*/,
           if (hit)
           {
             // get the edge on the left, if non exist, break
-            SweepTree *node =
-              static_cast < SweepTree * >(nSrc->swsData[nBrd].misc);
+            SweepTree *node = nSrc->swsData[nBrd].misc;
             if (node == nullptr)
               break;
             node = static_cast < SweepTree * >(node->elem[LEFT]);
@@ -3154,8 +3147,7 @@ Shape::CheckAdjacencies (int lastPointNo, int lastChgtPt, Shape * /*shapeHead*/,
           }
           if (hit)
           {
-            SweepTree *node =
-              static_cast < SweepTree * >(nSrc->swsData[nBrd].misc);
+            SweepTree *node = nSrc->swsData[nBrd].misc;
             if (node == nullptr)
               break;
             node = static_cast < SweepTree * >(node->elem[RIGHT]);
@@ -3194,7 +3186,7 @@ void Shape::AddChgt(int lastPointNo, int lastChgtPt, Shape * &shapeHead,
 
   if (lS) {
     // if there is an edge to the left, mark it in lSrc
-    SweepTree *lE = static_cast < SweepTree * >(lS->swsData[lB].misc);
+    SweepTree *lE = lS->swsData[lB].misc;
     if (lE && lE->elem[LEFT]) {
       SweepTree *llE = static_cast < SweepTree * >(lE->elem[LEFT]);
       chgts[nCh].lSrc = llE->src;
@@ -3240,7 +3232,7 @@ void Shape::AddChgt(int lastPointNo, int lastChgtPt, Shape * &shapeHead,
   // right edge
   if (rS) {
     // get the edge on the right and set it in rBrd and rSrc
-    SweepTree *rE = static_cast < SweepTree * >(rS->swsData[rB].misc);
+    SweepTree *rE = rS->swsData[rB].misc;
     if (rE->elem[RIGHT]) {
       SweepTree *rrE = static_cast < SweepTree * >(rE->elem[RIGHT]);
       chgts[nCh].rSrc = rrE->src;
@@ -3272,7 +3264,7 @@ void Shape::AddChgt(int lastPointNo, int lastChgtPt, Shape * &shapeHead,
     }
   } else { // if rS wasn't set, this is not an intersection event, so
     // check if there is an edge to the right and set rBrd
-    SweepTree *lE = static_cast < SweepTree * >(lS->swsData[lB].misc);
+    SweepTree *lE = lS->swsData[lB].misc;
     if (lE && lE->elem[RIGHT]) {
       SweepTree *rlE = static_cast < SweepTree * >(lE->elem[RIGHT]);
       chgts[nCh].rSrc = rlE->src;
@@ -3366,8 +3358,7 @@ Shape::CheckEdges (int lastPointNo, int lastChgtPt, Shape * a, Shape * b,
       {
         Avance (lastPointNo, lastChgtPt, nSrc, nBrd, a, b, mod);
 
-        SweepTree *node =
-          static_cast < SweepTree * >(nSrc->swsData[nBrd].misc);
+        SweepTree *node = nSrc->swsData[nBrd].misc;
         if (node == nullptr)
           break;
         node = static_cast < SweepTree * >(node->elem[LEFT]);
@@ -3386,8 +3377,7 @@ Shape::CheckEdges (int lastPointNo, int lastChgtPt, Shape * a, Shape * b,
       {
         Avance (lastPointNo, lastChgtPt, nSrc, nBrd, a, b, mod);
 
-        SweepTree *node =
-          static_cast < SweepTree * >(nSrc->swsData[nBrd].misc);
+        SweepTree *node = nSrc->swsData[nBrd].misc;
         if (node == nullptr)
           break;
         node = static_cast < SweepTree * >(node->elem[RIGHT]);

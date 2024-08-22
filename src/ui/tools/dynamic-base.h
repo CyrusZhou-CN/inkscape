@@ -43,12 +43,13 @@ class CanvasItemBpath;
 namespace UI {
 namespace Tools {
 
-class DynamicBase : public ToolBase {
+class DynamicBase : public ToolBase
+{
 public:
-    DynamicBase(SPDesktop *desktop, std::string prefs_path, const std::string &cursor_filename);
+    DynamicBase(SPDesktop *desktop, std::string &&prefs_path, std::string &&cursor_filename);
     ~DynamicBase() override;
 
-    void set(const Inkscape::Preferences::Entry& val) override;
+    void set(Preferences::Entry const &val) override;
 
 protected:
     /** accumulated shape which ultimately goes in svg:path */

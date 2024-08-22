@@ -21,32 +21,36 @@
 #include <cstring>
 #include <algorithm>
 #include <string>
+
 #include <glibmm.h>
 #include <glib/gstdio.h>
-#include <2geom/rect.h>
-#include <2geom/transforms.h>
 #include <glibmm/i18n.h>
 #include <giomm/error.h>
 
+#include <lcms2.h>
+#include <2geom/rect.h>
+#include <2geom/transforms.h>
+
+// Added for preserveAspectRatio support -- EAF
+#include "attributes.h"
+#include "document.h"
+#include "preferences.h"
+#include "print.h"
 #include "snap-candidate.h"
 #include "snap-preferences.h"
+
+#include "sp-image.h"
+#include "sp-clippath.h"
+
 #include "display/drawing-image.h"
 #include "display/cairo-utils.h"
 #include "display/curve.h"
-// Added for preserveAspectRatio support -- EAF
-#include "attributes.h"
-#include "print.h"
-#include "document.h"
-#include "sp-image.h"
-#include "sp-clippath.h"
+#include "io/sys.h"
 #include "xml/quote.h"
 #include "xml/href-attribute-helper.h"
-#include "preferences.h"
-#include "io/sys.h"
 
-#include "cms-system.h"
+#include "color/cms-system.h"
 #include "color-profile.h"
-#include <lcms2.h>
 
 //#define DEBUG_LCMS
 #ifdef DEBUG_LCMS
@@ -252,12 +256,12 @@ void SPImage::apply_profile(Inkscape::Pixbuf *pixbuf) {
     guchar* px = pixbuf->pixels();
 
     if ( px ) {
-        DEBUG_MESSAGE( lcmsFive, "in <image>'s sp_image_update. About to call colorprofile_get_handle()" );
+        DEBUG_MESSAGE( lcmsFive, "in <image>'s sp_image_update. About to call get_document_profile()");
 
         guint profIntent = Inkscape::RENDERING_INTENT_UNKNOWN;
-        cmsHPROFILE prof = Inkscape::CMSSystem::getHandle( this->document,
-                                                           &profIntent,
-                                                           this->color_profile );
+        cmsHPROFILE prof = Inkscape::CMSSystem::get_document_profile(document,
+                                                                     &profIntent,
+                                                                     color_profile );
         if ( prof ) {
             cmsProfileClassSignature profileClass = cmsGetDeviceClass( prof );
             if ( profileClass != cmsSigNamedColorClass ) {

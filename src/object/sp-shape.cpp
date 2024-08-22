@@ -879,7 +879,7 @@ void SPShape::update_patheffect(bool write)
 }
 
 Inkscape::DrawingItem* SPShape::show(Inkscape::Drawing &drawing, unsigned int /*key*/, unsigned int /*flags*/) {
-    // std::cout << "SPShape::show(): " << (getId()?getId():"null") << std::endl;
+    // std::cout << "SPShape::set_visible(true): " << (getId()?getId():"null") << std::endl;
     Inkscape::DrawingShape *s = new Inkscape::DrawingShape(drawing);
 
     bool has_markers = this->hasMarkers();
@@ -914,6 +914,10 @@ Inkscape::DrawingItem* SPShape::show(Inkscape::Drawing &drawing, unsigned int /*
         this->context_style = this->parent->context_style;
         s->setStyle(this->style, this->context_style);
     }
+
+    // apply 'shape-rendering' presentation attribute
+    Inkscape::propagate_antialias(style->shape_rendering.computed, *s);
+
     return s;
 }
 

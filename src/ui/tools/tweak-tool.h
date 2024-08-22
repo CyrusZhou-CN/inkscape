@@ -81,12 +81,12 @@ public:
 
     auto_connection style_set_connection;
 
-    void set(const Inkscape::Preferences::Entry &val) override;
-    bool root_handler(GdkEvent *event) override;
+    void set(Preferences::Entry const &val) override;
+    bool root_handler(CanvasEvent const &event) override;
     void update_cursor(bool with_shift);
 
 private:
-    bool set_style(const SPCSSAttr *css);
+    bool set_style(SPCSSAttr const *css);
 };
 
 }

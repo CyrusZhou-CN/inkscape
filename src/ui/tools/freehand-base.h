@@ -41,18 +41,19 @@ namespace Tools {
 
 enum shapeType { NONE, TRIANGLE_IN, TRIANGLE_OUT, ELLIPSE, CLIPBOARD, BEND_CLIPBOARD, LAST_APPLIED };
 
-class FreehandBase : public ToolBase {
+class FreehandBase : public ToolBase
+{
 public:
-    FreehandBase(SPDesktop *desktop, std::string prefs_path, const std::string &cursor_filename);
+    FreehandBase(SPDesktop *desktop, std::string &&prefs_path, std::string &&cursor_filename);
     ~FreehandBase() override;
 
-    Inkscape::Selection *selection;
+    Selection *selection;
 
 protected:
-    guint32 red_color;
-    guint32 blue_color;
-    guint32 green_color;
-    guint32 highlight_color;
+    uint32_t red_color;
+    uint32_t blue_color;
+    uint32_t green_color;
+    uint32_t highlight_color;
 
 public:
     // Red - Last segment as it's drawn.
@@ -85,7 +86,7 @@ public:
     SPDrawAnchor *ea;
 
     /* Type of the LPE that is to be applied automatically to a finished path (if any) */
-    Inkscape::LivePathEffect::EffectType waiting_LPE_type;
+    LivePathEffect::EffectType waiting_LPE_type;
 
     sigc::connection sel_changed_connection;
     sigc::connection sel_modified_connection;
@@ -98,13 +99,13 @@ public:
 
     bool is_tablet;
 
-    gdouble pressure;
-    void set(const Inkscape::Preferences::Entry& val) override;
+    double pressure;
+    void set(Preferences::Entry const &val) override;
 
     void onSelectionModified();
 
 protected:
-    bool root_handler(GdkEvent* event) override;
+    bool root_handler(CanvasEvent const &event) override;
     void _attachSelection();
 };
 

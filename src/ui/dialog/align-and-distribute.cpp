@@ -16,17 +16,22 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#include "align-and-distribute.h" // widget
-
 #include <iostream>
+#include <sigc++/adaptors/bind.h>
+#include <sigc++/functors/mem_fun.h>
+#include <giomm/application.h>
+#include <gtkmm/button.h>
+#include <gtkmm/combobox.h>
+#include <gtkmm/spinbutton.h>
+#include <gtkmm/togglebutton.h>
 
-#include <giomm.h>
-
+#include "align-and-distribute.h" // widget
 #include "desktop.h"               // Tool switching.
 #include "inkscape-window.h"       // Activate window action.
 #include "actions/actions-tools.h" // Tool switching.
 #include "io/resource.h"
 #include "ui/dialog/dialog-base.h" // Tool switching.
+#include "ui/util.h"
 
 namespace Inkscape {
 namespace UI {
@@ -62,14 +67,14 @@ AlignAndDistribute::AlignAndDistribute(Inkscape::UI::Dialog::DialogBase* dlg)
     if (!align_and_distribute_object) {
         std::cerr << "AlignAndDistribute::AlignAndDistribute: failed to load widget (object)!" << std::endl;
     } else {
-        align_and_distribute_object->show();
+        align_and_distribute_object->set_visible(true);
     }
 
     builder->get_widget("align-and-distribute-node", align_and_distribute_node);
     if (!align_and_distribute_node) {
         std::cerr << "AlignAndDistribute::AlignAndDistribute: failed to load widget (node)!" << std::endl;
     } else {
-        align_and_distribute_node->hide();
+        align_and_distribute_node->set_visible(false);
     }
 
     // ------------  Object Align  -------------
@@ -89,7 +94,6 @@ AlignAndDistribute::AlignAndDistribute(Inkscape::UI::Dialog::DialogBase* dlg)
     } else {
         bool sel_as_group = prefs->getBool("/dialogs/align/sel-as-groups");
         align_move_as_group->set_active(sel_as_group);
-
         align_move_as_group->signal_clicked().connect(sigc::mem_fun(*this, &AlignAndDistribute::on_align_as_group_clicked));
     }
 
@@ -117,8 +121,8 @@ AlignAndDistribute::AlignAndDistribute(Inkscape::UI::Dialog::DialogBase* dlg)
             std::cerr << "AlignAndDistribute::AlignAndDisribute: failed to get button: "
                       << align_button.first << " " << align_button.second << std::endl;
         } else {
-            button->signal_button_press_event().connect(
-                sigc::bind<std::string>(sigc::mem_fun(*this, &AlignAndDistribute::on_align_button_press_event), align_button.second), false);
+            button->signal_clicked().connect(
+                sigc::bind(sigc::mem_fun(*this, &AlignAndDistribute::on_align_clicked), align_button.second));
         }
     }
 
@@ -129,8 +133,8 @@ AlignAndDistribute::AlignAndDistribute(Inkscape::UI::Dialog::DialogBase* dlg)
     if (!remove_overlap_button) {
         std::cerr << "AlignAndDistribute::AlignAndDistribute: failed to load widget!" << std::endl;
     } else {
-        remove_overlap_button->signal_button_press_event().connect(
-            sigc::mem_fun(*this, &AlignAndDistribute::on_remove_overlap_button_press_event), false); // false => run first.
+        remove_overlap_button->signal_clicked().connect(
+            sigc::mem_fun(*this, &AlignAndDistribute::on_remove_overlap_clicked));
     }
 
     builder->get_widget("remove-overlap-hgap", remove_overlap_hgap);
@@ -166,8 +170,8 @@ AlignAndDistribute::AlignAndDistribute(Inkscape::UI::Dialog::DialogBase* dlg)
             std::cerr << "AlignAndDistribute::AlignAndDisribute: failed to get button: "
                       << align_button.first << " " << align_button.second << std::endl;
         } else {
-            button->signal_button_press_event().connect(
-                sigc::bind<std::string>(sigc::mem_fun(*this, &AlignAndDistribute::on_align_node_button_press_event), align_button.second), false);
+            button->signal_clicked().connect(
+                sigc::bind(sigc::mem_fun(*this, &AlignAndDistribute::on_align_node_clicked), align_button.second));
         }
     }
 
@@ -179,6 +183,16 @@ AlignAndDistribute::AlignAndDistribute(Inkscape::UI::Dialog::DialogBase* dlg)
     if (desktop) {
         desktop_changed(desktop);
     }
+
+    auto set_icon_size_prefs = [=]() {
+        int size = prefs->getIntLimited("/toolbox/tools/iconsize", -1, 16, 48);
+        Inkscape::UI::set_icon_sizes(this, size);
+    };
+
+    // For now we are going to track the toolbox icon size, in the future we will have our own
+    // dialog based icon sizes, perhaps done via css instead.
+    _icon_sizes_changed = prefs->createObserver("/toolbox/tools/iconsize", set_icon_size_prefs);
+    set_icon_size_prefs();
 }
 
 void
@@ -197,11 +211,11 @@ AlignAndDistribute::tool_changed(SPDesktop* desktop)
 {
     bool node = get_active_tool(desktop) == "Node";
     if (node) {
-        align_and_distribute_object->hide();
-        align_and_distribute_node->show();
+        align_and_distribute_object->set_visible(false);
+        align_and_distribute_node->set_visible(true);
     } else {
-        align_and_distribute_object->show();
-        align_and_distribute_node->hide();
+        align_and_distribute_object->set_visible(true);
+        align_and_distribute_node->set_visible(false);
     }
 }
 
@@ -234,8 +248,8 @@ AlignAndDistribute::on_align_relative_node_changed()
     prefs->setString("/dialogs/align/nodes-align-to", align_relative_node->get_active_id());
 }
 
-bool
-AlignAndDistribute::on_align_button_press_event(GdkEventButton* button_event, const std::string& align_to)
+void
+AlignAndDistribute::on_align_clicked(std::string const &align_to)
 {
     Glib::ustring argument = align_to;
 
@@ -253,12 +267,10 @@ AlignAndDistribute::on_align_button_press_event(GdkEventButton* button_event, co
     } else {
         app->activate_action("object-align",      variant);
     }
-
-    return true;
 }
 
-bool
-AlignAndDistribute::on_remove_overlap_button_press_event(GdkEventButton* button_event)
+void
+AlignAndDistribute::on_remove_overlap_clicked()
 {
     double hgap = remove_overlap_hgap->get_value();
     double vgap = remove_overlap_vgap->get_value();
@@ -266,26 +278,25 @@ AlignAndDistribute::on_remove_overlap_button_press_event(GdkEventButton* button_
     auto variant = Glib::Variant<std::tuple<double, double>>::create(std::tuple<double, double>(hgap, vgap));
     auto app = Gio::Application::get_default();
     app->activate_action("object-remove-overlaps", variant);
-    return true;
 }
 
-bool
-AlignAndDistribute::on_align_node_button_press_event(GdkEventButton* button_event, const std::string& direction)
+void
+AlignAndDistribute::on_align_node_clicked(std::string const &direction)
 {
     Glib::ustring argument = align_relative_node->get_active_id();
 
     auto variant = Glib::Variant<Glib::ustring>::create(argument);
     InkscapeWindow* win = InkscapeApplication::instance()->get_active_window();
+
     if (!win) {
-        return true;
+        return;
     }
+
     if (direction == "horizontal") {
         win->activate_action("node-align-horizontal", variant);
     } else {
         win->activate_action("node-align-vertical", variant);
     }
-
-    return true;
 }
 
 } // namespace Dialog

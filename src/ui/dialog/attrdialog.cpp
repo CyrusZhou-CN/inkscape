@@ -26,7 +26,6 @@
 #include "ui/icon-loader.h"
 #include "ui/icon-names.h"
 #include "ui/syntax.h"
-#include "ui/util.h"
 #include "ui/widget/shapeicon.h"
 #include "util/numeric/converters.h"
 #include "util/trim.h"
@@ -163,7 +162,7 @@ AttrDialog::AttrDialog()
         col->set_clickable(true);
         col->set_widget(*add_icon);
         add_icon->set_tooltip_text(_("Add a new attribute"));
-        add_icon->show();
+        add_icon->set_visible(true);
         auto button = add_icon->get_parent()->get_parent()->get_parent();
         // Assign the button event so that create happens BEFORE delete. If this code
         // isn't in this exact way, the onAttrDelete is called when the header lines are pressed.
@@ -218,7 +217,7 @@ AttrDialog::AttrDialog()
 
     _popover->signal_closed().connect([=]() { popClosed(); });
     _popover->signal_key_press_event().connect([=](GdkEventKey* ev) { return key_callback(ev); }, false);
-    _popover->hide();
+    _popover->set_visible(false);
 
     get_widget<Gtk::Button>(_builder, "btn-truncate").signal_clicked().connect([=](){ truncateDigits(); });
 
@@ -247,7 +246,7 @@ AttrDialog::AttrDialog()
 AttrDialog::~AttrDialog()
 {
     _current_text_edit = nullptr;
-    _popover->hide();
+    _popover->set_visible(false);
 
     // remove itself from the list of node observers
     setRepr(nullptr);
@@ -456,7 +455,7 @@ void AttrDialog::startValueEdit(Gtk::CellEditable *cell, const Glib::ustring &pa
     }
 
     // number rounding functionality
-    widget_show(get_widget<Gtk::Box>(_builder, "rounding-box"), enable_rouding);
+    get_widget<Gtk::Box>(_builder, "rounding-box").set_visible(enable_rouding);
 
     _activeTextView().set_size_request(std::min(MAX_POPOVER_WIDTH - 10, dlg_width), -1);
 

@@ -1,11 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 set(livarot_SRC
-	AlphaLigne.cpp
 	AVL.cpp
-	BitLigne.cpp
 	float-line.cpp
-	int-line.cpp
 	PathConversion.cpp
 	Path.cpp
 	PathCutting.cpp
@@ -26,13 +23,10 @@ set(livarot_SRC
 	# -------
 	# Headers
 	AVL.h
-	AlphaLigne.h
-	BitLigne.h
 	LivarotDefs.h
 	Path.h
 	Shape.h
 	float-line.h
-	int-line.h
 	path-description.h
 	sweep-event-queue.h
 	sweep-event.h

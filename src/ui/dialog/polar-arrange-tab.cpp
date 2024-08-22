@@ -25,6 +25,7 @@
 #include "ui/dialog/polar-arrange-tab.h"
 #include "ui/dialog/tile.h"
 #include "ui/icon-names.h"
+#include "ui/dialog-run.h"
 
 
 namespace Inkscape {
@@ -133,7 +134,7 @@ PolarArrangeTab::PolarArrangeTab(ArrangeDialog *parent_)
 
     parametersTable.show_all();
     parametersTable.set_no_show_all();
-    parametersTable.hide();
+    parametersTable.set_visible(false);
 }
 
 /**
@@ -277,36 +278,29 @@ void PolarArrangeTab::arrange()
 	bool arrangeOnFirstEllipse = arrangeOnEllipse && arrangeOnFirstCircleRadio.get_active();
 	float yaxisdir = parent->getDesktop()->yaxisdir();
 
-	int count = 0;
-	for(auto item : tmp)
-	{
-		if(arrangeOnEllipse)
-		{
-				if(!arrangeOnFirstEllipse)
-			{
-				if(is<SPGenericEllipse>(item))
-					referenceEllipse = cast<SPGenericEllipse>(item);
-			} else {
-				if(is<SPGenericEllipse>(item) && referenceEllipse == nullptr)
-					referenceEllipse = cast<SPGenericEllipse>(item);
-			}
-		}
-		++count;
-	}
+    int count = 0;
+    if (arrangeOnEllipse) {
+        for (auto item : tmp) {
+            if (auto ellipse = cast<SPGenericEllipse>(item)) {
+                if (!referenceEllipse || !arrangeOnFirstEllipse) {
+                    referenceEllipse = ellipse;
+                }
+            }
+            ++count;
+        }
+    }
 
 	float cx, cy; // Center of the ellipse
 	float rx, ry; // Radiuses of the ellipse in x and y direction
 	float arcBeg, arcEnd; // begin and end angles for arcs
-	Geom::Affine transformation; // Any additional transformation to apply to the objects
-
-	if(arrangeOnEllipse)
-	{
-		if(referenceEllipse == nullptr)
-		{
-			Gtk::MessageDialog dialog(_("Couldn't find an ellipse in selection"), false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE, true);
-			dialog.run();
-			return;
-		} else {
+    Geom::Affine transformation; // Any additional transformation to apply to the objects
+    if (arrangeOnEllipse) {
+        if (!referenceEllipse) {
+            if (auto desktop = parent->getDesktop()) {
+                desktop->showNotice(_("Couldn't find an ellipse in selection"), 5000);
+            }
+            return;
+        } else {
 			cx = referenceEllipse->cx.value;
 			cy = referenceEllipse->cy.value;
 			rx = referenceEllipse->rx.value;

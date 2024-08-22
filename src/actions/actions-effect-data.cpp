@@ -17,38 +17,45 @@
 
 #include <iostream>
 #include <algorithm>
+#include <string>
 #include <tuple>
 
 #include <glibmm/i18n.h>
 
-std::vector<InkActionEffectData::datum>
-InkActionEffectData::give_all_data()
-{
-    // Sort by menu tree and effect name.
-    std::sort(data.begin(), data.end(), [](datum a, datum b) {
-        auto a_list = std::get<1>(a);
-        auto b_list = std::get<1>(b);
-        auto a_it = a_list.begin();
-        auto b_it = b_list.begin();
-        while (a_it != a_list.end() && b_it != b_list.end()) {
-            if (*a_it < *b_it) return true;
-            if (*a_it > *b_it) return false;
-            a_it++;
-            b_it++;
-        }
-       if (a_it != a_list.end()) return *a_it < std::get<2>(b);  // Compare menu name with effect name.
-       if (b_it != b_list.end()) return *b_it > std::get<2>(a);  // Compare menu name with effect name.
-       return std::get<2>(a) < std::get<2>(b); // Same menu, order by effect name.
-    });
-
+const std::vector<InkActionEffectData::datum>& InkActionEffectData::give_all_data() const {
     return data;
 }
 
-void
-InkActionEffectData::add_data ( std::string effect_id, std::list<Glib::ustring> effect_submenu_name,
-                                Glib::ustring const &effect_name )
+bool InkActionEffectData::datum::operator < (const datum& b) const {
+    const auto& a = *this;
+
+    if (a.is_filter != b.is_filter) return a.is_filter < b.is_filter;
+
+    // Sort by menu tree and effect name.
+    const auto& a_list = a.submenu;
+    const auto& b_list = b.submenu;
+
+    auto a_it = a_list.begin();
+    auto b_it = b_list.begin();
+    while (a_it != a_list.end() && b_it != b_list.end()) {
+        if (*a_it < *b_it) return true;
+        if (*a_it > *b_it) return false;
+        a_it++;
+        b_it++;
+    }
+    if (a_it != a_list.end()) return *a_it < b.effect_name;  // Compare menu name with effect name.
+    if (b_it != b_list.end()) return *b_it > a.effect_name;  // Compare menu name with effect name.
+    return a.effect_name < b.effect_name; // Same menu, order by effect name.
+}
+
+void InkActionEffectData::add_data(
+    std::string effect_id,
+    bool is_filter,
+    std::list<Glib::ustring> effect_submenu,
+    Glib::ustring const &effect_name)
 {
-    data.emplace_back(effect_id, effect_submenu_name, effect_name);
+    auto el = datum{effect_id, effect_submenu, effect_name, is_filter};
+    data.insert(std::upper_bound(data.begin(), data.end(), el), el);
 }
 
 /*

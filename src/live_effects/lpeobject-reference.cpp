@@ -22,7 +22,6 @@ namespace LivePathEffect {
 
 static void lpeobjectreference_href_changed(SPObject *old_ref, SPObject *ref, LPEObjectReference *lpeobjref);
 static void lpeobjectreference_release_self(SPObject *release, LPEObjectReference *lpeobjref);
-static void lpeobjectreference_source_modified(SPObject *iSource, guint flags, LPEObjectReference *lpeobjref);
 
 LPEObjectReference::LPEObjectReference(SPObject* i_owner) : URIReference(i_owner)
 {
@@ -105,7 +104,6 @@ LPEObjectReference::start_listening(LivePathEffectObject* to)
     lpeobject = to;
     lpeobject_repr = to->getRepr();
     _release_connection = to->connectRelease(sigc::bind(sigc::ptr_fun(&lpeobjectreference_release_self), this));
-    _modified_connection = to->connectModified(sigc::bind<2>(sigc::ptr_fun(&lpeobjectreference_source_modified), this));
 }
 
 void
@@ -139,17 +137,6 @@ lpeobjectreference_release_self(SPObject */*release*/, LPEObjectReference *lpeob
         lpeobjref->user_unlink(lpeobjref, lpeobjref->owner);
     }
     
-}
-
-static void
-lpeobjectreference_source_modified(SPObject */*iSource*/, guint /*flags*/, LPEObjectReference *lpeobjref)
-{
-//    We dont need to request update when LPE XML is updated
-//    Retain it temporary, drop if no regression
-//    SPObject *owner_obj = lpeobjref->owner;
-//    if (owner_obj) {
-//        lpeobjref->owner->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
-//    }
 }
 
 } //namespace LivePathEffect

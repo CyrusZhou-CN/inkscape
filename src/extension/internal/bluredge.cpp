@@ -52,13 +52,8 @@ BlurEdge::load (Inkscape::Extension::Extension */*module*/)
     \param  desktop What should be edited.
 */
 void
-BlurEdge::effect (Inkscape::Extension::Effect *module, Inkscape::UI::View::View *view, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
+BlurEdge::effect (Inkscape::Extension::Effect *module, SPDesktop *desktop, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
 {
-    auto desktop = dynamic_cast<SPDesktop *>(view);
-    if (!desktop) {
-        std::cerr << "BlurEdge::effect: view is not desktop!" << std::endl;
-        return;
-    }
     Inkscape::Selection * selection     = desktop->getSelection();
 
     double width = module->get_param_float("blur-width");
@@ -122,7 +117,7 @@ BlurEdge::effect (Inkscape::Extension::Effect *module, Inkscape::UI::View::View 
 }
 
 Gtk::Widget *
-BlurEdge::prefs_effect(Inkscape::Extension::Effect * module, Inkscape::UI::View::View * /*view*/, sigc::signal<void ()> * changeSignal, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
+BlurEdge::prefs_effect(Inkscape::Extension::Effect * module, SPDesktop * /*desktop*/, sigc::signal<void ()> * changeSignal, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
 {
     return module->autogui(nullptr, nullptr, changeSignal);
 }

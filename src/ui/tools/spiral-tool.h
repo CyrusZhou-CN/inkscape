@@ -19,6 +19,7 @@
 #include <sigc++/connection.h>
 #include <2geom/point.h>
 #include "ui/tools/tool-base.h"
+#include "object/weakptr.h"
 
 #define SP_SPIRAL_CONTEXT(obj) (dynamic_cast<Inkscape::UI::Tools::SpiralTool*>((Inkscape::UI::Tools::ToolBase*)obj))
 #define SP_IS_SPIRAL_CONTEXT(obj) (dynamic_cast<const Inkscape::UI::Tools::SpiralTool*>((const Inkscape::UI::Tools::ToolBase*)obj) != NULL)
@@ -32,26 +33,28 @@ class Selection;
 namespace UI {
 namespace Tools {
 
-class SpiralTool : public ToolBase {
+class SpiralTool : public ToolBase
+{
 public:
     SpiralTool(SPDesktop *desktop);
     ~SpiralTool() override;
 
-	void set(const Inkscape::Preferences::Entry& val) override;
-	bool root_handler(GdkEvent* event) override;
+    void set(Preferences::Entry const &val) override;
+    bool root_handler(CanvasEvent const &event) override;
+
 private:
-	SPSpiral * spiral;
-	Geom::Point center;
-	gdouble revo;
-	gdouble exp;
-	gdouble t0;
+    SPWeakPtr<SPSpiral> spiral;
+    Geom::Point center;
+    double revo;
+    double exp;
+    double t0;
 
     sigc::connection sel_changed_connection;
 
-	void drag(Geom::Point const &p, guint state);
+    void drag(Geom::Point const &p, unsigned state);
 	void finishItem();
 	void cancel();
-	void selection_changed(Inkscape::Selection *selection);
+    void selection_changed(Selection *selection);
 };
 
 }

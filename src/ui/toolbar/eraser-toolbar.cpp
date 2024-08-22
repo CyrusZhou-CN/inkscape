@@ -62,17 +62,17 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
 
         std::vector<Gtk::RadioToolButton *> mode_buttons;
 
-        auto delete_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Delete")));
+        auto const delete_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Delete"));
         delete_btn->set_tooltip_text(_("Delete objects touched by eraser"));
         delete_btn->set_icon_name(INKSCAPE_ICON("draw-eraser-delete-objects"));
         mode_buttons.push_back(delete_btn);
 
-        auto cut_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Cut")));
+        auto const cut_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Cut"));
         cut_btn->set_tooltip_text(_("Cut out from paths and shapes"));
         cut_btn->set_icon_name(INKSCAPE_ICON("path-difference"));
         mode_buttons.push_back(cut_btn);
 
-        auto clip_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Clip")));
+        auto const clip_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Clip"));
         clip_btn->set_tooltip_text(_("Clip from objects"));
         clip_btn->set_icon_name(INKSCAPE_ICON("path-intersection"));
         mode_buttons.push_back(clip_btn);
@@ -88,7 +88,7 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
         }
     }
 
-    _separators.push_back(Gtk::manage(new Gtk::SeparatorToolItem()));
+    _separators.push_back(Gtk::make_managed<Gtk::SeparatorToolItem>());
     add(*_separators.back());
 
     /* Width */
@@ -97,7 +97,7 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
         std::vector<double>        values = {              0,               1,  3,  5, 10,             15, 20, 30, 50, 75,                 100};
         auto width_val = prefs->getDouble("/tools/eraser/width", 15);
         _width_adj = Gtk::Adjustment::create(width_val, 0, 100, 1.0, 10.0);
-        _width = Gtk::manage(new UI::Widget::SpinButtonToolItem("eraser-width", _("Width:"), _width_adj, 1, 0));
+        _width = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("eraser-width", _("Width:"), _width_adj, 1, 0);
         _width->set_tooltip_text(_("The width of the eraser pen (relative to the visible canvas area)"));
         _width->set_focus_widget(desktop->canvas);
         _width->set_custom_numeric_menu_data(values, labels);
@@ -116,7 +116,7 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
         _usepressure->signal_toggled().connect(sigc::mem_fun(*this, &EraserToolbar::usepressure_toggled));
     }
 
-    _separators.push_back(Gtk::manage(new Gtk::SeparatorToolItem()));
+    _separators.push_back(Gtk::make_managed<Gtk::SeparatorToolItem>());
     add(*_separators.back());
 
     /* Thinning */
@@ -125,7 +125,7 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
         std::vector<double>        values = {                        -100, -40, -20,                    -10,                     0,                              10, 20, 40,                          100};
         auto thinning_val = prefs->getDouble("/tools/eraser/thinning", 10);
         _thinning_adj = Gtk::Adjustment::create(thinning_val, -100, 100, 1, 10.0);
-        _thinning = Gtk::manage(new UI::Widget::SpinButtonToolItem("eraser-thinning", _("Thinning:"), _thinning_adj, 1, 0));
+        _thinning = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("eraser-thinning", _("Thinning:"), _thinning_adj, 1, 0);
         _thinning->set_tooltip_text(_("How much velocity thins the stroke (> 0 makes fast strokes thinner, < 0 makes them broader, 0 makes width independent of velocity)"));
         _thinning->set_custom_numeric_menu_data(values, labels);
         _thinning->set_focus_widget(desktop->canvas);
@@ -134,7 +134,7 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
         _thinning->set_sensitive(true);
     }
 
-    _separators.push_back(Gtk::manage(new Gtk::SeparatorToolItem()));
+    _separators.push_back(Gtk::make_managed<Gtk::SeparatorToolItem>());
     add(*_separators.back());
 
     /* Cap Rounding */
@@ -144,7 +144,7 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
         auto cap_rounding_val = prefs->getDouble("/tools/eraser/cap_rounding", 0.0);
         _cap_rounding_adj = Gtk::Adjustment::create(cap_rounding_val, 0.0, 5.0, 0.01, 0.1);
         // TRANSLATORS: "cap" means "end" (both start and finish) here
-        _cap_rounding = Gtk::manage(new UI::Widget::SpinButtonToolItem("eraser-cap-rounding", _("Caps:"), _cap_rounding_adj, 0.01, 2));
+        _cap_rounding = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("eraser-cap-rounding", _("Caps:"), _cap_rounding_adj, 0.01, 2);
         _cap_rounding->set_tooltip_text(_("Increase to make caps at the ends of strokes protrude more (0 = no caps, 1 = round caps)"));
         _cap_rounding->set_custom_numeric_menu_data(values, labels);
         _cap_rounding->set_focus_widget(desktop->canvas);
@@ -153,7 +153,7 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
         _cap_rounding->set_sensitive(true);
     }
 
-    _separators.push_back(Gtk::manage(new Gtk::SeparatorToolItem()));
+    _separators.push_back(Gtk::make_managed<Gtk::SeparatorToolItem>());
     add(*_separators.back());
 
     /* Tremor */
@@ -162,7 +162,7 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
         std::vector<double>        values = {                 0,                   10,                       20, 40, 60,                   100};
         auto tremor_val = prefs->getDouble("/tools/eraser/tremor", 0.0);
         _tremor_adj = Gtk::Adjustment::create(tremor_val, 0.0, 100, 1, 10.0);
-        _tremor = Gtk::manage(new UI::Widget::SpinButtonToolItem("eraser-tremor", _("Tremor:"), _tremor_adj, 1, 0));
+        _tremor = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("eraser-tremor", _("Tremor:"), _tremor_adj, 1, 0);
         _tremor->set_tooltip_text(_("Increase to make strokes rugged and trembling"));
         _tremor->set_custom_numeric_menu_data(values, labels);
         _tremor->set_focus_widget(desktop->canvas);
@@ -173,7 +173,7 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
         _tremor->set_sensitive(true);
     }
 
-    _separators.push_back(Gtk::manage(new Gtk::SeparatorToolItem()));
+    _separators.push_back(Gtk::make_managed<Gtk::SeparatorToolItem>());
     add(*_separators.back());
 
     /* Mass */
@@ -182,7 +182,7 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
         std::vector<double>        values = {              0.0,                                2,                        10, 20, 50,                    100};
         auto mass_val = prefs->getDouble("/tools/eraser/mass", 10.0);
         _mass_adj = Gtk::Adjustment::create(mass_val, 0.0, 100, 1, 10.0);
-        _mass = Gtk::manage(new UI::Widget::SpinButtonToolItem("eraser-mass", _("Mass:"), _mass_adj, 1, 0));
+        _mass = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("eraser-mass", _("Mass:"), _mass_adj, 1, 0);
         _mass->set_tooltip_text(_("Increase to make the eraser drag behind, as if slowed by inertia"));
         _mass->set_custom_numeric_menu_data(values, labels);
         _mass->set_focus_widget(desktop->canvas);
@@ -192,7 +192,7 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
         _mass->set_sensitive(true);
     }
 
-    _separators.push_back(Gtk::manage(new Gtk::SeparatorToolItem()));
+    _separators.push_back(Gtk::make_managed<Gtk::SeparatorToolItem>());
     add(*_separators.back());
 
     /* Overlap */

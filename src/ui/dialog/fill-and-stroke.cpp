@@ -40,9 +40,9 @@ namespace Dialog {
 
 FillAndStroke::FillAndStroke()
     : DialogBase("/dialogs/fillstroke", "FillStroke")
-    , _page_fill(Gtk::manage(new UI::Widget::NotebookPage(1, 1, true, true)))
-    , _page_stroke_paint(Gtk::manage(new UI::Widget::NotebookPage(1, 1, true, true)))
-    , _page_stroke_style(Gtk::manage(new UI::Widget::NotebookPage(1, 1, true, true)))
+    , _page_fill(Gtk::make_managed<UI::Widget::NotebookPage>(1, 1, true, true))
+    , _page_stroke_paint(Gtk::make_managed<UI::Widget::NotebookPage>(1, 1, true, true))
+    , _page_stroke_style(Gtk::make_managed<UI::Widget::NotebookPage>(1, 1, true, true))
     , _composite_settings(INKSCAPE_ICON("dialog-fill-and-stroke"),
                           "fillstroke",
                           UI::Widget::SimpleFilterModifier::ISOLATION |
@@ -138,21 +138,21 @@ FillAndStroke::_savePagePref(guint page_num)
 void
 FillAndStroke::_layoutPageFill()
 {
-    fillWdgt = Gtk::manage(new UI::Widget::FillNStroke(FILL));
+    fillWdgt = Gtk::make_managed<UI::Widget::FillNStroke>(FILL);
     _page_fill->table().attach(*fillWdgt, 0, 0, 1, 1);
 }
 
 void
 FillAndStroke::_layoutPageStrokePaint()
 {
-    strokeWdgt = Gtk::manage(new UI::Widget::FillNStroke(STROKE));
+    strokeWdgt = Gtk::make_managed<UI::Widget::FillNStroke>(STROKE);
     _page_stroke_paint->table().attach(*strokeWdgt, 0, 0, 1, 1);
 }
 
 void
 FillAndStroke::_layoutPageStrokeStyle()
 {
-    strokeStyleWdgt = Gtk::manage(new UI::Widget::StrokeStyle());
+    strokeStyleWdgt = Gtk::make_managed<UI::Widget::StrokeStyle>();
     strokeStyleWdgt->set_hexpand();
     strokeStyleWdgt->set_halign(Gtk::ALIGN_START);
     _page_stroke_style->table().attach(*strokeStyleWdgt, 0, 0, 1, 1);
@@ -187,12 +187,12 @@ FillAndStroke::showPageStrokeStyle()
 Gtk::Box&
 FillAndStroke::_createPageTabLabel(const Glib::ustring& label, const char *label_image)
 {
-    Gtk::Box *_tab_label_box = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, 4));
+    auto const _tab_label_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 4);
 
     auto img = Gtk::manage(sp_get_icon_image(label_image, Gtk::ICON_SIZE_MENU));
     _tab_label_box->pack_start(*img);
 
-    Gtk::Label *_tab_label = Gtk::manage(new Gtk::Label(label, true));
+    auto const _tab_label = Gtk::make_managed<Gtk::Label>(label, true);
     _tab_label_box->pack_start(*_tab_label);
     _tab_label_box->show_all();
 

@@ -74,7 +74,7 @@ public:
     void on_delete_button_pressed();
     void on_edit_button_pressed();
 
-    int deleltion_warning_message_dialog(const Glib::ustring&);
+    void deletion_warning_message_dialog(Glib::ustring const &collection_name, sigc::slot<void(int)> onresponse);
     bool on_key_pressed(GdkEventKey*);
 
     bool on_drag_motion(const Glib::RefPtr<Gdk::DragContext> &, int, int, guint) override;

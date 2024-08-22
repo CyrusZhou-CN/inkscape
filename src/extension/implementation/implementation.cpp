@@ -25,15 +25,15 @@ namespace Inkscape {
 namespace Extension {
 namespace Implementation {
 
-Gtk::Widget *Implementation::prefs_effect(Inkscape::Extension::Effect *module, Inkscape::UI::View::View * view, sigc::signal<void ()> * changeSignal, ImplementationDocumentCache * /*docCache*/)
+Gtk::Widget *Implementation::prefs_effect(Inkscape::Extension::Effect *module, SPDesktop *desktop, sigc::signal<void ()> * changeSignal, ImplementationDocumentCache * /*docCache*/)
 {
     if (module->widget_visible_count() == 0) {
         return nullptr;
     }
 
-    SPDocument * current_document = view->doc();
+    SPDocument * current_document = desktop->doc();
 
-    auto selected = ((SPDesktop *) view)->getSelection()->items();
+    auto selected = desktop->getSelection()->items();
     Inkscape::XML::Node const* first_select = nullptr;
     if (!selected.empty()) {
         const SPItem * item = selected.front();
@@ -42,6 +42,7 @@ Gtk::Widget *Implementation::prefs_effect(Inkscape::Extension::Effect *module, I
 
     // TODO deal with this broken const correctness:
     return module->autogui(current_document, const_cast<Inkscape::XML::Node *>(first_select), changeSignal);
+
 } // Implementation::prefs_effect
 
 }  /* namespace Implementation */

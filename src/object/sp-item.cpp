@@ -460,14 +460,14 @@ void SPItem::release()
 
     // we do NOT disconnect from the changed signal of those before deletion.
     // The destructor will call *_ref_changed with NULL as the new value,
-    // which will cause the hide() function to be called.
+    // which will cause the set_visible(false) function to be called.
     delete clip_ref;
     clip_ref = nullptr;
     delete mask_ref;
     mask_ref = nullptr;
 
     // the first thing SPObject::release() does is destroy the fill/stroke/filter references.
-    // as above, this calls *_ref_changed() which performs the hide().
+    // as above, this calls *_ref_changed() which performs the set_visible(false).
     // it is important this happens before the views are cleared.
     SPObject::release();
 
@@ -738,7 +738,7 @@ void SPItem::update(SPCtx *ctx, unsigned flags)
         if (flags & SP_OBJECT_STYLE_MODIFIED_FLAG) {
             for (auto &v : views) {
                 v.drawingitem->setOpacity(SP_SCALE24_TO_FLOAT(style->opacity.value));
-                v.drawingitem->setAntialiasing(style->shape_rendering.computed == SP_CSS_SHAPE_RENDERING_CRISPEDGES ? 0 : 2);
+                v.drawingitem->setAntialiasing(style->shape_rendering.computed == SP_CSS_SHAPE_RENDERING_CRISPEDGES ? Inkscape::Antialiasing::None : Inkscape::Antialiasing::Good);
                 v.drawingitem->setIsolation(style->isolation.value);
                 v.drawingitem->setBlendMode(style->mix_blend_mode.value);
                 v.drawingitem->setVisible(!isHidden());
@@ -1667,16 +1667,6 @@ void SPItem::doWriteTransform(Geom::Affine const &transform, Geom::Affine const 
 
     // send the relative transform with a _transformed_signal
     _transformed_signal.emit(&advertized_transform, this);
-}
-
-// CPPIFY: see below, do not make pure?
-gint SPItem::event(SPEvent* /*event*/) {
-    return FALSE;
-}
-
-gint SPItem::emitEvent(SPEvent &event)
-{
-    return this->event(&event);
 }
 
 void SPItem::set_item_transform(Geom::Affine const &transform_matrix)

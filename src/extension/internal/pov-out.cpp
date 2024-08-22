@@ -39,6 +39,7 @@
 #include <cstdarg>
 #include "document.h"
 #include "extension/extension.h"
+#include "util/safe-printf.h"
 
 
 namespace Inkscape
@@ -454,34 +455,30 @@ bool PovOutput::doCurve(SPItem *item, const String &id)
  */
 bool PovOutput::doTreeRecursive(SPDocument *doc, SPObject *obj)
 {
-
     String id;
-    if (!obj->getId())
-        {
+    if (!obj->getId()) {
         char buf[16];
-        sprintf(buf, "id%d", idIndex++);
+        safeprintf(buf, "id%d", idIndex++);
         id = buf;
-        }
-    else
-        {
-            id = obj->getId();
-        }
+    }
+    else {
+        id = obj->getId();
+    }
 
-    if (is<SPItem>(obj))
-        {
+    if (is<SPItem>(obj)) {
         auto item = cast<SPItem>(obj);
-        if (!doCurve(item, id))
+        if (!doCurve(item, id)) {
             return false;
         }
+    }
 
     /**
      * Descend into children
      */
-    for (auto &child: obj->children)
-        {
-            if (!doTreeRecursive(doc, &child))
-                return false;
-        }
+    for (auto &child: obj->children) {
+        if (!doTreeRecursive(doc, &child))
+            return false;
+    }
 
     return true;
 }

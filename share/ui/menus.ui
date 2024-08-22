@@ -351,12 +351,6 @@
     </section>
     <section>
       <item>
-      	<attribute name='label' translatable="yes">_Input Devices...</attribute>
-      	<attribute name='action'>win.dialog-open</attribute>
-      	<attribute name='target'>Input</attribute>
-      	<attribute name='icon'>dialog-input-devices</attribute>
-      </item>
-      <item>
       	<attribute name='label' translatable="yes">P_references</attribute>
       	<attribute name='action'>win.dialog-open</attribute>
       	<attribute name='target'>Preferences</attribute>
@@ -1120,6 +1114,7 @@
         <attribute name='label' translatable="yes">SVG Font Editor...</attribute>
         <attribute name='action'>win.dialog-open</attribute>
         <attribute name='target'>SVGFonts</attribute>
+        <attribute name='icon'>dialog-svg-font</attribute>
       </item>
       <item>
         <attribute name='label' translatable="yes">_Unicode Characters...</attribute>
@@ -1181,14 +1176,23 @@
 
   <submenu id="filter-menu">
     <attribute name='label'  translatable="yes">Filter_s</attribute>
-    <section id="filter-menu-filters"/>
     <section>
+      <item>
+        <attribute name='label' translatable="yes">Filter _Gallery...</attribute>
+        <attribute name='action'>app.</attribute>
+        <attribute name='action'>win.dialog-open</attribute>
+        <attribute name='target'>FilterGallery</attribute>
+        <attribute name='icon'>dialog-filters</attribute>
+      </item>
       <item>
         <attribute name='label' translatable="yes">Filter _Editor...</attribute>
         <attribute name='action'>win.dialog-open</attribute>
         <attribute name='target'>FilterEffects</attribute>
         <attribute name='icon'>dialog-filters</attribute>
       </item>
+    </section>
+    <section id="filter-menu-filters"/>
+    <section>
       <item>
         <attribute name='label' translatable="yes">_Remove Filters</attribute>
         <attribute name='action'>app.edit-remove-filter</attribute>
@@ -1206,6 +1210,13 @@
       <item>
         <attribute name='label' translatable="yes">_Previous Extension Settings...</attribute>
         <attribute name='action'>app.last-effect-pref</attribute>
+      </item>
+      <item>
+        <attribute name='label' translatable="yes">_Extensions Gallery...</attribute>
+        <attribute name='action'>app.</attribute>
+        <attribute name='action'>win.dialog-open</attribute>
+        <attribute name='target'>ExtensionsGallery</attribute>
+        <attribute name='icon'>dialog-extensions</attribute>
       </item>
     </section>
     <section id="effect-menu-effects"/>

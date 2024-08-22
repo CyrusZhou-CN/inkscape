@@ -200,14 +200,14 @@ void ColorScales<MODE>::_initUI(bool no_alpha)
     {
         /* Create wheel */
         if constexpr (MODE == SPColorScalesMode::HSLUV) {
-            _wheel = Gtk::manage(new Inkscape::UI::Widget::ColorWheelHSLuv());
+            _wheel = Gtk::make_managed<Inkscape::UI::Widget::ColorWheelHSLuv>();
         } else if constexpr (MODE == SPColorScalesMode::OKLAB) {
             _wheel = Gtk::make_managed<OKWheel>();
         } else {
-            _wheel = Gtk::manage(new Inkscape::UI::Widget::ColorWheelHSL());
+            _wheel = Gtk::make_managed<Inkscape::UI::Widget::ColorWheelHSL>();
         }
 
-        _wheel->show();
+        _wheel->set_visible(true);
         _wheel->set_halign(Gtk::ALIGN_FILL);
         _wheel->set_valign(Gtk::ALIGN_FILL);
         _wheel->set_hexpand(true);
@@ -220,24 +220,24 @@ void ColorScales<MODE>::_initUI(bool no_alpha)
 
         /* Expander */
         // Label icon
-        Gtk::Image *expander_icon = Gtk::manage(
+        auto const expander_icon = Gtk::manage(
                 sp_get_icon_image("color-wheel", Gtk::ICON_SIZE_BUTTON)
         );
-        expander_icon->show();
+        expander_icon->set_visible(true);
         expander_icon->set_margin_start(2 * XPAD);
         expander_icon->set_margin_end(3 * XPAD);
         // Label
-        Gtk::Label *expander_label = Gtk::manage(new Gtk::Label(_("Color Wheel")));
-        expander_label->show();
+        auto const expander_label = Gtk::make_managed<Gtk::Label>(_("Color Wheel"));
+        expander_label->set_visible(true);
         // Content
-        Gtk::Box *expander_box = Gtk::manage(new Gtk::Box());
-        expander_box->show();
+        auto const expander_box = Gtk::make_managed<Gtk::Box>();
+        expander_box->set_visible(true);
         expander_box->pack_start(*expander_icon);
         expander_box->pack_start(*expander_label);
         expander_box->set_orientation(Gtk::ORIENTATION_HORIZONTAL);
         // Expander
-        wheel_frame = Gtk::manage(new Gtk::Expander());
-        wheel_frame->show();
+        wheel_frame = Gtk::make_managed<Gtk::Expander>();
+        wheel_frame->set_visible(true);
         wheel_frame->set_margin_start(2 * XPAD);
         wheel_frame->set_margin_end(XPAD);
         wheel_frame->set_margin_top(2 * YPAD);
@@ -262,16 +262,16 @@ void ColorScales<MODE>::_initUI(bool no_alpha)
     }
 
     /* Create sliders */
-    Gtk::Grid *grid = Gtk::manage(new Gtk::Grid());
-    grid->show();
+    auto const grid = Gtk::make_managed<Gtk::Grid>();
+    grid->set_visible(true);
     add(*grid);
 
     for (gint i = 0; i < 5; i++) {
         /* Label */
-        _l[i] = Gtk::manage(new Gtk::Label("", true));
+        _l[i] = Gtk::make_managed<Gtk::Label>("", true);
 
         _l[i]->set_halign(Gtk::ALIGN_START);
-        _l[i]->show();
+        _l[i]->set_visible(true);
 
         _l[i]->set_margin_start(2 * XPAD);
         _l[i]->set_margin_end(XPAD);
@@ -282,8 +282,8 @@ void ColorScales<MODE>::_initUI(bool no_alpha)
         /* Adjustment */
         _a.push_back(Gtk::Adjustment::create(0.0, 0.0, _range_limit, 1.0, 10.0, 10.0));
         /* Slider */
-        _s[i] = Gtk::manage(new Inkscape::UI::Widget::ColorSlider(_a[i]));
-        _s[i]->show();
+        _s[i] = Gtk::make_managed<Inkscape::UI::Widget::ColorSlider>(_a[i]);
+        _s[i]->set_visible(true);
 
         _s[i]->set_margin_start(XPAD);
         _s[i]->set_margin_end(XPAD);
@@ -293,10 +293,10 @@ void ColorScales<MODE>::_initUI(bool no_alpha)
         grid->attach(*_s[i], 1, i, 1, 1);
 
         /* Spinbutton */
-        _b[i] = Gtk::manage(new ScrollProtected<Gtk::SpinButton>(_a[i], 1.0));
+        _b[i] = Gtk::make_managed<ScrollProtected<Gtk::SpinButton>>(_a[i], 1.0);
         sp_dialog_defocus_on_enter(_b[i]->gobj());
         _l[i]->set_mnemonic_widget(*_b[i]);
-        _b[i]->show();
+        _b[i]->set_visible(true);
 
         _b[i]->set_margin_start(XPAD);
         _b[i]->set_margin_end(XPAD);
@@ -602,9 +602,9 @@ void ColorScales<MODE>::setupMode(bool no_alpha)
         _s[3]->set_tooltip_text(_("Alpha (opacity)"));
         _b[3]->set_tooltip_text(_("Alpha (opacity)"));
         _s[0]->setMap(nullptr);
-        _l[4]->hide();
-        _s[4]->hide();
-        _b[4]->hide();
+        _l[4]->set_visible(false);
+        _s[4]->set_visible(false);
+        _b[4]->set_visible(false);
         _updating = true;
         setScaled(_a[0], rgba[0]);
         setScaled(_a[1], rgba[1]);
@@ -633,9 +633,9 @@ void ColorScales<MODE>::setupMode(bool no_alpha)
         _s[3]->set_tooltip_text(_("Alpha (opacity)"));
         _b[3]->set_tooltip_text(_("Alpha (opacity)"));
         _s[0]->setMap(sp_color_scales_hue_map());
-        _l[4]->hide();
-        _s[4]->hide();
-        _b[4]->hide();
+        _l[4]->set_visible(false);
+        _s[4]->set_visible(false);
+        _b[4]->set_visible(false);
         _updating = true;
         c[0] = 0.0;
 
@@ -669,9 +669,9 @@ void ColorScales<MODE>::setupMode(bool no_alpha)
         _s[3]->set_tooltip_text(_("Alpha (opacity)"));
         _b[3]->set_tooltip_text(_("Alpha (opacity)"));
         _s[0]->setMap(sp_color_scales_hue_map());
-        _l[4]->hide();
-        _s[4]->hide();
-        _b[4]->hide();
+        _l[4]->set_visible(false);
+        _s[4]->set_visible(false);
+        _b[4]->set_visible(false);
         _updating = true;
         c[0] = 0.0;
 
@@ -708,9 +708,9 @@ void ColorScales<MODE>::setupMode(bool no_alpha)
         _b[4]->set_tooltip_text(_("Alpha (opacity)"));
 
         _s[0]->setMap(nullptr);
-        _l[4]->show();
-        _s[4]->show();
-        _b[4]->show();
+        _l[4]->set_visible(true);
+        _s[4]->set_visible(true);
+        _b[4]->set_visible(true);
         _updating = true;
 
         SPColor::rgb_to_cmyk_floatv(c, rgba[0], rgba[1], rgba[2]);
@@ -747,9 +747,9 @@ void ColorScales<MODE>::setupMode(bool no_alpha)
         _s[1]->setMap(hsluvSaturationMap(0.0f, 0.0f, &_sliders_maps[1]));
         _s[2]->setMap(hsluvLightnessMap(0.0f, 0.0f, &_sliders_maps[2]));
 
-        _l[4]->hide();
-        _s[4]->hide();
-        _b[4]->hide();
+        _l[4]->set_visible(false);
+        _s[4]->set_visible(false);
+        _b[4]->set_visible(false);
         _updating = true;
         c[0] = 0.0;
 
@@ -783,9 +783,9 @@ void ColorScales<MODE>::setupMode(bool no_alpha)
         _s[3]->set_tooltip_text(_("Alpha (opacity)"));
         _b[3]->set_tooltip_text(_("Alpha (opacity)"));
 
-        _l[4]->hide();
-        _s[4]->hide();
-        _b[4]->hide();
+        _l[4]->set_visible(false);
+        _s[4]->set_visible(false);
+        _b[4]->set_visible(false);
         _updating = true;
 
         auto const tmp = Oklab::oklab_to_okhsl(Oklab::rgb_to_oklab({rgba[0], rgba[1], rgba[2]}));
@@ -801,9 +801,9 @@ void ColorScales<MODE>::setupMode(bool no_alpha)
     }
 
     if (no_alpha && alpha_index > 0) {
-        _l[alpha_index]->hide();
-        _s[alpha_index]->hide();
-        _b[alpha_index]->hide();
+        _l[alpha_index]->set_visible(false);
+        _s[alpha_index]->set_visible(false);
+        _b[alpha_index]->set_visible(false);
         _l[alpha_index]->set_no_show_all(true);
         _s[alpha_index]->set_no_show_all(true);
         _b[alpha_index]->set_no_show_all(true);
@@ -1190,7 +1190,7 @@ ColorScalesFactory<MODE>::ColorScalesFactory()
 template <SPColorScalesMode MODE>
 Gtk::Widget *ColorScalesFactory<MODE>::createWidget(Inkscape::UI::SelectedColor &color, bool no_alpha) const
 {
-    Gtk::Widget *w = Gtk::manage(new ColorScales<MODE>(color, no_alpha));
+    Gtk::Widget *w = Gtk::make_managed<ColorScales<MODE>>(color, no_alpha);
     return w;
 }
 

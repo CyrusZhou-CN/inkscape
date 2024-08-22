@@ -1,31 +1,43 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <functional>
-#include <gtkmm/enums.h>
-#include <optional>
-
-#include <glibmm/ustring.h>
-#include <gtkmm/grid.h>
-#include <gtkmm/image.h>
-#include <gtkmm/label.h>
-#include <gtkmm/menu.h>
-#include <gtkmm/menuitem.h>
-#include <gtkmm/separatormenuitem.h>
-#include <utility>
-
 #ifndef COLUMN_MENU_BUILDER_INCLUDED
 #define COLUMN_MENU_BUILDER_INCLUDED
+
+#include <cassert>
+#include <optional>
+#include <utility>
+#include <sigc++/slot.h>
+#include <glibmm/ustring.h>
+#include <gtkmm/enums.h>
+#include <gtkmm/image.h>
+#include <gtkmm/label.h>
+#include <gtkmm/separator.h>
+#include "ui/widget/popover-menu.h"
+#include "ui/widget/popover-menu-item.h"
 
 namespace Inkscape {
 namespace UI {
 
-template<typename T>
+template <typename SectionData>
 class ColumnMenuBuilder {
 public:
-    ColumnMenuBuilder(Gtk::Menu& menu, int columns, Gtk::IconSize icon_size = Gtk::ICON_SIZE_MENU)
-        : _menu(menu), _columns(columns), _icon_size(static_cast<int>(icon_size)) {}
+    ColumnMenuBuilder(Widget::PopoverMenu& menu, int columns,
+                      Gtk::IconSize icon_size = Gtk::ICON_SIZE_MENU,
+                      int const first_row = 0)
+        : _menu(menu)
+        , _row(first_row)
+        , _columns(columns)
+        , _icon_size(static_cast<int>(icon_size))
+    {
+        assert(_row >= 0);
+        assert(_columns >= 1);
+    }
 
-    Gtk::MenuItem* add_item(Glib::ustring label, T section, Glib::ustring tooltip, Glib::ustring icon_name, bool sensitive, bool customtooltip, std::function<void ()> callback) {
+    Widget::PopoverMenuItem* add_item(
+        Glib::ustring const &label, SectionData section, Glib::ustring const &tooltip,
+        Glib::ustring const &icon_name, bool const sensitive, bool const customtooltip,
+        sigc::slot<void ()> callback)
+    {
         _new_section = false;
         _section = nullptr;
         if (!_last_section || *_last_section != section) {
@@ -37,39 +49,31 @@ public:
 
             // add separator
             if (_row > 0) {
-                auto separator = Gtk::make_managed<Gtk::SeparatorMenuItem>();
-                separator->show();
+                auto const separator = Gtk::make_managed<Gtk::Separator>(Gtk::ORIENTATION_HORIZONTAL);
+                separator->set_visible(true);
                 _menu.attach(*separator, 0, _columns, _row, _row + 1);
                 _row++;
             }
 
-            _last_section = section;
+            _last_section = std::move(section);
 
-            auto sep = Gtk::make_managed<Gtk::MenuItem>();
+            auto const sep = Gtk::make_managed<Widget::PopoverMenuItem>();
             sep->get_style_context()->add_class("menu-category");
             sep->set_sensitive(false);
-            sep->show();
+            sep->set_halign(Gtk::ALIGN_START);
+            sep->show_all();
             _menu.attach(*sep, 0, _columns, _row, _row + 1);
             _section = sep;
-            _col = 0;
             _row++;
+            _col = 0;
         }
 
-        auto item = Gtk::make_managed<Gtk::MenuItem>();
-        auto grid = Gtk::make_managed<Gtk::Grid>();
-        grid->set_column_spacing(8);
-        grid->insert_row(0);
-        grid->insert_column(0);
-        grid->insert_column(1);
-        grid->attach(*Gtk::make_managed<Gtk::Image>(std::move(icon_name), _icon_size), 0, 0);
-        grid->attach(*Gtk::make_managed<Gtk::Label>(std::move(label), Gtk::ALIGN_START, Gtk::ALIGN_CENTER, true), 1, 0);
-        grid->set_sensitive(sensitive);
-        item->add(*grid);
+        auto const item = Gtk::make_managed<Widget::PopoverMenuItem>(label, icon_name, _icon_size);
         if (!customtooltip) {
-            item->set_tooltip_markup(std::move(tooltip));
+            item->set_tooltip_markup(tooltip);
         }
         item->set_sensitive(sensitive);
-        item->signal_activate().connect(callback);
+        item->signal_activate().connect(std::move(callback));
         item->show_all();
         _menu.attach(*item, _col, _col + 1, _row, _row + 1);
         _col++;
@@ -96,10 +100,10 @@ private:
     int _row = 0;
     int _col = 0;
     int _columns;
-    Gtk::Menu& _menu;
+    Widget::PopoverMenu &_menu;
     bool _new_section = false;
-    std::optional<T> _last_section;
-    Gtk::MenuItem* _section = nullptr;
+    std::optional<SectionData> _last_section;
+    Widget::PopoverMenuItem *_section = nullptr;
     Gtk::IconSize _icon_size;
 };
 

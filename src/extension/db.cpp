@@ -309,15 +309,15 @@ DB::get_output_list (DB::OutputList &ou_list)
 
 /**
 	\brief  Creates a list of all the Effect extensions
-	\param  ou_list  The list that is used to put all the extensions in
-
-	Calls the database \c foreach function with \c effect_internal.
 */
-DB::EffectList &
-DB::get_effect_list (DB::EffectList &ou_list)
-{
-	foreach(effect_internal, (gpointer)&ou_list);
-	return ou_list;
+std::vector<Effect*> DB::get_effect_list() {
+    std::vector<Effect*> out;
+    for (auto ex : modulelist) {
+        if (auto effect = dynamic_cast<Effect*>(ex)) {
+            out.push_back(effect);
+        }
+    }
+    return out;
 }
 
 } } /* namespace Extension, Inkscape */

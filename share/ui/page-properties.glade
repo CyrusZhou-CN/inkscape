@@ -939,7 +939,7 @@ SVG element positions are expressed in user units.</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">False</property>
-                <property name="tooltip-text" translatable="yes">Clip rendered objects to pages' boundaries</property>
+                <property name="tooltip-text" translatable="yes">Anything that is not on a page will not be displayed</property>
                 <property name="halign">start</property>
                 <property name="draw-indicator">True</property>
               </object>

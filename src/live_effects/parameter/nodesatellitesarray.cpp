@@ -399,12 +399,12 @@ Geom::Point FilletChamferKnotHolderEntity::knot_get() const
     if (subsatelite_index == 0 && pathv[satelite_index].closed()) {
         previous_index = count_path_nodes(pathv[satelite_index]) - 1;
     }
-    if ( previous_index < 0 ) {
+    if (previous_index < 0 || subsatelite_index > pathv[satelite_index].size_open()) {
         return Geom::Point(Geom::infinity(), Geom::infinity());
     }
     Geom::Curve const &curve_in = pathv[satelite_index][previous_index];
-    
-        
+
+
     double s = nodesatellite.arcDistance(pathv[satelite_index][subsatelite_index]);
     double t = nodesatellite.time(s, true, curve_in);
     if (t > 1) {

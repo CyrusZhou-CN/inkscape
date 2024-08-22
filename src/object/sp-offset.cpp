@@ -640,26 +640,19 @@ void SPOffset::set_shape() {
         delete theRes;
     }
     {
-        char *res_d = nullptr;
+        Geom::PathVector res_pv;
 
-        if (orig->descr_cmd.size() <= 1)
-        {
+        if (orig->descr_cmd.size() <= 1) {
             // Aie.... nothing left.
-            res_d = strdup ("M 0 0 L 0 0 z");
-            //printf("%s\n",res_d);
-        }
-        else
-        {
-
-            res_d = orig->svg_dump_path ();
+            res_pv = sp_svg_read_pathv("M 0 0 L 0 0 z");
+        } else {
+            res_pv = orig->MakePathVector();
         }
 
         delete orig;
 
-        setCurveInsync(SPCurve(sp_svg_read_pathv(res_d)));
+        setCurveInsync(SPCurve(std::move(res_pv)));
         setCurveBeforeLPE(curve());
-
-        free (res_d);
     }
 }
 

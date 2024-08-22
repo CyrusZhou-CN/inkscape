@@ -142,7 +142,7 @@ static SPStyleProp const props[] = {
     /* SPPage */
     {SPAttr::PAGE_MARGIN, "margin"},
     {SPAttr::PAGE_BLEED, "bleed"},
-    {SPAttr::PAGE_SIZE, "page-size"},
+    {SPAttr::PAGE_SIZE_NAME, "page-size"},
     /* SPGrid */
     {SPAttr::ORIGINX, "originx"},
     {SPAttr::ORIGINY, "originy"},
@@ -150,6 +150,10 @@ static SPStyleProp const props[] = {
     {SPAttr::SPACINGY, "spacingy"},
     {SPAttr::ANGLE_X, "gridanglex"},
     {SPAttr::ANGLE_Z, "gridanglez"},
+    {SPAttr::GAP_X, "gapx"},
+    {SPAttr::GAP_Y, "gapy"},
+    {SPAttr::MARGIN_X, "marginx"},
+    {SPAttr::MARGIN_Y, "marginy"},
     {SPAttr::VISIBLE, "visible"},
     {SPAttr::ENABLED, "enabled"},
     {SPAttr::EMPOPACITY, "empopacity"},
@@ -567,7 +571,7 @@ static SPStyleProp const props[] = {
     {SPAttr::COLOR_INTERPOLATION, "color-interpolation"},
     {SPAttr::COLOR_INTERPOLATION_FILTERS, "color-interpolation-filters"},
     {SPAttr::COLOR_PROFILE, "color-profile"},
-    {SPAttr::COLOR_RENDERING, "color-rendering"},
+    {SPAttr::COLOR_RENDERING, "color-rendering"}, // Obsolete
     {SPAttr::IMAGE_RENDERING, "image-rendering"},
     {SPAttr::SHAPE_RENDERING, "shape-rendering"},
     {SPAttr::TEXT_RENDERING, "text-rendering"},
@@ -590,6 +594,7 @@ static SPStyleProp const props[] = {
     {SPAttr::INKSCAPE_DESK_CHECKERBOARD, "inkscape:pagecheckerboard"}, // old attr
     // rendering mode
     {SPAttr::INKSCAPE_CLIP_TO_PAGE_RENDERING, "inkscape:clip-to-page"},
+    {SPAttr::INKSCAPE_ANTIALIAS_RENDERING, "inkscape:antialias-rendering"},
 };
 
 #define n_attrs (sizeof(props) / sizeof(props[0]))

@@ -220,16 +220,16 @@ Gtk::Widget *
 LPELattice2::newWidget()
 {
     // use manage here, because after deletion of Effect object, others might still be pointing to this widget.
-    Gtk::Box *vbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const vbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
 
     vbox->set_border_width(5);
     vbox->set_homogeneous(false);
     vbox->set_spacing(6);
-    Gtk::Box * hbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL,0));
-    Gtk::Box *vbox_expander = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL,0);
+    auto const vbox_expander = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     vbox_expander->set_border_width(0);
     vbox_expander->set_spacing(2);
-    Gtk::Button * reset_button = Gtk::manage(new Gtk::Button(Glib::ustring(_("Reset grid"))));
+    auto const reset_button = Gtk::make_managed<Gtk::Button>(Glib::ustring(_("Reset grid")));
     reset_button->signal_clicked().connect(sigc::mem_fun (*this,&LPELattice2::resetGrid));
     reset_button->set_size_request(140,30);
     vbox->pack_start(*hbox, true,true,2);
@@ -238,7 +238,7 @@ LPELattice2::newWidget()
     while (it != param_vector.end()) {
         if ((*it)->widget_is_visible) {
             Parameter * param = *it;
-            Gtk::Widget * widg = dynamic_cast<Gtk::Widget *>(param->param_newWidget());
+            auto widg = param->param_newWidget();
             if(param->param_key == "grid") {
                 widg = nullptr;
             }
@@ -265,12 +265,12 @@ LPELattice2::newWidget()
         ++it;
     }
 
-    expander = Gtk::manage(new Gtk::Expander(Glib::ustring(_("Show Points"))));
+    expander = Gtk::make_managed<Gtk::Expander>(Glib::ustring(_("Show Points")));
     expander->add(*vbox_expander);
     expander->set_expanded(expanded);
     vbox->pack_start(*expander, true, true, 2);
     expander->property_expanded().signal_changed().connect(sigc::mem_fun(*this, &LPELattice2::onExpanderChanged) );
-    return dynamic_cast<Gtk::Widget *>(vbox);
+    return vbox;
 }
 
 void

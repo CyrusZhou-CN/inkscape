@@ -89,6 +89,7 @@ public:
     void deletePage(SPPage *page, bool contents = false);
     void deletePage(bool contents = false);
     void resizePage(double width, double height);
+    void resizePage(SPPage *page, double width, double height);
     void changeOrientation();
     void fitToSelection(ObjectSet *selection, bool add_margins = true);
     void fitToRect(Geom::OptRect box, SPPage *page, bool add_margins = false);
@@ -122,7 +123,7 @@ public:
     guint32 bleed_color = 0xbe310e31;
 
     void movePages(Geom::Affine tr);
-    std::vector<SPItem *> getOverlappingItems(SPDesktop *desktop, SPPage *page);
+    std::vector<SPItem *> getOverlappingItems(SPDesktop *desktop, SPPage *page, bool hidden = true, bool in_bleed = false, bool in_layers = true);
 
 protected:
     friend class Inkscape::UI::Dialog::DocumentProperties;

@@ -43,7 +43,8 @@ enum PencilState {
 /**
  * PencilTool: a context for pencil tool events
  */
-class PencilTool : public FreehandBase {
+class PencilTool : public FreehandBase
+{
 public:
     PencilTool(SPDesktop *desktop);
     ~PencilTool() override;
@@ -57,7 +58,8 @@ public:
     unsigned sketch_n; // number of sketches done
 
 protected:
-    bool root_handler(GdkEvent* event) override;
+    bool root_handler(CanvasEvent const &event) override;
+
 private:
     bool _handleButtonPress(GdkEventButton const &bevent);
     bool _handleMotionNotify(GdkEventMotion const &mevent);
@@ -79,8 +81,7 @@ private:
     Geom::Point _req_tangent;
     bool _is_drawing;
     PencilState _state;
-    gint _npoints;
-    // std::future<bool> future;
+    int _npoints;
 };
 
 }

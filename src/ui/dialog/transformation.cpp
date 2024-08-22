@@ -132,7 +132,7 @@ Transformation::Transformation()
     ((Gtk::Entry *) (_scalar_skew_horizontal.getWidget()))->signal_activate().connect(sigc::mem_fun(*this, &Transformation::_apply));
     ((Gtk::Entry *) (_scalar_skew_vertical.getWidget()))->signal_activate().connect(sigc::mem_fun(*this, &Transformation::_apply));
 
-    resetButton = Gtk::manage(new Gtk::Button());
+    resetButton = Gtk::make_managed<Gtk::Button>();
     resetButton->set_image_from_icon_name("reset-settings-symbolic");
     resetButton->set_size_request(30, -1);
     resetButton->set_halign(Gtk::ALIGN_CENTER);
@@ -141,7 +141,7 @@ Transformation::Transformation()
     resetButton->set_sensitive(true);
     resetButton->signal_clicked().connect(sigc::mem_fun(*this, &Transformation::onClear));
 
-    applyButton = Gtk::manage(new Gtk::Button(_("_Apply")));
+    applyButton = Gtk::make_managed<Gtk::Button>(_("_Apply"));
     applyButton->set_use_underline();
     applyButton->set_halign(Gtk::ALIGN_CENTER);
     applyButton->set_tooltip_text(_("Apply transformation to selection"));
@@ -149,7 +149,7 @@ Transformation::Transformation()
     applyButton->signal_clicked().connect(sigc::mem_fun(*this, &Transformation::_apply));
     applyButton->get_style_context()->add_class("wide-apply-button");
 
-    auto button_box = Gtk::manage(new Gtk::Box());
+    auto const button_box = Gtk::make_managed<Gtk::Box>();
     button_box->set_margin_top(4);
     button_box->set_spacing(8);
     button_box->set_halign(Gtk::ALIGN_CENTER);
@@ -181,7 +181,7 @@ void Transformation::selectionModified(Inkscape::Selection *selection, guint fla
 void Transformation::presentPage(Transformation::PageType page)
 {
     _notebook.set_current_page(page);
-    show();
+    set_visible(true);
 }
 
 
@@ -299,7 +299,7 @@ void Transformation::layoutPageRotate()
     Gtk::RadioButton::Group group = _counterclockwise_rotate.get_group();
     _clockwise_rotate.set_group(group);
 
-    auto box = Gtk::make_managed<Gtk::Box>();
+    auto const box = Gtk::make_managed<Gtk::Box>();
     _counterclockwise_rotate.set_halign(Gtk::ALIGN_START);
     _clockwise_rotate.set_halign(Gtk::ALIGN_START);
     box->pack_start(_counterclockwise_rotate);
@@ -451,22 +451,22 @@ void Transformation::layoutPageTransform()
     _page_transform.table().attach(*Gtk::make_managed<Gtk::Label>("F:"), 2, 2, 1, 1);
     _page_transform.table().attach(_scalar_transform_f, 2, 3, 1, 1);
 
-    auto img = Gtk::make_managed<Gtk::Image>();
+    auto const img = Gtk::make_managed<Gtk::Image>();
     img->set_from_icon_name("matrix-2d", Gtk::ICON_SIZE_BUTTON);
     img->set_pixel_size(52);
     img->set_margin_top(4);
     img->set_margin_bottom(4);
     _page_transform.table().attach(*img, 0, 5, 1, 1);
 
-    auto descr = Gtk::make_managed<Gtk::Label>();
+    auto const descr = Gtk::make_managed<Gtk::Label>();
     descr->set_line_wrap();
     descr->set_line_wrap_mode(Pango::WRAP_WORD);
     descr->set_text(
-        "<small>"
+        _("<small>"
         "<a href=\"https://www.w3.org/TR/SVG11/coords.html#TransformMatrixDefined\">"
         "2D transformation matrix</a> that combines translation (E,F), scaling (A,D),"
         " rotation (A-D) and shearing (B,C)."
-        "</small>"
+        "</small>")
     );
     descr->set_use_markup();
     _page_transform.table().attach(*descr, 1, 5, 2, 1);

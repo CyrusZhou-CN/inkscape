@@ -17,73 +17,68 @@
  */
 
 #include <cmath>
-#include <gdkmm/pixbufanimation.h>
-#include <gdkmm/rgba.h>
+#include <map>
+#include <set>
+#include <string>
+#include <sstream>
+#include <utility>
+#include <vector>
+#include <glibmm/convert.h>
+#include <glibmm/i18n.h>
+#include <glibmm/main.h>
 #include <glibmm/refptr.h>
+#include <glibmm/stringutils.h>
 #include <glibmm/ustring.h>
-#include <gtkmm/box.h>
-#include <gtkmm/button.h>
-#include <gtkmm/enums.h>
-#include <gtkmm/grid.h>
-#include <gtkmm/image.h>
-#include <gtkmm/imagemenuitem.h>
-
 #include <gdkmm/display.h>
 #include <gdkmm/general.h>
+// #include <gdkmm/pixbufanimation.h>
+#include <gdkmm/rgba.h>
 #include <gdkmm/seat.h>
-
+#include <gtkmm/button.h>
 #include <gtkmm/checkbutton.h>
-#include <gtkmm/colorbutton.h>
-#include <gtkmm/eventbox.h>
+#include <gtkmm/enums.h>
+#include <gtkmm/gesturemultipress.h>
+#include <gtkmm/grid.h>
+#include <gtkmm/image.h>
 #include <gtkmm/label.h>
 #include <gtkmm/menuitem.h>
 #include <gtkmm/paned.h>
 #include <gtkmm/popover.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/sizegroup.h>
-
-#include <glibmm/i18n.h>
-#include <glibmm/stringutils.h>
-#include <glibmm/main.h>
-#include <glibmm/convert.h>
-
 #include <gtkmm/textview.h>
-#include <gtkmm/treeview.h>
 #include <gtkmm/treeviewcolumn.h>
+#include <gtkmm/treeview.h>
 #include <gtkmm/widget.h>
 #include <pangomm/layout.h>
-#include <utility>
-#include <vector>
 
+#include "filter-effects-dialog.h"
 #include "desktop.h"
 #include "display/nr-filter-types.h"
-#include "document-undo.h"
 #include "document.h"
+#include "document-undo.h"
 #include "filter-chemistry.h"
-#include "filter-effects-dialog.h"
 #include "filter-enums.h"
-#include "inkscape.h"
-#include "layer-manager.h"
-#include "selection-chemistry.h"
-#include "style.h"
-
 #include "include/gtkmm_version.h"
-
+#include "inkscape.h"
+#include "io/sys.h"
+#include "layer-manager.h"
 #include "object/filters/blend.h"
 #include "object/filters/colormatrix.h"
-#include "object/filters/componenttransfer.h"
 #include "object/filters/componenttransfer-funcnode.h"
+#include "object/filters/componenttransfer.h"
 #include "object/filters/convolvematrix.h"
 #include "object/filters/distantlight.h"
 #include "object/filters/merge.h"
 #include "object/filters/mergenode.h"
 #include "object/filters/pointlight.h"
 #include "object/filters/spotlight.h"
-
+#include "selection-chemistry.h"
+#include "style.h"
 #include "svg/svg-color.h"
-
 #include "ui/builder-utils.h"
 #include "ui/column-menu-builder.h"
+#include "ui/controller.h"
 #include "ui/dialog/filedialog.h"
 #include "ui/icon-names.h"
 #include "ui/util.h"
@@ -92,9 +87,7 @@
 #include "ui/widget/custom-tooltip.h"
 #include "ui/widget/filter-effect-chooser.h"
 #include "ui/widget/spinbutton.h"
-
-#include "io/sys.h"
-
+#include "ui/widget/spin-scale.h"
 
 using namespace Inkscape::Filters;
 
@@ -199,30 +192,17 @@ public:
     }
 };
 
-template< typename T> class ComboWithTooltip : public Gtk::EventBox
+template <typename T> class ComboWithTooltip
+    : public ComboBoxEnum<T>
 {
 public:
-    ComboWithTooltip<T>(T default_value, const Util::EnumDataConverter<T>& c, const SPAttr a = SPAttr::INVALID, char* tip_text = nullptr)
+    ComboWithTooltip<T>(T default_value, const Util::EnumDataConverter<T>& c,
+                        const SPAttr a = SPAttr::INVALID,
+                        Glib::ustring const& tip_text = {})
+        : ComboBoxEnum<T>(default_value, c, a, false)
     {
-        if (tip_text) {
-            set_tooltip_text(tip_text);
-        }
-        combo = new ComboBoxEnum<T>(default_value, c, a, false);
-        add(*combo);
-        show_all();
+        this->set_tooltip_text(tip_text);
     }
-
-    ~ComboWithTooltip() override
-    {
-        delete combo;
-    }
-
-    ComboBoxEnum<T>* get_attrwidget()
-    {
-        return combo;
-    }
-private:
-    ComboBoxEnum<T>* combo;
 };
 
 // Contains an arbitrary number of spin buttons that use separate attributes
@@ -230,7 +210,10 @@ class MultiSpinButton : public Gtk::Box
 {
 public:
     MultiSpinButton(double lower, double upper, double step_inc,
-                    double climb_rate, int digits, std::vector<SPAttr> attrs, std::vector<double> default_values, std::vector<char*> tip_text)
+                    double climb_rate, int digits,
+                    std::vector<SPAttr> const &attrs,
+                    std::vector<double> const &default_values,
+                    std::vector<char *> const &tip_text)
     : Gtk::Box(Gtk::ORIENTATION_HORIZONTAL)
     {
         g_assert(attrs.size()==default_values.size());
@@ -238,22 +221,18 @@ public:
         set_spacing(4);
         for(unsigned i = 0; i < attrs.size(); ++i) {
             unsigned index = attrs.size() - 1 - i;
-            _spins.push_back(new SpinButtonAttr(lower, upper, step_inc, climb_rate, digits, attrs[index], default_values[index], tip_text[index]));
+            _spins.push_back(Gtk::make_managed<SpinButtonAttr>(lower, upper, step_inc, climb_rate, digits,
+                                                               attrs[index], default_values[index], tip_text[index]));
             pack_end(*_spins.back(), true, true);
             _spins.back()->set_width_chars(3); // allow spin buttons to shrink to save space
         }
-    }
-
-    ~MultiSpinButton() override
-    {
-        for(auto & _spin : _spins)
-            delete _spin;
     }
 
     std::vector<SpinButtonAttr*>& get_spinbuttons()
     {
         return _spins;
     }
+
 private:
     std::vector<SpinButtonAttr*> _spins;
 };
@@ -411,7 +390,7 @@ public:
         _model = Gtk::ListStore::create(_columns);
         _tree.set_model(_model);
         _tree.set_headers_visible(false);
-        _tree.show();
+        _tree.set_visible(true);
         add(_tree);
         set_shadow_type(Gtk::SHADOW_IN);
         if (tip_text) {
@@ -554,10 +533,10 @@ public:
         _angle.signal_attr_changed().connect(signal_attr_changed().make_slot());
         signal_attr_changed().connect(sigc::mem_fun(*this, &ColorMatrixValues::update_store));
 
-        _matrix.show();
-        _saturation.show();
-        _angle.show();
-        _label.show();
+        _matrix.set_visible(true);
+        _saturation.set_visible(true);
+        _angle.set_visible(true);
+        _label.set_visible(true);
         _label.set_sensitive(false);
 
         set_shadow_type(Gtk::SHADOW_NONE);
@@ -793,29 +772,20 @@ public:
         _size_group = Gtk::SizeGroup::create(Gtk::SIZE_GROUP_HORIZONTAL);
 
         for(int i = 0; i < _max_types; ++i) {
-            _groups[i] = new Gtk::Box(Gtk::ORIENTATION_VERTICAL, 3);
+            _groups[i] = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, 3);
             b.set_spacing(4);
             b.pack_start(*_groups[i], Gtk::PACK_SHRINK);
         }
         //_current_type = 0;  If set to 0 then update_and_show() fails to update properly.
     }
 
-    ~Settings()
-    {
-        for(int i = 0; i < _max_types; ++i) {
-            delete _groups[i];
-            for(auto & j : _attrwidgets[i])
-                delete j;
-        }
-    }
-
     void show_current_only() {
         for (auto& group : _groups) {
-            group->hide();
+            group->set_visible(false);
         }
         auto t = get_current_type();
         if (t >= 0) {
-            _groups[t]->show();
+            _groups[t]->set_visible(true);
         }
     }
 
@@ -826,12 +796,12 @@ public:
             type(t);
 
             for (auto& group : _groups) {
-                group->hide();
+                group->set_visible(false);
             }
         }
 
         if (t >= 0) {
-            _groups[t]->show(); // Do not use show_all(), it shows children than should be hidden
+            _groups[t]->set_visible(true); // Do not use show_all(), it shows children than should be hidden
         }
 
         _dialog.set_attrs_locked(true);
@@ -852,7 +822,7 @@ public:
 
     void add_no_params()
     {
-        Gtk::Label* lbl = Gtk::manage(new Gtk::Label(_("This SVG filter effect does not require any parameters.")));
+        auto const lbl = Gtk::make_managed<Gtk::Label>(_("This SVG filter effect does not require any parameters."));
         lbl->set_line_wrap();
         lbl->set_line_wrap_mode(Pango::WRAP_WORD);
         add_widget(lbl, "");
@@ -868,7 +838,7 @@ public:
     CheckButtonAttr* add_checkbutton(bool def, const SPAttr attr, const Glib::ustring& label,
                                      const Glib::ustring& tv, const Glib::ustring& fv, char* tip_text = nullptr)
     {
-        CheckButtonAttr* cb = new CheckButtonAttr(def, label, tv, fv, attr, tip_text);
+        auto const cb = Gtk::make_managed<CheckButtonAttr>(def, label, tv, fv, attr, tip_text);
         add_widget(cb, "");
         add_attr_widget(cb);
         return cb;
@@ -877,7 +847,7 @@ public:
     // ColorButton
     ColorButton* add_color(unsigned int def, const SPAttr attr, const Glib::ustring& label, char* tip_text = nullptr)
     {
-        ColorButton* col = new ColorButton(def, attr, tip_text);
+        auto const col = Gtk::make_managed<ColorButton>(def, attr, tip_text);
         add_widget(col, label);
         add_attr_widget(col);
         return col;
@@ -886,7 +856,7 @@ public:
     // Matrix
     MatrixAttr* add_matrix(const SPAttr attr, const Glib::ustring& label, char* tip_text)
     {
-        MatrixAttr* conv = new MatrixAttr(attr, tip_text);
+        auto const conv = Gtk::make_managed<MatrixAttr>(attr, tip_text);
         add_widget(conv, label);
         add_attr_widget(conv);
         return conv;
@@ -895,7 +865,7 @@ public:
     // ColorMatrixValues
     ColorMatrixValues* add_colormatrixvalues(const Glib::ustring& label)
     {
-        ColorMatrixValues* cmv = new ColorMatrixValues();
+        auto const cmv = Gtk::make_managed<ColorMatrixValues>();
         add_widget(cmv, label);
         add_attr_widget(cmv);
         return cmv;
@@ -908,7 +878,7 @@ public:
         Glib::ustring tip_text2;
         if (tip_text)
             tip_text2 = tip_text;
-        SpinScale* spinslider = new SpinScale("", def, lo, hi, step_inc, page_inc, digits, attr, tip_text2);
+        auto const spinslider = Gtk::make_managed<SpinScale>("", def, lo, hi, step_inc, page_inc, digits, attr, tip_text2);
         add_widget(spinslider, label);
         add_attr_widget(spinslider);
         return spinslider;
@@ -921,7 +891,7 @@ public:
                                      const Glib::ustring tip_text1 = "",
                                      const Glib::ustring tip_text2 = "")
     {
-        DualSpinScale* dss = new DualSpinScale("", "", lo, lo, hi, step_inc, climb, digits, attr, tip_text1, tip_text2);
+        auto const dss = Gtk::make_managed<DualSpinScale>("", "", lo, lo, hi, step_inc, climb, digits, attr, tip_text1, tip_text2);
         add_widget(dss, label);
         add_attr_widget(dss);
         return dss;
@@ -932,7 +902,7 @@ public:
                                        const double lo, const double hi, const double step_inc,
                                        const double climb, const int digits, char* tip = nullptr)
     {
-        SpinButtonAttr* sb = new SpinButtonAttr(lo, hi, step_inc, climb, digits, attr, defalt_value, tip);
+        auto const sb = Gtk::make_managed<SpinButtonAttr>(lo, hi, step_inc, climb, digits, attr, defalt_value, tip);
         add_widget(sb, label);
         add_attr_widget(sb);
         return sb;
@@ -943,7 +913,7 @@ public:
                                        const double lo, const double hi, const double step_inc,
                                        const double climb, const int digits, char* tip1 = nullptr, char* tip2 = nullptr)
     {
-        DualSpinButton* dsb = new DualSpinButton(defalt_value, lo, hi, step_inc, climb, digits, attr, tip1, tip2);
+        auto const dsb = Gtk::make_managed<DualSpinButton>(defalt_value, lo, hi, step_inc, climb, digits, attr, tip1, tip2);
         add_widget(dsb, label);
         add_attr_widget(dsb);
         return dsb;
@@ -966,12 +936,13 @@ public:
         tips.push_back(tip1);
         tips.push_back(tip2);
 
-        MultiSpinButton* msb = new MultiSpinButton(lo, hi, step_inc, climb, digits, attrs, default_values, tips);
+        auto const msb = Gtk::make_managed<MultiSpinButton>(lo, hi, step_inc, climb, digits, attrs, default_values, tips);
         add_widget(msb, label);
         for(auto & i : msb->get_spinbuttons())
             add_attr_widget(i);
         return msb;
     }
+
     MultiSpinButton* add_multispinbutton(double def1, double def2, double def3, const SPAttr attr1, const SPAttr attr2,
                                          const SPAttr attr3, const Glib::ustring& label, const double lo,
                                          const double hi, const double step_inc, const double climb, const int digits, char* tip1 = nullptr, char* tip2 = nullptr, char* tip3 = nullptr)
@@ -991,7 +962,7 @@ public:
         tips.push_back(tip2);
         tips.push_back(tip3);
 
-        MultiSpinButton* msb = new MultiSpinButton(lo, hi, step_inc, climb, digits, attrs, default_values, tips);
+        auto const msb = Gtk::make_managed<MultiSpinButton>(lo, hi, step_inc, climb, digits, attrs, default_values, tips);
         add_widget(msb, label);
         for(auto & i : msb->get_spinbuttons())
             add_attr_widget(i);
@@ -1001,21 +972,22 @@ public:
     // FileOrElementChooser
     FileOrElementChooser* add_fileorelement(const SPAttr attr, const Glib::ustring& label)
     {
-        FileOrElementChooser* foech = new FileOrElementChooser(_dialog, attr);
+        auto const foech = Gtk::make_managed<FileOrElementChooser>(_dialog, attr);
         add_widget(foech, label);
         add_attr_widget(foech);
         return foech;
     }
 
     // ComboBoxEnum
-    template<typename T> ComboBoxEnum<T>* add_combo(T default_value, const SPAttr attr,
-                                  const Glib::ustring& label,
-                                  const Util::EnumDataConverter<T>& conv, char* tip_text = nullptr)
+    template <typename T> ComboWithTooltip<T>* add_combo(T default_value, const SPAttr attr,
+                                                         const Glib::ustring& label,
+                                                         const Util::EnumDataConverter<T>& conv,
+                                                         const Glib::ustring& tip_text = {})
     {
-        ComboWithTooltip<T>* combo = new ComboWithTooltip<T>(default_value, conv, attr, tip_text);
+        auto const combo = Gtk::make_managed<ComboWithTooltip<T>>(default_value, conv, attr, tip_text);
         add_widget(combo, label);
-        add_attr_widget(combo->get_attrwidget());
-        return combo->get_attrwidget();
+        add_attr_widget(combo);
+        return combo;
     }
 
     // Entry
@@ -1023,29 +995,33 @@ public:
                          const Glib::ustring& label,
                          char* tip_text = nullptr)
     {
-        EntryAttr* entry = new EntryAttr(attr, tip_text);
+        auto const entry = Gtk::make_managed<EntryAttr>(attr, tip_text);
         add_widget(entry, label);
         add_attr_widget(entry);
         return entry;
     }
 
     Glib::RefPtr<Gtk::SizeGroup> _size_group;
+
 private:
     void add_attr_widget(AttrWidget* a)
     {
         _attrwidgets[_current_type].push_back(a);
         a->signal_attr_changed().connect(sigc::bind(_set_attr_slot, a));
+        // add_widget() takes a managed widget, so dtor will delete & disconnect
     }
 
     /* Adds a new settings widget using the specified label. The label will be formatted with a colon
        and all widgets within the setting group are aligned automatically. */
     void add_widget(Gtk::Widget* w, const Glib::ustring& label)
     {
-        Gtk::Box *hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL));
+        g_assert(w->is_managed_());
+
+        auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
         hb->set_spacing(6);
 
         if (label != "") {
-            Gtk::Label *lbl = Gtk::manage(new Gtk::Label(label));
+            auto const lbl = Gtk::make_managed<Gtk::Label>(label);
             lbl->set_xalign(0.0);
             hb->pack_start(*lbl, Gtk::PACK_SHRINK);
             _size_group->add_widget(*lbl);
@@ -1212,17 +1188,19 @@ public:
 };
 
 // Settings for the three light source objects
-class FilterEffectsDialog::LightSourceControl : public AttrWidget
+class FilterEffectsDialog::LightSourceControl
+    : public AttrWidget
+    , public Gtk::Box
 {
 public:
     LightSourceControl(FilterEffectsDialog& d)
         : AttrWidget(SPAttr::INVALID),
+          Gtk::Box(Gtk::ORIENTATION_VERTICAL),
           _dialog(d),
-          _settings(d, _box, sigc::mem_fun(_dialog, &FilterEffectsDialog::set_child_attr_direct), LIGHT_ENDSOURCE),
+          _settings(d, *this, sigc::mem_fun(_dialog, &FilterEffectsDialog::set_child_attr_direct), LIGHT_ENDSOURCE),
           _light_label(_("Light Source:")),
           _light_source(LightSourceConverter),
           _locked(false),
-          _box(Gtk::ORIENTATION_VERTICAL),
           _light_box(Gtk::ORIENTATION_HORIZONTAL)
     {
         _light_label.set_xalign(0.0);
@@ -1232,8 +1210,8 @@ public:
         _light_box.show_all();
         _light_box.set_spacing(6);
 
-        _box.add(_light_box);
-        _box.reorder_child(_light_box, 0);
+        add(_light_box);
+        reorder_child(_light_box, 0);
         _light_source.signal_changed().connect(sigc::mem_fun(*this, &LightSourceControl::on_source_changed));
 
         // FIXME: these range values are complete crap
@@ -1257,15 +1235,12 @@ public:
         _settings.type(-1); // Force update_and_show() to show/hide windows correctly
     }
 
-    Gtk::Box& get_box()
-    {
-        return _box;
-    }
 protected:
     Glib::ustring get_as_attribute() const override
     {
         return "";
     }
+
     void set_from_attribute(SPObject* o) override
     {
         if(_locked)
@@ -1288,6 +1263,7 @@ protected:
 
         _locked = false;
     }
+
 private:
     void on_source_changed()
     {
@@ -1327,7 +1303,7 @@ private:
 
     void update()
     {
-        _box.show();
+        set_visible(true);
 
         SPFilterPrimitive* prim = _dialog._primitive_list.get_selected();
         if (prim && prim->firstChild()) {
@@ -1339,7 +1315,6 @@ private:
     }
 
     FilterEffectsDialog& _dialog;
-    Gtk::Box _box;
     Settings _settings;
     Gtk::Box _light_box;
     Gtk::Label _light_label;
@@ -1350,7 +1325,7 @@ private:
     // ComponentTransferValues
 FilterEffectsDialog::ComponentTransferValues* FilterEffectsDialog::Settings::add_componenttransfervalues(const Glib::ustring& label, SPFeFuncNode::Channel channel)
     {
-        ComponentTransferValues* ct = new ComponentTransferValues(_dialog, channel);
+        auto const ct = Gtk::make_managed<ComponentTransferValues>(_dialog, channel);
         add_widget(ct, label);
         add_attr_widget(ct);
         ct->set_margin_top(4);
@@ -1361,9 +1336,9 @@ FilterEffectsDialog::ComponentTransferValues* FilterEffectsDialog::Settings::add
 
 FilterEffectsDialog::LightSourceControl* FilterEffectsDialog::Settings::add_lightsource()
 {
-    LightSourceControl* ls = new LightSourceControl(_dialog);
+    auto const ls = Gtk::make_managed<LightSourceControl>(_dialog);
     add_attr_widget(ls);
-    add_widget(&ls->get_box(), "");
+    add_widget(ls, "");
     return ls;
 }
 
@@ -1371,17 +1346,17 @@ static Gtk::Menu * create_popup_menu(Gtk::Widget& parent,
                                      sigc::slot<void ()> dup,
                                      sigc::slot<void ()> rem)
 {
-    auto menu = Gtk::manage(new Gtk::Menu);
+    auto const menu = Gtk::make_managed<Gtk::Menu>();
 
-    Gtk::MenuItem* mi = Gtk::manage(new Gtk::MenuItem(_("_Duplicate"),true));
+    auto mi = Gtk::make_managed<Gtk::MenuItem>(_("_Duplicate"), true);
     mi->signal_activate().connect(dup);
-    mi->show();
+    mi->set_visible(true);
     menu->append(*mi);
 
-    mi = Gtk::manage(new Gtk::MenuItem(_("_Remove"), true));
+    mi = Gtk::make_managed<Gtk::MenuItem>(_("_Remove"), true);
     menu->append(*mi);
     mi->signal_activate().connect(rem);
-    mi->show();
+    mi->set_visible(true);
     menu->accelerate(parent);
 
     return menu;
@@ -1398,7 +1373,7 @@ FilterEffectsDialog::FilterModifier::FilterModifier(FilterEffectsDialog& d, Glib
          _del(get_widget<Gtk::Button>(_builder, "btn-del")),
          _select(get_widget<Gtk::Button>(_builder, "btn-select")),
          _menu(get_widget<Gtk::Menu>(_builder, "filters-ctx-menu")),
-         _observer(new Inkscape::XML::SignalObserver)
+         _observer(std::make_unique<Inkscape::XML::SignalObserver>())
 {
     _filters_model = Gtk::ListStore::create(_columns);
     _list.set_model(_filters_model);
@@ -1432,8 +1407,9 @@ FilterEffectsDialog::FilterModifier::FilterModifier(FilterEffectsDialog& d, Glib
     _select.signal_clicked().connect([=]() { select_filter_elements(); });
 
     _cell_toggle.signal_toggled().connect(sigc::mem_fun(*this, &FilterModifier::on_selection_toggled));
-    _list.signal_button_release_event().connect_notify(
-        sigc::mem_fun(*this, &FilterModifier::filter_list_button_release));
+
+    Controller::add_click(_list, {}, // no pressed handler,
+        sigc::mem_fun(*this, &FilterModifier::filter_list_click_released), Controller::Button::right);
 
     // connect handlers to context menu items
     auto&& items = _menu.get_children();
@@ -1657,17 +1633,16 @@ void FilterEffectsDialog::FilterModifier::select_filter(const SPFilter* filter)
     }
 }
 
-void FilterEffectsDialog::FilterModifier::filter_list_button_release(GdkEventButton* event)
+Gtk::EventSequenceState FilterEffectsDialog::FilterModifier::filter_list_click_released(Gtk::GestureMultiPress &click,
+                                                                                        int const n_press, double const x, double const y)
 {
-    if((event->type == GDK_BUTTON_RELEASE) && (event->button == 3)) {
-        const bool sensitive = get_selected_filter() != nullptr;
-        auto items = _menu.get_children();
-        items[0]->set_sensitive(sensitive);
-        items[1]->set_sensitive(sensitive);
-        items[3]->set_sensitive(sensitive);
-
-        _menu.popup_at_pointer(reinterpret_cast<GdkEvent*>(event));
-    }
+    const bool sensitive = get_selected_filter() != nullptr;
+    auto items = _menu.get_children();
+    items[0]->set_sensitive(sensitive);
+    items[1]->set_sensitive(sensitive);
+    items[3]->set_sensitive(sensitive);
+    _menu.popup_at_pointer(Controller::get_last_event(click));
+    return Gtk::EVENT_SEQUENCE_CLAIMED;
 }
 
 void FilterEffectsDialog::FilterModifier::add_filter()
@@ -1825,13 +1800,24 @@ void FilterEffectsDialog::CellRendererConnection::get_preferred_height_for_width
 FilterEffectsDialog::PrimitiveList::PrimitiveList(FilterEffectsDialog& d)
     : _dialog(d),
       _in_drag(0),
-      _observer(new Inkscape::XML::SignalObserver)
+      _observer(std::make_unique<Inkscape::XML::SignalObserver>())
 {
     _inputs_count = FPInputConverter._length;
 
     signal_draw().connect(sigc::mem_fun(*this, &PrimitiveList::on_draw_signal));
 
     add_events(Gdk::POINTER_MOTION_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK);
+
+    Controller::add_click(*this,
+        sigc::mem_fun(*this, &PrimitiveList::on_click_pressed ),
+        sigc::mem_fun(*this, &PrimitiveList::on_click_released),
+        Controller::Button::any,
+        Gtk::PHASE_TARGET);
+
+    Controller::add_motion<nullptr,
+                           &PrimitiveList::on_motion_motion,
+                           nullptr>
+                          (*this, *this, Gtk::PHASE_TARGET);
 
     _model = Gtk::ListStore::create(_columns);
 
@@ -2006,15 +1992,11 @@ bool FilterEffectsDialog::PrimitiveList::on_draw_signal(const Cairo::RefPtr<Cair
     convert_bin_window_to_widget_coords(0,0,x_origin,y_origin);
     cr->translate(x_origin, y_origin);
 
-    auto sc = get_style_context();
-
-    // TODO: In Gtk+ 4, the state is not used in get_color
-    auto state = sc->get_state();
-    auto bg_color = get_background_color(sc, state);
-    auto orig_color = sc->get_color(state);
-    Gdk::RGBA fg_color = orig_color;
-    auto bar_color = mix_colors(bg_color, orig_color, 0.06);
-    // color of connector arrow heads and effect separator lines
+    auto const style_context = get_style_context();
+    auto const fg_color = get_foreground_color(style_context);
+    auto const bg_color = get_color_with_class(style_context, "theme_bg_color");
+    auto bar_color = mix_colors(bg_color, fg_color, 0.06);
+     // color of connector arrow heads and effect separator lines
     auto mid_color = mix_colors(bg_color, fg_color, 0.16);
 
     SPFilterPrimitive* prim = get_selected();
@@ -2036,8 +2018,7 @@ bool FilterEffectsDialog::PrimitiveList::on_draw_signal(const Cairo::RefPtr<Cair
         Gdk::Cairo::set_source_rgba(cr, bg_color);
         cr->rectangle(text_start_x + 1, 0, w * _inputs_count, h);
         cr->fill();
-        auto text_color = fg_color;
-        text_color.set_alpha(0.7);
+        auto const text_color = change_alpha(fg_color, 0.7);
 
         // draw vertical bars corresponding to possible filter inputs
         for(unsigned int i = 0; i < _inputs_count; ++i) {
@@ -2147,7 +2128,7 @@ bool FilterEffectsDialog::PrimitiveList::on_draw_signal(const Cairo::RefPtr<Cair
         // Draw drag connection
         if(row_prim == prim && _in_drag) {
             cr->save();
-            Gdk::Cairo::set_source_rgba(cr, orig_color);
+            Gdk::Cairo::set_source_rgba(cr, fg_color);
             cr->move_to(con_drag_x, con_drag_y);
             cr->line_to(mx, con_drag_y);
             cr->line_to(mx, my);
@@ -2338,11 +2319,19 @@ int FilterEffectsDialog::PrimitiveList::find_index(const Gtk::TreeIter& target)
     return i;
 }
 
-bool FilterEffectsDialog::PrimitiveList::on_button_press_event(GdkEventButton* e)
+static std::pair<int, int> widget_to_bin_window(Gtk::TreeView const &tree_view, int const wx, int const wy)
+{
+    int bx, by;
+    tree_view.convert_widget_to_bin_window_coords(wx, wy, bx, by);
+    return {bx, by};
+}
+
+Gtk::EventSequenceState FilterEffectsDialog::PrimitiveList::on_click_pressed(Gtk::GestureMultiPress &click,
+                                                                             int const n_press, double const wx, double const wy)
 {
     Gtk::TreePath path;
     Gtk::TreeViewColumn* col;
-    const int x = (int)e->x, y = (int)e->y;
+    auto const [x, y] = widget_to_bin_window(*this, wx, wy);
     int cx, cy;
 
     _drag_prim = nullptr;
@@ -2369,42 +2358,44 @@ bool FilterEffectsDialog::PrimitiveList::on_button_press_event(GdkEventButton* e
         _autoscroll_x = 0;
         _autoscroll_y = 0;
         get_selection()->select(path);
-        return true;
+        return Gtk::EVENT_SEQUENCE_CLAIMED;
+        //click.set_sequence_state(click.get_current_sequence(), Gtk::EVENT_SEQUENCE_CLAIMED);
     }
-    else
-        return Gtk::TreeView::on_button_press_event(e);
+
+    return Gtk::EVENT_SEQUENCE_NONE;
 }
 
-bool FilterEffectsDialog::PrimitiveList::on_motion_notify_event(GdkEventMotion* e)
+void FilterEffectsDialog::PrimitiveList::on_motion_motion(GtkEventControllerMotion const * const motion,
+                                                          double const wx, double const wy)
 {
     const int speed = 10;
     const int limit = 15;
 
+    auto const [x, y] = widget_to_bin_window(*this, wx, wy);
+
     Gdk::Rectangle vis;
     get_visible_rect(vis);
     int vis_x, vis_y;
-
     int vis_x2, vis_y2;
     convert_widget_to_tree_coords(vis.get_x(), vis.get_y(), vis_x2, vis_y2);
-
     convert_tree_to_widget_coords(vis.get_x(), vis.get_y(), vis_x, vis_y);
     const int top = vis_y + vis.get_height();
     const int right_edge = vis_x + vis.get_width();
 
     // When autoscrolling during a connection drag, set the speed based on
     // where the mouse is in relation to the edges.
-    if(e->y < vis_y)
-        _autoscroll_y = -(int)(speed + (vis_y - e->y) / 5);
-    else if(e->y < vis_y + limit)
+    if (y < vis_y)
+        _autoscroll_y = -(int)(speed + (vis_y - y) / 5);
+    else if (y < vis_y + limit)
         _autoscroll_y = -speed;
-    else if(e->y > top)
-        _autoscroll_y = (int)(speed + (e->y - top) / 5);
-    else if(e->y > top - limit)
+    else if (y > top)
+        _autoscroll_y = (int)(speed + (y - top) / 5);
+    else if (y > top - limit)
         _autoscroll_y = speed;
     else
         _autoscroll_y = 0;
 
-    double e2 = ( e->x - vis_x2/2);
+    double const e2 = x - vis_x2 / 2;
     // horizontal scrolling
     if(e2 < vis_x)
         _autoscroll_x = -(int)(speed + (vis_x - e2) / 5);
@@ -2417,15 +2408,13 @@ bool FilterEffectsDialog::PrimitiveList::on_motion_notify_event(GdkEventMotion* 
     else
         _autoscroll_x = 0;
 
-
-
     queue_draw();
-
-    return Gtk::TreeView::on_motion_notify_event(e);
 }
 
-bool FilterEffectsDialog::PrimitiveList::on_button_release_event(GdkEventButton* e)
+Gtk::EventSequenceState FilterEffectsDialog::PrimitiveList::on_click_released(Gtk::GestureMultiPress &click,
+                                                                              int const n_press, double const wx, double const wy)
 {
+    auto const [x, y] = widget_to_bin_window(*this, wx, wy);
     SPFilterPrimitive *prim = get_selected(), *target;
 
     _scroll_connection.disconnect();
@@ -2435,7 +2424,7 @@ bool FilterEffectsDialog::PrimitiveList::on_button_release_event(GdkEventButton*
         Gtk::TreeViewColumn* col;
         int cx, cy;
 
-        if(get_path_at_pos((int)e->x, (int)e->y, path, col, cx, cy)) {
+        if (get_path_at_pos(x, y, path, col, cx, cy)) {
             const gchar *in_val = nullptr;
             Glib::ustring result;
             Gtk::TreeIter target_iter = _model->get_iter(path);
@@ -2524,18 +2513,16 @@ bool FilterEffectsDialog::PrimitiveList::on_button_release_event(GdkEventButton*
         _dialog.update_settings_view();
     }
 
-    if((e->type == GDK_BUTTON_RELEASE) && (e->button == 3)) {
+    if (click.get_current_button() == 3) {
         const bool sensitive = get_selected() != nullptr;
         auto items = _primitive_menu->get_children();
         items[0]->set_sensitive(sensitive);
         items[1]->set_sensitive(sensitive);
-
-        _primitive_menu->popup_at_pointer(reinterpret_cast<GdkEvent *>(e));
-
-        return true;
+        _primitive_menu->popup_at_pointer(Controller::get_last_event(click));
+        return Gtk::EVENT_SEQUENCE_CLAIMED;
     }
-    else
-        return Gtk::TreeView::on_button_release_event(e);
+
+    return Gtk::EVENT_SEQUENCE_NONE;
 }
 
 // Checks all of prim's inputs, removes any that use result
@@ -2671,12 +2658,15 @@ void FilterEffectsDialog::PrimitiveList::set_inputs_count(int count) {
 
 enum class EffectCategory { Effect, Compose, Colors, Generation };
 
-static std::map<EffectCategory, Glib::ustring> g_category_names = {
-    { EffectCategory::Effect,     _("Effect") },
-    { EffectCategory::Compose,    _("Compositing") },
-    { EffectCategory::Colors,     _("Color editing") },
-    { EffectCategory::Generation, _("Generating") },
-};
+const Glib::ustring& get_category_name(EffectCategory category) {
+    static const std::map<EffectCategory, Glib::ustring> category_names = {
+        { EffectCategory::Effect,     _("Effect") },
+        { EffectCategory::Compose,    _("Compositing") },
+        { EffectCategory::Colors,     _("Color editing") },
+        { EffectCategory::Generation, _("Generating") },
+    };
+    return category_names.at(category);
+}
 
 struct EffectMetadata {
     EffectCategory category;
@@ -2684,7 +2674,8 @@ struct EffectMetadata {
     Glib::ustring tooltip;
 };
 
-static std::map<Inkscape::Filters::FilterPrimitiveType, EffectMetadata> g_effects = {
+static const std::map<Inkscape::Filters::FilterPrimitiveType, EffectMetadata>& get_effects() {
+    static std::map<Inkscape::Filters::FilterPrimitiveType, EffectMetadata> effects = {
     { NR_FILTER_GAUSSIANBLUR,      { EffectCategory::Effect,     "feGaussianBlur-icon",
         _("Uniformly blurs its input. Commonly used together with Offset to create a drop shadow effect.") }},
     { NR_FILTER_MORPHOLOGY,        { EffectCategory::Effect,     "feMorphology-icon",
@@ -2717,7 +2708,9 @@ static std::map<Inkscape::Filters::FilterPrimitiveType, EffectMetadata> g_effect
         _("Fills the region with graphics from an external file or from another portion of the document.") }},
     { NR_FILTER_TURBULENCE,        { EffectCategory::Generation, "feTurbulence-icon",
         _("Renders Perlin noise, which is useful to generate textures such as clouds, fire, smoke, marble or granite.") }},
-};
+    };
+    return effects;
+}
 
 // populate popup with filter effects and completion list for a search box
 void FilterEffectsDialog::add_effects(Inkscape::UI::Widget::CompletionPopup& popup, bool symbolic) {
@@ -2731,11 +2724,11 @@ void FilterEffectsDialog::add_effects(Inkscape::UI::Widget::CompletionPopup& pop
         Glib::ustring tooltip;
     };
     std::vector<Effect> effects;
-    effects.reserve(g_effects.size());
-    for (auto&& effect : g_effects) {
+    effects.reserve(get_effects().size());
+    for (auto&& effect : get_effects()) {
         effects.push_back({
             effect.first,
-            FPConverter.get_label(effect.first),
+            _(FPConverter.get_label(effect.first).c_str()),
             effect.second.category,
             effect.second.icon_name,
             effect.second.tooltip
@@ -2763,7 +2756,7 @@ void FilterEffectsDialog::add_effects(Inkscape::UI::Widget::CompletionPopup& pop
             return sp_query_custom_tooltip(x, y, kbd, tooltipw, id, effect.tooltip, effect.icon_name);
         });
         if (builder.new_section()) {
-            builder.set_section(g_category_names[effect.category]);
+            builder.set_section(get_category_name(effect.category));
         }
     
         // build completion list
@@ -2799,10 +2792,13 @@ FilterEffectsDialog::FilterEffectsDialog()
     , _settings_effect(Gtk::ORIENTATION_VERTICAL)
     , _settings_filter(Gtk::ORIENTATION_VERTICAL)
 {
-    _settings = new Settings(*this, _settings_effect, [=](auto a){ set_attr_direct(a); }, NR_FILTER_ENDPRIMITIVETYPE);
+    _settings = std::make_unique<Settings>(*this, _settings_effect,
+                                           [=](auto a){ set_attr_direct(a); },
+                                           NR_FILTER_ENDPRIMITIVETYPE);
     _cur_effect_name = &get_widget<Gtk::Label>(_builder, "cur-effect");
     _settings->_size_group->add_widget(*_cur_effect_name);
-    _filter_general_settings = new Settings(*this, _settings_filter, [=](auto a){ set_filternode_attr(a); }, 1);
+    _filter_general_settings = std::make_unique<Settings>(*this, _settings_filter,
+                                                          [=](auto a){ set_filternode_attr(a); }, 1);
 
     // Initialize widget hierarchy
     _primitive_box = &get_widget<Gtk::ScrolledWindow>(_builder, "filter");
@@ -2828,8 +2824,11 @@ FilterEffectsDialog::FilterEffectsDialog()
         if (auto prim = _primitive_list.get_selected()) {
             if (prim->getRepr()) {
                 auto id = FPConverter.get_id_from_key(prim->getRepr()->name());
-                get_widget<Gtk::Image>(_builder, "effect-icon").set_from_icon_name(g_effects[id].icon_name, Gtk::ICON_SIZE_DND);
-                get_widget<Gtk::TextView>(_builder, "effect-info").get_buffer()->set_text(g_effects[id].tooltip);
+                const auto& effect = get_effects().at(id);
+                get_widget<Gtk::Image>(_builder, "effect-icon").set_from_icon_name(effect.icon_name, Gtk::ICON_SIZE_DND);
+                auto buffer = get_widget<Gtk::TextView>(_builder, "effect-info").get_buffer();
+                buffer->set_text("");
+                buffer->insert_markup(buffer->begin(), effect.tooltip);
                 get_widget<Gtk::TextView>(_builder, "effect-desc").get_buffer()->set_text("");
             }
         }
@@ -2918,7 +2917,7 @@ FilterEffectsDialog::FilterEffectsDialog()
 
     _primitive_list.update();
 
-    show();
+    set_visible(true);
 
     // reading minimal width at this point should reflect space needed for fitting effect parameters panel
     int min_width = 0, dummy = 0;
@@ -2976,11 +2975,7 @@ FilterEffectsDialog::FilterEffectsDialog()
     update_settings_view();
 }
 
-FilterEffectsDialog::~FilterEffectsDialog()
-{
-    delete _settings;
-    delete _filter_general_settings;
-}
+FilterEffectsDialog::~FilterEffectsDialog() = default;
 
 void FilterEffectsDialog::documentReplaced()
 {
@@ -3261,12 +3256,12 @@ void FilterEffectsDialog::update_filter_general_settings_view()
 
         if(filter) {
             _filter_general_settings->show_and_update(0, filter);
-            _no_filter_selected.hide();
+            _no_filter_selected.set_visible(false);
         }
         else {
             std::vector<Gtk::Widget*> vect = _settings_filter.get_children();
-            vect[0]->hide();
-            _no_filter_selected.show();
+            vect[0]->set_visible(false);
+            _no_filter_selected.set_visible(true);
         }
 
         _attr_lock = false;
@@ -3283,7 +3278,7 @@ void FilterEffectsDialog::update_settings_view()
     // selected effect parameters
 
     for (auto& i : _settings_effect.get_children()) {
-        i->hide();
+        i->set_visible(false);
     }
 
     SPFilterPrimitive* prim = _primitive_list.get_selected();
@@ -3295,9 +3290,9 @@ void FilterEffectsDialog::update_settings_view()
         //XML Tree being used directly here while it shouldn't be.
         auto id = FPConverter.get_id_from_key(prim->getRepr()->name());
         _settings->show_and_update(id, prim);
-        _empty_settings.hide();
-        _cur_effect_name->set_text(FPConverter.get_label(id));
-        header.show();
+        _empty_settings.set_visible(false);
+        _cur_effect_name->set_text(_(FPConverter.get_label(id).c_str()));
+        header.set_visible(true);
     }
     else {
         if (filter) {
@@ -3309,20 +3304,20 @@ void FilterEffectsDialog::update_settings_view()
         else {
             _empty_settings.set_text(_("No filters in the document"));
         }
-        _empty_settings.show();
+        _empty_settings.set_visible(true);
         _cur_effect_name->set_text(Glib::ustring());
-        header.hide();
+        header.set_visible(false);
     }
 
     // current filter parameters (area size)
 
     std::vector<Gtk::Widget*> vect2 = _settings_filter.get_children();
-    vect2[0]->hide();
-    _no_filter_selected.show();
+    vect2[0]->set_visible(false);
+    _no_filter_selected.set_visible(true);
 
     if (filter) {
         _filter_general_settings->show_and_update(0, filter);
-        _no_filter_selected.hide();
+        _no_filter_selected.set_visible(false);
     }
 
     ensure_size();

@@ -53,8 +53,8 @@ ContextMenu::ContextMenu(SPDesktop *desktop, SPObject *object, bool hide_layers_
     action_group = Gio::SimpleActionGroup::create();
     insert_action_group("ctx", action_group);
     auto document = desktop->getDocument();
-    action_group->add_action("unhide-objects-below-cursor", sigc::bind<SPDocument*, bool>(sigc::mem_fun(*this, &ContextMenu::unhide_or_unlock), document, true));
-    action_group->add_action("unlock-objects-below-cursor", sigc::bind<SPDocument*, bool>(sigc::mem_fun(*this, &ContextMenu::unhide_or_unlock), document, false));
+    action_group->add_action("unhide-objects-below-cursor", sigc::bind(sigc::mem_fun(*this, &ContextMenu::unhide_or_unlock), document, true));
+    action_group->add_action("unlock-objects-below-cursor", sigc::bind(sigc::mem_fun(*this, &ContextMenu::unhide_or_unlock), document, false));
 
     auto gmenu         = Gio::Menu::create(); // Main menu
     auto gmenu_section = Gio::Menu::create(); // Section (used multiple times)
@@ -103,7 +103,7 @@ ContextMenu::ContextMenu(SPDesktop *desktop, SPObject *object, bool hide_layers_
         AppendItemFromAction(gmenu_section, "doc.page-move-forward", _("Move Page _Forward"), "pages-order-forwards");
         gmenu->append_section(gmenu_section);
 
-    } else if (!layer) {
+    } else if (!layer || desktop->getSelection()->includes(layer)) {
         // "item" is the object that was under the mouse when right-clicked. It determines what is shown
         // in the menu thus it makes the most sense that it is either selected or part of the current
         // selection.
@@ -189,7 +189,7 @@ ContextMenu::ContextMenu(SPDesktop *desktop, SPObject *object, bool hide_layers_
                     AppendItemFromAction( gmenu_section, "app.selection-ungroup",               _("_Ungroup"),              ""                                );
                     Glib::ustring label = Glib::ustring::compose(_("Enter group %1"), item->defaultLabel());
                     AppendItemFromAction( gmenu_section, "win.selection-group-enter",           label,                      ""                                );
-                    if (item->getParentGroup()->isLayer() || item->getParentGroup() == root) {
+                    if (!layer && (item->getParentGroup()->isLayer() || item->getParentGroup() == root)) {
                         // A layer should be a child of root or another layer.
                         AppendItemFromAction( gmenu_section, "win.layer-from-group",            _("Group to Layer"),        ""                                );
                     }

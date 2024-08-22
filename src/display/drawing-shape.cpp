@@ -119,7 +119,7 @@ unsigned DrawingShape::_updateItem(Geom::IntRect const &area, UpdateContext cons
 
             // Scale by view transformation, unless vector effect stroke.
             if (!style_vector_effect_stroke) {
-                stroke_max *= ctx.ctm.descrim();
+                stroke_max *= max_expansion(ctx.ctm);
             }
 
             // Cap minimum line width if asked.
@@ -366,8 +366,7 @@ DrawingItem *DrawingShape::_pickItem(Geom::Point const &p, double delta, unsigne
         width = 0.5; // in outline mode, everything is stroked with the same 0.5px line width
     } else if (_nrstyle.data.stroke.type != NRStyleData::PaintType::NONE && (_nrstyle.data.stroke.opacity > 1e-3 || _drawing.selectZeroOpacity())) {
         // for normal picking calculate the distance corresponding top the stroke width
-        // FIXME BUG: this is incorrect for transformed strokes
-        float const scale = _ctm.descrim();
+        float scale = max_expansion(_ctm);
         width = std::max(0.125f, _nrstyle.data.stroke_width * scale) / 2;
     } else {
         width = 0;

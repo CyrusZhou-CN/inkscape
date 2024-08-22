@@ -22,12 +22,14 @@
 class SPDesktop;
 class SPDocument;
 class SPObject;
+class SPImage;
 
 namespace Inkscape {
 
 class CanvasItemGroup;
 class CanvasItemBpath;
 class ObjectSet;
+class Drawing;
 
 using VisualItem = CanvasItemPtr<CanvasItemBpath>;
 struct ItemPair
@@ -63,6 +65,7 @@ public:
     bool has_task() const { return (bool)_work_task; }
     bool has_changes() const { return !_undo.empty(); }
     bool highlight(const Geom::Point &point, bool add_task = true);
+    bool contains_image(SPItem *root) const;
 
 private:
     ObjectSet *_set;
@@ -81,7 +84,7 @@ private:
 
     auto_connection desk_modified_connection;
 
-    void redraw_item(CanvasItemBpath &bpath, bool selected, TaskType task);
+    void redraw_item(CanvasItemBpath &bpath, bool selected, TaskType task, bool image);
     void redraw_items();
 };
 

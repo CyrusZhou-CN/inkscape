@@ -22,6 +22,7 @@ namespace Toolbar {
 BooleansToolbar::BooleansToolbar(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder, SPDesktop *desktop)
     : Gtk::Toolbar(cobject)
     , _builder(builder)
+    , _adj_opacity(get_object<Gtk::Adjustment>(_builder, "opacity-adj"))
     , _btn_confirm(get_widget<Gtk::ToolButton>(builder, "confirm"))
     , _btn_cancel(get_widget<Gtk::ToolButton>(builder, "cancel"))
 {
@@ -32,6 +33,15 @@ BooleansToolbar::BooleansToolbar(BaseObjectType *cobject, const Glib::RefPtr<Gtk
     _btn_cancel.signal_clicked().connect([=]{
         auto ec = dynamic_cast<Tools::InteractiveBooleansTool *>(desktop->event_context);
         ec->shape_cancel();
+    });
+
+    auto prefs = Inkscape::Preferences::get();
+    _adj_opacity->set_value(prefs->getDouble("/tools/booleans/opacity", 0.5) * 100);
+    _adj_opacity->signal_value_changed().connect([=](){
+        auto ec = dynamic_cast<Tools::InteractiveBooleansTool *>(desktop->event_context);
+        double value = (double)_adj_opacity->get_value() / 100;
+        prefs->setDouble("/tools/booleans/opacity", value);
+        ec->set_opacity(value);
     });
 }
 

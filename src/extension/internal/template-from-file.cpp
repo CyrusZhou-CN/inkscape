@@ -8,6 +8,8 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#include <glibmm/miscutils.h>
+
 #include "document.h"
 #include "extension/prefdialog/parameter.h"
 #include "io/file.h"
@@ -62,7 +64,7 @@ void TemplatePresetFile::_load_data(const Inkscape::XML::Node *root)
 {
     _name = sp_repr_lookup_content(root, "inkscape:name", _name);
     _name = sp_repr_lookup_content(root, "inkscape:_name", _name); // backwards-compatibility
-    _label = sp_repr_lookup_content(root, "inkscape:shortdesc", "Custom Template");
+    _label = sp_repr_lookup_content(root, "inkscape:shortdesc", N_("Custom Template"));
     _label = sp_repr_lookup_content(root, "inkscape:shortdesc", _label); // backwards-compatibility
 
     _icon = sp_repr_lookup_content(root, "inkscape:icon", _icon);
@@ -93,7 +95,7 @@ void TemplateFromFile::init()
             "<id>org.inkscape.template.from-file</id>"
             "<name>" N_("Load from User File") "</name>"
             "<description>" N_("Custom list of templates for a folder") "</description>"
-            "<category>" N_("Custom") "</category>"
+            "<category>" NC_("TemplateCategory", "Custom") "</category>"
 
             "<param name='filename' gui-text='" N_("Filename") "' type='string'></param>"
             "<template icon='custom' priority='-1' visibility='both'>"

@@ -73,8 +73,12 @@ public:
     /**
      * Base class for preference observers.
      *
-     * If you want to watch for changes in the preferences, you'll have to
+     * If you want to watch for changes in the preferences, you can
      * derive a class from this one and override the notify() method.
+     *
+     * Note that nowadays there are other ways to listen for preference changes,
+     * which do not require creating a new subclass: see PreferencesObserver and
+     * Pref<T> below, ready-to-go classes that support callbacks on pref change.
      */
     class Observer {
         friend class Preferences;

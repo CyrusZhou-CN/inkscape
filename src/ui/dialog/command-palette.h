@@ -16,24 +16,22 @@
 #include <vector>
 
 #include <giomm/action.h>
-#include <giomm/application.h>
 #include <glibmm/refptr.h>
 #include <glibmm/ustring.h>
-#include <gtkmm/box.h>
 #include <gtkmm/builder.h>
-#include <gtkmm/button.h>
-#include <gtkmm/eventbox.h>
-#include <gtkmm/label.h>
-#include <gtkmm/listbox.h>
-#include <gtkmm/listboxrow.h>
-#include <gtkmm/recentinfo.h>
-#include <gtkmm/scrolledwindow.h>
-#include <gtkmm/searchbar.h>
-#include <gtkmm/searchentry.h>
-#include <gtkmm/viewport.h>
+#include <sigc++/connection.h>
 
-#include "inkscape.h"
-#include "ui/dialog/align-and-distribute.h"
+#include "xml/document.h"
+
+namespace Gtk {
+class Box;
+class Label;
+class ListBox;
+class ListBoxRow;
+class SearchBar;
+class SearchEntry;
+class ScrolledWindow;
+}
 
 namespace Inkscape {
 namespace UI {

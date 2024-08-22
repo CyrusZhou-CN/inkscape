@@ -28,6 +28,7 @@
 
 #include <glibmm/i18n.h>
 
+#include "actions/actions-effect-data.h"
 #include "actions/actions-effect.h"
 #include "inkscape-application.h" // Open recent
 #include "preferences.h"          // Use icons or not
@@ -83,22 +84,21 @@ build_menu()
 
             std::map<Glib::ustring, Glib::RefPtr<Gio::Menu>> submenus;
 
-            for (auto &[ entry_id, submenu_name_list, entry_name ] : app->get_action_effect_data().give_all_data())
-            {
+            for (auto&& entry : app->get_action_effect_data().give_all_data()) {
+                auto& submenu_name_list = entry.submenu;
+
                 if (submenu_name_list.size() > 0) {
 
                     // Effect data is used for both filters menu and extensions menu... we need to
-                    // add to correct menu. 'submenu_name_list' either starts with 'Effects' or 'Filters'.
-                    // Note "Filters" is translated!
+                    // add to correct menu.
                     Glib::ustring path; // Only used as index to map of submenus.
                     auto top_menu = filters_menu;
-                    if (submenu_name_list.front() == "Effects") {
+                    if (!entry.is_filter) {
                         top_menu = effects_menu;
                         path += "Effects";
                     } else {
                         path += "Filters";
                     }
-                    submenu_name_list.pop_front();
 
                     if (top_menu) { // It's possible that the menu doesn't exist (Kid's Inkscape?)
                         auto current_menu = top_menu;
@@ -114,7 +114,7 @@ build_menu()
                                 current_menu = it->second;
                             }
                         }
-                        current_menu->append(entry_name, "app." + entry_id);
+                        current_menu->append(entry.effect_name, "app." + entry.effect_id);
                     } else {
                         std::cerr << "build_menu(): menu doesn't exist!" << std::endl; // Warn for now.
                     }

@@ -54,7 +54,7 @@ EntityEntry::create (rdf_work_entity_t* ent, Registry& wr)
     }
 
     g_assert (obj);
-    obj->_label.show();
+    obj->_label.set_visible(true);
     return obj;
 }
 

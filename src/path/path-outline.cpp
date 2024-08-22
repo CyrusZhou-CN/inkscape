@@ -547,8 +547,9 @@ item_to_paths(SPItem *item, bool legacy, SPItem *context)
     Inkscape::XML::Node *stroke = nullptr;
     if (s_val && g_strcmp0(s_val,"none") != 0 && stroke_path.size() > 0) {
         stroke = xml_doc->createElement("svg:path");
-        sp_repr_css_change(stroke, ncss, "style");
-
+        style->clear();
+        style->mergeCSS(ncss);
+        stroke->setAttribute("style", style->writeIfDiff(item->parent->style));
         stroke->setAttribute("d", sp_svg_write_path(stroke_path));
     }
     sp_repr_css_attr_unref(ncss);
@@ -557,8 +558,9 @@ item_to_paths(SPItem *item, bool legacy, SPItem *context)
     Inkscape::XML::Node *fill = nullptr;
     if (f_val && g_strcmp0(f_val,"none") != 0 && !legacy) {
         fill = xml_doc->createElement("svg:path");
-        sp_repr_css_change(fill, ncsf, "style");
-
+        style->clear();
+        style->mergeCSS(ncsf);
+        fill->setAttribute("style", style->writeIfDiff(item->parent->style));
         fill->setAttribute("d", sp_svg_write_path(fill_path));
     }
     sp_repr_css_attr_unref(ncsf);

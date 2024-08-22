@@ -22,6 +22,7 @@
 #include "object/sp-defs.h"
 #include "object/sp-item-group.h"
 #include "object/uri.h"
+#include "util/safe-printf.h"
 
 
 // TODO due to internal breakage in glibmm headers, this must be last:
@@ -242,7 +243,7 @@ LPEPowerMask::setMask(){
         Glib::ustring style;
         gchar c[32];
         unsigned const rgb24 = background_color.get_value() >> 8;
-        sprintf(c, "#%06x", rgb24);
+        safeprintf(c, "#%06x", rgb24);
         style = Glib::ustring("fill:") + Glib::ustring(c);
         Inkscape::SVGOStringStream os;
         os << SP_RGBA32_A_F(background_color.get_value());

@@ -14,7 +14,6 @@
 #include <glibmm/i18n.h>
 
 #include "ui/interface.h"
-#include "ui/view/view.h"
 
 #include "actions-canvas-mode.h"
 #include "actions-helper.h"
@@ -264,21 +263,21 @@ canvas_color_manage_toggle(InkscapeWindow *win)
 std::vector<std::vector<Glib::ustring>> raw_data_canvas_mode =
 {
     // clang-format off
-    {"win.canvas-display-mode(0)",              N_("Display Mode: Normal"),          "Canvas Display",   N_("Use normal rendering mode")                         },
-    {"win.canvas-display-mode(1)",              N_("Display Mode: Outline"),         "Canvas Display",   N_("Show only object outlines")                         },
-    {"win.canvas-display-mode(2)",              N_("Display Mode: No Filters"),      "Canvas Display",   N_("Do not render filters (for speed)")                 },
-    {"win.canvas-display-mode(3)",              N_("Display Mode: Enhance Thin Lines"), "Canvas Display",   N_("Ensure all strokes are displayed on screen as at least 1 pixel wide")                         },
-    {"win.canvas-display-mode(4)",              N_("Display Mode: Outline Overlay"), "Canvas Display",   N_("Show a outline overlay")                            },
-    {"win.canvas-display-mode-cycle",           N_("Display Mode Cycle"),            "Canvas Display",   N_("Cycle through display modes")                       },
-    {"win.canvas-display-mode-toggle",          N_("Display Mode Toggle"),           "Canvas Display",   N_("Toggle between normal and last non-normal mode")    },
-    {"win.canvas-display-mode-toggle-preview",  N_("Display Mode Toggle Preview"),   "Canvas Display",   N_("Toggle between preview and previous mode")          },
+    {"win.canvas-display-mode(0)",              N_("Display Mode: Normal"),             "Canvas Display",    N_("Use normal rendering mode")                     },
+    {"win.canvas-display-mode(1)",              N_("Display Mode: Outline"),            "Canvas Display",    N_("Show only object outlines")                     },
+    {"win.canvas-display-mode(2)",              N_("Display Mode: No Filters"),         "Canvas Display",    N_("Do not render filters (for speed)")             },
+    {"win.canvas-display-mode(3)",              N_("Display Mode: Enhance Thin Lines"), "Canvas Display",    N_("Ensure all strokes are displayed on screen as at least 1 pixel wide")},
+    {"win.canvas-display-mode(4)",              N_("Display Mode: Outline Overlay"),    "Canvas Display",    N_("Show objects as outlines, and the actual drawing below them with reduced opacity")},
+    {"win.canvas-display-mode-cycle",           N_("Display Mode: Cycle"),              "Canvas Display",    N_("Cycle through display modes")                   },
+    {"win.canvas-display-mode-toggle",          N_("Display Mode: Toggle"),             "Canvas Display",    N_("Toggle between normal and last non-normal mode")},
+    {"win.canvas-display-mode-toggle-preview",  N_("Display Mode: Toggle Preview"),     "Canvas Display",    N_("Toggle between preview and previous mode")      },
 
-    {"win.canvas-split-mode(0)",                N_("Split Mode: Normal"),            "Canvas Display",   N_("Do not split canvas")                               },
-    {"win.canvas-split-mode(1)",                N_("Split Mode: Split"),             "Canvas Display",   N_("Render part of the canvas in outline mode")         },
-    {"win.canvas-split-mode(2)",                N_("Split Mode: X-Ray"),             "Canvas Display",   N_("Render a circular area in outline mode")            },
+    {"win.canvas-split-mode(0)",                N_("Split Mode: Normal"),            "Canvas Display",    N_("Do not split canvas")                              },
+    {"win.canvas-split-mode(1)",                N_("Split Mode: Split"),             "Canvas Display",    N_("Render part of the canvas in outline mode")        },
+    {"win.canvas-split-mode(2)",                N_("Split Mode: X-Ray"),             "Canvas Display",    N_("Render a circular area in outline mode")           },
 
-    {"win.canvas-color-mode",                   N_("Color Mode"),                    "Canvas Display",   N_("Toggle between normal and grayscale modes")         },
-    {"win.canvas-color-manage",                 N_("Color Managed Mode"),            "Canvas Display",   N_("Toggle between normal and color managed modes")     }
+    {"win.canvas-color-mode",                   N_("Color Mode"),                    "Canvas Display",    N_("Toggle between normal and grayscale modes")        },
+    {"win.canvas-color-manage",                 N_("Color Managed Mode"),            "Canvas Display",    N_("Toggle between normal and color managed modes")    }
     // clang-format on
 };
 
@@ -302,12 +301,12 @@ add_actions_canvas_mode(InkscapeWindow* win)
     }
 
     // clang-format off
-    win->add_action_radio_integer ("canvas-display-mode",                 sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&canvas_display_mode),                win), display_mode);
-    win->add_action(               "canvas-display-mode-cycle",           sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&canvas_display_mode_cycle),          win));
-    win->add_action(               "canvas-display-mode-toggle",          sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&canvas_display_mode_toggle),         win));
-    win->add_action_radio_integer ("canvas-split-mode",                   sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&canvas_split_mode),                  win), (int)Inkscape::SplitMode::NORMAL);
-    win->add_action_bool(          "canvas-color-mode",                   sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&canvas_color_mode_toggle),           win));
-    win->add_action_bool(          "canvas-color-manage",                 sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&canvas_color_manage_toggle),         win), color_manage);
+    win->add_action_radio_integer ("canvas-display-mode",                 sigc::bind(sigc::ptr_fun(&canvas_display_mode),                win), display_mode);
+    win->add_action(               "canvas-display-mode-cycle",           sigc::bind(sigc::ptr_fun(&canvas_display_mode_cycle),          win));
+    win->add_action(               "canvas-display-mode-toggle",          sigc::bind(sigc::ptr_fun(&canvas_display_mode_toggle),         win));
+    win->add_action_radio_integer ("canvas-split-mode",                   sigc::bind(sigc::ptr_fun(&canvas_split_mode),                  win), (int)Inkscape::SplitMode::NORMAL);
+    win->add_action_bool(          "canvas-color-mode",                   sigc::bind(sigc::ptr_fun(&canvas_color_mode_toggle),           win));
+    win->add_action_bool(          "canvas-color-manage",                 sigc::bind(sigc::ptr_fun(&canvas_color_manage_toggle),         win), color_manage);
     // clang-format on
 
     auto app = InkscapeApplication::instance();

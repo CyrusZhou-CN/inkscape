@@ -92,7 +92,7 @@ std::vector<std::vector<Glib::ustring>> doc_page_actions =
     // clang-format off
     {"doc.page-new",               N_("New Page"),                "Page",     N_("Create a new page")                                  },
     {"doc.page-delete",            N_("Delete Page"),             "Page",     N_("Delete the selected page")                           },
-    {"doc.page-move-objects",      N_("Move Objects with Page"),  "Page",     N_("Move overlapping objects as the page is moved.")     },
+    {"doc.page-move-objects",      N_("Move Objects with Page"),  "Page",     N_("Move overlapping objects as the page is moved")     },
     {"doc.page-move-backward",     N_("Move Before Previous"),    "Page",     N_("Move page backwards in the page order")              },
     {"doc.page-move-forward",      N_("Move After Next"),         "Page",     N_("Move page forwards in the page order")               },
     // clang-format on
@@ -103,11 +103,11 @@ void add_actions_pages(SPDocument* doc)
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
 
     auto group = doc->getActionGroup();
-    group->add_action("page-new", sigc::bind<SPDocument*>(sigc::ptr_fun(&page_new), doc));
-    group->add_action("page-delete", sigc::bind<SPDocument*>(sigc::ptr_fun(&page_delete), doc));
-    group->add_action("page-move-backward", sigc::bind<SPDocument*>(sigc::ptr_fun(&page_backward), doc));
-    group->add_action("page-move-forward", sigc::bind<SPDocument*>(sigc::ptr_fun(&page_forward), doc));
-    group->add_action_bool("page-move-objects", sigc::bind<SPDocument*>(sigc::ptr_fun(&set_move_objects), doc),
+    group->add_action("page-new", sigc::bind(sigc::ptr_fun(&page_new), doc));
+    group->add_action("page-delete", sigc::bind(sigc::ptr_fun(&page_delete), doc));
+    group->add_action("page-move-backward", sigc::bind(sigc::ptr_fun(&page_backward), doc));
+    group->add_action("page-move-forward", sigc::bind(sigc::ptr_fun(&page_forward), doc));
+    group->add_action_bool("page-move-objects", sigc::bind(sigc::ptr_fun(&set_move_objects), doc),
         prefs->getBool("/tools/pages/move_objects", true));
 
     // Note: This will only work for the first ux to load, possible problem.
@@ -122,8 +122,8 @@ void add_actions_pages(SPDocument* doc)
 std::vector<std::vector<Glib::ustring>> win_page_actions =
 {
     // clang-format off
-    {"win.page-new",    N_("New Page"),    "Page", N_("Create a new page and center window.")},
-    {"win.page-delete", N_("Delete Page"), "Page", N_("Delete the selected page and center on next page")},
+    {"win.page-new",    N_("New Page"),    "Page", N_("Create a new page and center view on it")},
+    {"win.page-delete", N_("Delete Page"), "Page", N_("Delete the selected page and center view on next page")},
     // clang-format on
 };
 
@@ -131,8 +131,8 @@ void add_actions_page_tools(InkscapeWindow* win)
 {
     auto desktop = win->get_desktop();
 
-    win->add_action("page-new", sigc::bind<SPDesktop*>(sigc::ptr_fun(&page_new_and_center), desktop));
-    win->add_action("page-delete", sigc::bind<SPDesktop*>(sigc::ptr_fun(&page_delete_and_center), desktop));
+    win->add_action("page-new", sigc::bind(sigc::ptr_fun(&page_new_and_center), desktop));
+    win->add_action("page-delete", sigc::bind(sigc::ptr_fun(&page_delete_and_center), desktop));
 
     auto app = InkscapeApplication::instance();
     app->get_action_extra_data().add_data(win_page_actions);

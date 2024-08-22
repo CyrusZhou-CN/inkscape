@@ -11,42 +11,24 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifdef HAVE_CONFIG_H
-#endif
-
-#include <vector>
-
 #include "path-util.h"
-
 #include "text-editing.h"
-
 #include "livarot/Path.h"
-#include "livarot/Shape.h"
+#include "display/curve.h"
 
 #include "object/sp-flowtext.h"
 #include "object/sp-image.h"
-#include "object/sp-marker.h"
 #include "object/sp-path.h"
 #include "object/sp-text.h"
 
-#include "display/curve.h"
-
-Path *
-Path_for_pathvector(Geom::PathVector const &epathv)
+std::unique_ptr<Path> Path_for_pathvector(Geom::PathVector const &pathv)
 {
-    /*std::cout << "converting to Livarot path" << std::endl;
-
-    Geom::SVGPathWriter wr;
-    wr.feed(epathv);
-    std::cout << wr.str() << std::endl;*/
-
-    Path *dest = new Path;
-    dest->LoadPathVector(epathv);
+    auto dest = std::make_unique<Path>();
+    dest->LoadPathVector(pathv);
     return dest;
 }
 
-Path *
-Path_for_item(SPItem *item, bool doTransformation, bool transformFull)
+std::unique_ptr<Path> Path_for_item(SPItem *item, bool doTransformation, bool transformFull)
 {
     auto curve = curve_for_item(item);
 
@@ -54,30 +36,12 @@ Path_for_item(SPItem *item, bool doTransformation, bool transformFull)
         return nullptr;
     }
 
-    Geom::PathVector *pathv =
-        pathvector_for_curve(item, &*curve, doTransformation, transformFull, Geom::identity(), Geom::identity());
+    auto pathv = pathvector_for_curve(item, &*curve, doTransformation, transformFull);
 
-    /*std::cout << "converting to Livarot path" << std::endl;
-
-    Geom::SVGPathWriter wr;
-    if (pathv) {
-        wr.feed(*pathv);
-    }
-    std::cout << wr.str() << std::endl;*/
-
-    Path *dest = new Path;
-    dest->LoadPathVector(*pathv);    
-    delete pathv;
-
-    /*gchar *str = dest->svg_dump_path();
-    std::cout << "After conversion:\n" << str << std::endl;
-    g_free(str);*/
-
-    return dest;
+    return Path_for_pathvector(pathv);
 }
 
-Path *
-Path_for_item_before_LPE(SPItem *item, bool doTransformation, bool transformFull)
+std::unique_ptr<Path> Path_for_item_before_LPE(SPItem *item, bool doTransformation, bool transformFull)
 {
     auto curve = curve_for_item_before_LPE(item);
 
@@ -85,36 +49,24 @@ Path_for_item_before_LPE(SPItem *item, bool doTransformation, bool transformFull
         return nullptr;
     }
     
-    Geom::PathVector *pathv =
-        pathvector_for_curve(item, &*curve, doTransformation, transformFull, Geom::identity(), Geom::identity());
+    auto pathv = pathvector_for_curve(item, &*curve, doTransformation, transformFull);
     
-    Path *dest = new Path;
-    dest->LoadPathVector(*pathv);
-    delete pathv;
-
-    return dest;
+    return Path_for_pathvector(pathv);
 }
 
-Geom::PathVector*
-pathvector_for_curve(SPItem *item, SPCurve *curve, bool doTransformation, bool transformFull, Geom::Affine extraPreAffine, Geom::Affine extraPostAffine)
+Geom::PathVector pathvector_for_curve(SPItem *item, SPCurve *curve, bool doTransformation, bool transformFull)
 {
-    if (curve == nullptr)
-        return nullptr;
-
-    Geom::PathVector *dest = new Geom::PathVector;    
-    *dest = curve->get_pathvector(); // Make a copy; must be freed by the caller!
+    auto result = curve->get_pathvector();
     
     if (doTransformation) {
         if (transformFull) {
-            *dest *= extraPreAffine * item->i2doc_affine() * extraPostAffine;
+            result *= item->i2doc_affine();
         } else {
-            *dest *= extraPreAffine * (Geom::Affine)item->transform * extraPostAffine;
+            result *= item->transform;
         }
-    } else {
-        *dest *= extraPreAffine * extraPostAffine;
     }
 
-    return dest;
+    return result;
 }
 
 std::optional<SPCurve> curve_for_item(SPItem *item)
@@ -155,13 +107,11 @@ std::optional<SPCurve> curve_for_item_before_LPE(SPItem *item)
 
 std::optional<Path::cut_position> get_nearest_position_on_Path(Path *path, Geom::Point p, unsigned seg)
 {
-    std::optional<Path::cut_position> result;
     if (!path) {
-        return result; // returns empty std::optional
+        return {};
     }
-    //get nearest position on path
-    result = path->PointToCurvilignPosition(p, seg);
-    return result;
+    // Get nearest position on path.
+    return path->PointToCurvilignPosition(p, seg);
 }
 
 Geom::Point get_point_on_Path(Path *path, int piece, double t)
@@ -170,7 +120,6 @@ Geom::Point get_point_on_Path(Path *path, int piece, double t)
     path->PointAt(piece, t, p);
     return p;
 }
-
 
 /*
   Local Variables:

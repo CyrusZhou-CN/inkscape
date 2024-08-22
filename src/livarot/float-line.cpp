@@ -15,7 +15,6 @@
 #endif
 #include <cstdio>
 #include "livarot/float-line.h"
-#include "livarot/int-line.h"
 #include <cstdio>
 
 FloatLigne::FloatLigne()
@@ -597,23 +596,7 @@ void FloatLigne::Copy(FloatLigne *a)
     runs = a->runs;
 }
 
-void FloatLigne::Copy(IntLigne *a)
-{
-    if ( a->nbRun ) {
-        Reset();
-        return;
-    }
-    
-    bords.clear();
-    runs.resize(a->nbRun);
-    
-    for (int i = 0; i < int(runs.size()); i++) {
-        runs[i].st = a->runs[i].st;
-        runs[i].en = a->runs[i].en;
-        runs[i].vst = a->runs[i].vst;
-        runs[i].ven = a->runs[i].ven;
-    }
-}
+
 
 /// Cuts the parts having less than tresh coverage.
 void FloatLigne::Min(FloatLigne *a, float tresh, bool addIt)

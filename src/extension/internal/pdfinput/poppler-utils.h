@@ -70,6 +70,7 @@ private:
 typedef std::shared_ptr<std::map<FontPtr, FontData>> FontList;
 
 FontList getPdfFonts(std::shared_ptr<PDFDoc> pdf_doc);
+std::string getDictString(Dict *dict, const char *key);
 
 // Replacate poppler FontDict
 class InkFontDict

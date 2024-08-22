@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "choose-file.h"
+#include "ui/dialog-run.h"
 #include <glib/gi18n.h>
 #include <gtkmm/filechooser.h>
 #include <gtkmm/filechooserdialog.h>
@@ -27,9 +28,8 @@ std::string choose_file_save(Glib::ustring title, Gtk::Window* parent, Glib::ust
     dlg.set_current_folder(current_folder);
     dlg.set_current_name(file_name);
     dlg.set_do_overwrite_confirmation();
-    dlg.set_modal();
 
-    auto id = dlg.run();
+    auto id = UI::dialog_run(dlg);
     if (id != save_id) return {};
 
     auto fname = dlg.get_filename();
@@ -58,9 +58,8 @@ std::string choose_file_open(Glib::ustring title, Gtk::Window* parent, std::vect
     }
     dlg.set_filter(filter);
     dlg.set_current_folder(current_folder);
-    dlg.set_modal();
 
-    auto id = dlg.run();
+    auto id = UI::dialog_run(dlg);
     if (id != open_id) return {};
 
     auto fname = dlg.get_filename();

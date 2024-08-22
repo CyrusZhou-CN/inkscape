@@ -490,38 +490,38 @@ void
 add_actions_layer(InkscapeWindow* win)
 {
     // clang-format off
-    win->add_action("layer-new",                            sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_new), win));
-    win->add_action("layer-duplicate",                      sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_duplicate), win));
-    win->add_action("layer-delete",                         sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_delete), win));
-    win->add_action("layer-rename",                         sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_rename), win));
+    win->add_action("layer-new",                            sigc::bind(sigc::ptr_fun(&layer_new), win));
+    win->add_action("layer-duplicate",                      sigc::bind(sigc::ptr_fun(&layer_duplicate), win));
+    win->add_action("layer-delete",                         sigc::bind(sigc::ptr_fun(&layer_delete), win));
+    win->add_action("layer-rename",                         sigc::bind(sigc::ptr_fun(&layer_rename), win));
 
-    win->add_action("layer-hide-all",                       sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_hide_all), win));
-    win->add_action("layer-unhide-all",                     sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_unhide_all), win));
-    win->add_action("layer-hide-toggle",                    sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_hide_toggle), win));
-    win->add_action("layer-hide-toggle-others",             sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_hide_toggle_others), win));
+    win->add_action("layer-hide-all",                       sigc::bind(sigc::ptr_fun(&layer_hide_all), win));
+    win->add_action("layer-unhide-all",                     sigc::bind(sigc::ptr_fun(&layer_unhide_all), win));
+    win->add_action("layer-hide-toggle",                    sigc::bind(sigc::ptr_fun(&layer_hide_toggle), win));
+    win->add_action("layer-hide-toggle-others",             sigc::bind(sigc::ptr_fun(&layer_hide_toggle_others), win));
 
-    win->add_action("layer-lock-all",                       sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_lock_all), win));
-    win->add_action("layer-unlock-all",                     sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_unlock_all), win));
-    win->add_action("layer-lock-toggle",                    sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_lock_toggle), win));
-    win->add_action("layer-lock-toggle-others",             sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_lock_toggle_others), win));
+    win->add_action("layer-lock-all",                       sigc::bind(sigc::ptr_fun(&layer_lock_all), win));
+    win->add_action("layer-unlock-all",                     sigc::bind(sigc::ptr_fun(&layer_unlock_all), win));
+    win->add_action("layer-lock-toggle",                    sigc::bind(sigc::ptr_fun(&layer_lock_toggle), win));
+    win->add_action("layer-lock-toggle-others",             sigc::bind(sigc::ptr_fun(&layer_lock_toggle_others), win));
 
-    win->add_action("layer-previous",                       sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_previous), win));
-    win->add_action("layer-next",                           sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_next), win));
+    win->add_action("layer-previous",                       sigc::bind(sigc::ptr_fun(&layer_previous), win));
+    win->add_action("layer-next",                           sigc::bind(sigc::ptr_fun(&layer_next), win));
 
-    win->add_action("selection-move-to-layer-above",        sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&selection_move_to_layer_above), win));
-    win->add_action("selection-move-to-layer-below",        sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&selection_move_to_layer_below), win));
-    win->add_action("selection-move-to-layer",              sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&selection_move_to_layer), win));
+    win->add_action("selection-move-to-layer-above",        sigc::bind(sigc::ptr_fun(&selection_move_to_layer_above), win));
+    win->add_action("selection-move-to-layer-below",        sigc::bind(sigc::ptr_fun(&selection_move_to_layer_below), win));
+    win->add_action("selection-move-to-layer",              sigc::bind(sigc::ptr_fun(&selection_move_to_layer), win));
 
-    win->add_action("layer-top",                            sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_top), win));
-    win->add_action("layer-raise",                          sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_raise), win));
-    win->add_action("layer-lower",                          sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_lower), win));
-    win->add_action("layer-bottom",                         sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_bottom), win));
+    win->add_action("layer-top",                            sigc::bind(sigc::ptr_fun(&layer_top), win));
+    win->add_action("layer-raise",                          sigc::bind(sigc::ptr_fun(&layer_raise), win));
+    win->add_action("layer-lower",                          sigc::bind(sigc::ptr_fun(&layer_lower), win));
+    win->add_action("layer-bottom",                         sigc::bind(sigc::ptr_fun(&layer_bottom), win));
 
-    win->add_action("layer-to-group",                       sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_to_group), win));
-    win->add_action("layer-from-group",                     sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&layer_from_group), win));
+    win->add_action("layer-to-group",                       sigc::bind(sigc::ptr_fun(&layer_to_group), win));
+    win->add_action("layer-from-group",                     sigc::bind(sigc::ptr_fun(&layer_from_group), win));
 
-    win->add_action("selection-group-enter",                sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&group_enter), win));
-    win->add_action("selection-group-exit",                 sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&group_exit), win));
+    win->add_action("selection-group-enter",                sigc::bind(sigc::ptr_fun(&group_enter), win));
+    win->add_action("selection-group-exit",                 sigc::bind(sigc::ptr_fun(&group_exit), win));
     // clang-format on
 
     auto app = InkscapeApplication::instance();

@@ -61,7 +61,7 @@ namespace Inkscape::UI::Toolbar {
 RectToolbar::RectToolbar(SPDesktop *desktop)
     : Toolbar(desktop)
     , _tracker(new UnitTracker(Inkscape::Util::UNIT_TYPE_LINEAR))
-    , _mode_item(Gtk::manage(new UI::Widget::LabelToolItem(_("<b>New:</b>"))))
+    , _mode_item(Gtk::make_managed<UI::Widget::LabelToolItem>(_("<b>New:</b>")))
 {
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
 
@@ -78,7 +78,7 @@ RectToolbar::RectToolbar(SPDesktop *desktop)
         width_val = Quantity::convert(width_val, "px", init_units);
 
         _width_adj = Gtk::Adjustment::create(width_val, 0, 1e6, SPIN_STEP, SPIN_PAGE_STEP);
-        _width_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("rect-width", _("W:"), _width_adj));
+        _width_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("rect-width", _("W:"), _width_adj);
         _width_item->get_spin_button()->addUnitTracker(_tracker);
         _width_item->set_focus_widget(_desktop->canvas);
         _width_item->set_all_tooltip_text(_("Width of rectangle"));
@@ -107,7 +107,7 @@ RectToolbar::RectToolbar(SPDesktop *desktop)
         _tracker->addAdjustment(_height_adj->gobj());
 
         std::vector<double> values = { 1,  2,  3,  5, 10, 20, 50, 100, 200, 500};
-        _height_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("rect-height", _("H:"), _height_adj));
+        _height_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("rect-height", _("H:"), _height_adj);
         _height_item->get_spin_button()->addUnitTracker(_tracker);
         _height_item->set_custom_numeric_menu_data(values);
         _height_item->set_all_tooltip_text(_("Height of rectangle"));
@@ -128,7 +128,7 @@ RectToolbar::RectToolbar(SPDesktop *desktop)
                                                            "rx",
                                                            &SPRect::setVisibleRx));
         _tracker->addAdjustment(_rx_adj->gobj());
-        _rx_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("rect-rx", _("Rx:"), _rx_adj));
+        _rx_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("rect-rx", _("Rx:"), _rx_adj);
         _rx_item->get_spin_button()->addUnitTracker(_tracker);
         _rx_item->set_all_tooltip_text(_("Horizontal radius of rounded corners"));
         _rx_item->set_focus_widget(_desktop->canvas);
@@ -148,7 +148,7 @@ RectToolbar::RectToolbar(SPDesktop *desktop)
                                                            "ry",
                                                            &SPRect::setVisibleRy));
         _tracker->addAdjustment(_ry_adj->gobj());
-        _ry_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("rect-ry", _("Ry:"), _ry_adj));
+        _ry_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("rect-ry", _("Ry:"), _ry_adj);
         _ry_item->get_spin_button()->addUnitTracker(_tracker);
         _ry_item->set_all_tooltip_text(_("Vertical radius of rounded corners"));
         _ry_item->set_focus_widget(_desktop->canvas);
@@ -160,7 +160,7 @@ RectToolbar::RectToolbar(SPDesktop *desktop)
 
     /* Reset */
     {
-        _not_rounded = Gtk::manage(new Gtk::ToolButton(_("Not rounded")));
+        _not_rounded = Gtk::make_managed<Gtk::ToolButton>(_("Not rounded"));
         _not_rounded->set_tooltip_text(_("Make corners sharp"));
         _not_rounded->set_icon_name(INKSCAPE_ICON("rectangle-make-corners-sharp"));
         _not_rounded->signal_clicked().connect(sigc::mem_fun(*this, &RectToolbar::defaults));
@@ -173,7 +173,7 @@ RectToolbar::RectToolbar(SPDesktop *desktop)
     add(*_rx_item);
     add(*_ry_item);
     add(*unit_menu_ti);
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
     add(*_not_rounded);
     show_all();
     

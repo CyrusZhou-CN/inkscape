@@ -41,9 +41,6 @@ public:
     /** A sigc connection for transformed signal, used to do move compensation. */
     sigc::connection _transformed_connection;
 
-    /** A sigc connection for owning group transformed, used to do move compensation. */
-    sigc::connection _group_connection;
-
     void setAttacherHref(char const * value);
     void setAttacherSubHref(char const * value);
 

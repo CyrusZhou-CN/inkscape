@@ -13,7 +13,7 @@
 #include "gtest/gtest.h"
 
 #include "attributes.h"
-#include "cms-system.h"
+#include "color/cms-system.h"
 #include "object/color-profile.h"
 #include "doc-per-case-test.h"
 

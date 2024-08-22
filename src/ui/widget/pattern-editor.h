@@ -20,6 +20,7 @@
 #include <gtkmm/paned.h>
 #include <gtkmm/builder.h>
 #include <optional>
+#include <2geom/point.h>
 #include <2geom/transforms.h>
 #include "color.h"
 #include "object/sp-pattern.h"
@@ -123,7 +124,8 @@ private:
     int _tile_size = 0;
     SPDocument* _current_document = nullptr;
     // pattern being currently edited: id for a root pattern, and link id of a pattern with href set
-    struct { Glib::ustring id; Glib::ustring link_id; } _current_pattern;
+    // plus current translation offset, so we can preserve it
+    struct { Glib::ustring id; Glib::ustring link_id; Geom::Point offset; } _current_pattern;
 };
 
 

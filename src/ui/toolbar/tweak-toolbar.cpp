@@ -57,7 +57,7 @@ TweakToolbar::TweakToolbar(SPDesktop *desktop)
 
         auto width_val = prefs->getDouble("/tools/tweak/width", 15);
         _width_adj = Gtk::Adjustment::create(width_val * 100, 1, 100, 1.0, 10.0);
-        _width_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("tweak-width", _("Width:"), _width_adj, 0.01, 0));
+        _width_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("tweak-width", _("Width:"), _width_adj, 0.01, 0);
         _width_item->set_tooltip_text(_("The width of the tweak area (relative to the visible canvas area)"));
         _width_item->set_custom_numeric_menu_data(values, labels);
         _width_item->set_focus_widget(desktop->canvas);
@@ -72,7 +72,7 @@ TweakToolbar::TweakToolbar(SPDesktop *desktop)
         std::vector<double>        values = {                   1,  5, 10,             20, 30, 50, 70,                  100};
         auto force_val = prefs->getDouble("/tools/tweak/force", 20);
         _force_adj = Gtk::Adjustment::create(force_val * 100, 1, 100, 1.0, 10.0);
-        _force_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("tweak-force", _("Force:"), _force_adj, 0.01, 0));
+        _force_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("tweak-force", _("Force:"), _force_adj, 0.01, 0);
         _force_item->set_tooltip_text(_("The force of the tweak action"));
         _force_item->set_custom_numeric_menu_data(values, labels);
         _force_item->set_focus_widget(desktop->canvas);
@@ -90,74 +90,74 @@ TweakToolbar::TweakToolbar(SPDesktop *desktop)
         _pressure_item->set_active(prefs->getBool("/tools/tweak/usepressure", true));
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Mode */
     {
         add_label(_("Mode:"));
         Gtk::RadioToolButton::Group mode_group;
 
-        auto mode_move_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Move mode")));
+        auto const mode_move_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Move mode"));
         mode_move_btn->set_tooltip_text(_("Move objects in any direction"));
         mode_move_btn->set_icon_name(INKSCAPE_ICON("object-tweak-push"));
         _mode_buttons.push_back(mode_move_btn);
 
-        auto mode_inout_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Move in/out mode")));
+        auto const mode_inout_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Move in/out mode"));
         mode_inout_btn->set_tooltip_text(_("Move objects towards cursor; with Shift from cursor"));
         mode_inout_btn->set_icon_name(INKSCAPE_ICON("object-tweak-attract"));
         _mode_buttons.push_back(mode_inout_btn);
 
-        auto mode_jitter_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Move jitter mode")));
+        auto const mode_jitter_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Move jitter mode"));
         mode_jitter_btn->set_tooltip_text(_("Move objects in random directions"));
         mode_jitter_btn->set_icon_name(INKSCAPE_ICON("object-tweak-randomize"));
         _mode_buttons.push_back(mode_jitter_btn);
 
-        auto mode_scale_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Scale mode")));
+        auto const mode_scale_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Scale mode"));
         mode_scale_btn->set_tooltip_text(_("Shrink objects, with Shift enlarge"));
         mode_scale_btn->set_icon_name(INKSCAPE_ICON("object-tweak-shrink"));
         _mode_buttons.push_back(mode_scale_btn);
 
-        auto mode_rotate_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Rotate mode")));
+        auto const mode_rotate_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Rotate mode"));
         mode_rotate_btn->set_tooltip_text(_("Rotate objects, with Shift counterclockwise"));
         mode_rotate_btn->set_icon_name(INKSCAPE_ICON("object-tweak-rotate"));
         _mode_buttons.push_back(mode_rotate_btn);
 
-        auto mode_dupdel_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Duplicate/delete mode")));
+        auto const mode_dupdel_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Duplicate/delete mode"));
         mode_dupdel_btn->set_tooltip_text(_("Duplicate objects, with Shift delete"));
         mode_dupdel_btn->set_icon_name(INKSCAPE_ICON("object-tweak-duplicate"));
         _mode_buttons.push_back(mode_dupdel_btn);
 
-        auto mode_push_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Push mode")));
+        auto const mode_push_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Push mode"));
         mode_push_btn->set_tooltip_text(_("Push parts of paths in any direction"));
         mode_push_btn->set_icon_name(INKSCAPE_ICON("path-tweak-push"));
         _mode_buttons.push_back(mode_push_btn);
 
-        auto mode_shrinkgrow_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Shrink/grow mode")));
+        auto const mode_shrinkgrow_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Shrink/grow mode"));
         mode_shrinkgrow_btn->set_tooltip_text(_("Shrink (inset) parts of paths; with Shift grow (outset)"));
         mode_shrinkgrow_btn->set_icon_name(INKSCAPE_ICON("path-tweak-shrink"));
         _mode_buttons.push_back(mode_shrinkgrow_btn);
 
-        auto mode_attrep_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Attract/repel mode")));
+        auto const mode_attrep_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Attract/repel mode"));
         mode_attrep_btn->set_tooltip_text(_("Attract parts of paths towards cursor; with Shift from cursor"));
         mode_attrep_btn->set_icon_name(INKSCAPE_ICON("path-tweak-attract"));
         _mode_buttons.push_back(mode_attrep_btn);
 
-        auto mode_roughen_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Roughen mode")));
+        auto const mode_roughen_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Roughen mode"));
         mode_roughen_btn->set_tooltip_text(_("Roughen parts of paths"));
         mode_roughen_btn->set_icon_name(INKSCAPE_ICON("path-tweak-roughen"));
         _mode_buttons.push_back(mode_roughen_btn);
 
-        auto mode_colpaint_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Color paint mode")));
+        auto const mode_colpaint_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Color paint mode"));
         mode_colpaint_btn->set_tooltip_text(_("Paint the tool's color upon selected objects"));
         mode_colpaint_btn->set_icon_name(INKSCAPE_ICON("object-tweak-paint"));
         _mode_buttons.push_back(mode_colpaint_btn);
 
-        auto mode_coljitter_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Color jitter mode")));
+        auto const mode_coljitter_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Color jitter mode"));
         mode_coljitter_btn->set_tooltip_text(_("Jitter the colors of selected objects"));
         mode_coljitter_btn->set_icon_name(INKSCAPE_ICON("object-tweak-jitter-color"));
         _mode_buttons.push_back(mode_coljitter_btn);
 
-        auto mode_blur_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Blur mode")));
+        auto const mode_blur_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Blur mode"));
         mode_blur_btn->set_tooltip_text(_("Blur selected objects more; with Shift, blur less"));
         mode_blur_btn->set_icon_name(INKSCAPE_ICON("object-tweak-blur"));
         _mode_buttons.push_back(mode_blur_btn);
@@ -171,7 +171,7 @@ TweakToolbar::TweakToolbar(SPDesktop *desktop)
         }
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     guint mode = prefs->getInt("/tools/tweak/mode", 0);
 
@@ -182,7 +182,7 @@ TweakToolbar::TweakToolbar(SPDesktop *desktop)
 
         auto fidelity_val = prefs->getDouble("/tools/tweak/fidelity", 50);
         _fidelity_adj = Gtk::Adjustment::create(fidelity_val * 100, 1, 100, 1.0, 10.0);
-        _fidelity_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("tweak-fidelity", _("Fidelity:"), _fidelity_adj, 0.01, 0));
+        _fidelity_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("tweak-fidelity", _("Fidelity:"), _fidelity_adj, 0.01, 0);
         _fidelity_item->set_tooltip_text(_("Low fidelity simplifies paths; high fidelity preserves path features but may generate a lot of new nodes"));
         _fidelity_item->set_custom_numeric_menu_data(values, labels);
         _fidelity_item->set_focus_widget(desktop->canvas);
@@ -190,10 +190,10 @@ TweakToolbar::TweakToolbar(SPDesktop *desktop)
         add(*_fidelity_item);
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     {
-        _channels_label = Gtk::manage(new UI::Widget::LabelToolItem(_("Channels:")));
+        _channels_label = Gtk::make_managed<UI::Widget::LabelToolItem>(_("Channels:"));
         _channels_label->set_use_markup(true);
         add(*_channels_label);
     }

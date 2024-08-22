@@ -381,11 +381,11 @@ void sp_validate_marker(SPMarker *sp_marker, SPDocument *doc) {
                 yScale = xScale;
             }
         }
+    } else {
+        Inkscape::CSSOStringStream os;
+        os << "0 0 " << bounds.dimensions()[Geom::X] << " " << bounds.dimensions()[Geom::Y];
+        sp_marker->setAttribute("viewBox", os.str().c_str());
     }
-
-    Inkscape::CSSOStringStream os;
-    os << "0 0 " << bounds.dimensions()[Geom::X] << " " << bounds.dimensions()[Geom::Y];
-    sp_marker->setAttribute("viewBox", os.str().c_str());
     
     sp_marker->setAttributeDouble("markerWidth", sp_marker->viewBox.width() * xScale);
     sp_marker->setAttributeDouble("markerHeight", sp_marker->viewBox.height() * yScale);

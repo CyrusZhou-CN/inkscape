@@ -87,34 +87,33 @@ Gtk::Widget *LPEBSpline::newWidget()
 {
     // use manage here, because after deletion of Effect object, others might
     // still be pointing to this widget.
-    Gtk::Box *vbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const vbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     vbox->set_homogeneous(false);
     vbox->set_border_width(5);
     std::vector<Parameter *>::iterator it = param_vector.begin();
     while (it != param_vector.end()) {
         if ((*it)->widget_is_visible) {
             Parameter *param = *it;
-            Gtk::Widget *widg = dynamic_cast<Gtk::Widget *>(param->param_newWidget());
+            auto widg = param->param_newWidget();
             if (param->param_key == "weight") {
-                Gtk::Box * buttons = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL,0));
+                auto const buttons = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL,0);
                 Gtk::Button *default_weight =
-                    Gtk::manage(new Gtk::Button(Glib::ustring(_("Default weight"))));
+                    Gtk::make_managed<Gtk::Button>(Glib::ustring(_("Default weight")));
                 default_weight->signal_clicked()
                 .connect(sigc::mem_fun(*this, &LPEBSpline::toDefaultWeight));
                 buttons->pack_start(*default_weight, true, true, 2);
                 Gtk::Button *make_cusp =
-                    Gtk::manage(new Gtk::Button(Glib::ustring(_("Make cusp"))));
+                    Gtk::make_managed<Gtk::Button>(Glib::ustring(_("Make cusp")));
                 make_cusp->signal_clicked()
                 .connect(sigc::mem_fun(*this, &LPEBSpline::toMakeCusp));
                 buttons->pack_start(*make_cusp, true, true, 2);
                 vbox->pack_start(*buttons, true, true, 2);
             }
             if (param->param_key == "weight" || param->param_key == "steps") {
-                Inkscape::UI::Widget::Scalar *widg_registered =
-                    Gtk::manage(dynamic_cast<Inkscape::UI::Widget::Scalar *>(widg));
+                auto const widg_registered = Gtk::manage(dynamic_cast<UI::Widget::Scalar *>(widg));
                 widg_registered->signal_value_changed()
                 .connect(sigc::mem_fun(*this, &LPEBSpline::toWeight));
-                widg = dynamic_cast<Gtk::Widget *>(widg_registered);
+                widg = widg_registered;
                 if (widg) {
                     Gtk::Box * hbox_weight_steps = dynamic_cast<Gtk::Box *>(widg);
                     std::vector< Gtk::Widget* > childList = hbox_weight_steps->get_children();
@@ -123,9 +122,8 @@ Gtk::Widget *LPEBSpline::newWidget()
                 }
             }
             if (param->param_key == "only_selected" || param->param_key == "apply_no_weight" || param->param_key == "apply_with_weight") {
-                Gtk::CheckButton *widg_registered =
-                    Gtk::manage(dynamic_cast<Gtk::CheckButton *>(widg));
-                widg = dynamic_cast<Gtk::Widget *>(widg_registered);
+                auto const widg_registered = Gtk::manage(dynamic_cast<Gtk::CheckButton *>(widg));
+                widg = widg_registered;
             }
             Glib::ustring *tip = param->param_getTooltip();
             if (widg) {
@@ -141,7 +139,8 @@ Gtk::Widget *LPEBSpline::newWidget()
 
         ++it;
     }
-    return dynamic_cast<Gtk::Widget *>(vbox);
+
+    return vbox;
 }
 
 void LPEBSpline::toDefaultWeight()

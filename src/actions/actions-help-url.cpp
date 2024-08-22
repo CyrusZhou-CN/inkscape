@@ -133,16 +133,16 @@ add_actions_help_url(InkscapeWindow* win)
     const Glib::ustring branch = development_version ? "master" : Glib::ustring::compose("%1.%2.x", Inkscape::version_major,  Inkscape::version_minor);
 
     // clang-format off
-    win->add_action( "help-url-ask-question",   sigc::bind<InkscapeWindow*, const char*>(sigc::ptr_fun(&help_url_ask_question), win, lang));
-    win->add_action( "help-url-man",            sigc::bind<InkscapeWindow*, const char*, const Glib::ustring>(sigc::ptr_fun(&help_url_man), win, lang,branch));
-    win->add_action( "help-url-faq",            sigc::bind<InkscapeWindow*, const char*>(sigc::ptr_fun(&help_url_faq), win, lang));
-    win->add_action( "help-url-keys",           sigc::bind<InkscapeWindow*, const char*, const Glib::ustring>(sigc::ptr_fun(&help_url_keys), win, lang, branch));
-    win->add_action( "help-url-release-notes",  sigc::bind<InkscapeWindow*, const char*, const char*, const bool>(sigc::ptr_fun(&help_url_release_notes), win, lang, version, development_version));
-    win->add_action( "help-url-report-bug",     sigc::bind<InkscapeWindow*, const char*>(sigc::ptr_fun(&help_url_report_bug), win, lang));
-    win->add_action( "help-url-manual",         sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&help_url_manual), win));
-    win->add_action( "help-url-donate",         sigc::bind<InkscapeWindow*, const char*, const char*>(sigc::ptr_fun(&help_url_donate), win, lang, version));
-    win->add_action( "help-url-svg11-spec",     sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&help_url_svg11_spec), win));
-    win->add_action( "help-url-svg2-spec",      sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&help_url_svg2_spec), win));
+    win->add_action( "help-url-ask-question",   sigc::bind(sigc::ptr_fun(&help_url_ask_question), win, lang));
+    win->add_action( "help-url-man",            sigc::bind(sigc::ptr_fun(&help_url_man), win, lang,branch));
+    win->add_action( "help-url-faq",            sigc::bind(sigc::ptr_fun(&help_url_faq), win, lang));
+    win->add_action( "help-url-keys",           sigc::bind(sigc::ptr_fun(&help_url_keys), win, lang, branch));
+    win->add_action( "help-url-release-notes",  sigc::bind(sigc::ptr_fun(&help_url_release_notes), win, lang, version, development_version));
+    win->add_action( "help-url-report-bug",     sigc::bind(sigc::ptr_fun(&help_url_report_bug), win, lang));
+    win->add_action( "help-url-manual",         sigc::bind(sigc::ptr_fun(&help_url_manual), win));
+    win->add_action( "help-url-donate",         sigc::bind(sigc::ptr_fun(&help_url_donate), win, lang, version));
+    win->add_action( "help-url-svg11-spec",     sigc::bind(sigc::ptr_fun(&help_url_svg11_spec), win));
+    win->add_action( "help-url-svg2-spec",      sigc::bind(sigc::ptr_fun(&help_url_svg2_spec), win));
     // clang-format on
 
     auto app = InkscapeApplication::instance();

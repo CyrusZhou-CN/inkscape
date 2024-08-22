@@ -44,7 +44,7 @@ static void get_foldernames_from_path(std::vector<Glib::ustring> &folders, std::
 
 #define INKSCAPE_PROFILE_DIR "inkscape"
 
-gchar *_get_path(Domain domain, Type type, char const *filename)
+gchar *_get_path(Domain domain, Type type, char const *filename, char const *extra=nullptr)
 {
     if (domain == USER || domain == SHARED) {
         switch (type) {
@@ -74,7 +74,7 @@ gchar *_get_path(Domain domain, Type type, char const *filename)
         } break;
         case CACHE: {
             g_assert(type == NONE);
-            return g_build_filename(g_get_user_cache_dir(), "inkscape", filename, nullptr);
+            return g_build_filename(g_get_user_cache_dir(), "inkscape", filename, extra, nullptr);
         } break;
 
         case SYSTEM:
@@ -100,7 +100,6 @@ gchar *_get_path(Domain domain, Type type, char const *filename)
                 case THEMES: name = "themes"; break;
                 case TUTORIALS: name = "tutorials"; break;
                 case UIS: name = "ui"; break;
-                case PIXMAPS: name = "pixmaps"; break;
                 default: g_assert_not_reached();
                          return nullptr;
             }
@@ -110,7 +109,7 @@ gchar *_get_path(Domain domain, Type type, char const *filename)
     if (envor && domain == USER) {
         std::string env_dir = Glib::getenv(envor);
         if (!env_dir.empty()) {
-            return g_build_filename(env_dir.c_str(), filename, nullptr);
+            return g_build_filename(env_dir.c_str(), filename, extra, nullptr);
         }
     }
 
@@ -119,25 +118,25 @@ gchar *_get_path(Domain domain, Type type, char const *filename)
     }
 
     if (sysdir) {
-        return g_build_filename(get_inkscape_datadir(), sysdir, name, filename, nullptr);
+        return g_build_filename(get_inkscape_datadir(), sysdir, name, filename, extra, nullptr);
     } else if (domain == SHARED) {
         if (shared_path().empty()) {
             return nullptr;
         }
-        return g_build_filename(shared_path().c_str(), name, filename, nullptr);
+        return g_build_filename(shared_path().c_str(), name, filename, extra, nullptr);
     } else {
         if (profile_path().empty()) {
             return nullptr;
         }
-        return g_build_filename(profile_path().c_str(), name, filename, nullptr);
+        return g_build_filename(profile_path().c_str(), name, filename, extra, nullptr);
     }
 }
 
 
 
-Util::ptr_shared get_path(Domain domain, Type type, char const *filename)
+Util::ptr_shared get_path(Domain domain, Type type, char const *filename, char const *extra)
 {
-    char *path = _get_path(domain, type, filename);
+    char *path = _get_path(domain, type, filename, extra);
     if (!path) {
         return Util::ptr_shared();
     }
@@ -145,20 +144,20 @@ Util::ptr_shared get_path(Domain domain, Type type, char const *filename)
     g_free(path);
     return result;
 }
-Glib::ustring get_path_ustring(Domain domain, Type type, char const *filename)
+Glib::ustring get_path_ustring(Domain domain, Type type, char const *filename, char const *extra)
 {
     Glib::ustring result;
-    char *path = _get_path(domain, type, filename);
+    char *path = _get_path(domain, type, filename, extra);
     if(path) {
       result = Glib::ustring(path);
       g_free(path);
     }
     return result;
 }
-std::string get_path_string(Domain domain, Type type, char const *filename)
+std::string get_path_string(Domain domain, Type type, char const *filename, char const *extra)
 {
     std::string result;
-    char *path = _get_path(domain, type, filename);
+    char *path = _get_path(domain, type, filename, extra);
     if (path) {
         result = path;
         g_free(path);

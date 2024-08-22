@@ -93,7 +93,7 @@ static std::map<Glib::ustring, Glib::ustring> const &get_tool_msg()
         // clang-format off
     {"Select",       _("<b>Click</b> to Select and Transform objects, <b>Drag</b> to select many objects.")                                                                                                                   },
     {"Node",         _("Modify selected path points (nodes) directly.")                                                                                                                                                       },
-    {"Booleans",     _("Construct shapes with the interactive boolean tool.")                                                                                                                                                 },
+    {"Booleans",     _("Construct shapes with the interactive Boolean tool.")                                                                                                                                                 },
     {"Rect",         _("<b>Drag</b> to create a rectangle. <b>Drag controls</b> to round corners and resize. <b>Click</b> to select.")                                                                                        },
     {"Arc",          _("<b>Drag</b> to create an ellipse. <b>Drag controls</b> to make an arc or segment. <b>Click</b> to select.")                                                                                           },
     {"Star",         _("<b>Drag</b> to create a star. <b>Drag controls</b> to edit the star shape. <b>Click</b> to select.")                                                                                                  },
@@ -359,9 +359,9 @@ void set_active_tool(SPDesktop *desktop, SPItem *item, Geom::Point const p)
 std::vector<std::vector<Glib::ustring>> raw_data_tools =
 {
     // clang-format off
-    {"win.tool-switch('Select')",       N_("Select Tool"),        "Tool Switch",   N_("Select and transform objects")                  },
+    {"win.tool-switch('Select')",       N_("Selector Tool"),        "Tool Switch",   N_("Select and transform objects")                  },
     {"win.tool-switch('Node')",         N_("Node Tool"),          "Tool Switch",   N_("Edit paths by nodes")                           },
-    {"win.tool-switch('Booleans')",     N_("Shape Builder Tool"), "Tool Switch",   N_("Build shapes with the boolean tools")           },
+    {"win.tool-switch('Booleans')",     N_("Shape Builder Tool"), "Tool Switch",   N_("Build shapes with the Boolean tool")           },
 
     {"win.tool-switch('Rect')",         N_("Rectangle Tool"),     "Tool Switch",   N_("Create rectangles and squares")                 },
     {"win.tool-switch('Arc')",          N_("Ellipse/Arc Tool"),   "Tool Switch",   N_("Create circles, ellipses and arcs")             },
@@ -390,7 +390,7 @@ std::vector<std::vector<Glib::ustring>> raw_data_tools =
     {"win.tool-switch('Measure')",      N_("Measure Tool"),       "Tool Switch",   N_("Measure objects")                               },
     {"win.tool-switch('Pages')",        N_("Pages Tool"),         "Tool Switch",   N_("Create and edit document pages")                },
 
-    {"win.tool-toggle('Select')",       N_("Toggle Select"),      "Tool Switch",   N_("Toggle between Select tool and last used tool") },
+    {"win.tool-toggle('Select')",       N_("Toggle Selector Tool"),      "Tool Switch",   N_("Toggle between Selector tool and last used tool") },
     {"win.tool-toggle('Dropper')",      N_("Toggle Dropper"),     "Tool Switch",   N_("Toggle between Dropper tool and last used tool")},
     // clang-format on
 };
@@ -400,8 +400,8 @@ void
 add_actions_tools(InkscapeWindow* win)
 {
     // clang-format off
-    win->add_action_radio_string ( "tool-switch",        sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&tool_switch),  win), "Select");
-    win->add_action_radio_string ( "tool-toggle",        sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&tool_toggle),  win), "Select");
+    win->add_action_radio_string ( "tool-switch",        sigc::bind(sigc::ptr_fun(&tool_switch),  win), "Select");
+    win->add_action_radio_string ( "tool-toggle",        sigc::bind(sigc::ptr_fun(&tool_toggle),  win), "Select");
     // clang-format on
 
     auto app = InkscapeApplication::instance();

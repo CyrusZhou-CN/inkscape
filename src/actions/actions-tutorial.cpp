@@ -80,15 +80,15 @@ add_actions_tutorial(InkscapeApplication* app)
     auto *gapp = app->gio_app();
 
     // clang-format off
-    gapp->add_action( "tutorial-basic",                  sigc::bind<Glib::ustring>(sigc::ptr_fun(&help_open_tutorial), "tutorial-basic"));
-    gapp->add_action( "tutorial-shapes",                 sigc::bind<Glib::ustring>(sigc::ptr_fun(&help_open_tutorial), "tutorial-shapes"));
-    gapp->add_action( "tutorial-advanced",               sigc::bind<Glib::ustring>(sigc::ptr_fun(&help_open_tutorial), "tutorial-advanced"));
-    gapp->add_action( "tutorial-tracing",                sigc::bind<Glib::ustring>(sigc::ptr_fun(&help_open_tutorial), "tutorial-tracing"));
-    gapp->add_action( "tutorial-tracing-pixelart",       sigc::bind<Glib::ustring>(sigc::ptr_fun(&help_open_tutorial), "tutorial-tracing-pixelart"));
-    gapp->add_action( "tutorial-calligraphy",            sigc::bind<Glib::ustring>(sigc::ptr_fun(&help_open_tutorial), "tutorial-calligraphy"));
-    gapp->add_action( "tutorial-interpolate",            sigc::bind<Glib::ustring>(sigc::ptr_fun(&help_open_tutorial), "tutorial-interpolate"));
-    gapp->add_action( "tutorial-design",                 sigc::bind<Glib::ustring>(sigc::ptr_fun(&help_open_tutorial), "tutorial-elements"));
-    gapp->add_action( "tutorial-tips",                   sigc::bind<Glib::ustring>(sigc::ptr_fun(&help_open_tutorial), "tutorial-tips"));
+    gapp->add_action( "tutorial-basic",                  sigc::bind(sigc::ptr_fun(&help_open_tutorial), "tutorial-basic"));
+    gapp->add_action( "tutorial-shapes",                 sigc::bind(sigc::ptr_fun(&help_open_tutorial), "tutorial-shapes"));
+    gapp->add_action( "tutorial-advanced",               sigc::bind(sigc::ptr_fun(&help_open_tutorial), "tutorial-advanced"));
+    gapp->add_action( "tutorial-tracing",                sigc::bind(sigc::ptr_fun(&help_open_tutorial), "tutorial-tracing"));
+    gapp->add_action( "tutorial-tracing-pixelart",       sigc::bind(sigc::ptr_fun(&help_open_tutorial), "tutorial-tracing-pixelart"));
+    gapp->add_action( "tutorial-calligraphy",            sigc::bind(sigc::ptr_fun(&help_open_tutorial), "tutorial-calligraphy"));
+    gapp->add_action( "tutorial-interpolate",            sigc::bind(sigc::ptr_fun(&help_open_tutorial), "tutorial-interpolate"));
+    gapp->add_action( "tutorial-design",                 sigc::bind(sigc::ptr_fun(&help_open_tutorial), "tutorial-elements"));
+    gapp->add_action( "tutorial-tips",                   sigc::bind(sigc::ptr_fun(&help_open_tutorial), "tutorial-tips"));
     gapp->add_action( "about",                           sigc::ptr_fun(&help_about_inkscape));
     // clang-format on
 

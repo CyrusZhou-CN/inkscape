@@ -142,13 +142,13 @@ public:
 
     void documentReplaced() override;
 
+private:
     void update_fonts(bool document_replaced);
     SvgFont* get_selected_svgfont();
     SPFont* get_selected_spfont();
     SPGlyph* get_selected_glyph();
     SPGlyphKerning* get_selected_kerning_pair();
 
-    //TODO: these methods should be private, right?!
     void on_font_selection_changed();
     void on_kerning_pair_selection_changed();
     void on_preview_text_changed();
@@ -191,7 +191,6 @@ public:
 
     OperationBlocker _update;
 
-private:
     void update_glyphs(SPGlyph* changed_glyph = nullptr);
     void update_glyph(SPGlyph* glyph);
     void set_glyph_row(const Gtk::TreeRow& row, SPGlyph& glyph);
@@ -252,13 +251,8 @@ private:
 
     Gtk::Box* kerning_tab();
     Gtk::Box* glyphs_tab();
-    Gtk::Button _add;
-    Gtk::Button _remove;
-    Gtk::Button add_glyph_button;
-    Gtk::Button remove_glyph_button;
-    Gtk::Button glyph_from_path_button;
-    Gtk::Button missing_glyph_button;
-    Gtk::Button missing_glyph_reset_button;
+    Gtk::Button _font_add;
+    Gtk::Button _font_remove;
 
     class Columns : public Gtk::TreeModel::ColumnRecord
     {
@@ -278,6 +272,7 @@ private:
     Gtk::TreeView _FontsList;
     Gtk::ScrolledWindow _fonts_scroller;
 
+    /* Glyph Tab */
     class GlyphsColumns : public Gtk::TreeModel::ColumnRecord
     {
     public:
@@ -307,6 +302,7 @@ private:
     SvgGlyphRenderer* _glyph_renderer = nullptr;
     SvgGlyphRenderer* _glyph_cell_renderer = nullptr;
 
+    /* Kerning Tab */
     class KerningPairColumns : public Gtk::TreeModel::ColumnRecord
     {
     public:

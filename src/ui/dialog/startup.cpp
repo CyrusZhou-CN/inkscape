@@ -217,10 +217,10 @@ StartScreen::StartScreen()
     keys->signal_changed().connect(sigc::mem_fun(*this, &StartScreen::keyboard_changed));
     themes->signal_changed().connect(sigc::mem_fun(*this, &StartScreen::theme_changed));
     dark_toggle->property_active().signal_changed().connect(sigc::mem_fun(*this, &StartScreen::theme_changed));
-    save->signal_clicked().connect(sigc::bind<Gtk::Button *>(sigc::mem_fun(*this, &StartScreen::notebook_next), save));
+    save->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &StartScreen::notebook_next), save));
 
     // "Supported by You" tab
-    thanks->signal_clicked().connect(sigc::bind<Gtk::Button *>(sigc::mem_fun(*this, &StartScreen::notebook_next), thanks));
+    thanks->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &StartScreen::notebook_next), thanks));
 
     // "Time to Draw" tab
     recent_treeview->signal_row_activated().connect(sigc::hide(sigc::hide((sigc::mem_fun(*this, &StartScreen::load_document)))));
@@ -255,7 +255,7 @@ StartScreen::StartScreen()
     set_position(Gtk::WIN_POS_CENTER_ALWAYS);
     property_resizable() = false;
     set_default_size(700, 360);
-    show();
+    set_visible(true);
 }
 
 StartScreen::~StartScreen()
@@ -377,9 +377,9 @@ void
 StartScreen::on_kind_changed(Gtk::Widget *tab, guint page_num)
 {
     if (page_num == 0) {
-        load_btn->show();
+        load_btn->set_visible(true);
     } else {
-        load_btn->hide();
+        load_btn->set_visible(false);
     }
 }
 
@@ -736,9 +736,9 @@ StartScreen::keyboard_changed()
         builder->get_widget("keys_warning", keys_warning);
         if (set_to != "inkscape.xml" && set_to != "default.xml") {
             keys_warning->set_message_type(Gtk::MessageType::MESSAGE_WARNING);
-            keys_warning->show();
+            keys_warning->set_visible(true);
         } else {
-            keys_warning->hide();
+            keys_warning->set_visible(false);
         }
     } catch(int e) {
         g_warning("Couldn't find keys value.");
@@ -754,8 +754,8 @@ void StartScreen::refresh_dark_switch()
 {
     auto prefs = Inkscape::Preferences::get();
 
-    Gtk::Container *window = dynamic_cast<Gtk::Container *>(get_toplevel());
-    bool dark = INKSCAPE.themecontext->isCurrentThemeDark(window);
+    auto const window = dynamic_cast<Gtk::Window *>(get_toplevel());
+    auto const dark = INKSCAPE.themecontext->isCurrentThemeDark(window);
     prefs->setBool("/theme/preferDarkTheme", dark);
     prefs->setBool("/theme/darkTheme", dark);
 

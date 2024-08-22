@@ -64,6 +64,7 @@
 #include "ui/icon-names.h"
 #include "ui/shape-editor.h"
 #include "ui/widget/canvas.h"  // Canvas area
+#include "ui/widget/events/canvas-event.h"
 
 using Inkscape::DocumentUndo;
 
@@ -1060,8 +1061,9 @@ static void sp_flood_do_flood_fill(SPDesktop *desktop, GdkEvent *event,
     DocumentUndo::done(document, _("Fill bounded area"), INKSCAPE_ICON("color-fill"));
 }
 
-bool FloodTool::item_handler(SPItem* item, GdkEvent* event) {
-    gint ret = FALSE;
+bool FloodTool::item_handler(SPItem *item, CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
 
     switch (event->type) {
     case GDK_BUTTON_PRESS:
@@ -1083,16 +1085,12 @@ bool FloodTool::item_handler(SPItem* item, GdkEvent* event) {
         break;
     }
 
-//    if (((ToolBaseClass *) sp_flood_context_parent_class)->item_handler) {
-//        ret = ((ToolBaseClass *) sp_flood_context_parent_class)->item_handler(event_context, item, event);
-//    }
-    // CPPIFY: ret is overwritten...
-    ret = ToolBase::item_handler(item, event);
-
-    return ret;
+    return ToolBase::item_handler(item, canvas_event);
 }
 
-bool FloodTool::root_handler(GdkEvent* event) {
+bool FloodTool::root_handler(CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     static bool dragging;
     
     gint ret = FALSE;
@@ -1105,9 +1103,8 @@ bool FloodTool::root_handler(GdkEvent* event) {
 
                 if (Inkscape::have_viable_layer(_desktop, this->defaultMessageContext())) {
                     // save drag origin
-                    this->xp = (gint) button_w[Geom::X];
-                    this->yp = (gint) button_w[Geom::Y];
-                    this->within_tolerance = true;
+                    xyp = button_w.floor();
+                    within_tolerance = true;
                       
                     dragging = true;
 
@@ -1120,9 +1117,9 @@ bool FloodTool::root_handler(GdkEvent* event) {
 
     case GDK_MOTION_NOTIFY:
         if ( dragging && ( event->motion.state & GDK_BUTTON1_MASK )) {
-            if ( this->within_tolerance
-                 && ( abs( (gint) event->motion.x - this->xp ) < this->tolerance )
-                 && ( abs( (gint) event->motion.y - this->yp ) < this->tolerance ) ) {
+            if ( within_tolerance
+                && ( abs( (gint) event->motion.x - xyp.x() ) < this->tolerance )
+                && ( abs( (gint) event->motion.y - xyp.y() ) < this->tolerance ) ) {
                 break; // do not drag if we're within tolerance from origin
             }
             
@@ -1190,7 +1187,7 @@ bool FloodTool::root_handler(GdkEvent* event) {
     }
 
     if (!ret) {
-        ret = ToolBase::root_handler(event);
+        ret = ToolBase::root_handler(canvas_event);
     }
 
     return ret;

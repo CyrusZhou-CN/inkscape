@@ -107,6 +107,7 @@ void SPAttributeTable::clear()
             {
                 try
                 {
+                    #define sp_signal_disconnect_by_data(o,d) g_signal_handlers_disconnect_matched(o, G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, d)
                     sp_signal_disconnect_by_data (w->gobj(), this);
                     delete w;
                 }
@@ -159,7 +160,7 @@ void SPAttributeTable::set_object(SPObject *object,
         _attributes = attributes;
         for (guint i = 0; i < (attributes.size()); i++) {
             Gtk::Label *ll = new Gtk::Label (_(labels[i].c_str()));
-            ll->show();
+            ll->set_visible(true);
             ll->set_halign(Gtk::ALIGN_START);
             ll->set_valign(Gtk::ALIGN_CENTER);
             ll->set_vexpand(false);
@@ -169,7 +170,7 @@ void SPAttributeTable::set_object(SPObject *object,
             table->attach(*ll, 0, i, 1, 1);
 
             Gtk::Entry *ee = new Gtk::Entry();
-            ee->show();
+            ee->set_visible(true);
             const gchar *val = object->getRepr()->attribute(attributes[i].c_str());
             ee->set_text (val ? val : (const gchar *) "");
             ee->set_hexpand();

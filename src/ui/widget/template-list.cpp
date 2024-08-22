@@ -9,6 +9,8 @@
 
 #include "template-list.h"
 
+#include <glib/gi18n.h>
+
 #include "extension/db.h"
 #include "extension/template.h"
 #include "inkscape-application.h"
@@ -72,9 +74,10 @@ void TemplateList::init(Inkscape::Extension::TemplateShow mode)
         }
         for (auto preset : tmod->get_presets(mode)) {
             Gtk::TreeModel::Row row = *(_stores[cat]->append());
-            row[cols.name] = preset->get_name();
+            row[cols.name] = _(preset->get_name().c_str());
             row[cols.icon] = icon_to_pixbuf(preset->get_icon_path());
-            row[cols.label] = preset->get_label();
+            auto label = preset->get_label();
+            row[cols.label] = label.empty() ? "" : _(label.c_str());
             row[cols.key] = preset->get_key();
         }
     }
@@ -121,7 +124,7 @@ Glib::RefPtr<Gtk::ListStore> TemplateList::generate_category(std::string label)
     }
 
     // This packing keeps the Gtk widget alive, beyond the builder's lifetime
-    this->append_page(*container, label);
+    this->append_page(*container, g_dpgettext2(nullptr, "TemplateCategory", label.c_str()));
 
     icons->signal_selection_changed().connect([=]() { _item_selected_signal.emit(); });
     icons->signal_item_activated().connect([=](const Gtk::TreeModel::Path) { _item_activated_signal.emit(); });

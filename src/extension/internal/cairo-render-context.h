@@ -144,6 +144,8 @@ public:
 
     void tagBegin(const char* link);
     void tagEnd();
+    void destBegin(const char* link);
+    void destEnd();
 
     /* Graphics state manipulation */
     void pushState();

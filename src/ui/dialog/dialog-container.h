@@ -78,6 +78,13 @@ public:
     std::shared_ptr<Glib::KeyFile> get_container_state(const window_position_t* position) const;
     void load_container_state(Glib::KeyFile& state, const std::string& window_id);
 
+#ifdef __APPLE__
+// Note: this is an ugly work-around for https://gitlab.com/inkscape/inkscape/-/issues/4111
+// ToDo: revisit and hopefully remove this hack in gtk4
+static DialogNotebook* new_nb;
+static Gtk::Widget* page_move;
+#endif
+
 private:
     InkscapeWindow *_inkscape_window = nullptr;   // Every container is attached to an InkscapeWindow.
     DialogMultipaned *columns = nullptr;          // The main widget inside which other children are kept.

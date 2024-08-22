@@ -49,16 +49,16 @@ static Glib::ustring const wrapper = R"=====(
 </svg>
 )=====";
 
+const char *ALLDOCS = N_("All paint servers");
+const char *CURRENTDOC = N_("Current document");
+
 PaintServersDialog::PaintServersDialog()
     : DialogBase("/dialogs/paint", "PaintServers")
     , _targetting_fill(true)
-    , ALLDOCS(_("All paint servers"))
-    , CURRENTDOC(_("Current document"))
     , columns()
 {
     current_store = ALLDOCS;
     store[ALLDOCS] = Gtk::ListStore::create(columns);
-    store[CURRENTDOC] = Gtk::ListStore::create(columns);
 
     // Get wrapper document (rectangle to fill with paint server).
     preview_document = SPDocument::createNewDocFromMem(wrapper.c_str(), wrapper.length(), true);
@@ -132,9 +132,8 @@ void PaintServersDialog::_buildDialogWindow(char const *const glade_file)
     }
 
     builder->get_widget("ServersDropdown", dropdown);
-    dropdown->append(ALLDOCS);
-    dropdown->append(CURRENTDOC);
-    dropdown->set_active_text(ALLDOCS);
+    dropdown->append(ALLDOCS, _(ALLDOCS));
+    dropdown->set_active_id(ALLDOCS);
     dropdown->signal_changed().connect([=]() { onPaintSourceDocumentChanged(); });
 
     builder->get_widget("PaintIcons", icon_view);
@@ -308,7 +307,7 @@ void PaintServersDialog::_addToStore(PaintDescription &paint)
 
     if (document_map.find(paint.doc_title) == document_map.end()) {
         document_map[paint.doc_title] = paint.source_document;
-        dropdown->append(paint.doc_title);
+        dropdown->append(paint.doc_title, _(paint.doc_title.c_str()));
     }
 }
 
@@ -483,7 +482,7 @@ void PaintServersDialog::_loadPaintsFromDocument(SPDocument *document, std::vect
 /** Handles the change of the dropdown for selecting paint sources */
 void PaintServersDialog::onPaintSourceDocumentChanged()
 {
-    current_store = dropdown->get_active_text();
+    current_store = dropdown->get_active_id();
     icon_view->set_model(store[current_store]);
     _updateActiveItem();
 }

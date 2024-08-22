@@ -10,7 +10,7 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-
+#include <2geom/rect.h>
 #include <cmath>
 #include <cstddef>
 #include <glibmm/i18n.h>
@@ -41,13 +41,11 @@
 #include "object/sp-rect.h"
 #include "object/sp-star.h"
 #include "object/tags.h"
-#include "rect.h"
 #include "streq.h"
 #include "ui/builder-utils.h"
 #include "ui/dialog/object-attributes.h"
 #include "ui/icon-names.h"
 #include "ui/tools/node-tool.h"
-#include "ui/util.h"
 #include "ui/widget/image-properties.h"
 #include "ui/widget/spinbutton.h"
 #include "ui/widget/style-swatch.h"
@@ -102,7 +100,7 @@ ObjectAttributes::ObjectAttributes()
     get_widget<Gtk::Box>(_builder, "main-header").pack_end(_style_swatch, false, true);
     add(main);
     create_panels();
-    _style_swatch.hide();
+    _style_swatch.set_visible(false);
 }
 
 void ObjectAttributes::widget_setup() {
@@ -131,13 +129,13 @@ void ObjectAttributes::widget_setup() {
             }
         }
         else if (selection->size() > 1) {
-            title = _("Multiple items selected");
+            title = _("Multiple objects selected");
         }
     }
     _obj_title.set_markup("<b>" + Glib::Markup::escape_text(title) + "</b>");
 
     if (!panel) {
-        _style_swatch.hide();
+        _style_swatch.set_visible(false);
         return;
     }
 
@@ -149,9 +147,9 @@ void ObjectAttributes::widget_setup() {
             show_style = true;
         }
     }
-    widget_show(_style_swatch, show_style);
+    _style_swatch.set_visible(show_style);
     panel->update_panel(item, getDesktop());
-    panel->widget().show();
+    panel->widget().set_visible(true);
     _current_item = item;
 
     // TODO
@@ -343,7 +341,7 @@ public:
         _title = _("Anchor");
         _show_fill_stroke = false;
         _table = std::make_unique<SPAttributeTable>();
-        _table->show();
+        _table->set_visible(true);
         _table->set_hexpand();
         _table->set_vexpand(false);
         _widget = _table.get();
@@ -573,7 +571,7 @@ public:
         _ellipse->setAttribute("sodipodi:open", open ? "true" : nullptr);
         _ellipse->setAttribute("sodipodi:arc-type", arc_type.c_str());
         _ellipse->updateRepr();
-        DocumentUndo::done(_ellipse->document, _("Changed arc type"), INKSCAPE_ICON("draw-ellipse"));
+        DocumentUndo::done(_ellipse->document, _("Change arc type"), INKSCAPE_ICON("draw-ellipse"));
     }
 
 private:
@@ -671,9 +669,9 @@ public:
         }
         _rounded.set_value(_path->rounded);
         _rand.set_value(_path->randomized);
-        widget_show(_clear_rnd, _path->randomized != 0);
-        widget_show(_clear_round, _path->rounded != 0);
-        widget_show(_clear_ratio, std::abs(_ratio.get_value() - 0.5) > 0.0005);
+        _clear_rnd  .set_visible(_path->randomized != 0);
+        _clear_round.set_visible(_path->rounded != 0);
+        _clear_ratio.set_visible(std::abs(_ratio.get_value() - 0.5) > 0.0005);
 
         _poly.set_active(_path->flatsided);
         _star.set_active(!_path->flatsided);

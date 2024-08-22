@@ -33,7 +33,6 @@
 ../share/extensions/dxf12_outlines.inx
 ../share/extensions/dxf_input.inx
 ../share/extensions/dxf_outlines.inx
-../share/extensions/edge3d.inx
 ../share/extensions/eps_input.inx
 ../share/extensions/export_gimp_palette.inx
 ../share/extensions/extrude.inx
@@ -60,6 +59,7 @@
 ../share/extensions/image_extract_selected.inx
 ../share/extensions/ink2canvas.inx
 ../share/extensions/inkscape_follow_link.inx
+../share/extensions/inset_shadow.inx
 ../share/extensions/interp.inx
 ../share/extensions/interp_att_g.inx
 ../share/extensions/jessyink_autotexts.inx
@@ -102,6 +102,7 @@
 ../share/extensions/other/gcodetools/gcodetools_prepare_path_for_plasma.inx
 ../share/extensions/other/gcodetools/gcodetools_tools_library.inx
 ../share/extensions/other/inkman/manage_extensions.inx
+../share/extensions/other/templates/template_shape_prefab.inx
 ../share/extensions/output_scour.inx
 ../share/extensions/param_curves.inx
 ../share/extensions/path_envelope.inx
@@ -157,6 +158,7 @@
 ../share/extensions/text_titlecase.inx
 ../share/extensions/text_uppercase.inx
 ../share/extensions/triangle.inx
+../share/extensions/twirl.inx
 ../share/extensions/ungroup_deep.inx
 ../share/extensions/voronoi_diagram.inx
 ../share/extensions/voronoi_fill.inx
@@ -166,5 +168,4 @@
 ../share/extensions/webslicer_create_group.inx
 ../share/extensions/webslicer_create_rect.inx
 ../share/extensions/webslicer_export.inx
-../share/extensions/whirl.inx
 ../share/extensions/wireframe_sphere.inx

@@ -393,7 +393,7 @@ void SwatchesPanel::rebuild()
     current_stroke.clear();
 
     // Add the "remove-color" color.
-    auto w = Gtk::make_managed<ColorItem>(PaintDef(), this);
+    auto const w = Gtk::make_managed<ColorItem>(PaintDef(), this);
     w->set_pinned_pref(_prefs_path);
     palette.emplace_back(w);
     widgetmap.emplace(std::monostate{}, w);
@@ -402,7 +402,7 @@ void SwatchesPanel::rebuild()
         auto &pal = GlobalPalettes::get().palettes[index - PALETTE_GLOBAL];
         palette.reserve(palette.size() + pal.colors.size());
         for (auto &c : pal.colors) {
-            auto w = Gtk::make_managed<ColorItem>(PaintDef(c.rgb, c.name), this);
+            auto const w = Gtk::make_managed<ColorItem>(PaintDef(c.rgb, c.name), this);
             w->set_pinned_pref(_prefs_path);
             palette.emplace_back(w);
             widgetmap.emplace(c.rgb, w);
@@ -412,7 +412,7 @@ void SwatchesPanel::rebuild()
         for (auto obj : grads) {
             auto grad = static_cast<SPGradient*>(obj);
             if (grad->isSwatch()) {
-                auto w = Gtk::make_managed<ColorItem>(grad, this);
+                auto const w = Gtk::make_managed<ColorItem>(grad, this);
                 palette.emplace_back(w);
                 widgetmap.emplace(grad, w);
                 // Rebuild if the gradient gets pinned or unpinned

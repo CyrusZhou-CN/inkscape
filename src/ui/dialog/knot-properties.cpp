@@ -111,7 +111,7 @@ void KnotPropertiesDialog::showDialog(SPDesktop *desktop, const SPKnot *pt, Glib
     desktop->setWindowTransient (dialog->gobj());
     dialog->property_destroy_with_parent() = true;
 
-    dialog->show();
+    dialog->set_visible(true);
     dialog->present();
 }
 
@@ -135,27 +135,6 @@ KnotPropertiesDialog::_close()
             false 
         )
     );
-}
-
-bool KnotPropertiesDialog::_handleKeyEvent(GdkEventKey * /*event*/)
-{
-
-    /*switch (get_latin_keyval(event)) {
-        case GDK_KEY_Return:
-        case GDK_KEY_KP_Enter: {
-            _apply();
-            return true;
-        }
-        break;
-    }*/
-    return false;
-}
-
-void KnotPropertiesDialog::_handleButtonEvent(GdkEventButton* event)
-{
-    if ( (event->type == GDK_2BUTTON_PRESS) && (event->button == 1) ) {
-        _apply();
-    }
 }
 
 void KnotPropertiesDialog::_setKnotPoint(Geom::Point knotpoint, Glib::ustring const unit_name)

@@ -41,6 +41,7 @@
 #include "svg/svg-color.h"       // Background color
 #include "text-editing.h"        // te_update_layout_now_recursive
 #include "util/parse-int-range.h"
+#include "io/sys.h"
 
 // Temporary dependency : once all compilers we want to support have support for
 // C++17 std::filesystem (with #include <filesystem> ) then we drop this dep
@@ -260,9 +261,11 @@ InkFileExportCmd::get_filename_out(std::string filename_in, std::string object_i
 
     auto const export_type_current_native = Glib::filename_from_utf8(export_type_current);
 
-    // Use filename provided with --export-filename if given (and append proper extension).
+    // Use filename provided with --export-filename if given
     if (!export_filename.empty()) {
-        return export_filename + "." + export_type_current_native;
+        auto ext = Inkscape::IO::get_file_extension(export_filename);
+        auto cmp = "." + export_type_current_native;
+        return export_filename + (ext == cmp ? "" : cmp);
     }
 
     // Check for pipe
@@ -290,24 +293,8 @@ InkFileExportCmd::get_filename_out(std::string filename_in, std::string object_i
         }
         return filename_in.substr(0, extension_pos) + tag + "." + export_type_current_native;
     }
-
-    // We need a valid file name to write to unless we're using PNG export hints.
-    // if (!(export_type == "png" && export_use_hints)) {
-
-    //     // Check for file name.
-    //     if (filename_out.empty()) {
-    //         std::cerr << "InkFileExportCmd::do_export: Could not determine output file name!" << std::endl;
-    //         return (std::string());
-    //     }
-
-    //     // Check if directory exists.
-    //     std::string directory = Glib::path_get_dirname(filename_out);
-    //     if (!Glib::file_test(directory, Glib::FILE_TEST_IS_DIR)) {
-    //         std::cerr << "InkFileExportCmd::do_export: File path includes directory that does not exist! " << directory << std::endl;
-    //         return (std::string());
-    //     }
-    // }
 }
+
 /**
  *  Perform an SVG export
  *
@@ -327,14 +314,14 @@ int InkFileExportCmd::do_export_svg(SPDocument *doc, std::string const &export_f
     return do_export_vector(doc, export_filename, *oext);
 }
 /**
- *  Perform an SVG export
+ *  Perform a vector file export (SVG, PDF, or PS)
  *
  *  \param doc Document to export.
  *  \param export_filename Filename for export
  *  \param extension Output extension used for exporting
  */
 int InkFileExportCmd::do_export_vector(SPDocument *doc, std::string const &export_filename,
-                                    Inkscape::Extension::Output &extension)
+                                       Inkscape::Extension::Output &extension)
 {
     // Start with options that are once per document.
     if (export_text_to_path) {
@@ -405,6 +392,7 @@ int InkFileExportCmd::do_export_vector(SPDocument *doc, std::string const &expor
     }
 
     for (auto object : objects) {
+        auto copy_doc = doc->copy();
 
         std::string filename_out = get_filename_out(export_filename, Glib::filename_from_utf8(object));
         if (filename_out.empty()) {
@@ -412,27 +400,27 @@ int InkFileExportCmd::do_export_vector(SPDocument *doc, std::string const &expor
         }
 
         if(!object.empty()) {
-            doc->ensureUpToDate();
+            copy_doc->ensureUpToDate();
 
             // "crop" the document to the specified object, cleaning as we go.
-            SPObject *obj = doc->getObjectById(object);
+            SPObject *obj = copy_doc->getObjectById(object);
             if (obj == nullptr) {
                 std::cerr << "InkFileExportCmd::do_export_vector: Object " << object.raw() << " not found in document, nothing to export." << std::endl;
                 return 1;
             }
             if (export_id_only) {
                 // If -j then remove all other objects to complete the "crop"
-                doc->getRoot()->cropToObject(obj);
+                copy_doc->getRoot()->cropToObject(obj);
             }
             if (export_area_type != ExportAreaType::Drawing && export_area_type != ExportAreaType::Page) {
-                Inkscape::ObjectSet s(doc);
+                Inkscape::ObjectSet s(copy_doc.get());
                 s.set(obj);
                 s.fitCanvas((bool)export_margin);
             }
         }
         try {
             extension.set_gui(false);
-            Inkscape::Extension::save(dynamic_cast<Inkscape::Extension::Extension *>(&extension), doc,
+            Inkscape::Extension::save(dynamic_cast<Inkscape::Extension::Extension *>(&extension), copy_doc.get(),
                                       filename_out.c_str(), false, false,
                                       export_plain_svg ? Inkscape::Extension::FILE_SAVE_METHOD_SAVE_COPY
                                                        : Inkscape::Extension::FILE_SAVE_METHOD_INKSCAPE_SVG);
@@ -500,6 +488,7 @@ InkFileExportCmd::do_export_png(SPDocument *doc, std::string const &export_filen
     std::vector<Glib::ustring> objects = Glib::Regex::split_simple("\\s*;\\s*", export_id);
 
     std::vector<SPItem*> items;
+    std::vector<Glib::ustring> objects_found;
     for (auto object_id : objects) {
         // Find export object. (Either root or object with specified id.)
         auto object = doc->getObjectById(object_id);
@@ -519,6 +508,7 @@ InkFileExportCmd::do_export_png(SPDocument *doc, std::string const &export_filen
         }
 
         items.push_back(cast<SPItem>(object));
+        objects_found.push_back(object_id);
     }
 
     // Export pages instead of objects
@@ -543,10 +533,10 @@ InkFileExportCmd::do_export_png(SPDocument *doc, std::string const &export_filen
     }
 
     if (objects.empty()) {
-        objects.emplace_back(); // So we do loop at least once for root.
+        objects_found.emplace_back(); // So we do loop at least once for root.
     }
 
-    for (auto object_id : objects) {
+    for (auto object_id : objects_found) {
         SPObject *object = doc->getRoot();
         if (!object_id.empty()) {
             object = doc->getObjectById(object_id);
@@ -944,7 +934,7 @@ std::string export_area_type_string(ExportAreaType type)
 
 void InkFileExportCmd::set_export_area_type(ExportAreaType type)
 {
-    if (export_area_type != ExportAreaType::Unset) {
+    if ((export_area_type != ExportAreaType::Unset) && (export_area_type != type)) {
         std::cerr << "Warning: multiple export area types have been set, overriding "
                   << export_area_type_string(export_area_type) << " with " << export_area_type_string(type)
                   << std::endl;

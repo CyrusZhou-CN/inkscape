@@ -34,6 +34,7 @@
 #include "io/resource.h"
 #include "io/sys.h"
 
+#include "ui/controller.h" // get_group(GtkEventControllerKey constt *)
 #include "ui/modifiers.h"
 #include "ui/tools/tool-base.h"    // For latin keyval
 #include "ui/dialog/filedialog.h"  // Importing/exporting files.
@@ -142,12 +143,8 @@ Shortcuts::clear()
 
 /**  Trigger action from a shortcut. Useful if we want to intercept the event from GTK */
 bool
-Shortcuts::invoke_action(GdkEventKey const *event)
+Shortcuts::invoke_action(Gtk::AccelKey const &shortcut)
 {
-    Gtk::AccelKey shortcut = get_from_event(event);
-
-    bool return_value = false;
-
     // This can be simplified in GTK4.
     Glib::ustring accel = Gtk::AccelGroup::name(shortcut.get_key(), shortcut.get_mod());
     std::vector<Glib::ustring> actions = app->get_actions_for_accel(accel);
@@ -158,16 +155,34 @@ Shortcuts::invoke_action(GdkEventKey const *event)
         Gio::SimpleAction::parse_detailed_name_variant(action.substr(4), action_name, value);
         if (action.compare(0, 4, "app.") == 0) {
             app->activate_action(action_name, value);
-            return_value = true;
+            return true;
         } else if (action.compare(0, 4, "win.") == 0) {
             auto window = dynamic_cast<InkscapeWindow *>(app->get_active_window());
             if (window) {
                 window->activate_action(action_name, value);
-                return_value = true;
+                return true;
             }
         }
     }
-    return return_value;
+    return false;
+}
+
+/**  Trigger action from a shortcut. Useful if we want to intercept the event from GTK */
+bool
+Shortcuts::invoke_action(GdkEventKey const * const event)
+{
+    auto const shortcut = get_from_event(event);
+    return invoke_action(shortcut);
+}
+
+/**  Trigger action from a shortcut. Useful if we want to intercept the event from GTK */
+bool
+Shortcuts::invoke_action(GtkEventControllerKey const * const controller,
+                         unsigned const keyval, unsigned const keycode,
+                         GdkModifierType const state)
+{
+    auto const shortcut = get_from(controller, keyval, keycode, state);
+    return invoke_action(shortcut);
 }
 
 Gdk::ModifierType
@@ -659,7 +674,55 @@ Shortcuts::get_label(const Gtk::AccelKey& shortcut)
     return label;
 }
 
-/*
+static Gtk::AccelKey
+get_from_event_impl(unsigned const event_keyval, unsigned const event_keycode,
+                    GdkModifierType const event_state, unsigned const event_group,
+                    bool const fix)
+{
+    // MOD2 corresponds to the NumLock key. Masking it out allows
+    // shortcuts to work regardless of its state.
+    auto const initial_modifiers = static_cast<Gdk::ModifierType>(event_state & ~Gdk::MOD2_MASK);
+
+    unsigned int consumed_modifiers = 0;
+    auto keyval = Inkscape::UI::Tools::get_latin_keyval_impl(
+        event_keyval, event_keycode, event_state, event_group, &consumed_modifiers);
+
+    // If a key value is "convertible", i.e. it has different lower case and upper case versions,
+    // convert to lower case and don't consume the "shift" modifier.
+    bool is_case_convertible = !(gdk_keyval_is_upper(keyval) && gdk_keyval_is_lower(keyval));
+    if (is_case_convertible) {
+        keyval = gdk_keyval_to_lower(keyval);
+        consumed_modifiers &= ~ Gdk::SHIFT_MASK;
+    }
+
+    // The InkscapePreferences dialog returns an event structure where the Shift modifier is not
+    // set for keys like '('. This causes '(' to be converted to '9' by get_latin_keyval. It also
+    // returns 'Shift-k' for 'K' (instead of 'Shift-K') but this is not a problem.
+    // We fix this by restoring keyval to its original value.
+    if (fix) {
+        keyval = event_keyval;
+    }
+
+    auto unused_modifiers = Gdk::ModifierType((initial_modifiers &~ consumed_modifiers)
+                                                                 & GDK_MODIFIER_MASK
+                                                                 &~ GDK_LOCK_MASK);
+
+    // std::cout << "Shortcuts::get_from_event: End:   "
+    //           << " Key: " << std::hex << keyval << " (" << (char)keyval << ")"
+    //           << " Mod: " << std::hex << unused_modifiers << std::endl;
+    return (Gtk::AccelKey(keyval, unused_modifiers));
+}
+
+/// See/prefer get_from(controller, ...) for a more modern/GTK4-ready equivalent
+Gtk::AccelKey
+Shortcuts::get_from_event(GdkEventKey const * const event, bool const fix)
+{
+    return get_from_event_impl(event->keyval, event->hardware_keycode,
+                               static_cast<GdkModifierType>(event->state), event->group,
+                               fix);
+}
+
+/**
  * Return: keyval translated to group 0 in lower 32 bits, modifier encoded in upper 32 bits.
  *
  * Usage of group 0 (i.e. the main, typically English layout) instead of simply event->keyval
@@ -675,42 +738,13 @@ Shortcuts::get_label(const Gtk::AccelKey& shortcut)
  *               otherwise lower case and uper case keys are treated as equivalent.
  */
 Gtk::AccelKey
-Shortcuts::get_from_event(GdkEventKey const *event, bool fix)
+Shortcuts::get_from(GtkEventControllerKey const * const controller,
+                    unsigned const keyval, unsigned const keycode, GdkModifierType const state,
+                    bool const fix)
 {
-    // MOD2 corresponds to the NumLock key. Masking it out allows
-    // shortcuts to work regardless of its state.
-    Gdk::ModifierType initial_modifiers  = Gdk::ModifierType(event->state & ~Gdk::MOD2_MASK);
-    unsigned int consumed_modifiers = 0;
-    //Gdk::ModifierType consumed_modifiers = Gdk::ModifierType(0);
-
-    unsigned int keyval = Inkscape::UI::Tools::get_latin_keyval(event, &consumed_modifiers);
-
-    // If a key value is "convertible", i.e. it has different lower case and upper case versions,
-    // convert to lower case and don't consume the "shift" modifier.
-    bool is_case_convertible = !(gdk_keyval_is_upper(keyval) && gdk_keyval_is_lower(keyval));
-    if (is_case_convertible) {
-        keyval = gdk_keyval_to_lower(keyval);
-        consumed_modifiers &= ~ Gdk::SHIFT_MASK;
-    }
-
-    // The InkscapePreferences dialog returns an event structure where the Shift modifier is not
-    // set for keys like '('. This causes '(' to be converted to '9' by get_latin_keyval. It also
-    // returns 'Shift-k' for 'K' (instead of 'Shift-K') but this is not a problem.
-    // We fix this by restoring keyval to its original value.
-    if (fix) {
-        keyval = event->keyval;
-    }
-
-    auto unused_modifiers = Gdk::ModifierType((initial_modifiers &~ consumed_modifiers)
-                                                                 & GDK_MODIFIER_MASK
-                                                                 &~ GDK_LOCK_MASK);
-
-    // std::cout << "Shortcuts::get_from_event: End:   "
-    //           << " Key: " << std::hex << keyval << " (" << (char)keyval << ")"
-    //           << " Mod: " << std::hex << unused_modifiers << std::endl;
-    return (Gtk::AccelKey(keyval, unused_modifiers));
+    auto const group = UI::Controller::get_group(controller);
+    return get_from_event_impl(keyval, keycode, state, group, fix);
 }
-
 
 // Get a list of filenames to populate menu
 std::vector<std::pair<Glib::ustring, Glib::ustring>>

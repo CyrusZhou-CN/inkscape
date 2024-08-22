@@ -40,7 +40,7 @@ namespace Widget {
 void GradientSelector::style_button(Gtk::Button *btn, char const *iconName)
 {
     GtkWidget *child = sp_get_icon_image(iconName, GTK_ICON_SIZE_SMALL_TOOLBAR);
-    gtk_widget_show(child);
+    gtk_widget_set_visible(child, true);
     btn->add(*manage(Glib::wrap(child)));
     btn->set_relief(Gtk::RELIEF_NONE);
 }
@@ -54,17 +54,17 @@ GradientSelector::GradientSelector()
     set_orientation(Gtk::ORIENTATION_VERTICAL);
 
     /* Vectors */
-    _vectors = Gtk::manage(new GradientVectorSelector(nullptr, nullptr));
+    _vectors = Gtk::make_managed<GradientVectorSelector>(nullptr, nullptr);
     _store = _vectors->get_store();
     _columns = _vectors->get_columns();
 
-    _treeview = Gtk::manage(new Gtk::TreeView());
+    _treeview = Gtk::make_managed<Gtk::TreeView>();
     _treeview->set_model(_store);
     _treeview->set_headers_clickable(true);
     _treeview->set_search_column(1);
     _treeview->set_vexpand();
-    _icon_renderer = Gtk::manage(new Gtk::CellRendererPixbuf());
-    _text_renderer = Gtk::manage(new Gtk::CellRendererText());
+    _icon_renderer = Gtk::make_managed<Gtk::CellRendererPixbuf>();
+    _text_renderer = Gtk::make_managed<Gtk::CellRendererText>();
 
     _treeview->append_column(_("Gradient"), *_icon_renderer);
     auto icon_column = _treeview->get_column(0);
@@ -87,7 +87,7 @@ GradientSelector::GradientSelector()
 
     _treeview->signal_key_press_event().connect(sigc::mem_fun(*this, &GradientSelector::onKeyPressEvent), false);
 
-    _treeview->show();
+    _treeview->set_visible(true);
 
     icon_column->signal_clicked().connect(sigc::mem_fun(*this, &GradientSelector::onTreeColorColClick));
     name_column->signal_clicked().connect(sigc::mem_fun(*this, &GradientSelector::onTreeNameColClick));
@@ -97,23 +97,23 @@ GradientSelector::GradientSelector()
     _vectors->set_tree_select_connection(tree_select_connection);
     _text_renderer->signal_edited().connect(sigc::mem_fun(*this, &GradientSelector::onGradientRename));
 
-    _scrolled_window = Gtk::manage(new Gtk::ScrolledWindow());
+    _scrolled_window = Gtk::make_managed<Gtk::ScrolledWindow>();
     _scrolled_window->add(*_treeview);
     _scrolled_window->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
     _scrolled_window->set_shadow_type(Gtk::SHADOW_IN);
     _scrolled_window->set_size_request(0, 180);
     _scrolled_window->set_hexpand();
-    _scrolled_window->show();
+    _scrolled_window->set_visible(true);
 
     pack_start(*_scrolled_window, true, true, 4);
 
 
     /* Create box for buttons */
-    auto hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, 0));
+    auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 0);
     hb->set_homogeneous(false);
     pack_start(*hb, false, false, 0);
 
-    _add = Gtk::manage(new Gtk::Button());
+    _add = Gtk::make_managed<Gtk::Button>();
     style_button(_add, INKSCAPE_ICON("list-add"));
 
     _nonsolid.push_back(_add);
@@ -124,7 +124,7 @@ GradientSelector::GradientSelector()
     _add->set_relief(Gtk::RELIEF_NONE);
     _add->set_tooltip_text(_("Create a duplicate gradient"));
 
-    _del2 = Gtk::manage(new Gtk::Button());
+    _del2 = Gtk::make_managed<Gtk::Button>();
     style_button(_del2, INKSCAPE_ICON("list-remove"));
 
     _nonsolid.push_back(_del2);
@@ -135,7 +135,7 @@ GradientSelector::GradientSelector()
     _del2->set_tooltip_text(_("Delete unused gradient"));
 
     // The only use of this button is hidden!
-    _edit = Gtk::manage(new Gtk::Button());
+    _edit = Gtk::make_managed<Gtk::Button>();
     style_button(_edit, INKSCAPE_ICON("edit"));
 
     _nonsolid.push_back(_edit);
@@ -146,7 +146,7 @@ GradientSelector::GradientSelector()
     _edit->set_tooltip_text(_("Edit gradient"));
     _edit->set_no_show_all();
 
-    _del = Gtk::manage(new Gtk::Button());
+    _del = Gtk::make_managed<Gtk::Button>();
     style_button(_del, INKSCAPE_ICON("list-remove"));
 
     _swatch_widgets.push_back(_del);
@@ -171,7 +171,7 @@ void GradientSelector::setMode(SelectorMode mode)
         _mode = mode;
         if (mode == MODE_SWATCH) {
             for (auto &it : _nonsolid) {
-                it->hide();
+                it->set_visible(false);
             }
             for (auto &swatch_widget : _swatch_widgets) {
                 swatch_widget->show_all();
@@ -186,7 +186,7 @@ void GradientSelector::setMode(SelectorMode mode)
                 it->show_all();
             }
             for (auto &swatch_widget : _swatch_widgets) {
-                swatch_widget->hide();
+                swatch_widget->set_visible(false);
             }
             auto icon_column = _treeview->get_column(0);
             icon_column->set_title(_("Gradient"));
@@ -399,7 +399,7 @@ bool GradientSelector::_checkForSelected(const Gtk::TreePath &path, const Gtk::T
 
 void GradientSelector::selectGradientInTree(SPGradient *vector)
 {
-    _store->foreach (sigc::bind<SPGradient *>(sigc::mem_fun(*this, &GradientSelector::_checkForSelected), vector));
+    _store->foreach (sigc::bind(sigc::mem_fun(*this, &GradientSelector::_checkForSelected), vector));
 }
 
 void GradientSelector::setVector(SPDocument *doc, SPGradient *vector)
@@ -418,7 +418,7 @@ void GradientSelector::setVector(SPDocument *doc, SPGradient *vector)
         if ((_mode == MODE_SWATCH) && vector->isSwatch()) {
             if (vector->isSolid()) {
                 for (auto &it : _nonsolid) {
-                    it->hide();
+                    it->set_visible(false);
                 }
             } else {
                 for (auto &it : _nonsolid) {
@@ -428,7 +428,7 @@ void GradientSelector::setVector(SPDocument *doc, SPGradient *vector)
         } else if (_mode != MODE_SWATCH) {
 
             for (auto &swatch_widget : _swatch_widgets) {
-                swatch_widget->hide();
+                swatch_widget->set_visible(false);
             }
             for (auto &it : _nonsolid) {
                 it->show_all();
@@ -583,7 +583,7 @@ void GradientSelector::add_vector_clicked()
 }
 
 void GradientSelector::show_edit_button(bool show) {
-    if (show) _edit->show(); else _edit->hide();
+    _edit->set_visible(show);
 }
 
 void GradientSelector::set_name_col_size(int min_width) {

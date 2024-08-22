@@ -31,12 +31,12 @@
 #include <2geom/rect.h>
 #include <sigc++/sigc++.h>
 
-#include <gdkmm/device.h> // Gdk::EventMask
-#include <gdk/gdk.h>  // GdkEvent
+#include <gdkmm/cursor.h>
 
 #include "canvas-item-enums.h"
 #include "canvas-item-buffer.h"
 #include "canvas-item-context.h"
+#include "ui/widget/events/enums.h"
 
 class SPItem;
 
@@ -46,6 +46,7 @@ inline constexpr uint32_t CANVAS_ITEM_COLORS[] = { 0x0000ff7f, 0xff00007f, 0xfff
 
 namespace UI::Widget { class Canvas; }
 class CanvasItemGroup;
+class CanvasEvent;
 
 class CanvasItem
 {
@@ -74,7 +75,7 @@ public:
 
     // Selection
     virtual bool contains(Geom::Point const &p, double tolerance = 0) { return _bounds && _bounds->interiorContains(p); }
-    void grab(Gdk::EventMask event_mask, Glib::RefPtr<Gdk::Cursor> const & = {});
+    void grab(EventMask event_mask, Glib::RefPtr<Gdk::Cursor> const & = {});
     void ungrab();
 
     // Display
@@ -97,10 +98,10 @@ public:
     // Events
     void set_pickable(bool pickable) { _pickable = pickable; }
     bool is_pickable() const { return _pickable; }
-    sigc::connection connect_event(sigc::slot<bool(GdkEvent*)> const &slot) {
+    sigc::connection connect_event(sigc::slot<bool(CanvasEvent const &)> const &slot) {
         return _event_signal.connect(slot);
     }
-    virtual bool handle_event(GdkEvent *event) {
+    virtual bool handle_event(CanvasEvent const &event) {
         return _event_signal.emit(event); // Default just emits event.
     }
 
@@ -140,7 +141,7 @@ protected:
     std::string _name; // For debugging
 
     // Events
-    sigc::signal<bool (GdkEvent*)> _event_signal;
+    sigc::signal<bool(CanvasEvent const &)> _event_signal;
 
     // Snapshotting
     template<typename F>

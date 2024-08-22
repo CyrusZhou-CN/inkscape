@@ -155,7 +155,7 @@ InkviewWindow::show_document(SPDocument* document)
     if (_view) {
         _view->setDocument(document);
     } else {
-        _view = Gtk::manage(new Inkscape::UI::View::SVGViewWidget(document));
+        _view = Gtk::make_managed<Inkscape::UI::View::SVGViewWidget>(document);
         add (*_view);
     }
 
@@ -211,7 +211,8 @@ static std::string window_markup = R"(
 <interface>
   <object class="GtkWindow" id="ControlWindow">
     <child>
-      <object class="GtkButtonBox">
+      <object class="GtkBox">
+        <property name="homogeneous">True</property>
         <child>
           <object class="GtkButton" id="show-first">
             <property name="visible">True</property>

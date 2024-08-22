@@ -1000,41 +1000,6 @@
          r="0.45"
          id="circle682" />
     </pattern>
-    <pattern
-       inkscape:collect="always"
-       xlink:href="#circle-8"
-       preserveAspectRatio="xMidYMid"
-       id="pattern35-2"
-       patternTransform="translate(1007.349,-408.24665)"
-       x="0"
-       y="0"
-       width="20"
-       height="20" />
-    <pattern
-       patternUnits="userSpaceOnUse"
-       width="10"
-       height="10"
-       patternTransform="translate(307.92203,-100.78567)"
-       preserveAspectRatio="xMidYMid"
-       id="circle-8"
-       x="0"
-       y="0"
-       inkscape:label="Circle">
-      <circle
-         style="display:inline;fill:#000000;fill-opacity:1;stroke-width:6;stroke-linecap:square;paint-order:markers fill stroke;stop-color:#000000"
-         id="path10-8"
-         cx="5"
-         cy="5"
-         r="5" />
-    </pattern>
-    <pattern
-       inkscape:collect="always"
-       xlink:href="#circle-8-0"
-       preserveAspectRatio="xMidYMid"
-       id="pattern35-2-5"
-       patternTransform="translate(582.94918,-517.1278)"
-       x="0"
-       y="0" />
   </defs>
   <g
      inkscape:label="Layer 1"
@@ -1114,19 +1079,5 @@
        y="543.71295"
        id="rect1063"
        style="display:inline;fill:url(#pattern96381)" />
-    <rect
-       style="fill:url(#pattern35-2);fill-opacity:1;stroke:none"
-       width="100.67052"
-       height="105.77917"
-       x="724.08594"
-       y="409.53903"
-       id="rect19-57" />
-    <rect
-       style="fill:url(#pattern35-2-5);fill-opacity:1;stroke:none"
-       width="100.67052"
-       height="105.77917"
-       x="832.69189"
-       y="410.76828"
-       id="rect19-57-2" />
   </g>
 </svg>

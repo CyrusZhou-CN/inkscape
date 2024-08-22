@@ -11,19 +11,17 @@
  */
 
 #include <boost/none.hpp>
-#include "ui/tool/selectable-control-point.h"
+#include <gdk/gdkkeysyms.h>
 #include <2geom/transforms.h>
+
 #include "desktop.h"
+#include "display/control/snap-indicator.h"
+#include "ui/tool/selectable-control-point.h"
 #include "ui/tool/control-point-selection.h"
-#include "ui/tool/event-utils.h"
 #include "ui/tool/transform-handle-set.h"
 #include "ui/tool/node.h"
-#include "display/control/snap-indicator.h"
 #include "ui/widget/canvas.h"
-
-
-
-#include <gdk/gdkkeysyms.h>
+#include "ui/widget/events/canvas-event.h"
 
 namespace Inkscape {
 namespace UI {
@@ -167,7 +165,7 @@ void ControlPointSelection::selectArea(Geom::Path const &path, bool invert)
 {
     std::vector<SelectableControlPoint *> out;
     for (auto _all_point : _all_points) {
-        if (path.winding(*_all_point) % 2 != 0) {
+        if (path.winding(_all_point->position()) % 2 != 0) {
             if (invert) {
                 erase(_all_point);
             } else {
@@ -374,7 +372,7 @@ void ControlPointSelection::_pointGrabbed(SelectableControlPoint *point)
     for (auto _point : _points) {
         _original_positions.insert(std::make_pair(_point, _point->position()));
         _last_trans.insert(std::make_pair(_point, m));
-        double dist = Geom::distance(*_grabbed_point, *_point);
+        double dist = Geom::distance(_grabbed_point->position(), _point->position());
         if (dist > maxdist) {
             maxdist = dist;
             _farthest_point = _point;
@@ -382,11 +380,11 @@ void ControlPointSelection::_pointGrabbed(SelectableControlPoint *point)
     }
 }
 
-void ControlPointSelection::_pointDragged(Geom::Point &new_pos, GdkEventMotion *event)
+void ControlPointSelection::_pointDragged(Geom::Point &new_pos, MotionEvent const &event)
 {
     Geom::Point abs_delta = new_pos - _original_positions[_grabbed_point];
     double fdist = Geom::distance(_original_positions[_grabbed_point], _original_positions[_farthest_point]);
-    if (held_only_alt(*event) && fdist > 0) {
+    if (held_only_alt(event) && fdist > 0) {
         // Sculpting
         for (auto cur : _points) {
             Geom::Affine trans;
@@ -458,11 +456,11 @@ void ControlPointSelection::_pointUngrabbed()
     signal_commit.emit(COMMIT_MOUSE_MOVE);
 }
 
-bool ControlPointSelection::_pointClicked(SelectableControlPoint *p, GdkEventButton *event)
+bool ControlPointSelection::_pointClicked(SelectableControlPoint *p, ButtonReleaseEvent const &event)
 {
     // clicking a selected node should toggle the transform handles between rotate and scale mode,
     // if they are visible
-    if (held_no_modifiers(*event) && _handles_visible && p->selected()) {
+    if (held_no_modifiers(event) && _handles_visible && p->selected()) {
         toggleTransformHandlesMode();
         return true;
     }
@@ -517,7 +515,7 @@ void ControlPointSelection::_updateTransformHandles(bool preserve_center)
 
 /** Moves the selected points along the supplied unit vector according to
  * the modifier state of the supplied event. */
-bool ControlPointSelection::_keyboardMove(GdkEventKey const &event, Geom::Point const &dir)
+bool ControlPointSelection::_keyboardMove(KeyPressEvent const &event, Geom::Point const &dir)
 {
     if (held_control(event)) return false;
     unsigned num = 1 + Tools::gobble_key_events(shortcut_key(event), 0);
@@ -563,7 +561,7 @@ double ControlPointSelection::_rotationRadius(Geom::Point const &rc)
  * @param event Key event to take modifier state from
  * @param dir   Direction of rotation (math convention: 1 = counterclockwise, -1 = clockwise)
  */
-bool ControlPointSelection::_keyboardRotate(GdkEventKey const &event, int dir)
+bool ControlPointSelection::_keyboardRotate(KeyPressEvent const &event, int dir)
 {
     if (empty()) return false;
 
@@ -581,7 +579,7 @@ bool ControlPointSelection::_keyboardRotate(GdkEventKey const &event, int dir)
         }
         radius = *_mouseover_rot_radius;
     } else {
-        rc = _handles->rotationCenter();
+        rc = _handles->rotationCenter().position();
         if (!_rot_radius) {
             _rot_radius = _rotationRadius(rc);
         }
@@ -608,8 +606,7 @@ bool ControlPointSelection::_keyboardRotate(GdkEventKey const &event, int dir)
     return true;
 }
 
-
-bool ControlPointSelection::_keyboardScale(GdkEventKey const &event, int dir)
+bool ControlPointSelection::_keyboardScale(KeyPressEvent const &event, int dir)
 {
     if (empty()) return false;
 
@@ -671,50 +668,51 @@ void ControlPointSelection::_commitHandlesTransform(CommitEvent ce)
     signal_commit.emit(ce);
 }
 
-bool ControlPointSelection::event(Inkscape::UI::Tools::ToolBase * /*event_context*/, GdkEvent *event)
+bool ControlPointSelection::event(Inkscape::UI::Tools::ToolBase *, CanvasEvent const &event)
 {
     // implement generic event handling that should apply for all control point selections here;
     // for example, keyboard moves and transformations. This way this functionality doesn't need
     // to be duplicated in many places
     // Later split out so that it can be reused in object selection
 
-    switch (event->type) {
-    case GDK_KEY_PRESS:
-        // do not handle key events if the selection is empty
-        if (empty()) break;
+    if (event.type() != EventType::KEY_PRESS || empty()) {
+        return false;
+    }
 
-        switch(shortcut_key(event->key)) {
+    auto &keyevent = static_cast<KeyPressEvent const &>(event);
+
+    switch (shortcut_key(keyevent)) {
         // moves
         case GDK_KEY_Up:
         case GDK_KEY_KP_Up:
         case GDK_KEY_KP_8:
-            return _keyboardMove(event->key, Geom::Point(0, -_desktop->yaxisdir()));
+            return _keyboardMove(keyevent, Geom::Point(0, -_desktop->yaxisdir()));
         case GDK_KEY_Down:
         case GDK_KEY_KP_Down:
         case GDK_KEY_KP_2:
-            return _keyboardMove(event->key, Geom::Point(0, _desktop->yaxisdir()));
+            return _keyboardMove(keyevent, Geom::Point(0, _desktop->yaxisdir()));
         case GDK_KEY_Right:
         case GDK_KEY_KP_Right:
         case GDK_KEY_KP_6:
-            return _keyboardMove(event->key, Geom::Point(1, 0));
+            return _keyboardMove(keyevent, Geom::Point(1, 0));
         case GDK_KEY_Left:
         case GDK_KEY_KP_Left:
         case GDK_KEY_KP_4:
-            return _keyboardMove(event->key, Geom::Point(-1, 0));
+            return _keyboardMove(keyevent, Geom::Point(-1, 0));
 
         // rotates
         case GDK_KEY_bracketleft:
-            return _keyboardRotate(event->key, -_desktop->yaxisdir());
+            return _keyboardRotate(keyevent, -_desktop->yaxisdir());
         case GDK_KEY_bracketright:
-            return _keyboardRotate(event->key, _desktop->yaxisdir());
+            return _keyboardRotate(keyevent, _desktop->yaxisdir());
 
         // scaling
         case GDK_KEY_less:
         case GDK_KEY_comma:
-            return _keyboardScale(event->key, -1);
+            return _keyboardScale(keyevent, -1);
         case GDK_KEY_greater:
         case GDK_KEY_period:
-            return _keyboardScale(event->key, 1);
+            return _keyboardScale(keyevent, 1);
 
         // TODO: skewing
 
@@ -722,22 +720,21 @@ bool ControlPointSelection::event(Inkscape::UI::Tools::ToolBase * /*event_contex
         // NOTE: H is horizontal flip, while Shift+H switches transform handle mode!
         case GDK_KEY_h:
         case GDK_KEY_H:
-            if (held_shift(event->key)) {
+            if (held_shift(keyevent)) {
                 toggleTransformHandlesMode();
                 return true;
             }
             // any modifiers except shift should cause no action
-            if (held_any_modifiers(event->key)) break;
+            if (held_any_modifiers(keyevent)) break;
             return _keyboardFlip(Geom::X);
         case GDK_KEY_v:
         case GDK_KEY_V:
-            if (held_any_modifiers(event->key)) break;
+            if (held_any_modifiers(keyevent)) break;
             return _keyboardFlip(Geom::Y);
-        default: break;
-        }
-        break;
-    default: break;
+        default:
+            break;
     }
+
     return false;
 }
 

@@ -36,7 +36,8 @@ class CanvasItemCurve;
 namespace UI {
 namespace Tools {
 
-class MeshTool : public ToolBase {
+class MeshTool : public ToolBase
+{
 public:
     MeshTool(SPDesktop *desktop);
     ~MeshTool() override;
@@ -48,8 +49,8 @@ public:
     sigc::connection *selcon;
     sigc::connection *subselcon;
 
-    void set(const Inkscape::Preferences::Entry& val) override;
-    bool root_handler(GdkEvent* event) override;
+    void set(Preferences::Entry const &val) override;
+    bool root_handler(CanvasEvent const &event) override;
     void fit_mesh_in_bbox();
     void corner_operation(MeshCornerOperation operation);
 
@@ -72,7 +73,6 @@ private:
 }
 
 #endif // SEEN_SP_MESH_CONTEXT_H
-
 
 /*
   Local Variables:

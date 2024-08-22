@@ -13,6 +13,7 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#include "display/control/canvas-item.h"
 #include "ui/tools/tool-base.h"
 
 #define SP_SELECT_CONTEXT(obj) (dynamic_cast<Inkscape::UI::Tools::SelectTool*>((Inkscape::UI::Tools::ToolBase*)obj))
@@ -21,40 +22,43 @@
 namespace Inkscape {
   class SelTrans;
   class SelectionDescriber;
+  class Selection;
 }
 
 namespace Inkscape {
 namespace UI {
 namespace Tools {
 
-class SelectTool : public ToolBase {
+class SelectTool : public ToolBase
+{
 public:
     SelectTool(SPDesktop *desktop);
     ~SelectTool() override;
 
     bool dragging;
     bool moved;
-    guint button_press_state;
+    unsigned button_press_state;
 
-        std::vector<SPItem *> cycling_items;
-        std::vector<SPItem *> cycling_items_cmp;
-        SPItem *cycling_cur_item;
+    std::vector<SPItem *> cycling_items;
+    std::vector<SPItem *> cycling_items_cmp;
+    SPItem *cycling_cur_item;
     bool cycling_wrap;
 
     SPItem *item;
-        Inkscape::CanvasItem *grabbed = nullptr;
-    Inkscape::SelTrans *_seltrans;
-    Inkscape::SelectionDescriber *_describer;
-    gchar *no_selection_msg = nullptr;
+    CanvasItem *grabbed = nullptr;
+    SelTrans *_seltrans;
+    SelectionDescriber *_describer;
+    char *no_selection_msg = nullptr;
 
-    void set(const Inkscape::Preferences::Entry& val) override;
-    bool root_handler(GdkEvent* event) override;
-    bool item_handler(SPItem* item, GdkEvent* event) override;
+    void set(Preferences::Entry const &val) override;
+    bool root_handler(CanvasEvent const &event) override;
+    bool item_handler(SPItem *item, CanvasEvent const &event) override;
 
-    void updateDescriber(Inkscape::Selection *sel);
+    void updateDescriber(Selection *sel);
+
 private:
     bool sp_select_context_abort();
-    void sp_select_context_cycle_through_items(Inkscape::Selection *selection, GdkEventScroll *scroll_event);
+    void sp_select_context_cycle_through_items(Selection *selection, GdkEventScroll *scroll_event);
     void sp_select_context_reset_opacities();
 
     bool _alt_on;

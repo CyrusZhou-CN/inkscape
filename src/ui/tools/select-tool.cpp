@@ -51,6 +51,7 @@
 #include "ui/modifiers.h"
 #include "ui/tools/select-tool.h"
 #include "ui/widget/canvas.h"
+#include "ui/widget/events/canvas-event.h"
 
 using Inkscape::DocumentUndo;
 using Inkscape::Modifiers::Modifier;
@@ -215,7 +216,9 @@ sp_select_context_up_one_layer(SPDesktop *desktop)
     }
 }
 
-bool SelectTool::item_handler(SPItem* item, GdkEvent* event) {
+bool SelectTool::item_handler(SPItem *item, CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     gint ret = FALSE;
 
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
@@ -232,8 +235,7 @@ bool SelectTool::item_handler(SPItem* item, GdkEvent* event) {
                 /* Left mousebutton */
 
                 // save drag origin
-                xp = (gint) event->button.x;
-                yp = (gint) event->button.y;
+                xyp = { (gint) event->button.x, (gint) event->button.y };
                 within_tolerance = true;
 
                 // remember what modifiers were on before button press
@@ -269,11 +271,11 @@ bool SelectTool::item_handler(SPItem* item, GdkEvent* event) {
                     }
 
                     grabbed = _desktop->getCanvasDrawing();
-                    grabbed->grab(Gdk::KEY_PRESS_MASK      |
-                                  Gdk::KEY_RELEASE_MASK    |
-                                  Gdk::BUTTON_PRESS_MASK   |
-                                  Gdk::BUTTON_RELEASE_MASK |
-                                  Gdk::POINTER_MOTION_MASK );
+                    grabbed->grab(EventType::KEY_PRESS      |
+                                  EventType::KEY_RELEASE    |
+                                  EventType::BUTTON_PRESS   |
+                                  EventType::BUTTON_RELEASE |
+                                  EventType::MOTION);
 
                     ret = TRUE;
                 }
@@ -332,13 +334,14 @@ bool SelectTool::item_handler(SPItem* item, GdkEvent* event) {
     }
 
     if (!ret) {
-        ret = ToolBase::item_handler(item, event);
+        ret = ToolBase::item_handler(item, canvas_event);
     }
 
     return ret;
 }
 
-void SelectTool::sp_select_context_cycle_through_items(Inkscape::Selection *selection, GdkEventScroll *scroll_event) {
+void SelectTool::sp_select_context_cycle_through_items(Selection *selection, GdkEventScroll *scroll_event)
+{
     if ( this->cycling_items.empty() )
         return;
 
@@ -416,7 +419,9 @@ void SelectTool::sp_select_context_reset_opacities() {
     this->cycling_cur_item = nullptr;
 }
 
-bool SelectTool::root_handler(GdkEvent* event) {
+bool SelectTool::root_handler(CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     SPItem *item = nullptr;
     SPItem *item_at_point = nullptr, *group_at_point = nullptr, *item_in_group = nullptr;
     gint ret = FALSE;
@@ -457,8 +462,7 @@ bool SelectTool::root_handler(GdkEvent* event) {
         case GDK_BUTTON_PRESS:
             if (event->button.button == 1) {
                 // save drag origin
-                xp = (gint) event->button.x;
-                yp = (gint) event->button.y;
+                xyp = { (gint) event->button.x, (gint) event->button.y };
                 within_tolerance = true;
 
                 Geom::Point const button_pt(event->button.x, event->button.y);
@@ -478,11 +482,11 @@ bool SelectTool::root_handler(GdkEvent* event) {
                 }
 
                 grabbed = _desktop->getCanvasCatchall();
-                grabbed->grab(Gdk::KEY_PRESS_MASK      |
-                              Gdk::KEY_RELEASE_MASK    |
-                              Gdk::BUTTON_PRESS_MASK   |
-                              Gdk::BUTTON_RELEASE_MASK |
-                              Gdk::POINTER_MOTION_MASK );
+                grabbed->grab(EventType::KEY_PRESS      |
+                              EventType::KEY_RELEASE    |
+                              EventType::BUTTON_PRESS   |
+                              EventType::BUTTON_RELEASE |
+                              EventType::MOTION);
 
                 // remember what modifiers were on before button press
                 this->button_press_state = event->button.state;
@@ -514,8 +518,8 @@ bool SelectTool::root_handler(GdkEvent* event) {
                 Geom::Point const motion_pt(event->motion.x, event->motion.y);
                 Geom::Point const p(_desktop->w2d(motion_pt));
                 if ( within_tolerance
-                     && ( abs( (gint) event->motion.x - xp ) < tolerance )
-                     && ( abs( (gint) event->motion.y - yp ) < tolerance ) ) {
+                    && ( abs( (gint) event->motion.x - xyp.x() ) < tolerance )
+                    && ( abs( (gint) event->motion.y - xyp.y() ) < tolerance ) ) {
                     break; // do not drag if we're within tolerance from origin
                 }
                 // Once the user has moved farther than tolerance from the original location
@@ -540,7 +544,7 @@ bool SelectTool::root_handler(GdkEvent* event) {
                     this->defaultMessageContext()->clear();
 
                     // Look for an item where the mouse was reported to be by mouse press (not mouse move).
-                    item_at_point = _desktop->getItemAtPoint(Geom::Point(xp, yp), FALSE);
+                    item_at_point = _desktop->getItemAtPoint(xyp, FALSE);
 
                     if (item_at_point || this->moved || force_drag) {
                         // drag only if starting from an item, or if something is already grabbed, or if alt-dragging
@@ -618,7 +622,7 @@ bool SelectTool::root_handler(GdkEvent* event) {
             break;
         }
         case GDK_BUTTON_RELEASE:
-            xp = yp = 0;
+            xyp = {};
 
             if ((event->button.button == 1) && (this->grabbed)) {
                 if (this->dragging) {
@@ -1118,7 +1122,7 @@ bool SelectTool::root_handler(GdkEvent* event) {
     }
 
     if (!ret) {
-        ret = ToolBase::root_handler(event);
+        ret = ToolBase::root_handler(canvas_event);
     }
 
     return ret;

@@ -28,7 +28,6 @@
 #include "style.h"
 #include "page-manager.h"
 
-#include "display/curve.h"
 #include "display/drawing.h"
 #include "display/control/canvas-item-bpath.h"
 #include "display/control/canvas-item-drawing.h"
@@ -43,12 +42,17 @@
 #include "ui/icon-names.h"
 #include "ui/tools/dropper-tool.h"
 #include "ui/widget/canvas.h"
+#include "ui/widget/events/canvas-event.h"
 
 using Inkscape::DocumentUndo;
 
-namespace Inkscape {
-namespace UI {
-namespace Tools {
+namespace Inkscape::UI::Tools {
+
+enum PickMode
+{
+    PICK_VISIBLE,
+    PICK_ACTUAL
+};
 
 DropperTool::DropperTool(SPDesktop *desktop)
     : ToolBase(desktop, "/tools/dropper", "dropper-pick-fill.svg")
@@ -56,23 +60,22 @@ DropperTool::DropperTool(SPDesktop *desktop)
     area = make_canvasitem<CanvasItemBpath>(desktop->getCanvasControls());
     area->set_stroke(0x0000007f);
     area->set_fill(0x0, SP_WIND_RULE_EVENODD);
-    area->hide();
+    area->set_visible(false);
 
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    auto prefs = Preferences::get();
     
     if (prefs->getBool("/tools/dropper/selcue")) {
-        this->enableSelectionCue();
+        enableSelectionCue();
     }
 
     if (prefs->getBool("/tools/dropper/gradientdrag")) {
-        this->enableGrDrag();
+        enableGrDrag();
     }
 }
 
 DropperTool::~DropperTool()
 {
-    this->enableGrDrag(false);
-
+    enableGrDrag(false);
     ungrabCanvasEvents();
 }
 
@@ -80,289 +83,292 @@ DropperTool::~DropperTool()
  * Returns the current dropper context color.
  *
  * - If in dropping mode, returns color from selected objects.
- * Ignored if non_dropping set to true.
- * - If in dragging mode, returns average color on canvas, depending on radius
+ *   Ignored if non_dropping set to true.
+ * - If in dragging mode, returns average color on canvas, depending on radius.
  * - If in pick mode, alpha is not premultiplied. Alpha is only set if in pick mode
- * and setalpha is true. Both values are taken from preferences.
+ *   and setalpha is true. Both values are taken from preferences.
  *
  * @param invert If true, invert the rgb value
  * @param non_dropping If true, use color from canvas, even in dropping mode.
  */
-guint32 DropperTool::get_color(bool invert, bool non_dropping) {
-    Inkscape::Preferences   *prefs = Inkscape::Preferences::get();
+uint32_t DropperTool::get_color(bool invert, bool non_dropping) const
+{
+    auto prefs = Preferences::get();
 
-    int pick = prefs->getInt("/tools/dropper/pick", SP_DROPPER_PICK_VISIBLE);
+    int pick = prefs->getInt("/tools/dropper/pick", PICK_VISIBLE);
     bool setalpha = prefs->getBool("/tools/dropper/setalpha", true);
 
     // non_dropping ignores dropping mode and always uses color from canvas.
     // Used by the clipboard
-    double r = non_dropping ? this->non_dropping_R : this->R;
-    double g = non_dropping ? this->non_dropping_G : this->G;
-    double b = non_dropping ? this->non_dropping_B : this->B;
-    double a = non_dropping ? this->non_dropping_A : this->alpha;
+    double r = non_dropping ? non_dropping_R : R;
+    double g = non_dropping ? non_dropping_G : G;
+    double b = non_dropping ? non_dropping_B : B;
+    double a = non_dropping ? non_dropping_A : alpha;
 
     return SP_RGBA32_F_COMPOSE(
-        fabs(invert - r),
-        fabs(invert - g),
-        fabs(invert - b),
-       (pick == SP_DROPPER_PICK_ACTUAL && setalpha) ? a : 1.0);
+        std::abs(invert - r),
+        std::abs(invert - g),
+        std::abs(invert - b),
+        (pick == PICK_ACTUAL && setalpha) ? a : 1.0);
 }
 
-bool DropperTool::root_handler(GdkEvent* event) {
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-
-    int ret = FALSE;
-    int pick = prefs->getInt("/tools/dropper/pick", SP_DROPPER_PICK_VISIBLE);
+bool DropperTool::root_handler(CanvasEvent const &event)
+{
+    auto prefs = Preferences::get();
+    int pick = prefs->getInt("/tools/dropper/pick", PICK_VISIBLE);
 
     // Decide first what kind of 'mode' we're in.
-    if (event->type == GDK_KEY_PRESS || event->type == GDK_KEY_RELEASE) {
-        switch (event->key.keyval) {
-            case GDK_KEY_Shift_L:
-            case GDK_KEY_Shift_R:
-                this->stroke = event->type == GDK_KEY_PRESS;
-                break;
-            case GDK_KEY_Control_L:
-            case GDK_KEY_Control_R:
-                this->dropping = event->type == GDK_KEY_PRESS;
-                break;
-            case GDK_KEY_Alt_L:
-            case GDK_KEY_Alt_R:
-                this->invert = event->type == GDK_KEY_PRESS;
-                break;
-        }
-    }
+    auto modifiers = event.modifiersAfter();
+    stroke   = modifiers & GDK_SHIFT_MASK;
+    dropping = modifiers & GDK_CONTROL_MASK; // Even on macOS.
+    invert   = modifiers & GDK_MOD1_MASK;
 
     // Get color from selected object
     // Only if dropping mode enabled and object's color is set.
     // Otherwise dropping mode disabled.
-    if(this->dropping) {
-        Inkscape::Selection *selection = _desktop->getSelection();
+    if (dropping) {
+        auto selection = _desktop->getSelection();
         g_assert(selection);
-        guint32 apply_color;
-        bool apply_set = false;
-        for (auto& obj: selection->objects()) {
-            if(obj->style) {
+
+        std::optional<uint32_t> apply_color;
+        for (auto const &obj: selection->objects()) {
+            if (obj->style) {
                 double opacity = 1.0;
-                if(!this->stroke && obj->style->fill.set) {
-                    if(obj->style->fill_opacity.set) {
+                if (!stroke && obj->style->fill.set) {
+                    if (obj->style->fill_opacity.set) {
                         opacity = SP_SCALE24_TO_FLOAT(obj->style->fill_opacity.value);
                     }
                     apply_color = obj->style->fill.value.color.toRGBA32(opacity);
-                    apply_set = true;
-                } else if(this->stroke && obj->style->stroke.set) {
-                    if(obj->style->stroke_opacity.set) {
+                } else if (stroke && obj->style->stroke.set) {
+                    if (obj->style->stroke_opacity.set) {
                         opacity = SP_SCALE24_TO_FLOAT(obj->style->stroke_opacity.value);
                     }
                     apply_color = obj->style->stroke.value.color.toRGBA32(opacity);
-                    apply_set = true;
                 }
             }
         }
-        if(apply_set) {
-            this->R = SP_RGBA32_R_F(apply_color);
-            this->G = SP_RGBA32_G_F(apply_color);
-            this->B = SP_RGBA32_B_F(apply_color);
-            this->alpha = SP_RGBA32_A_F(apply_color);
+
+        if (apply_color) {
+            R = SP_RGBA32_R_F(*apply_color);
+            G = SP_RGBA32_G_F(*apply_color);
+            B = SP_RGBA32_B_F(*apply_color);
+            alpha = SP_RGBA32_A_F(*apply_color);
         } else {
             // This means that having no selection or some other error
             // we will default back to normal dropper mode.
-            this->dropping = false;
+            dropping = false;
         }
     }
 
-    switch (event->type) {
-	case GDK_BUTTON_PRESS:
-            if (event->button.button == 1) {
-                this->centre = Geom::Point(event->button.x, event->button.y);
-                this->dragging = true;
-                ret = TRUE;
+    bool ret = false;
+    bool self_destroyed = false;
+
+    inspect_event(event,
+        [&] (ButtonPressEvent const &event) {
+            if (event.numPress() != 1) {
+                return;
             }
 
-            grabCanvasEvents(Gdk::KEY_PRESS_MASK      |
-                             Gdk::KEY_RELEASE_MASK    |
-                             Gdk::BUTTON_RELEASE_MASK |
-                             Gdk::POINTER_MOTION_MASK |
-                             Gdk::BUTTON_PRESS_MASK   );
-            break;
+            if (event.button() == 1) {
+                centre = event.eventPos();
+                dragging = true;
+                ret = true;
+            }
 
-	case GDK_MOTION_NOTIFY:
-            if (event->motion.state & GDK_BUTTON2_MASK || event->motion.state & GDK_BUTTON3_MASK) {
+            grabCanvasEvents(EventType::KEY_PRESS      |
+                             EventType::KEY_RELEASE    |
+                             EventType::BUTTON_RELEASE |
+                             EventType::MOTION         |
+                             EventType::BUTTON_PRESS);
+        },
+
+        [&] (MotionEvent const &event) {
+            if (event.modifiers() & (GDK_BUTTON2_MASK | GDK_BUTTON3_MASK)) {
                 // pass on middle and right drag
-                ret = FALSE;
-                break;
+                return;
+            }
+
+            // otherwise, constantly calculate color no matter if any button pressed or not
+            Geom::IntRect pick_area;
+            if (dragging) {
+                // Calculate average
+
+                // Radius
+                double rw = std::min((event.eventPos() - centre).length(), 400.0);
+                if (rw == 0) { // happens sometimes, little idea why...
+                    return;
+                }
+                radius = rw;
+
+                auto const cd = _desktop->w2d(centre);
+                auto const w2dt = _desktop->w2d();
+                auto const scale = rw * w2dt.descrim();
+                auto const sm = Geom::Scale(scale) * Geom::Translate(cd);
+
+                // Show circle on canvas.
+                auto path = Geom::Path(Geom::Circle(0, 0, 1)); // Unit circle centered at origin.
+                path *= sm;
+                area->set_bpath(std::move(path));
+                area->set_visible(true);
+
+                // Get buffer
+                auto r = Geom::Rect(centre, centre);
+                r.expandBy(rw);
+                if (!r.hasZeroArea()) {
+                    pick_area = r.roundOutwards();
+                }
             } else {
-                // otherwise, constantly calculate color no matter if any button pressed or not
-
-                Geom::IntRect pick_area;
-                if (this->dragging) {
-                    // calculate average
-
-                    // radius
-                    double rw = std::min(Geom::L2(Geom::Point(event->button.x, event->button.y) - this->centre), 400.0);
-                    if (rw == 0) { // happens sometimes, little idea why...
-                        break;
-                    }
-                    this->radius = rw;
-
-                    Geom::Point const cd = _desktop->w2d(this->centre);
-                    Geom::Affine const w2dt = _desktop->w2d();
-                    const double scale = rw * w2dt.descrim();
-                    Geom::Affine const sm( Geom::Scale(scale, scale) * Geom::Translate(cd) );
-
-                    // Show circle on canvas
-                    Geom::PathVector path = Geom::Path(Geom::Circle(0, 0, 1)); // Unit circle centered at origin.
-                    path *= sm;
-                    this->area->set_bpath(std::move(path));
-                    this->area->show();
-
-                    /* Get buffer */
-                    Geom::Rect r(this->centre, this->centre);
-                    r.expandBy(rw);
-                    if (!r.hasZeroArea()) {
-                        pick_area = r.roundOutwards();
-
-                    }
-                } else {
-                    // pick single pixel
-                    pick_area = Geom::IntRect::from_xywh(floor(event->button.x), floor(event->button.y), 1, 1);
-                }
-
-                Inkscape::CanvasItemDrawing *canvas_item_drawing = _desktop->getCanvasDrawing();
-                Inkscape::Drawing *drawing = canvas_item_drawing->get_drawing();
-
-                // Get average color.
-                double R, G, B, A;
-                drawing->averageColor(pick_area, R, G, B, A);
-
-                if (pick == SP_DROPPER_PICK_VISIBLE) {
-                    // compose with page color
-                    auto bg = _desktop->getDocument()->getPageManager().getDefaultBackgroundColor();
-                    R = R + bg[0] * (1 - A);
-                    G = G + bg[1] * (1 - A);
-                    B = B + bg[2] * (1 - A);
-                    A = 1.0;
-                } else {
-                    // un-premultiply color channels
-                    if (A > 0) {
-                        R /= A;
-                        G /= A;
-                        B /= A;
-                    }
-                }
-
-                if (fabs(A) < 1e-4) {
-                    A = 0; // suppress exponentials, CSS does not allow that
-                }
-
-                // remember color
-                if (!this->dropping) {
-                    this->R = R;
-                    this->G = G;
-                    this->B = B;
-                    this->alpha = A;
-                }
-                // remember color from canvas, even in dropping mode
-                // These values are used by the clipboard
-                this->non_dropping_R = R;
-                this->non_dropping_G = G;
-                this->non_dropping_B = B;
-                this->non_dropping_A = A;
-
-                ret = TRUE;
+                // Pick single pixel
+                pick_area = Geom::IntRect::from_xywh(0, 0, 1, 1) + event.eventPos().floor();
             }
-            break;
 
-	case GDK_BUTTON_RELEASE:
-            if (event->button.button == 1) {
-                this->area->hide();
-		this->dragging = false;
+            auto canvas_item_drawing = _desktop->getCanvasDrawing();
+            auto drawing = canvas_item_drawing->get_drawing();
 
-                ungrabCanvasEvents();
+            // Get average color
+            double R2, G2, B2, A2;
+            drawing->averageColor(pick_area, R2, G2, B2, A2);
 
-                Inkscape::Selection *selection = _desktop->getSelection();
-                g_assert(selection);
-                std::vector<SPItem *> old_selection(selection->items().begin(), selection->items().end());
-                if(this->dropping) {
-		    Geom::Point const button_w(event->button.x, event->button.y);
-		    // remember clicked item, disregarding groups, honoring Alt
-		    this->item_to_select = sp_event_context_find_item (_desktop, button_w, event->button.state & GDK_MOD1_MASK, TRUE);
+            if (pick == PICK_VISIBLE) {
+                // Compose with page color
+                auto bg = _desktop->getDocument()->getPageManager().getDefaultBackgroundColor();
+                R2 = R2 + bg[0] * (1 - A2);
+                G2 = G2 + bg[1] * (1 - A2);
+                B2 = B2 + bg[2] * (1 - A2);
+                A2 = 1.0;
+            } else {
+                // Un-premultiply color channels
+                if (A2 > 0) {
+                    R2 /= A2;
+                    G2 /= A2;
+                    B2 /= A2;
+                }
+            }
 
-                    // Change selected object to object under cursor
-                    if (this->item_to_select) {
-                        std::vector<SPItem *> vec(selection->items().begin(), selection->items().end());
-                        selection->set(this->item_to_select);
+            if (std::abs(A2) < 1e-4) {
+                A2 = 0; // Suppress exponentials, CSS does not allow that.
+            }
+
+            // Remember color
+            if (!dropping) {
+                R = R2;
+                G = G2;
+                B = B2;
+                alpha = A2;
+            }
+
+            // Remember color from canvas, even in dropping mode.
+            // These values are used by the clipboard.
+            non_dropping_R = R2;
+            non_dropping_G = G2;
+            non_dropping_B = B2;
+            non_dropping_A = A2;
+
+            ret = true;
+        },
+
+        [&] (ButtonReleaseEvent const &event) {
+            if (event.button() != 1) {
+                return;
+            }
+
+            area->set_visible(false);
+            dragging = false;
+
+            ungrabCanvasEvents();
+
+            auto selection = _desktop->getSelection();
+            g_assert(selection);
+
+            auto old_selection = std::vector<SPItem*>(selection->items().begin(), selection->items().end());
+
+            if (dropping) {
+                auto const button_w = event.eventPos();
+                // Remember clicked item, disregarding groups, honoring Alt.
+                item_to_select = sp_event_context_find_item(_desktop, button_w, event.modifiers() & GDK_MOD1_MASK, true);
+
+                // Change selected object to object under cursor.
+                if (item_to_select) {
+                    selection->set(item_to_select);
+                }
+            }
+
+            auto picked_color = ColorRGBA(get_color(invert));
+
+            // One time pick has active signal, call them all and clear.
+            if (!onetimepick_signal.empty()) {
+                onetimepick_signal.emit(&picked_color);
+                onetimepick_signal.clear();
+                // Do this last as it destroys the picker tool.
+                sp_toggle_dropper(_desktop);
+                self_destroyed = true;
+                return;
+            }
+
+            // do the actual color setting
+            sp_desktop_set_color(_desktop, picked_color, false, !stroke);
+
+            // REJON: set aux. toolbar input to hex color!
+            if (!_desktop->getSelection()->isEmpty()) {
+                DocumentUndo::done(_desktop->getDocument(), _("Set picked color"), INKSCAPE_ICON("color-picker"));
+            }
+
+            if (dropping) {
+                selection->setList(old_selection);
+            }
+
+            ret = true;
+        },
+
+        [&] (KeyPressEvent const &event) {
+            switch (get_latin_keyval(event.original())) {
+                case GDK_KEY_Up:
+                case GDK_KEY_Down:
+                case GDK_KEY_KP_Up:
+                case GDK_KEY_KP_Down:
+                    // Prevent the zoom field from activating.
+                    if (!MOD__CTRL_ONLY(event)) {
+                        ret = true;
                     }
-                }
-
-                auto picked_color = ColorRGBA(this->get_color(this->invert));
-
-                // One time pick has active signal, call them all and clear.
-                if (!onetimepick_signal.empty())
-                {
-                    onetimepick_signal.emit(&picked_color);
-                    onetimepick_signal.clear();
-                    // Do this last as it destroys the picker tool.
-                    sp_toggle_dropper(_desktop);
-                    return true;
-                }
-
-                // do the actual color setting
-                sp_desktop_set_color(_desktop, picked_color, false, !this->stroke);
-
-                // REJON: set aux. toolbar input to hex color!
-                if (!(_desktop->getSelection()->isEmpty())) {
-                    DocumentUndo::done(_desktop->getDocument(), _("Set picked color"), INKSCAPE_ICON("color-picker"));
-                }
-                if(this->dropping) {
-                    selection->setList(old_selection);
-                }
-
-
-                ret = TRUE;
+                    break;
+                case GDK_KEY_Escape:
+                    _desktop->getSelection()->clear();
+                    break;
+                default:
+                    break;
             }
-            break;
+        },
 
-    case GDK_KEY_PRESS:
-        switch (get_latin_keyval(&event->key)) {
-          case GDK_KEY_Up:
-          case GDK_KEY_Down:
-          case GDK_KEY_KP_Up:
-          case GDK_KEY_KP_Down:
-            // prevent the zoom field from activation
-            if (!MOD__CTRL_ONLY(event)) {
-                ret = TRUE;
-            }
-            break;
-          case GDK_KEY_Escape:
-              _desktop->getSelection()->clear();
-              break;
-        }
-        break;
+        [&] (CanvasEvent const &event) {}
+    );
+
+    if (self_destroyed) {
+        return true;
     }
 
     // set the status message to the right text.
-    gchar c[64];
-    sp_svg_write_color(c, sizeof(c), this->get_color(this->invert));
+    char c[64];
+    sp_svg_write_color(c, sizeof(c), get_color(invert));
 
     // alpha of color under cursor, to show in the statusbar
     // locale-sensitive printf is OK, since this goes to the UI, not into SVG
-    gchar *alpha = g_strdup_printf(_(" alpha %.3g"), this->alpha);
+    auto alphastr = g_strdup_printf(_(" alpha %.3g"), alpha);
     // where the color is picked, to show in the statusbar
-    gchar *where = this->dragging ? g_strdup_printf(_(", averaged with radius %d"), (int) this->radius) : g_strdup_printf("%s", _(" under cursor"));
+    auto where = dragging ? g_strdup_printf(_(", averaged with radius %d"), (int)radius) : g_strdup_printf("%s", _(" under cursor"));
     // message, to show in the statusbar
-    const gchar *message = this->dragging ? _("<b>Release mouse</b> to set color.") : _("<b>Click</b> to set fill, <b>Shift+click</b> to set stroke; <b>drag</b> to average color in area; with <b>Alt</b> to pick inverse color; <b>Ctrl+C</b> to copy the color under mouse to clipboard");
+    auto message = dragging ? _("<b>Release mouse</b> to set color.") : _("<b>Click</b> to set fill, <b>Shift+click</b> to set stroke; <b>drag</b> to average color in area; with <b>Alt</b> to pick inverse color; <b>Ctrl+C</b> to copy the color under mouse to clipboard");
 
-    this->defaultMessageContext()->setF(
+    defaultMessageContext()->setF(
         Inkscape::NORMAL_MESSAGE,
         "<b>%s%s</b>%s. %s", c,
-        (pick == SP_DROPPER_PICK_VISIBLE) ? "" : alpha, where, message);
+        pick == PICK_VISIBLE ? "" : alphastr, where, message);
 
     g_free(where);
-    g_free(alpha);
+    g_free(alphastr);
 
     // Set the right cursor for the mode and apply the special Fill color
-    _cursor_filename = (this->dropping ? (this->stroke ? "dropper-drop-stroke.svg" : "dropper-drop-fill.svg") :
-                                        (this->stroke ? "dropper-pick-stroke.svg" : "dropper-pick-fill.svg") );
+    _cursor_filename = dropping ? (stroke ? "dropper-drop-stroke.svg" : "dropper-drop-fill.svg")
+                                : (stroke ? "dropper-pick-stroke.svg" : "dropper-pick-fill.svg");
 
     // We do this ourselves to get color correct.
     auto display = _desktop->getCanvas()->get_display();
@@ -371,16 +377,13 @@ bool DropperTool::root_handler(GdkEvent* event) {
     window->set_cursor(cursor);
 
     if (!ret) {
-    	ret = ToolBase::root_handler(event);
+        ret = ToolBase::root_handler(event);
     }
 
     return ret;
 }
 
-}
-}
-}
-
+} // namespace Inkscape::UI::Tools
 
 /*
   Local Variables:

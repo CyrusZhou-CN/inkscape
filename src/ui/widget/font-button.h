@@ -42,7 +42,7 @@ public:
     /**
     * Signal raised when the font button's value changes.
     */
-    Glib::SignalProxy0<void> signal_font_value_changed();
+    Glib::SignalProxy<void> signal_font_value_changed();
 };
 
 } // namespace Widget

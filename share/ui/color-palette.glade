@@ -275,7 +275,7 @@
   <object class="GtkPopover" id="config-popup">
     <property name="can-focus">False</property>
     <property name="relative-to">btn-menu</property>
-    <property name="position">left</property>
+    <property name="position">top</property>
     <child>
       <!-- n-columns=2 n-rows=8 -->
       <object class="GtkGrid" id="main-grid">

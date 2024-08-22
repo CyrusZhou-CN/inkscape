@@ -134,9 +134,9 @@ public:
     gchar *ehref {nullptr};
     gchar *sub_ehref{nullptr};
 
-    void set(const Inkscape::Preferences::Entry& val) override;
-    bool root_handler(GdkEvent* event) override;
-    bool item_handler(SPItem* item, GdkEvent* event) override;
+    void set(Preferences::Entry const &val) override;
+    bool root_handler(CanvasEvent const &event) override;
+    bool item_handler(SPItem* item, CanvasEvent const &event) override;
 
     void cc_clear_active_shape();
     void cc_set_active_conn(SPItem *item);

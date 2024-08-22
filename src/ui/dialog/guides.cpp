@@ -31,6 +31,7 @@
 #include "page-manager.h"
 
 #include "ui/dialog-events.h"
+#include "ui/dialog-run.h"
 #include "ui/tools/tool-base.h"
 #include "ui/widget/spinbutton.h"
 
@@ -68,7 +69,7 @@ GuidelinePropertiesDialog::~GuidelinePropertiesDialog() {
 void GuidelinePropertiesDialog::showDialog(SPGuide *guide, SPDesktop *desktop) {
     GuidelinePropertiesDialog dialog(guide, desktop);
     dialog._setup();
-    dialog.run();
+    Inkscape::UI::dialog_run(dialog);
 }
 
 void GuidelinePropertiesDialog::_modeChanged()

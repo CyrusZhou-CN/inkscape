@@ -82,6 +82,10 @@ void Inkscape::AlignmentSnapper::_collectBBoxPoints(bool const &first_point) con
                     SNAPSOURCE_UNDEFINED, SNAPTARGET_ALIGNMENT_PAGE_MARGIN_CORNER,
                     SNAPSOURCE_UNDEFINED, SNAPTARGET_UNDEFINED, // No edges
                     SNAPSOURCE_UNDEFINED, SNAPTARGET_ALIGNMENT_PAGE_MARGIN_CENTER);
+                getBBoxPoints(page->getDesktopBleed(), _points_to_snap_to.get(), true,
+                    SNAPSOURCE_UNDEFINED, SNAPTARGET_ALIGNMENT_PAGE_BLEED_CORNER,
+                    SNAPSOURCE_UNDEFINED, SNAPTARGET_UNDEFINED, // No edges
+                    SNAPSOURCE_UNDEFINED, SNAPTARGET_UNDEFINED);
             }
         }
         if (_snapmanager->snapprefs.isTargetSnappable(SNAPTARGET_PAGE_EDGE_CORNER)) {

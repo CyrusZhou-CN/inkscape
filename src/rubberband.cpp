@@ -113,8 +113,8 @@ void Inkscape::Rubberband::move(Geom::Point const &p)
         _path.appendNew<Geom::LineSegment>(next);
     }
 
-    if (_touchpath) _touchpath->hide();
-    if (_rect) _rect->hide();
+    if (_touchpath) _touchpath->set_visible(false);
+    if (_rect) _rect->set_visible(false);
 
     switch (_mode) {
         case RUBBERBAND_MODE_RECT:
@@ -126,7 +126,7 @@ void Inkscape::Rubberband::move(Geom::Point const &p)
                 _rect->set_inverted(true);
             }
             _rect->set_rect(Geom::Rect(_start, _end));
-            _rect->show();
+            _rect->set_visible(true);
             break;
         case RUBBERBAND_MODE_TOUCHRECT:
             if (!_rect) {
@@ -137,7 +137,7 @@ void Inkscape::Rubberband::move(Geom::Point const &p)
                 _rect->set_inverted(false);
             }
             _rect->set_rect(Geom::Rect(_start, _end));
-            _rect->show();
+            _rect->set_visible(true);
             break;
         case RUBBERBAND_MODE_TOUCHPATH:
             if (!_touchpath) {
@@ -146,7 +146,7 @@ void Inkscape::Rubberband::move(Geom::Point const &p)
                 _touchpath->set_fill(0x0, SP_WIND_RULE_NONZERO);
             }
             _touchpath->set_bpath(_touchpath_curve);
-            _touchpath->show();
+            _touchpath->set_visible(true);
             break;
         default:
             break;

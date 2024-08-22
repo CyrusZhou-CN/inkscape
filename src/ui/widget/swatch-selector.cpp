@@ -34,13 +34,13 @@ SwatchSelector::SwatchSelector()
     _gsel = Gtk::make_managed<GradientSelector>();
     _gsel->setMode(GradientSelector::MODE_SWATCH);
 
-    _gsel->show();
+    _gsel->set_visible(true);
 
     pack_start(*_gsel);
 
-    auto color_selector = Gtk::make_managed<ColorNotebook>(_selected_color);
+    auto const color_selector = Gtk::make_managed<ColorNotebook>(_selected_color);
     color_selector->set_label(_("Swatch color"));
-    color_selector->show();
+    color_selector->set_visible(true);
     pack_start(*color_selector);
 
     _selected_color.signal_dragged.connect(sigc::mem_fun(*this, &SwatchSelector::_changedCb));

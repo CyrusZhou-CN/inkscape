@@ -134,7 +134,7 @@ static char const preferences_skeleton[] =
     <eventcontext id="mesh" selcue="1"/>
     <eventcontext id="zoom" selcue="1" gradientdrag="0"/>
     <eventcontext id="dropper" selcue="1" gradientdrag="1" pick="1" setalpha="1"/>
-    <eventcontext id="select" selcue="1" gradientdrag="0"/>
+    <eventcontext id="select" selcue="1" gradientdrag="0" changelayer="1" changepage="1" />
     <eventcontext id="connector" style="fill:none;fill-rule:evenodd;stroke:black;stroke-opacity:1;stroke-linejoin:miter;stroke-width:1px;stroke-linecap:butt;" selcue="1"/>
     <eventcontext id="paintbucket" style="fill:#a0a0a0;stroke:none;" usecurrent="1"/>
     <group
@@ -380,6 +380,17 @@ static char const preferences_skeleton[] =
              angle_x="30.0"
              angle_z="30.0"
              empspacing="5"/>
+      <group id="modular"
+             units="mm"
+             origin_x="0.0"
+             origin_y="0.0"
+             spacing_x="40.0"
+             spacing_y="40.0"
+             gapx="10"
+             gapy="10"
+             marginx="0"
+             marginy="0"
+             />
     </group>
     <group id="workarounds"
            colorsontop="0"

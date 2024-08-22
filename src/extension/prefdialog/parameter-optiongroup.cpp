@@ -258,13 +258,13 @@ Gtk::Widget *ParamOptionGroup::get_widget(sigc::signal<void ()> *changeSignal)
         return nullptr;
     }
 
-    auto hbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, GUI_PARAM_WIDGETS_SPACING));
+    auto const hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, GUI_PARAM_WIDGETS_SPACING);
 
-    Gtk::Label *label = Gtk::manage(new Gtk::Label(_text, Gtk::ALIGN_START));
+    auto const label = Gtk::make_managed<Gtk::Label>(_text, Gtk::ALIGN_START);
     hbox->pack_start(*label, false, false);
 
     if (_mode == COMBOBOX) {
-        ComboWidget *combo = Gtk::manage(new ComboWidget(this, changeSignal));
+        auto const combo = Gtk::make_managed<ComboWidget>(this, changeSignal);
 
         for (auto choice : choices) {
             combo->append(choice->_text);
@@ -281,11 +281,11 @@ Gtk::Widget *ParamOptionGroup::get_widget(sigc::signal<void ()> *changeSignal)
     } else if (_mode == RADIOBUTTON) {
         label->set_valign(Gtk::ALIGN_START); // align label and first radio
 
-        Gtk::Box *radios = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL, 0));
+        auto const radios = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, 0);
         Gtk::RadioButtonGroup group;
 
         for (auto choice : choices) {
-            RadioWidget *radio = Gtk::manage(new RadioWidget(group, choice->_text, this, changeSignal));
+            auto const radio = Gtk::make_managed<RadioWidget>(group, choice->_text, this, changeSignal);
             radios->pack_start(*radio, true, true);
             if (choice->_value == _value) {
                 radio->set_active();

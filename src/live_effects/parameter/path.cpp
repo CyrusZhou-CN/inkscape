@@ -258,20 +258,20 @@ PathParam::set_buttons(bool edit_button, bool copy_button, bool paste_button, bo
 Gtk::Widget *
 PathParam::param_newWidget()
 {
-    Gtk::Box * _widget = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL));
+    auto const _widget = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
 
-    Gtk::Label* pLabel = Gtk::manage(new Gtk::Label(param_label));
+    auto const pLabel = Gtk::make_managed<Gtk::Label>(param_label);
     _widget->pack_start(*pLabel, true, true);
     pLabel->set_tooltip_text(param_tooltip);
     Gtk::Image * pIcon = nullptr;
     Gtk::Button * pButton = nullptr;
     if (_edit_button) {
         pIcon = Gtk::manage(sp_get_icon_image("tool-node-editor", Gtk::ICON_SIZE_BUTTON));
-        pButton = Gtk::manage(new Gtk::Button());
+        pButton = Gtk::make_managed<Gtk::Button>();
         pButton->set_relief(Gtk::RELIEF_NONE);
-        pIcon->show();
+        pIcon->set_visible(true);
         pButton->add(*pIcon);
-        pButton->show();
+        pButton->set_visible(true);
         pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_edit_button_click));
         _widget->pack_start(*pButton, true, true);
         pButton->set_tooltip_text(_("Edit on-canvas"));
@@ -279,11 +279,11 @@ PathParam::param_newWidget()
 
     if (_copy_button) {
         pIcon = Gtk::manage(sp_get_icon_image("edit-copy", Gtk::ICON_SIZE_BUTTON));
-        pButton = Gtk::manage(new Gtk::Button());
+        pButton = Gtk::make_managed<Gtk::Button>();
         pButton->set_relief(Gtk::RELIEF_NONE);
-        pIcon->show();
+        pIcon->set_visible(true);
         pButton->add(*pIcon);
-        pButton->show();
+        pButton->set_visible(true);
         pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_copy_button_click));
         _widget->pack_start(*pButton, true, true);
         pButton->set_tooltip_text(_("Copy path"));
@@ -291,22 +291,22 @@ PathParam::param_newWidget()
 
     if (_paste_button) {
         pIcon = Gtk::manage(sp_get_icon_image("edit-paste", Gtk::ICON_SIZE_BUTTON));
-        pButton = Gtk::manage(new Gtk::Button());
+        pButton = Gtk::make_managed<Gtk::Button>();
         pButton->set_relief(Gtk::RELIEF_NONE);
-        pIcon->show();
+        pIcon->set_visible(true);
         pButton->add(*pIcon);
-        pButton->show();
+        pButton->set_visible(true);
         pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_paste_button_click));
         _widget->pack_start(*pButton, true, true);
         pButton->set_tooltip_text(_("Paste path"));
     }
     if (_link_button) {
         pIcon = Gtk::manage(sp_get_icon_image("edit-clone", Gtk::ICON_SIZE_BUTTON));
-        pButton = Gtk::manage(new Gtk::Button());
+        pButton = Gtk::make_managed<Gtk::Button>();
         pButton->set_relief(Gtk::RELIEF_NONE);
-        pIcon->show();
+        pIcon->set_visible(true);
         pButton->add(*pIcon);
-        pButton->show();
+        pButton->set_visible(true);
         pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_link_button_click));
         _widget->pack_start(*pButton, true, true);
         pButton->set_tooltip_text(_("Link to path in clipboard"));
@@ -314,7 +314,7 @@ PathParam::param_newWidget()
 
     _widget->show_all_children();
 
-    return dynamic_cast<Gtk::Widget *> (_widget);
+    return _widget;
 }
 
 void

@@ -16,14 +16,9 @@
 
 #include <gtkmm/dialog.h>
 
+class SPDesktop;
+
 namespace Inkscape {
-
-namespace UI {
-namespace View {
-class View;
-} // namespace View
-} // namespace UI
-
 namespace Extension {
 
 class Effect;
@@ -51,8 +46,8 @@ private:
     /** \brief  In some cases we need a mainLoop, when we do, this is
                 a pointer to it. */
     Glib::RefPtr<Glib::MainLoop> _mainloop;
-    /** \brief  The document that we're working on. */
-    Inkscape::UI::View::View * _doc;
+    /** \brief  The desktop containing the document that we're working on. */
+    SPDesktop * _desktop;
     /** \brief  A document cache if we were passed one. */
     Implementation::ImplementationDocumentCache * _docCache;
 
@@ -65,7 +60,7 @@ public:
 
     /** \brief  Create a new context for execution of an effect
         \param effect  The effect to execute
-        \param doc     The document to execute the effect on
+        \param desktop   The desktop containing the document to execute the effect on
         \param docCache  The implementation cache of the document.  May be
                          NULL in which case it'll be created by the execution
                          environment.
@@ -74,7 +69,7 @@ public:
         \param show_errors   If the effect has an error, show it or not.
     */
     ExecutionEnv (Effect * effect,
-                  Inkscape::UI::View::View * doc,
+                  SPDesktop * desktop,
                   Implementation::ImplementationDocumentCache * docCache = nullptr,
                   bool show_working = true,
                   bool show_errors = true);

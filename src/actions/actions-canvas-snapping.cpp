@@ -349,8 +349,7 @@ void set_actions_canvas_snapping(Gio::ActionMap& map) {
 
         { "snap-alignment", alignment, global },
         { "snap-alignment-self",     snapprefs.isSnapButtonEnabled(SNAPTARGET_ALIGNMENT_HANDLE),   global && alignment },
-
-        { "snap-distribution", distribution, global },
+        { "snap-distribution", distribution, global && alignment},
 
         { "snap-bbox", bbox, global },
         { "snap-bbox-edge",          snapprefs.isSnapButtonEnabled(SNAPTARGET_BBOX_EDGE),          global && bbox },
@@ -372,13 +371,13 @@ void set_actions_canvas_snapping(Gio::ActionMap& map) {
         { "snap-rotation-center",    snapprefs.isSnapButtonEnabled(SNAPTARGET_ROTATION_CENTER),    global && other },
         { "snap-text-baseline",      snapprefs.isSnapButtonEnabled(SNAPTARGET_TEXT_BASELINE),      global && other },
 
+        { "snap-path-clip",          snapprefs.isSnapButtonEnabled(SNAPTARGET_PATH_CLIP),          global && other},
+        { "snap-path-mask",          snapprefs.isSnapButtonEnabled(SNAPTARGET_PATH_MASK),          global && other},
+
         { "snap-page-border",        snapprefs.isSnapButtonEnabled(SNAPTARGET_PAGE_EDGE_BORDER),   global },
         { "snap-page-margin",        snapprefs.isSnapButtonEnabled(SNAPTARGET_PAGE_MARGIN_BORDER), global },
         { "snap-grid",               snapprefs.isSnapButtonEnabled(SNAPTARGET_GRID),               global },
         { "snap-guide",              snapprefs.isSnapButtonEnabled(SNAPTARGET_GUIDE),              global },
-
-        { "snap-path-clip",          snapprefs.isSnapButtonEnabled(SNAPTARGET_PATH_CLIP),          global },
-        { "snap-path-mask",          snapprefs.isSnapButtonEnabled(SNAPTARGET_PATH_MASK),          global },
 
         { "simple-snap-bbox", bbox, global },
         { "simple-snap-nodes", node, global },

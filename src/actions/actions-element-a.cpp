@@ -70,7 +70,7 @@ add_actions_element_a(InkscapeApplication* app)
     auto *gapp = app->gio_app();
 
     // clang-format off
-    gapp->add_action(                "element-a-open-link",          sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&anchor_open_link),      app));
+    gapp->add_action(                "element-a-open-link",          sigc::bind(sigc::ptr_fun(&anchor_open_link),      app));
     // clang-format on
 
     app->get_action_extra_data().add_data(raw_data_element_a);

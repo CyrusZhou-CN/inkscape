@@ -85,7 +85,7 @@ void SpinScale::set_from_attribute(SPObject* o)
         _adjustment->set_value(get_default()->as_double());
 }
 
-Glib::SignalProxy0<void> SpinScale::signal_value_changed()
+Glib::SignalProxy<void> SpinScale::signal_value_changed()
 {
     return _adjustment->signal_value_changed();
 }
@@ -139,7 +139,7 @@ DualSpinScale::DualSpinScale(const Glib::ustring label1, const Glib::ustring lab
     _link.set_valign(Gtk::ALIGN_CENTER);
     _link.signal_clicked().connect(sigc::mem_fun(*this, &DualSpinScale::link_toggled));
 
-    Gtk::Box* vb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const vb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     vb->add(_s1);
     _s1.set_margin_bottom(3);
     vb->add(_s2);

@@ -977,7 +977,7 @@ void sp_import_document(SPDesktop *desktop, SPDocument *clipdoc, bool in_place, 
     Inkscape::Selection *selection = desktop->getSelection();
     selection->setReprList(pasted_objects_not);
 
-    selection->deleteItems();
+    selection->deleteItems(true);
 
     // Change the selection to the freshly pasted objects
     selection->setReprList(pasted_objects);
@@ -1016,6 +1016,8 @@ void sp_import_document(SPDesktop *desktop, SPDocument *clipdoc, bool in_place, 
             // get offset from mouse pointer to bbox center, snap to grid if enabled
             Geom::Point mouse_offset = desktop->point() - sel_bbox->midpoint();
             offset = m.multipleOfGridPitch(mouse_offset - offset, sel_bbox->midpoint() + offset) + offset;
+            // Integer align for mouse pasting
+            offset = offset.round();
             m.unSetup();
         } else if (on_page && from_page && to_page) {
             // Moving to the same location on a different page requires us to remove the original page translation
@@ -1178,7 +1180,7 @@ file_import(SPDocument *in_doc, const Glib::ustring &uri,
                 desktop->getDocument()->ensureUpToDate();
                 Geom::OptRect sel_bbox = selection->visualBounds();
                 if (sel_bbox) {
-                    Geom::Point m( pointer_location - sel_bbox->midpoint() );
+                    Geom::Point m(pointer_location.round() - sel_bbox->midpoint());
                     selection->moveRelative(m, false);
                 }
             }

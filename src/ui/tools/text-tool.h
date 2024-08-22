@@ -38,7 +38,8 @@ class Selection;
 namespace UI {
 namespace Tools {
 
-class TextTool : public ToolBase {
+class TextTool : public ToolBase
+{
 public:
     TextTool(SPDesktop *desktop);
     ~TextTool() override;
@@ -55,12 +56,12 @@ public:
     /* Text item position in root coordinates */
     Geom::Point pdoc;
     /* Insertion point position */
-    Inkscape::Text::Layout::iterator text_sel_start;
-    Inkscape::Text::Layout::iterator text_sel_end;
+    Text::Layout::iterator text_sel_start;
+    Text::Layout::iterator text_sel_end;
 
-    gchar uni[9];
+    char uni[9];
     bool unimode = false;
-    guint unipos = 0;
+    unsigned unipos = 0;
 
     // ---- On canvas editing ---
     CanvasItemPtr<CanvasItemCurve> cursor;
@@ -69,7 +70,7 @@ public:
     CanvasItemPtr<CanvasItemBpath> padding_frame; // Highlighting flowtext padding
     std::vector<CanvasItemPtr<CanvasItemQuad>> text_selection_quads;
 
-    gint timeout = 0;
+    int timeout = 0;
     bool show = false;
     bool phase = false;
     bool nascent_object = false; // true if we're clicked on canvas to put cursor,
@@ -77,19 +78,20 @@ public:
 
     bool over_text = false; // true if cursor is over a text object
 
-    guint dragging = 0;     // dragging selection over text
+    unsigned dragging = 0;     // dragging selection over text
     bool creating = false;  // dragging rubberband to create flowtext
     Geom::Point p0;         // initial point if the flowtext rect
 
     /* Preedit String */
-    gchar* preedit_string = nullptr;
+    char* preedit_string = nullptr;
 
-    bool root_handler(GdkEvent* event) override;
-    bool item_handler(SPItem* item, GdkEvent* event) override;
+    bool root_handler(CanvasEvent const &event) override;
+    bool item_handler(SPItem *item, CanvasEvent const &event) override;
     void deleteSelected();
+
 private:
-    void _selectionChanged(Inkscape::Selection *selection);
-    void _selectionModified(Inkscape::Selection *selection, guint flags);
+    void _selectionChanged(Selection *selection);
+    void _selectionModified(Selection *selection, unsigned flags);
     bool _styleSet(SPCSSAttr const *css);
     int _styleQueried(SPStyle *style, int property);
 };

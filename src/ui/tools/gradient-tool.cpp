@@ -39,6 +39,7 @@
 
 #include "ui/icon-names.h"
 #include "ui/tools/gradient-tool.h"
+#include "ui/widget/events/canvas-event.h"
 
 using Inkscape::DocumentUndo;
 
@@ -417,7 +418,9 @@ void GradientTool::add_stop_near_point(SPItem *item, Geom::Point mouse_p, guint3
     get_drag()->selectByStop(newstop);
 }
 
-bool GradientTool::root_handler(GdkEvent* event) {
+bool GradientTool::root_handler(CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     static bool dragging;
 
     Inkscape::Selection *selection = _desktop->getSelection();
@@ -461,9 +464,8 @@ bool GradientTool::root_handler(GdkEvent* event) {
             Geom::Point button_w(event->button.x, event->button.y);
 
             // save drag origin
-            this->xp = (gint) button_w[Geom::X];
-            this->yp = (gint) button_w[Geom::Y];
-            this->within_tolerance = true;
+            xyp = button_w.floor();
+            within_tolerance = true;
 
             dragging = true;
 
@@ -493,9 +495,9 @@ bool GradientTool::root_handler(GdkEvent* event) {
 
     case GDK_MOTION_NOTIFY:
         if (dragging && ( event->motion.state & GDK_BUTTON1_MASK )) {
-            if ( this->within_tolerance
-                 && ( abs( (gint) event->motion.x - this->xp ) < this->tolerance )
-                 && ( abs( (gint) event->motion.y - this->yp ) < this->tolerance ) ) {
+            if ( within_tolerance
+                && ( abs( (gint) event->motion.x - this->xyp.x() ) < this->tolerance )
+                && ( abs( (gint) event->motion.y - this->xyp.y() ) < this->tolerance ) ) {
                 break; // do not drag if we're within tolerance from origin
             }
             // Once the user has moved farther than tolerance from the original location
@@ -542,7 +544,7 @@ bool GradientTool::root_handler(GdkEvent* event) {
         break;
 
     case GDK_BUTTON_RELEASE:
-        this->xp = this->yp = 0;
+        xyp = {};
 
         if ( event->button.button == 1 ) {
             SPItem *item = is_over_curve(Geom::Point(event->motion.x, event->motion.y));
@@ -728,7 +730,7 @@ bool GradientTool::root_handler(GdkEvent* event) {
     }
 
     if (!ret) {
-       ret = ToolBase::root_handler(event);
+       ret = ToolBase::root_handler(canvas_event);
     }
 
     return ret;

@@ -25,11 +25,11 @@ namespace LivePathEffect {
 LPESimplify::LPESimplify(LivePathEffectObject *lpeobject)
     : Effect(lpeobject)
     , steps(_("Repeat"), _("Change number of repeats of simplifying operation. Useful for complex paths that need to be significantly simplified. "), "steps", &wr, this, 1)
-    , threshold(_("Complexity"), _("Drag slider to set how much simplification should happen"), "threshold", &wr, this, 5)
+    , threshold(_("Complexity"), _("Drag slider to set the amount of simplification"), "threshold", &wr, this, 5)
     , smooth_angles(_("Smoothness"), _("Max degree difference on handles to perform smoothing"), "smooth_angles",
                     &wr, this, 360.)
-    , helper_size(_("Preview size"), _("Helper size"), "helper_size", &wr, this, 10)
-    , simplify_individual_paths(_("Paths separately"), _("Simplifying paths (separately)"), "simplify_individual_paths",
+    , helper_size(_("Handle size"), _("Size of the handles in the effect visualization (not editable)"), "helper_size", &wr, this, 10)
+    , simplify_individual_paths(_("Paths separately"), _("When there are multiple paths in the selection, simplify each one separately."), "simplify_individual_paths",
                                 &wr, this, false, "", INKSCAPE_ICON("on-outline"), INKSCAPE_ICON("off-outline"))
     , simplify_just_coalesce(_("Just coalesce"), _("Simplify just coalesce"), "simplify_just_coalesce", &wr, this,
                              false, "", INKSCAPE_ICON("on-outline"), INKSCAPE_ICON("off-outline"))
@@ -107,17 +107,17 @@ Gtk::Widget *
 LPESimplify::newWidget()
 {
     // use manage here, because after deletion of Effect object, others might still be pointing to this widget.
-    Gtk::Box *vbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const vbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     
     vbox->set_border_width(5);
     vbox->set_homogeneous(false);
     vbox->set_spacing(2);
     std::vector<Parameter *>::iterator it = param_vector.begin();
-    Gtk::Box * buttons = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL,0));
+    auto const buttons = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL,0);
     while (it != param_vector.end()) {
         if ((*it)->widget_is_visible) {
             Parameter * param = *it;
-            Gtk::Widget * widg = dynamic_cast<Gtk::Widget *>(param->param_newWidget());
+            auto const widg = param->param_newWidget();
             if (param->param_key == "simplify_just_coalesce") {
                 ++it;
                 continue;
@@ -152,8 +152,9 @@ LPESimplify::newWidget()
 
         ++it;
     }
+
     vbox->pack_start(*buttons,true, true, 2);
-    return dynamic_cast<Gtk::Widget *>(vbox);
+    return vbox;
 }
 
 void
@@ -161,8 +162,7 @@ LPESimplify::doEffect(SPCurve *curve)
 {
     Geom::PathVector const original_pathv = pathv_to_linear_and_cubic_beziers(curve->get_pathvector());
     gdouble size  = Geom::L2(bbox->dimensions());
-    //size /= Geom::Affine(0,0,0,0,0,0).descrim();
-    Path* pathliv = Path_for_pathvector(original_pathv);
+    auto pathliv = Path_for_pathvector(original_pathv);
     if(simplify_individual_paths) {
         size = Geom::L2(Geom::bounds_fast(original_pathv)->dimensions());
     }
@@ -180,7 +180,7 @@ LPESimplify::doEffect(SPCurve *curve)
             pathliv->Simplify((threshold / factor) * size);
         }
     }
-    Geom::PathVector result = Geom::parse_svg_path(pathliv->svg_dump_path());
+    auto result = pathliv->MakePathVector();
     generateHelperPathAndSmooth(result);
     curve->set_pathvector(result);
     update_helperpath();

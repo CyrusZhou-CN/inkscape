@@ -48,6 +48,7 @@ using Inkscape::UI::Tools::LpeTool;
 namespace Inkscape {
 namespace UI {
 namespace Toolbar {
+
 LPEToolbar::LPEToolbar(SPDesktop *desktop)
     : Toolbar(desktop),
       _tracker(new UnitTracker(Util::UNIT_TYPE_LINEAR)),
@@ -68,7 +69,7 @@ LPEToolbar::LPEToolbar(SPDesktop *desktop)
         Gtk::RadioToolButton::Group mode_group;
 
         // The first toggle button represents the state that no subtool is active.
-        auto inactive_mode_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("All inactive")));
+        auto const inactive_mode_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("All inactive"));
         inactive_mode_btn->set_tooltip_text(_("No geometric tool is active"));
         inactive_mode_btn->set_icon_name(INKSCAPE_ICON("draw-geometry-inactive"));
         _mode_buttons.push_back(inactive_mode_btn);
@@ -78,7 +79,7 @@ LPEToolbar::LPEToolbar(SPDesktop *desktop)
 
             type =  lpesubtools[i].type;
 
-            auto btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, Inkscape::LivePathEffect::LPETypeConverter.get_label(type)));
+            auto const btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, Inkscape::LivePathEffect::LPETypeConverter.get_label(type));
             btn->set_tooltip_text(_(Inkscape::LivePathEffect::LPETypeConverter.get_label(type).c_str()));
             btn->set_icon_name(lpesubtools[i].icon_name);
             _mode_buttons.push_back(btn);
@@ -95,7 +96,7 @@ LPEToolbar::LPEToolbar(SPDesktop *desktop)
         _mode_buttons[mode]->set_active();
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Show limiting bounding box */
     {
@@ -116,7 +117,7 @@ LPEToolbar::LPEToolbar(SPDesktop *desktop)
         _bbox_from_selection_item->set_active(false);
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Combo box to choose line segment type */
     {
@@ -145,7 +146,7 @@ LPEToolbar::LPEToolbar(SPDesktop *desktop)
         add(*_line_segment_combo);
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Display measuring info for selected items */
     {
@@ -164,7 +165,7 @@ LPEToolbar::LPEToolbar(SPDesktop *desktop)
         _units_item->set_sensitive( prefs->getBool("/tools/lpetool/show_measuring_info", true));
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Open LPE dialog (to adapt parameters numerically) */
     {

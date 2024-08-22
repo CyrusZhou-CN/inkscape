@@ -10,8 +10,8 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_UI_TOOL_SHAPE_RECORD_H
-#define SEEN_UI_TOOL_SHAPE_RECORD_H
+#ifndef INKSCAPE_UI_TOOL_SHAPE_RECORD_H
+#define INKSCAPE_UI_TOOL_SHAPE_RECORD_H
 
 #include <glibmm/ustring.h>
 #include <boost/operators.hpp>
@@ -30,8 +30,7 @@ enum ShapeRole {
     SHAPE_ROLE_LPE_PARAM // implies edit_original set to true in ShapeRecord
 };
 
-struct ShapeRecord :
-    public boost::totally_ordered<ShapeRecord>
+struct ShapeRecord : public boost::totally_ordered<ShapeRecord>
 {
     SPObject *object; // SP node for the edited shape could be a lpeoject invisible so we use a spobject
     ShapeRole role;
@@ -51,7 +50,7 @@ struct ShapeRecord :
 } // namespace UI
 } // namespace Inkscape
 
-#endif
+#endif // INKSCAPE_UI_TOOL_SHAPE_RECORD_H
 
 /*
   Local Variables:

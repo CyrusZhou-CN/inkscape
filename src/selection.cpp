@@ -35,6 +35,7 @@
 #include "ui/tool/control-point-selection.h"
 #include "layer-manager.h"
 #include "page-manager.h"
+#include "object/sp-page.h"
 #include "object/sp-path.h"
 #include "object/sp-defs.h"
 #include "object/sp-shape.h"
@@ -107,11 +108,23 @@ void Selection::_emitModified(guint flags)
         if (it->empty()) it = _modified_signals.erase(it); else ++it;
     }
 
-    if (_desktop) {
-        if (auto item = singleItem()) {
-            // If the selected items have been moved to a new page...
-            _desktop->getDocument()->getPageManager().selectPage(item, false);
+    if (!_desktop || isEmpty()) {
+        return;
+    }
+
+    auto &pm = _desktop->getDocument()->getPageManager();
+
+    // If the selected items have been moved to a new page...
+    if (auto item = singleItem()) {
+        pm.selectPage(item, false);
+    } else {
+        SPPage *page = pm.getPageFor(firstItem(), true);
+        for (auto this_item : this->items()) {
+            if (page != pm.getPageFor(this_item, true)) {
+                return;
+            }
         }
+        pm.selectPage(page);
     }
 }
 
@@ -132,12 +145,16 @@ void Selection::_emitChanged(bool persist_selection_context/* = false */) {
       */
     if (_document && _desktop) {
         if (auto item = singleItem()) {
-            auto layer = _desktop->layerManager().layerForObject(item);
-            if (layer && layer != _selection_context) {
-                _desktop->layerManager().setCurrentLayer(layer);
+            if (_change_layer) {
+                auto layer = _desktop->layerManager().layerForObject(item);
+                if (layer && layer != _selection_context) {
+                    _desktop->layerManager().setCurrentLayer(layer);
+                }
             }
-            // This could be more complex if we want to be smarter.
-            _document->getPageManager().selectPage(item, false);
+            if (_change_page) {
+                // This could be more complex if we want to be smarter.
+                _document->getPageManager().selectPage(item, false);
+            }
         }
         DocumentUndo::resetKey(_document);
     }
@@ -272,9 +289,8 @@ Selection::setBackup ()
     SPDesktop *desktop = this->desktop();
     Inkscape::UI::Tools::NodeTool *tool = nullptr;
     if (desktop) {
-        Inkscape::UI::Tools::ToolBase *ec = desktop->event_context;
-        if (INK_IS_NODE_TOOL(ec)) {
-            tool = static_cast<Inkscape::UI::Tools::NodeTool*>(ec);
+        if (auto nt = dynamic_cast<Inkscape::UI::Tools::NodeTool*>(desktop->event_context)) {
+            tool = nt;
         }
     }
     _selected_ids.clear();
@@ -338,9 +354,8 @@ Selection::restoreBackup()
     SPDocument *document = SP_ACTIVE_DOCUMENT;
     Inkscape::UI::Tools::NodeTool *tool = nullptr;
     if (desktop) {
-        Inkscape::UI::Tools::ToolBase *ec = desktop->event_context;
-        if (INK_IS_NODE_TOOL(ec)) {
-            tool = static_cast<Inkscape::UI::Tools::NodeTool*>(ec);
+        if (auto nt = dynamic_cast<Inkscape::UI::Tools::NodeTool*>(desktop->event_context)) {
+            tool = nt;
         }
     }
 

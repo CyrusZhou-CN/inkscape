@@ -40,6 +40,7 @@
 #include "prefdialog/prefdialog.h"
 #include "prefdialog/widget.h"
 #include "timer.h"
+#include "ui/dialog-run.h"
 #include "xml/repr.h"
 
 namespace Inkscape {
@@ -1025,7 +1026,7 @@ Extension::autogui (SPDocument *doc, Inkscape::XML::Node *node, sigc::signal<voi
         return nullptr;
     }
 
-    AutoGUI * agui = Gtk::manage(new AutoGUI());
+    auto const agui = Gtk::make_managed<AutoGUI>();
     agui->set_border_width(InxParameter::GUI_BOX_MARGIN);
     agui->set_spacing(InxParameter::GUI_BOX_SPACING);
 
@@ -1042,7 +1043,7 @@ Extension::autogui (SPDocument *doc, Inkscape::XML::Node *node, sigc::signal<voi
         agui->addWidget(widg, tip, indent);
     }
 
-    agui->show();
+    agui->set_visible(true);
     return agui;
 };
 
@@ -1051,16 +1052,15 @@ Extension::autogui (SPDocument *doc, Inkscape::XML::Node *node, sigc::signal<voi
 Gtk::Box *
 Extension::get_info_widget()
 {
-    Gtk::Box * retval = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const retval = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     retval->set_border_width(4);
 
-    Gtk::Frame * info = Gtk::manage(new Gtk::Frame("General Extension Information"));
+    auto const info = Gtk::make_managed<Gtk::Frame>("General Extension Information");
     retval->pack_start(*info, true, true, 4);
 
-    auto table = Gtk::manage(new Gtk::Grid());
+    auto const table = Gtk::make_managed<Gtk::Grid>();
     table->set_border_width(4);
     table->set_column_spacing(4);
-
     info->add(*table);
 
     int row = 0;
@@ -1074,34 +1074,29 @@ Extension::get_info_widget()
 
 void Extension::add_val(Glib::ustring labelstr, Glib::ustring valuestr, Gtk::Grid * table, int * row)
 {
-    Gtk::Label * label;
-    Gtk::Label * value;
+    auto const label = Gtk::make_managed<Gtk::Label>(labelstr, Gtk::ALIGN_START);
+    auto const value = Gtk::make_managed<Gtk::Label>(valuestr, Gtk::ALIGN_START);
 
     (*row)++;
-    label = Gtk::manage(new Gtk::Label(labelstr, Gtk::ALIGN_START));
-    value = Gtk::manage(new Gtk::Label(valuestr, Gtk::ALIGN_START));
-
     table->attach(*label, 0, (*row) - 1, 1, 1);
     table->attach(*value, 1, (*row) - 1, 1, 1);
 
-    label->show();
-    value->show();
-
-    return;
+    label->set_visible(true);
+    value->set_visible(true);
 }
 
 Gtk::Box *
 Extension::get_params_widget()
 {
-    Gtk::Box * retval = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
-    Gtk::Widget * content = Gtk::manage(new Gtk::Label("Params"));
+    auto const retval = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    Gtk::Widget * content = Gtk::make_managed<Gtk::Label>("Params");
     retval->pack_start(*content, true, true, 4);
-    content->show();
-    retval->show();
+    content->set_visible(true);
+    retval->set_visible(true);
     return retval;
 }
 
-unsigned int Extension::widget_visible_count ( )
+unsigned int Extension::widget_visible_count() const
 {
     unsigned int _visible_count = 0;
     for (auto widget : _widgets) {
@@ -1113,25 +1108,26 @@ unsigned int Extension::widget_visible_count ( )
 }
 
 /**
- * Create a dialog for preference for this extension
+ * Create a dialog for preference for this extension.
+ * Will skip if not using GUI.
  *
- * @param keep - Should the dialog be kept around for multiple uses?
- *
- * @return True if preferences have been shown, False is canceled or kept.
+ * @return True if preferences have been shown or not using GUI, False is canceled.
  */
 bool Extension::prefs()
 {
+    if (!INKSCAPE.use_gui()) {
+        return true;
+    }
+
     if (!loaded())
         set_state(Extension::STATE_LOADED);
     if (!loaded())
         return false;
 
     if (auto controls = autogui(nullptr, nullptr)) {
-        auto dialog = new PrefDialog(get_name(), controls);
-        int response = dialog->run();
-        dialog->hide();
-        delete dialog;
-        return (response == Gtk::RESPONSE_OK);
+        auto dialog = PrefDialog(get_name(), controls);
+        int response = Inkscape::UI::dialog_run(dialog);
+        return response == Gtk::RESPONSE_OK;
     }
 
     // No controls, no prefs

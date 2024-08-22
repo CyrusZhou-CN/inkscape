@@ -260,18 +260,18 @@ Gtk::Widget *
 LPEPerspectiveEnvelope::newWidget()
 {
     // use manage here, because after deletion of Effect object, others might still be pointing to this widget.
-    Gtk::Box *vbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const vbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
 
     vbox->set_border_width(5);
     vbox->set_homogeneous(false);
     vbox->set_spacing(6);
     std::vector<Parameter *>::iterator it = param_vector.begin();
-    Gtk::Box * hbox_up_handles = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL,0));
-    Gtk::Box * hbox_down_handles = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL,0));
+    auto const hbox_up_handles = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL,0);
+    auto const hbox_down_handles = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL,0);
     while (it != param_vector.end()) {
         if ((*it)->widget_is_visible) {
             Parameter * param = *it;
-            Gtk::Widget * widg = dynamic_cast<Gtk::Widget *>(param->param_newWidget());
+            auto const widg = param->param_newWidget();
             if (param->param_key == "up_left_point" ||
                     param->param_key == "up_right_point" ||
                     param->param_key == "down_left_point" ||
@@ -284,15 +284,15 @@ LPEPerspectiveEnvelope::newWidget()
                 Glib::ustring * tip = param->param_getTooltip();
                 if (widg) {
                     if(param->param_key == "up_left_point") {
-                        Gtk::Label* handles = Gtk::manage(new Gtk::Label(Glib::ustring(_("Handles:")),Gtk::ALIGN_START));
+                        auto const handles = Gtk::make_managed<Gtk::Label>(Glib::ustring(_("Handles:")),Gtk::ALIGN_START);
                         vbox->pack_start(*handles, false, false, 2);
                         hbox_up_handles->pack_start(*widg, true, true, 2);
-                        hbox_up_handles->pack_start(*Gtk::manage(new Gtk::Separator(Gtk::ORIENTATION_VERTICAL)), Gtk::PACK_EXPAND_WIDGET);
+                        hbox_up_handles->pack_start(*Gtk::make_managed<Gtk::Separator>(Gtk::ORIENTATION_VERTICAL), Gtk::PACK_EXPAND_WIDGET);
                     } else if(param->param_key == "up_right_point") {
                         hbox_up_handles->pack_start(*widg, true, true, 2);
                     } else if(param->param_key == "down_left_point") {
                         hbox_down_handles->pack_start(*widg, true, true, 2);
-                        hbox_down_handles->pack_start(*Gtk::manage(new Gtk::Separator(Gtk::ORIENTATION_VERTICAL)), Gtk::PACK_EXPAND_WIDGET);
+                        hbox_down_handles->pack_start(*Gtk::make_managed<Gtk::Separator>(Gtk::ORIENTATION_VERTICAL), Gtk::PACK_EXPAND_WIDGET);
                     } else {
                         hbox_down_handles->pack_start(*widg, true, true, 2);
                     }
@@ -320,19 +320,19 @@ LPEPerspectiveEnvelope::newWidget()
         ++it;
     }
     vbox->pack_start(*hbox_up_handles,true, true, 2);
-    Gtk::Box * hbox_middle = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL,2));
-    hbox_middle->pack_start(*Gtk::manage(new Gtk::Separator(Gtk::ORIENTATION_HORIZONTAL)), Gtk::PACK_EXPAND_WIDGET);
-    hbox_middle->pack_start(*Gtk::manage(new Gtk::Separator(Gtk::ORIENTATION_HORIZONTAL)), Gtk::PACK_EXPAND_WIDGET);
+    auto const hbox_middle = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL,2);
+    hbox_middle->pack_start(*Gtk::make_managed<Gtk::Separator>(Gtk::ORIENTATION_HORIZONTAL), Gtk::PACK_EXPAND_WIDGET);
+    hbox_middle->pack_start(*Gtk::make_managed<Gtk::Separator>(Gtk::ORIENTATION_HORIZONTAL), Gtk::PACK_EXPAND_WIDGET);
     vbox->pack_start(*hbox_middle, false, true, 2);
     vbox->pack_start(*hbox_down_handles, true, true, 2);
-    Gtk::Box * hbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL,0));
-    Gtk::Button* reset_button = Gtk::manage(new Gtk::Button(_("_Clear"), true));
+    auto const hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL,0);
+    auto const reset_button = Gtk::make_managed<Gtk::Button>(_("_Clear"), true);
     reset_button->set_image_from_icon_name("edit-clear");
     reset_button->signal_clicked().connect(sigc::mem_fun (*this,&LPEPerspectiveEnvelope::resetGrid));
     reset_button->set_size_request(140,30);
     vbox->pack_start(*hbox, true,true,2);
     hbox->pack_start(*reset_button, false, false,2);
-    return dynamic_cast<Gtk::Widget *>(vbox);
+    return vbox;
 }
 
 void

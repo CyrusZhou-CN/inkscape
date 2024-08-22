@@ -33,7 +33,7 @@
       <object class="GtkMenuItem">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="tooltip-text" translatable="yes">Flatten, apply an effect to path</property>
+        <property name="tooltip-text" translatable="yes">Apply this effect, and all effects above this one, to the path. This removes those effects from the stack.</property>
         <property name="label" translatable="yes">Flatten</property>
         <property name="use-underline">True</property>
       </object>
@@ -42,8 +42,8 @@
       <object class="GtkMenuItem" id="LPESetDefault">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="tooltip-text" translatable="yes">Set current status of widgets as default for next apply operation of this kind of LPE</property>
-        <property name="label" translatable="yes">Set as default</property>
+        <property name="tooltip-text" translatable="yes">Use the current values as custom defaults for this LPE</property>
+        <property name="label" translatable="yes">Set custom defaults</property>
         <property name="use-underline">True</property>
       </object>
     </child>
@@ -51,8 +51,8 @@
       <object class="GtkMenuItem" id="LPEResetDefault">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="tooltip-text" translatable="yes">Reset settings of this Life Path Effect to default values</property>
-        <property name="label" translatable="yes">Reset to defaults</property>
+        <property name="tooltip-text" translatable="yes">Reset default settings of this LPE to Inkscape's default values</property>
+        <property name="label" translatable="yes">Forget custom defaults</property>
         <property name="use-underline">True</property>
       </object>
     </child>
@@ -145,7 +145,7 @@
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="halign">start</property>
-                            <property name="label" translatable="yes">expander</property>
+                            <property name="label" translatable="no">expander</property>
                             <property name="ellipsize">end</property>
                             <property name="single-line-mode">True</property>
                             <property name="xalign">0</property>
@@ -239,26 +239,18 @@
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <child>
-                      <object class="GtkEventBox" id="LPEHide">
-                        <property name="name">eventbutton</property>
+                      <object class="GtkButton" id="LPEHide">
+                        <property name="width-request">30</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="tooltip-text" translatable="yes">Toggle show/hide this Live Path Effect</property>
-                        <property name="visible-window">False</property>
-                        <child>
-                          <object class="GtkButton">
-                            <property name="width-request">30</property>
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="receives-default">False</property>
-                            <property name="image">visibilityImage</property>
-                            <property name="relief">none</property>
-                            <property name="always-show-image">True</property>
-                            <style>
-                              <class name="minbutton"/>
-                            </style>
-                          </object>
-                        </child>
+                        <property name="receives-default">False</property>
+                        <property name="image">visibilityImage</property>
+                        <property name="relief">none</property>
+                        <property name="always-show-image">True</property>
+                        <property name="tooltip-text" translatable="yes">Show/hide this Live Path Effect</property>
+                        <style>
+                          <class name="minbutton"/>
+                        </style>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -267,26 +259,18 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEventBox" id="LPEErase">
-                        <property name="name">eventbutton</property>
+                      <object class="GtkButton" id="LPEErase">
+                        <property name="width-request">30</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
+                        <property name="receives-default">False</property>
+                        <property name="image">removeImage</property>
+                        <property name="relief">none</property>
+                        <property name="always-show-image">True</property>
                         <property name="tooltip-text" translatable="yes">Remove this Live Path Effect</property>
-                        <property name="visible-window">False</property>
-                        <child>
-                          <object class="GtkButton">
-                            <property name="width-request">30</property>
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="receives-default">False</property>
-                            <property name="image">removeImage</property>
-                            <property name="relief">none</property>
-                            <property name="always-show-image">True</property>
-                            <style>
-                              <class name="minbutton"/>
-                            </style>
-                          </object>
-                        </child>
+                        <style>
+                          <class name="minbutton"/>
+                        </style>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -304,18 +288,12 @@
                         <property name="receives-default">False</property>
                         <property name="popup">LPEEffectMenu</property>
                         <property name="use-popover">False</property>
+                        <property name="tooltip-text" translatable="yes">Menu with options related to this Live Path Effect</property>
                         <child>
-                          <object class="GtkEventBox">
+                          <object class="GtkImage">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="tooltip-text" translatable="yes">Menu with options related to this Live Path Effect</property>
-                            <child>
-                              <object class="GtkImage">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="icon-name">go-down-symbolic</property>
-                              </object>
-                            </child>
+                            <property name="icon-name">go-down-symbolic</property>
                           </object>
                         </child>
                       </object>
@@ -336,30 +314,21 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEventBox" id="LPEDrag">
-                    <property name="name">LPEDrag</property>
-                    <property name="width-request">35</property>
+                  <object class="GtkButton" id="LPEDrag">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
-                    <property name="tooltip-text" translatable="yes">Reorder this Live Path Effect</property>
+                    <property name="receives-default">False</property>
+                    <property name="no-show-all">True</property>
                     <property name="halign">center</property>
-                    <child>
-                      <object class="GtkButton">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">False</property>
-                        <property name="no-show-all">True</property>
-                        <property name="halign">center</property>
-                        <property name="image">dndImage</property>
-                        <property name="relief">none</property>
-                        <property name="xalign">1</property>
-                        <property name="image-position">right</property>
-                        <property name="always-show-image">True</property>
-                        <style>
-                          <class name="LPEDrag"/>
-                        </style>
-                      </object>
-                    </child>
+                    <property name="image">dndImage</property>
+                    <property name="relief">none</property>
+                    <property name="image-position">right</property>
+                    <property name="always-show-image">True</property>
+                    <property name="width-request">35</property>
+                    <property name="tooltip-text" translatable="yes">Reorder this Live Path Effect</property>
+                    <style>
+                      <class name="LPEDrag"/>
+                    </style>
                   </object>
                   <packing>
                     <property name="expand">True</property>

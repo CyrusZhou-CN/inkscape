@@ -1,8 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-
-#ifndef INKSCAPE_UI_DIALOG_WINDOW_H
-#define INKSCAPE_UI_DIALOG_WINDOW_H
-
 /** @file
  * @brief A window for floating docks.
  *
@@ -14,20 +10,17 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#ifndef INKSCAPE_UI_DIALOG_WINDOW_H
+#define INKSCAPE_UI_DIALOG_WINDOW_H
+
 #include <glibmm/refptr.h>
 #include <glibmm/ustring.h>
 #include <gtkmm/applicationwindow.h>
-
 #include "inkscape-application.h"
-
-using Gtk::Label;
-using Gtk::Widget;
 
 class InkscapeWindow;
 
-namespace Inkscape {
-namespace UI {
-namespace Dialog {
+namespace Inkscape::UI::Dialog {
 
 class DialogContainer;
 class DialogMultipaned;
@@ -60,9 +53,7 @@ private:
     Glib::ustring _title;
 };
 
-} // namespace Dialog
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Dialog
 
 #endif // INKSCAPE_UI_DIALOG_WINDOW_H
 

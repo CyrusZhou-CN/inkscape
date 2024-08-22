@@ -9,7 +9,7 @@
 
 #include "ui/tool/selectable-control-point.h"
 #include "ui/tool/control-point-selection.h"
-#include "ui/tool/event-utils.h"
+#include "ui/widget/events/canvas-event.h"
 
 namespace Inkscape {
 namespace UI {
@@ -53,7 +53,7 @@ SelectableControlPoint::~SelectableControlPoint()
     _selection.allPoints().erase(this);
 }
 
-bool SelectableControlPoint::grabbed(GdkEventMotion *)
+bool SelectableControlPoint::grabbed(MotionEvent const &)
 {
     // if a point is dragged while not selected, it should select itself
     if (!selected()) {
@@ -63,23 +63,24 @@ bool SelectableControlPoint::grabbed(GdkEventMotion *)
     return false;
 }
 
-void SelectableControlPoint::dragged(Geom::Point &new_pos, GdkEventMotion *event)
+void SelectableControlPoint::dragged(Geom::Point &new_pos, MotionEvent const &event)
 {
     _selection._pointDragged(new_pos, event);
 }
 
-void SelectableControlPoint::ungrabbed(GdkEventButton *)
+void SelectableControlPoint::ungrabbed(ButtonReleaseEvent const *)
 {
     _selection._pointUngrabbed();
 }
 
-bool SelectableControlPoint::clicked(GdkEventButton *event)
+bool SelectableControlPoint::clicked(ButtonReleaseEvent const &event)
 {
-    if (_selection._pointClicked(this, event))
+    if (_selection._pointClicked(this, event)) {
         return true;
+    }
 
-    if (event->button != 1) return false;
-    if (held_shift(*event)) {
+    if (event.button() != 1) return false;
+    if (held_shift(event)) {
         if (selected()) {
             _selection.erase(this);
         } else {

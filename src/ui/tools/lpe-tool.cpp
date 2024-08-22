@@ -39,6 +39,7 @@
 #include "ui/toolbar/lpe-toolbar.h"
 #include "ui/tools/lpe-tool.h"
 #include "ui/shape-editor.h"
+#include "ui/widget/events/canvas-event.h"
 
 using Inkscape::Util::unit_table;
 using Inkscape::UI::Tools::PenTool;
@@ -121,7 +122,9 @@ void LpeTool::set(const Inkscape::Preferences::Entry& val) {
     }
 }
 
-bool LpeTool::item_handler(SPItem* item, GdkEvent* event) {
+bool LpeTool::item_handler(SPItem *item, CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     gint ret = FALSE;
 
     switch (event->type) {
@@ -143,21 +146,22 @@ bool LpeTool::item_handler(SPItem* item, GdkEvent* event) {
     }
 
     if (!ret) {
-    	ret = PenTool::item_handler(item, event);
+        ret = PenTool::item_handler(item, canvas_event);
     }
 
     return ret;
 }
 
-bool LpeTool::root_handler(GdkEvent* event) {
+bool LpeTool::root_handler(CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     Inkscape::Selection *selection = _desktop->getSelection();
 
     bool ret = false;
 
     if (this->hasWaitingLPE()) {
         // quit when we are waiting for a LPE to be applied
-        //ret = ((ToolBaseClass *) sp_lpetool_context_parent_class)->root_handler(event_context, event);
-	return PenTool::root_handler(event);
+        return PenTool::root_handler(canvas_event);
     }
 
     switch (event->type) {
@@ -173,9 +177,8 @@ bool LpeTool::root_handler(GdkEvent* event) {
                 }
 
                 // save drag origin
-                this->xp = (gint) event->button.x;
-                this->yp = (gint) event->button.y;
-                this->within_tolerance = true;
+                xyp = { (gint) event->button.x, (gint) event->button.y };
+                within_tolerance = true;
 
                 using namespace Inkscape::LivePathEffect;
 
@@ -188,8 +191,7 @@ bool LpeTool::root_handler(GdkEvent* event) {
                 this->waitForLPEMouseClicks(type, Inkscape::LivePathEffect::Effect::acceptsNumClicks(type));
 
                 // we pass the mouse click on to pen tool as the first click which it should collect
-                //ret = ((ToolBaseClass *) sp_lpetool_context_parent_class)->root_handler(event_context, event);
-		ret = PenTool::root_handler(event);
+                ret = PenTool::root_handler(canvas_event);
             }
             break;
 
@@ -225,7 +227,7 @@ bool LpeTool::root_handler(GdkEvent* event) {
     }
 
     if (!ret) {
-    	ret = PenTool::root_handler(event);
+        ret = PenTool::root_handler(canvas_event);
     }
 
     return ret;
@@ -393,7 +395,7 @@ lpetool_create_measuring_items(LpeTool *lc, Inkscape::Selection *selection)
             auto canvas_text = make_canvasitem<CanvasItemText>(tmpgrp, Geom::Point(0,0), arc_length);
             set_pos_and_anchor(canvas_text.get(), pwd2, 0.5, 10);
             if (!show) {
-                canvas_text->hide();
+                canvas_text->set_visible(false);
             }
 
             lc->measuring_items[path] = std::move(canvas_text);
@@ -439,9 +441,9 @@ lpetool_show_measuring_info(LpeTool *lc, bool show)
 {
     for (auto& i : lc->measuring_items) {
         if (show) {
-            i.second->show();
+            i.second->set_visible(true);
         } else {
-            i.second->hide();
+            i.second->set_visible(false);
         }
     }
 }

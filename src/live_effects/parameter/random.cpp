@@ -165,14 +165,12 @@ RandomParam::resetRandomizer()
 Gtk::Widget *
 RandomParam::param_newWidget()
 {
-    Inkscape::UI::Widget::RegisteredRandom* regrandom = Gtk::manage(
-        new Inkscape::UI::Widget::RegisteredRandom( param_label,
-                                                    param_tooltip,
-                                                    param_key,
-                                                    *param_wr,
-                                                    param_effect->getRepr(),
-                                                    param_effect->getSPDoc() )  );
-
+    auto const regrandom = Gtk::make_managed<UI::Widget::RegisteredRandom>( param_label,
+                                                                            param_tooltip,
+                                                                            param_key,
+                                                                           *param_wr,
+                                                                            param_effect->getRepr(),
+                                                                            param_effect->getSPDoc() );
     regrandom->setValue(value, startseed);
     if (integer) {
         regrandom->setDigits(0);
@@ -183,8 +181,7 @@ RandomParam::param_newWidget()
     regrandom->signal_button_release_event().connect(sigc::mem_fun (*this, &RandomParam::on_button_release));
 
     regrandom->set_undo_parameters(_("Change random parameter"), INKSCAPE_ICON("dialog-path-effects"));
-
-    return dynamic_cast<Gtk::Widget *> (regrandom);
+    return regrandom;
 }
 
 bool RandomParam::on_button_release(GdkEventButton* button_event) {

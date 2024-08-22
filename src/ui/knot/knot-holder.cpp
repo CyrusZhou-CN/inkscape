@@ -454,9 +454,9 @@ void KnotHolder::add_filter_knotholder() {
     auto entity_x = new BlurKnotHolderEntity(Geom::X);
     auto entity_y = new BlurKnotHolderEntity(Geom::Y);
     entity_x->create(desktop, item, this, Inkscape::CANVAS_ITEM_CTRL_TYPE_ROTATE, "Filter:BlurX",
-                      _("<b>Resize</b> the blur in the X direction; set to Y with <b>Ctrl</b>; constrain Y with <b>Shift</b>+<b>Ctrl</b>"));
+                      _("<b>Drag</b> to <b>adjust</b> blur in x direction; <b>Ctrl</b>+<b>Drag</b> makes x equal to y; <b>Shift</b>+<b>Ctrl</b>+<b>Drag</b> scales blur proportionately "));
     entity_y->create(desktop, item, this, Inkscape::CANVAS_ITEM_CTRL_TYPE_ROTATE, "Filter:BlurY",
-                      _("<b>Resize</b> the blur in the Y direction; set to X with <b>Ctrl</b>; constrain X with <b>Shift</b>+<b>Ctrl</b>"));
+                      _("<b>Drag</b> to <b>adjust</b> blur in y direction; <b>Ctrl</b>+<b>Drag</b> makes y equal to x; <b>Shift</b>+<b>Ctrl</b>+<b>Drag</b> scales blur proportionately "));
     entity.push_back(entity_x);
     entity.push_back(entity_y);
 }

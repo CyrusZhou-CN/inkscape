@@ -203,6 +203,12 @@ public:
      */
     std::list<std::string> params;
 
+    /**
+     * Decide if the selection changing should change the layer and page selection too
+     */
+    void setChangeLayer(bool option) { _change_layer = option; }
+    void setChangePage(bool option) { _change_page = option; }
+
 protected:
     void _connectSignals(SPObject* object) override;
     void _releaseSignals(SPObject* object) override;
@@ -225,6 +231,8 @@ private:
     SPObject* _selection_context;
     unsigned int _flags;
     unsigned int _idle;
+    bool _change_layer = true;
+    bool _change_page = true;
     std::vector<std::pair<std::string, std::pair<int, int> > > _seldata;
     std::vector<std::string> _selected_ids;
     std::map<SPObject *, sigc::connection> _modified_connections;

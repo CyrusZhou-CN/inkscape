@@ -86,12 +86,12 @@ Glib::ustring build_lines(Geom::Rect bounding_area,
     \param  document What should be edited.
 */
 void
-Grid::effect (Inkscape::Extension::Effect *module, Inkscape::UI::View::View *document, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
+Grid::effect (Inkscape::Extension::Effect *module, SPDesktop *desktop, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
 {
 
     std::cerr << "Executing effect" << std::endl;
 
-    Inkscape::Selection *selection = static_cast<SPDocument *>(document)->getSelection();
+    Inkscape::Selection *selection = desktop->getSelection();
 
     Geom::Rect bounding_area = Geom::Rect(Geom::Point(0,0), Geom::Point(100,100));
     if (selection->isEmpty()) {
@@ -174,16 +174,16 @@ PrefAdjustment::val_changed ()
 
 /** \brief  A function to get the preferences for the grid
     \param  module  Module which holds the params
-    \param  view     Unused today - may get style information in the future.
+    \param  desktop
 
     Uses AutoGUI for creating the GUI.
 */
 Gtk::Widget *
-Grid::prefs_effect(Inkscape::Extension::Effect *module, Inkscape::UI::View::View * view, sigc::signal<void ()> * changeSignal, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
+Grid::prefs_effect(Inkscape::Extension::Effect *module, SPDesktop *desktop, sigc::signal<void ()> * changeSignal, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
 {
-    SPDocument * current_document = view->doc();
+    auto current_document = desktop->doc();
+    auto selected = desktop->getSelection()->items();
 
-    auto selected = static_cast<SPDocument *>(view)->getSelection()->items();
     Inkscape::XML::Node * first_select = nullptr;
     if (!selected.empty()) {
         first_select = selected.front()->getRepr();

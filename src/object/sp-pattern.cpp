@@ -725,11 +725,6 @@ void SPPattern::setBBox(unsigned key, Geom::OptRect const &bbox)
     update_view(v);
 }
 
-SPPattern::View::View(DrawingItemPtr<Inkscape::DrawingPattern> drawingitem, Geom::OptRect const &bbox, unsigned key)
-    : drawingitem(std::move(drawingitem))
-    , bbox(bbox)
-    , key(key) {}
-
 /*
   Local Variables:
   mode:c++

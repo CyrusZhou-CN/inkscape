@@ -41,35 +41,35 @@ OriginalPathParam::OriginalPathParam( const Glib::ustring& label, const Glib::us
 Gtk::Widget *
 OriginalPathParam::param_newWidget()
 {
-    Gtk::Box *_widget = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL));
+    auto const _widget = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
 
     { // Label
-        Gtk::Label *pLabel = Gtk::manage(new Gtk::Label(param_label));
+        auto const pLabel = Gtk::make_managed<Gtk::Label>(param_label);
         _widget->pack_start(*pLabel, true, true);
         pLabel->set_tooltip_text(param_tooltip);
     }
 
     { // Paste path to link button
-        Gtk::Image *pIcon = Gtk::manage(new Gtk::Image());
+        auto const pIcon = Gtk::make_managed<Gtk::Image>();
         pIcon->set_from_icon_name("edit-clone", Gtk::ICON_SIZE_BUTTON);
-        Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
+        auto const pButton = Gtk::make_managed<Gtk::Button>();
         pButton->set_relief(Gtk::RELIEF_NONE);
-        pIcon->show();
+        pIcon->set_visible(true);
         pButton->add(*pIcon);
-        pButton->show();
+        pButton->set_visible(true);
         pButton->signal_clicked().connect(sigc::mem_fun(*this, &OriginalPathParam::on_link_button_click));
         _widget->pack_start(*pButton, true, true);
         pButton->set_tooltip_text(_("Link to path in clipboard"));
     }
 
     { // Select original button
-        Gtk::Image *pIcon = Gtk::manage(new Gtk::Image());
+        auto const pIcon = Gtk::make_managed<Gtk::Image>();
         pIcon->set_from_icon_name("edit-select-original", Gtk::ICON_SIZE_BUTTON);
-        Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
+        auto const pButton = Gtk::make_managed<Gtk::Button>();
         pButton->set_relief(Gtk::RELIEF_NONE);
-        pIcon->show();
+        pIcon->set_visible(true);
         pButton->add(*pIcon);
-        pButton->show();
+        pButton->set_visible(true);
         pButton->signal_clicked().connect(sigc::mem_fun(*this, &OriginalPathParam::on_select_original_button_click));
         _widget->pack_start(*pButton, true, true);
         pButton->set_tooltip_text(_("Select original"));
@@ -77,7 +77,7 @@ OriginalPathParam::param_newWidget()
 
     _widget->show_all_children();
 
-    return dynamic_cast<Gtk::Widget *> (_widget);
+    return _widget;
 }
 
 void

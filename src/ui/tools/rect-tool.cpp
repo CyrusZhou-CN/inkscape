@@ -37,6 +37,7 @@
 #include "ui/icon-names.h"
 #include "ui/shape-editor.h"
 #include "ui/tools/rect-tool.h"
+#include "ui/widget/events/canvas-event.h"
 
 using Inkscape::DocumentUndo;
 
@@ -46,7 +47,6 @@ namespace Tools {
 
 RectTool::RectTool(SPDesktop *desktop)
     : ToolBase(desktop, "/tools/shapes/rect", "rect.svg")
-    , rect(nullptr)
     , rx(0)
     , ry(0)
 {
@@ -113,8 +113,9 @@ void RectTool::set(const Inkscape::Preferences::Entry& val) {
     }
 }
 
-bool RectTool::item_handler(SPItem* item, GdkEvent* event) {
-    gint ret = FALSE;
+bool RectTool::item_handler(SPItem *item, CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
 
     switch (event->type) {
     case GDK_BUTTON_PRESS:
@@ -127,12 +128,12 @@ bool RectTool::item_handler(SPItem* item, GdkEvent* event) {
         break;
     }
 
-       ret = ToolBase::item_handler(item, event);
-
-    return ret;
+    return ToolBase::item_handler(item, canvas_event);
 }
 
-bool RectTool::root_handler(GdkEvent* event) {
+bool RectTool::root_handler(CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     static bool dragging;
 
     Inkscape::Selection *selection = _desktop->getSelection();
@@ -149,9 +150,8 @@ bool RectTool::root_handler(GdkEvent* event) {
             Geom::Point const button_w(event->button.x, event->button.y);
 
             // save drag origin
-            this->xp = (gint) button_w[Geom::X];
-            this->yp = (gint) button_w[Geom::Y];
-            this->within_tolerance = true;
+            xyp = button_w.floor();
+            within_tolerance = true;
 
             // remember clicked item, disregarding groups, honoring Alt
             this->item_to_select = sp_event_context_find_item (_desktop, button_w, event->button.state & GDK_MOD1_MASK, TRUE);
@@ -177,9 +177,9 @@ bool RectTool::root_handler(GdkEvent* event) {
         if ( dragging
              && (event->motion.state & GDK_BUTTON1_MASK))
         {
-            if ( this->within_tolerance
-                 && ( abs( (gint) event->motion.x - this->xp ) < this->tolerance )
-                 && ( abs( (gint) event->motion.y - this->yp ) < this->tolerance ) ) {
+            if ( within_tolerance
+                && ( abs( (gint) event->motion.x - xyp.x() ) < this->tolerance )
+                && ( abs( (gint) event->motion.y - xyp.y() ) < this->tolerance ) ) {
                 break; // do not drag if we're within tolerance from origin
             }
             // Once the user has moved farther than tolerance from the original location
@@ -205,12 +205,12 @@ bool RectTool::root_handler(GdkEvent* event) {
         }
         break;
     case GDK_BUTTON_RELEASE:
-        this->xp = this->yp = 0;
+        xyp = {};
         if (event->button.button == 1) {
             dragging = false;
             this->discard_delayed_snap_event();
 
-            if (!this->within_tolerance) {
+            if (rect) {
                 // we've been dragging, finish the rect
                 this->finishItem();
             } else if (this->item_to_select) {
@@ -318,7 +318,7 @@ bool RectTool::root_handler(GdkEvent* event) {
     }
 
     if (!ret) {
-        ret = ToolBase::root_handler(event);
+        ret = ToolBase::root_handler(canvas_event);
     }
 
     return ret;
@@ -344,7 +344,7 @@ void RectTool::drag(Geom::Point const pt, guint state) {
         this->rect->updateRepr();
     }
 
-    Geom::Rect const r = Inkscape::snap_rectangular_box(_desktop, this->rect, pt, this->center, state);
+    Geom::Rect const r = Inkscape::snap_rectangular_box(_desktop, rect.get(), pt, this->center, state);
 
     this->rect->setPosition(r.min()[Geom::X], r.min()[Geom::Y], r.dimensions()[Geom::X], r.dimensions()[Geom::Y]);
 
@@ -414,7 +414,7 @@ void RectTool::drag(Geom::Point const pt, guint state) {
 void RectTool::finishItem() {
     this->message_context->clear();
 
-    if (this->rect != nullptr) {
+    if (rect) {
         if (this->rect->width.computed == 0 || this->rect->height.computed == 0) {
             this->cancel(); // Don't allow the creating of zero sized rectangle, for example when the start and and point snap to the snap grid point
             return;
@@ -423,7 +423,7 @@ void RectTool::finishItem() {
         this->rect->updateRepr();
         this->rect->doWriteTransform(this->rect->transform, nullptr, true);
 
-        _desktop->getSelection()->set(this->rect);
+        _desktop->getSelection()->set(rect.get());
 
         DocumentUndo::done(_desktop->getDocument(), _("Create rectangle"), INKSCAPE_ICON("draw-rectangle"));
 
@@ -435,14 +435,12 @@ void RectTool::cancel(){
     _desktop->getSelection()->clear();
     ungrabCanvasEvents();
 
-    if (this->rect != nullptr) {
-        this->rect->deleteObject();
-        this->rect = nullptr;
+    if (rect) {
+        rect->deleteObject();
     }
 
     this->within_tolerance = false;
-    this->xp = 0;
-    this->yp = 0;
+    xyp = {};
     this->item_to_select = nullptr;
 
     DocumentUndo::cancel(_desktop->getDocument());

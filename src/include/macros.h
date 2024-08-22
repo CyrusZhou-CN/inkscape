@@ -2,6 +2,8 @@
 #ifndef SEEN_MACROS_H
 #define SEEN_MACROS_H
 
+#include <gdk/gdk.h>
+
 /**
  * Useful macros for inkscape
  *
@@ -13,32 +15,36 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-// I'm of the opinion that this file should be removed, so I will in the future take the necessary steps to wipe it out.
-// Macros are not in general bad, but these particular ones are rather ugly. --Liam
-
-#define sp_signal_disconnect_by_data(o,d) g_signal_handlers_disconnect_matched(o, G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, d)
-
 // "primary" modifier: Ctrl on Linux/Windows and Cmd on macOS.
 // note: Could query this at runtime with
 // `gdk_keymap_get_modifier_mask(..., GDK_MODIFIER_INTENT_PRIMARY_ACCELERATOR)`
 #ifdef GDK_WINDOWING_QUARTZ
-#define INK_GDK_PRIMARY_MASK GDK_MOD2_MASK
+inline constexpr auto INK_GDK_PRIMARY_MASK = GDK_MOD2_MASK;
 #else
-#define INK_GDK_PRIMARY_MASK GDK_CONTROL_MASK
+inline constexpr auto INK_GDK_PRIMARY_MASK = GDK_CONTROL_MASK;
 #endif
+// Todo: (GTK4) Replace INK_GDK_PRIMARY_MASK with GDK_CONTROL_MASK.
+// Reference: https://docs.gtk.org/gtk4/migrating-3to4.html#adapt-to-changes-in-keyboard-modifier-handling
 
 // all modifiers used by Inkscape
-#define INK_GDK_MODIFIER_MASK (GDK_SHIFT_MASK | INK_GDK_PRIMARY_MASK | GDK_MOD1_MASK)
+inline constexpr auto INK_GDK_MODIFIER_MASK = GDK_SHIFT_MASK | INK_GDK_PRIMARY_MASK | GDK_MOD1_MASK;
 
 // keyboard modifiers in an event
-#define MOD__SHIFT(event) ((event)->key.state & GDK_SHIFT_MASK)
-#define MOD__CTRL(event) ((event)->key.state & INK_GDK_PRIMARY_MASK)
-#define MOD__ALT(event) ((event)->key.state & GDK_MOD1_MASK)
-#define MOD__SHIFT_ONLY(event) (((event)->key.state & INK_GDK_MODIFIER_MASK) == GDK_SHIFT_MASK)
-#define MOD__CTRL_ONLY(event) (((event)->key.state & INK_GDK_MODIFIER_MASK) == INK_GDK_PRIMARY_MASK)
-#define MOD__ALT_ONLY(event) (((event)->key.state & INK_GDK_MODIFIER_MASK) == GDK_MOD1_MASK)
+inline bool MOD__SHIFT(unsigned modifiers) { return modifiers & GDK_SHIFT_MASK; }
+inline bool MOD__CTRL(unsigned modifiers) { return modifiers & INK_GDK_PRIMARY_MASK; }
+inline bool MOD__ALT(unsigned modifiers) { return modifiers & GDK_MOD1_MASK; }
+inline bool MOD__SHIFT_ONLY(unsigned modifiers) { return (modifiers & INK_GDK_MODIFIER_MASK) == GDK_SHIFT_MASK; }
+inline bool MOD__CTRL_ONLY(unsigned modifiers) { return (modifiers & INK_GDK_MODIFIER_MASK) == INK_GDK_PRIMARY_MASK; }
+inline bool MOD__ALT_ONLY(unsigned modifiers) { return (modifiers & INK_GDK_MODIFIER_MASK) == GDK_MOD1_MASK; }
 
-#endif  // SEEN_MACROS_H
+inline bool MOD__SHIFT(GdkEvent const *event) { return MOD__SHIFT(event->key.state); }
+inline bool MOD__CTRL(GdkEvent const *event) { return MOD__CTRL(event->key.state); }
+inline bool MOD__ALT(GdkEvent const *event) { return MOD__ALT(event->key.state); }
+inline bool MOD__SHIFT_ONLY(GdkEvent const *event) { return MOD__SHIFT_ONLY(event->key.state); }
+inline bool MOD__CTRL_ONLY(GdkEvent const *event) { return MOD__CTRL_ONLY(event->key.state); }
+inline bool MOD__ALT_ONLY(GdkEvent const *event) { return MOD__ALT_ONLY(event->key.state); }
+
+#endif // SEEN_MACROS_H
 
 /*
   Local Variables:

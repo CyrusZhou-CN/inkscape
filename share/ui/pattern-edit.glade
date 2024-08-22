@@ -637,7 +637,7 @@
                 <property name="width-chars">10</property>
                 <property name="xalign">0.5</property>
                 <property name="caps-lock-warning">False</property>
-                <property name="placeholder-text" translatable="yes">name</property>
+                <property name="placeholder-text" translatable="no">name</property>
                 <style>
                   <class name="small-font"/>
                 </style>

@@ -5,6 +5,8 @@
 
 #include <gtkmm/tooltip.h>
 
+void sp_clear_custom_tooltip();
+
 bool
 sp_query_custom_tooltip(
     int x, 

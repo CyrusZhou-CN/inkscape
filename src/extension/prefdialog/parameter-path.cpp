@@ -159,24 +159,23 @@ Gtk::Widget *ParamPath::get_widget(sigc::signal<void ()> *changeSignal)
         return nullptr;
     }
 
-    Gtk::Box *hbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, GUI_PARAM_WIDGETS_SPACING));
-    Gtk::Label *label = Gtk::manage(new Gtk::Label(_text, Gtk::ALIGN_START));
-    label->show();
+    auto const hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, GUI_PARAM_WIDGETS_SPACING);
+    auto const label = Gtk::make_managed<Gtk::Label>(_text, Gtk::ALIGN_START);
+    label->set_visible(true);
     hbox->pack_start(*label, false, false);
 
-    ParamPathEntry *textbox = Gtk::manage(new ParamPathEntry(this, changeSignal));
-    textbox->show();
+    auto const textbox = Gtk::make_managed<ParamPathEntry>(this, changeSignal);
+    textbox->set_visible(true);
     hbox->pack_start(*textbox, true, true);
     _entry = textbox;
 
-    Gtk::Button *button = Gtk::manage(new Gtk::Button("…"));
-	button->show();
+    auto const button = Gtk::make_managed<Gtk::Button>("…");
+	button->set_visible(true);
     hbox->pack_end(*button, false, false);
     button->signal_clicked().connect(sigc::mem_fun(*this, &ParamPath::on_button_clicked));
 
-    hbox->show();
-
-    return dynamic_cast<Gtk::Widget *>(hbox);
+    hbox->set_visible(true);
+    return hbox;
 }
 
 /**

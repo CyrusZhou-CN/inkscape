@@ -79,14 +79,14 @@ PaintbucketToolbar::PaintbucketToolbar(SPDesktop *desktop)
     {
         auto threshold_val = prefs->getDouble("/tools/paintbucket/threshold", 5);
         _threshold_adj = Gtk::Adjustment::create(threshold_val, 0, 100.0, 1.0, 10.0);
-        auto threshold_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("inkscape:paintbucket-threshold", _("Threshold:"), _threshold_adj, 1, 0));
+        auto const threshold_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("inkscape:paintbucket-threshold", _("Threshold:"), _threshold_adj, 1, 0);
         threshold_item->set_tooltip_text(_("The maximum allowed difference between the clicked pixel and the neighboring pixels to be counted in the fill"));
         threshold_item->set_focus_widget(desktop->canvas);
         _threshold_adj->signal_value_changed().connect(sigc::mem_fun(*this, &PaintbucketToolbar::threshold_changed));
         add(*threshold_item);
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     // Create the units menu.
     Glib::ustring stored_unit = prefs->getString("/tools/paintbucket/offsetunits");
@@ -99,7 +99,7 @@ PaintbucketToolbar::PaintbucketToolbar(SPDesktop *desktop)
     {
         auto offset_val = prefs->getDouble("/tools/paintbucket/offset", 0);
         _offset_adj = Gtk::Adjustment::create(offset_val, -1e4, 1e4, 0.1, 0.5);
-        auto offset_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("inkscape:paintbucket-offset", _("Grow/shrink by:"), _offset_adj, 1, 2));
+        auto const offset_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("inkscape:paintbucket-offset", _("Grow/shrink by:"), _offset_adj, 1, 2);
         offset_item->set_tooltip_text(_("The amount to grow (positive) or shrink (negative) the created fill path"));
         _tracker->addAdjustment(_offset_adj->gobj());
         offset_item->get_spin_button()->addUnitTracker(_tracker);
@@ -113,7 +113,7 @@ PaintbucketToolbar::PaintbucketToolbar(SPDesktop *desktop)
         add(*unit_menu);
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Auto Gap */
     {
@@ -137,11 +137,11 @@ PaintbucketToolbar::PaintbucketToolbar(SPDesktop *desktop)
         add(*_autogap_item);
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Reset */
     {
-        auto reset_button = Gtk::manage(new Gtk::ToolButton(_("Defaults")));
+        auto const reset_button = Gtk::make_managed<Gtk::ToolButton>(_("Defaults"));
         reset_button->set_tooltip_text(_("Reset paint bucket parameters to defaults (use Inkscape Preferences > Tools to change defaults)"));
         reset_button->set_icon_name(INKSCAPE_ICON("edit-clear"));
         reset_button->signal_clicked().connect(sigc::mem_fun(*this, &PaintbucketToolbar::defaults));

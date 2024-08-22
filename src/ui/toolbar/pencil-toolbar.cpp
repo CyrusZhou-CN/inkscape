@@ -63,7 +63,7 @@ PencilToolbar::PencilToolbar(SPDesktop *desktop,
 
     add_freehand_mode_toggle();
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     if (_tool_is_pencil) {
         /* Use pressure */
@@ -79,7 +79,7 @@ PencilToolbar::PencilToolbar(SPDesktop *desktop,
             auto minpressure_val = prefs->getDouble("/tools/freehand/pencil/minpressure", 0);
             _minpressure_adj = Gtk::Adjustment::create(minpressure_val, 0, 100, 1, 0);
             _minpressure =
-                Gtk::manage(new UI::Widget::SpinButtonToolItem("pencil-minpressure", _("Min:"), _minpressure_adj, 0, 0));
+                Gtk::make_managed<UI::Widget::SpinButtonToolItem>("pencil-minpressure", _("Min:"), _minpressure_adj, 0, 0);
             _minpressure->set_tooltip_text(_("Min percent of pressure"));
             _minpressure->set_focus_widget(desktop->canvas);
             _minpressure_adj->signal_value_changed().connect(
@@ -91,7 +91,7 @@ PencilToolbar::PencilToolbar(SPDesktop *desktop,
             auto maxpressure_val = prefs->getDouble("/tools/freehand/pencil/maxpressure", 30);
             _maxpressure_adj = Gtk::Adjustment::create(maxpressure_val, 0, 100, 1, 0);
             _maxpressure =
-                Gtk::manage(new UI::Widget::SpinButtonToolItem("pencil-maxpressure", _("Max:"), _maxpressure_adj, 0, 0));
+                Gtk::make_managed<UI::Widget::SpinButtonToolItem>("pencil-maxpressure", _("Max:"), _maxpressure_adj, 0, 0);
             _maxpressure->set_tooltip_text(_("Max percent of pressure"));
             _maxpressure->set_focus_widget(desktop->canvas);
             _maxpressure_adj->signal_value_changed().connect(
@@ -102,7 +102,7 @@ PencilToolbar::PencilToolbar(SPDesktop *desktop,
         /* powerstoke */
         add_powerstroke_cap();
 
-        add(*Gtk::manage(new Gtk::SeparatorToolItem()));
+        add(*Gtk::make_managed<Gtk::SeparatorToolItem>());
 
         /* Tolerance */
         {
@@ -112,7 +112,7 @@ PencilToolbar::PencilToolbar(SPDesktop *desktop,
             auto tolerance_val = prefs->getDouble("/tools/freehand/pencil/tolerance", 3.0);
             _tolerance_adj = Gtk::Adjustment::create(tolerance_val, 0, 100.0, 0.5, 1.0);
             auto tolerance_item =
-                Gtk::manage(new UI::Widget::SpinButtonToolItem("pencil-tolerance", _("Smoothing:"), _tolerance_adj, 1, 2));
+                Gtk::make_managed<UI::Widget::SpinButtonToolItem>("pencil-tolerance", _("Smoothing:"), _tolerance_adj, 1, 2);
             tolerance_item->set_tooltip_text(_("How much smoothing (simplifying) is applied to the line"));
             tolerance_item->set_custom_numeric_menu_data(values, labels);
             tolerance_item->set_focus_widget(desktop->canvas);
@@ -130,14 +130,14 @@ PencilToolbar::PencilToolbar(SPDesktop *desktop,
 
         /* LPE simplify flatten */
         {
-            _flatten_simplify = Gtk::manage(new Gtk::ToolButton(_("LPE simplify flatten")));
+            _flatten_simplify = Gtk::make_managed<Gtk::ToolButton>(_("LPE simplify flatten"));
             _flatten_simplify->set_tooltip_text(_("LPE simplify flatten"));
             _flatten_simplify->set_icon_name(INKSCAPE_ICON("flatten"));
             _flatten_simplify->signal_clicked().connect(sigc::mem_fun(*this, &PencilToolbar::simplify_flatten));
             add(*_flatten_simplify);
         }
 
-        add(*Gtk::manage(new Gtk::SeparatorToolItem()));
+        add(*Gtk::make_managed<Gtk::SeparatorToolItem>());
     }
 
     /* advanced shape options */
@@ -210,33 +210,33 @@ PencilToolbar::freehand_tool_name()
 void
 PencilToolbar::add_freehand_mode_toggle()
 {
-    auto label = Gtk::manage(new UI::Widget::LabelToolItem(_("Mode:")));
+    auto const label = Gtk::make_managed<UI::Widget::LabelToolItem>(_("Mode:"));
     label->set_tooltip_text(_("Mode of new lines drawn by this tool"));
     add(*label);
     /* Freehand mode toggle buttons */
     Gtk::RadioToolButton::Group mode_group;
-    auto bezier_mode_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Bezier")));
+    auto const bezier_mode_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Bezier"));
     bezier_mode_btn->set_tooltip_text(_("Create regular Bezier path"));
     bezier_mode_btn->set_icon_name(INKSCAPE_ICON("path-mode-bezier"));
     _mode_buttons.push_back(bezier_mode_btn);
 
-    auto spiro_mode_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Spiro")));
+    auto const spiro_mode_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Spiro"));
     spiro_mode_btn->set_tooltip_text(_("Create Spiro path"));
     spiro_mode_btn->set_icon_name(INKSCAPE_ICON("path-mode-spiro"));
     _mode_buttons.push_back(spiro_mode_btn);
 
-    auto bspline_mode_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("BSpline")));
+    auto const bspline_mode_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("BSpline"));
     bspline_mode_btn->set_tooltip_text(_("Create BSpline path"));
     bspline_mode_btn->set_icon_name(INKSCAPE_ICON("path-mode-bspline"));
     _mode_buttons.push_back(bspline_mode_btn);
 
     if (!_tool_is_pencil) {
-        auto zigzag_mode_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Zigzag")));
+        auto const zigzag_mode_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Zigzag"));
         zigzag_mode_btn->set_tooltip_text(_("Create a sequence of straight line segments"));
         zigzag_mode_btn->set_icon_name(INKSCAPE_ICON("path-mode-polyline"));
         _mode_buttons.push_back(zigzag_mode_btn);
 
-        auto paraxial_mode_btn = Gtk::manage(new Gtk::RadioToolButton(mode_group, _("Paraxial")));
+        auto const paraxial_mode_btn = Gtk::make_managed<Gtk::RadioToolButton>(mode_group, _("Paraxial"));
         paraxial_mode_btn->set_tooltip_text(_("Create a sequence of paraxial line segments"));
         paraxial_mode_btn->set_icon_name(INKSCAPE_ICON("path-mode-polyline-paraxial"));
         _mode_buttons.push_back(paraxial_mode_btn);
@@ -251,10 +251,10 @@ PencilToolbar::add_freehand_mode_toggle()
 
     auto prefs = Inkscape::Preferences::get();
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* LPE bspline spiro flatten */
-    _flatten_spiro_bspline = Gtk::manage(new Gtk::ToolButton(_("Flatten Spiro or BSpline LPE")));
+    _flatten_spiro_bspline = Gtk::make_managed<Gtk::ToolButton>(_("Flatten Spiro or BSpline LPE"));
     _flatten_spiro_bspline->set_tooltip_text(_("Flatten Spiro or BSpline LPE"));
     _flatten_spiro_bspline->set_icon_name(INKSCAPE_ICON("flatten"));
     _flatten_spiro_bspline->signal_clicked().connect(sigc::mem_fun(*this, &PencilToolbar::flatten_spiro_bspline));
@@ -434,7 +434,7 @@ PencilToolbar::add_advanced_shape_options()
     {
         _shapescale_adj = Gtk::Adjustment::create(2.0, 0.0, 1000.0, 0.5, 1.0);
         _shapescale =
-            Gtk::manage(new UI::Widget::SpinButtonToolItem("pencil-maxpressure", _("Scale:"), _shapescale_adj, 1, 2));
+            Gtk::make_managed<UI::Widget::SpinButtonToolItem>("pencil-maxpressure", _("Scale:"), _shapescale_adj, 1, 2);
         _shapescale->set_tooltip_text(_("Scale of the width of the power stroke shape."));
         _shapescale->set_focus_widget(_desktop->canvas);
         _shapescale_adj->signal_value_changed().connect(sigc::mem_fun(*this, &PencilToolbar::shapewidth_value_changed));

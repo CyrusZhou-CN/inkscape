@@ -763,17 +763,33 @@ CairoRenderContext::popLayer(cairo_operator_t composite)
             cairo_paint_with_alpha(_cr, opacity);
     }
 }
-void CairoRenderContext::tagBegin(const char* l){
+
+void CairoRenderContext::tagBegin(const char* l)
+{
 #if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 15, 4)
-    char* link = g_strdup_printf("uri='%s'", l);
-    cairo_tag_begin(_cr, CAIRO_TAG_LINK, link);
-    g_free(link);
+    cairo_tag_begin(_cr, CAIRO_TAG_LINK, l);
 #endif
 }
 
-void CairoRenderContext::tagEnd(){
+void CairoRenderContext::tagEnd()
+{
 #if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 15, 4)
     cairo_tag_end(_cr, CAIRO_TAG_LINK);
+#endif
+}
+
+void CairoRenderContext::destBegin(const char* l)
+{
+#if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 15, 4)
+    char* dest = g_strdup_printf("name='%s'", l);
+    cairo_tag_begin(_cr, CAIRO_TAG_DEST, dest);
+    g_free(dest);
+#endif
+}
+
+void CairoRenderContext::destEnd(){
+#if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 15, 4)
+    cairo_tag_end(_cr, CAIRO_TAG_DEST);
 #endif
 }
 

@@ -17,25 +17,16 @@
 #ifndef INKSCAPE_WINDOW_H
 #define INKSCAPE_WINDOW_H
 
-#include <gtkmm.h>
+#include <gtkmm/applicationwindow.h>
 
-#include "inkscape-application.h"
+namespace Gtk { class Box; }
 
+class InkscapeApplication;
 class SPDocument;
 class SPDesktop;
 class SPDesktopWidget;
 
-namespace Inkscape {
-namespace UI {
-namespace View {
-//  class SVGViewWidget;
-}
-}
-}
-
-
 class InkscapeWindow : public Gtk::ApplicationWindow {
-
 public:
     InkscapeWindow(SPDocument* document);
     ~InkscapeWindow() override;
@@ -49,11 +40,11 @@ public:
 private:
     InkscapeApplication *_app = nullptr;
 
-    SPDocument*          _document;
-    SPDesktop*           _desktop;
-    SPDesktopWidget*     _desktop_widget;
+    SPDocument*          _document = nullptr;
+    SPDesktop*           _desktop = nullptr;
+    SPDesktopWidget*     _desktop_widget = nullptr;
 
-    Gtk::Box*      _mainbox;
+    Gtk::Box*      _mainbox = nullptr;
 
     void setup_view();
 

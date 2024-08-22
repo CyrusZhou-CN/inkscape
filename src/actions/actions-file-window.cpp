@@ -133,18 +133,18 @@ void
 add_actions_file_window(InkscapeWindow* win)
 {
     // clang-format off
-    win->add_action( "document-new",                sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&document_new),               win));
-    win->add_action( "document-dialog-templates",   sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&document_dialog_templates),  win));
-    win->add_action( "document-open",               sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&document_open),              win));
-    win->add_action( "document-revert",             sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&document_revert),            win));
-    win->add_action( "document-save",               sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&document_save),              win));
-    win->add_action( "document-save-as",            sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&document_save_as),           win));
-    win->add_action( "document-save-copy",          sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&document_save_copy),         win));
-    win->add_action( "document-save-template",      sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&document_save_template),     win));
-    win->add_action( "document-import",             sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&document_import),            win));
-    win->add_action( "document-print",              sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&document_print),             win));
-    win->add_action( "document-cleanup",            sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&document_cleanup),           win));
-    win->add_action( "document-close",              sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&document_close),             win));
+    win->add_action( "document-new",                sigc::bind(sigc::ptr_fun(&document_new),               win));
+    win->add_action( "document-dialog-templates",   sigc::bind(sigc::ptr_fun(&document_dialog_templates),  win));
+    win->add_action( "document-open",               sigc::bind(sigc::ptr_fun(&document_open),              win));
+    win->add_action( "document-revert",             sigc::bind(sigc::ptr_fun(&document_revert),            win));
+    win->add_action( "document-save",               sigc::bind(sigc::ptr_fun(&document_save),              win));
+    win->add_action( "document-save-as",            sigc::bind(sigc::ptr_fun(&document_save_as),           win));
+    win->add_action( "document-save-copy",          sigc::bind(sigc::ptr_fun(&document_save_copy),         win));
+    win->add_action( "document-save-template",      sigc::bind(sigc::ptr_fun(&document_save_template),     win));
+    win->add_action( "document-import",             sigc::bind(sigc::ptr_fun(&document_import),            win));
+    win->add_action( "document-print",              sigc::bind(sigc::ptr_fun(&document_print),             win));
+    win->add_action( "document-cleanup",            sigc::bind(sigc::ptr_fun(&document_cleanup),           win));
+    win->add_action( "document-close",              sigc::bind(sigc::ptr_fun(&document_close),             win));
     // clang-format on
 
     auto app = InkscapeApplication::instance();

@@ -71,7 +71,7 @@ const char *SPSwitch::displayName() const {
 gchar *SPSwitch::description() const {
     gint len = this->getItemCount();
     return g_strdup_printf(
-        ngettext(_("of <b>%d</b> object"), _("of <b>%d</b> objects"), len), len);
+        ngettext("of <b>%d</b> object", "of <b>%d</b> objects", len), len);
 }
 
 void SPSwitch::child_added(Inkscape::XML::Node* child, Inkscape::XML::Node* ref) {

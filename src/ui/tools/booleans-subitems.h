@@ -35,23 +35,27 @@ class SubItem
 {
 public:
 
-    SubItem(Geom::PathVector paths, SPItem *item, SPStyle *style)
+    SubItem(Geom::PathVector paths, SPItem *root, SPItem *item, SPStyle *style)
         : _paths(std::move(paths))
+        , _root(root)
         , _item(item)
         , _style(style)
+        , _is_image(_get_is_image(item))
     {}
 
     SubItem(const SubItem &copy)
-        : SubItem(copy._paths, copy._item, copy._style)
+        : SubItem(copy._paths, copy._root, copy._item, copy._style)
     {}
 
-    SubItem &operator+=(const SubItem &other);
+    SubItem &operator+=(SubItem const &other);
 
-    bool contains(const Geom::Point &pt) const;
+    bool contains(Geom::Point const &pt) const;
 
-    const Geom::PathVector &get_pathv() const { return _paths; }
+    Geom::PathVector const &get_pathv() const { return _paths; }
+    SPItem *get_root() const { return _root; }
     SPItem *get_item() const { return _item; }
     SPStyle *getStyle() const { return _style; }
+    bool is_image() const { return _is_image; }
 
     static WorkItems build_mosaic(std::vector<SPItem*> &&items);
     static WorkItems build_flatten(std::vector<SPItem*> &&items);
@@ -60,10 +64,14 @@ public:
     void setSelected(bool selected) { _selected = selected; }
 
 private:
+    static bool _get_is_image(SPItem const *item);
+
     Geom::PathVector _paths;
+    SPItem *_root;
     SPItem *_item;
     SPStyle *_style;
     bool _selected = false;
+    bool _is_image = false;
 };
 
 } // namespace Inkscape

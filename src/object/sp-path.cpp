@@ -83,7 +83,7 @@ gchar* SPPath::description() const {
         lpe_desc = g_strdup_printf(_(", path effect: %s"), s.c_str());
     }
     char *ret = g_strdup_printf(ngettext(
-                _("%i node%s"), _("%i nodes%s"), count), count, lpe_desc);
+                "%i node%s", "%i nodes%s", count), count, lpe_desc);
     g_free(lpe_desc);
     return ret;
 }

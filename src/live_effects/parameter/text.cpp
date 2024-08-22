@@ -132,20 +132,19 @@ TextParam::setTextParam(Inkscape::UI::Widget::RegisteredText *rsu)
 Gtk::Widget *
 TextParam::param_newWidget()
 {
-    Inkscape::UI::Widget::RegisteredText *rsu = Gtk::manage(new Inkscape::UI::Widget::RegisteredText(
-        param_label, param_tooltip, param_key, *param_wr, param_effect->getRepr(), param_effect->getSPDoc()));
+    auto const rsu = Gtk::make_managed<UI::Widget::RegisteredText>(
+        param_label, param_tooltip, param_key, *param_wr, param_effect->getRepr(), param_effect->getSPDoc());
     rsu->setText(value);
     rsu->setProgrammatically = false;
     rsu->set_undo_parameters(_("Change text parameter"), INKSCAPE_ICON("dialog-path-effects"));
-    Gtk::Box *text_container = Gtk::manage(new Gtk::Box());
-    Gtk::Button *set =  Gtk::manage(new Gtk::Button(Glib::ustring("✔")));
+    auto const text_container = Gtk::make_managed<Gtk::Box>();
+    auto const set =  Gtk::make_managed<Gtk::Button>(Glib::ustring("✔"));
     set->signal_clicked()
-    .connect(sigc::bind<Inkscape::UI::Widget::RegisteredText *>(sigc::mem_fun(*this, &TextParam::setTextParam),rsu));
+    .connect(sigc::bind(sigc::mem_fun(*this, &TextParam::setTextParam),rsu));
     text_container->pack_start(*rsu, false, false, 2);
     text_container->pack_start(*set, false, false, 2);
-    Gtk::Widget *return_widg = dynamic_cast<Gtk::Widget *> (text_container);
-    return_widg->set_halign(Gtk::ALIGN_END);
-    return return_widg;
+    text_container->set_halign(Gtk::ALIGN_END);
+    return text_container;
 }
 
 void TextParam::param_setValue(Glib::ustring newvalue)

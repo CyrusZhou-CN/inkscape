@@ -102,14 +102,14 @@ add_actions_edit_document(SPDocument* document)
     Glib::RefPtr<Gio::SimpleActionGroup> map = document->getActionGroup();
 
     // clang-format off
-    map->add_action( "create-guides-around-page",           sigc::bind<SPDocument*>(sigc::ptr_fun(&create_guides_around_page),  document));
-    map->add_action( "delete-all-guides",                   sigc::bind<SPDocument*>(sigc::ptr_fun(&delete_all_guides),  document));
-    map->add_action( "fit-canvas-to-drawing",               sigc::bind<SPDocument*>(sigc::ptr_fun(&fit_canvas_drawing),  document));
-    map->add_action_bool( "lock-all-guides",                sigc::bind<SPDocument*>(sigc::ptr_fun(&lock_all_guides),   document));
-    map->add_action_bool( "show-all-guides",                sigc::bind<SPDocument*>(sigc::ptr_fun(&show_all_guides),   document));
-    map->add_action_bool( "show-grids",                     sigc::bind<SPDocument*>(sigc::ptr_fun(&show_grids),   document));
+    map->add_action( "create-guides-around-page",           sigc::bind(sigc::ptr_fun(&create_guides_around_page),  document));
+    map->add_action( "delete-all-guides",                   sigc::bind(sigc::ptr_fun(&delete_all_guides),  document));
+    map->add_action( "fit-canvas-to-drawing",               sigc::bind(sigc::ptr_fun(&fit_canvas_drawing),  document));
+    map->add_action_bool( "lock-all-guides",                sigc::bind(sigc::ptr_fun(&lock_all_guides),   document));
+    map->add_action_bool( "show-all-guides",                sigc::bind(sigc::ptr_fun(&show_all_guides),   document));
+    map->add_action_bool( "show-grids",                     sigc::bind(sigc::ptr_fun(&show_grids),   document));
 
-    map->add_action_radio_string("set-display-unit",        sigc::bind<SPDocument*>(sigc::ptr_fun(&set_display_unit), document), "px");
+    map->add_action_radio_string("set-display-unit",        sigc::bind(sigc::ptr_fun(&set_display_unit), document), "px");
     map->add_action("clip-to-page",                         [=](){ toggle_clip_to_page(document); });
     // clang-format on
 

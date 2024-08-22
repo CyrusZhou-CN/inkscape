@@ -21,6 +21,7 @@
 #include "inkscape-window.h"
 #include "message-stack.h"
 #include "preferences.h"
+#include "ui/dialog-run.h"
 
 #include "selection.h"            // Selection
 #include "object/sp-image.h"
@@ -112,19 +113,17 @@ void image_edit(InkscapeApplication *app)
             if (error) {
                 Glib::ustring message = _("Failed to edit external image.\n<small>Note: Path to editor can be set in Preferences dialog.</small>");
                 Glib::ustring message2 = Glib::ustring::compose(_("System error message: %1"), error->message);
-                auto window = app->get_active_window();
-                if (window) {
-                    Gtk::MessageDialog dialog(*window, message, true, Gtk::MESSAGE_WARNING, Gtk::BUTTONS_OK);
-                    dialog.property_destroy_with_parent() = true;
-                    dialog.set_name("SetEditorDialog");
-                    dialog.set_title(_("External Edit Image:"));
-                    dialog.set_secondary_text(message2);
-                    dialog.run();
+                if (auto window = app->get_active_window()) {
+                    auto dialog = std::make_unique<Gtk::MessageDialog>(*window, message, true, Gtk::MESSAGE_WARNING, Gtk::BUTTONS_OK);
+                    dialog->property_destroy_with_parent() = true;
+                    dialog->set_name("SetEditorDialog");
+                    dialog->set_title(_("External Edit Image:"));
+                    dialog->set_secondary_text(message2);
+                    Inkscape::UI::dialog_show_modal_and_selfdestruct(std::move(dialog));
                 } else {
                     show_output(Glib::ustring("image_edit: ") + message.raw());
                 }
                 g_error_free(error);
-                error = nullptr;
             }
         }
     }
@@ -188,11 +187,11 @@ void image_crop(InkscapeApplication *app)
             selector->updateDescriber(selection);
         }
         std::stringstream ss;
-        ss << ngettext(_("<b>%d</b> image cropped"), _("<b>%d</b> images cropped"), done);
+        ss << ngettext("<b>%d</b> image cropped", "<b>%d</b> images cropped", done);
         if (bytes < 0) {
-            ss << ", " << ngettext(_("%s byte removed"), _("%s bytes removed"), abs(bytes));
+            ss << ", " << ngettext("%s byte removed", "%s bytes removed", abs(bytes));
         } else if (bytes > 0) {
-            ss << ", <b>" << ngettext(_("%s byte added!"), _("%s bytes added!"), bytes) << "</b>";
+            ss << ", <b>" << ngettext("%s byte added!", "%s bytes added!", bytes) << "</b>";
         }
         // Do flashing after select tool update.
         msg->flashF(Inkscape::INFORMATION_MESSAGE, ss.str().c_str(), done, Inkscape::Util::format_size(abs(bytes)).c_str());
@@ -205,7 +204,7 @@ void image_crop(InkscapeApplication *app)
 std::vector<std::vector<Glib::ustring>> raw_data_element_image =
 {
     // clang-format off
-    {"app.element-image-crop",          N_("Image crop to clip"),  "Image",    N_("Remove parts of the image outside the applied clipping area.") },
+    {"app.element-image-crop",          N_("Crop image to clip"),  "Image",    N_("Remove parts of the image outside the applied clipping area.") },
     {"app.element-image-edit",          N_("Edit externally"),   "Image",    N_("Edit image externally (image must be selected and not embedded).")    },
     // clang-format on
 };
@@ -216,8 +215,8 @@ add_actions_element_image(InkscapeApplication* app)
     auto *gapp = app->gio_app();
 
     // clang-format off
-    gapp->add_action(                "element-image-crop",          sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&image_crop),      app));
-    gapp->add_action(                "element-image-edit",          sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&image_edit),      app));
+    gapp->add_action(                "element-image-crop",          sigc::bind(sigc::ptr_fun(&image_crop),      app));
+    gapp->add_action(                "element-image-edit",          sigc::bind(sigc::ptr_fun(&image_edit),      app));
     // clang-format on
 
     app->get_action_extra_data().add_data(raw_data_element_image);

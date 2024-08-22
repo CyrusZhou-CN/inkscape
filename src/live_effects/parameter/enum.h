@@ -45,18 +45,17 @@ public:
     EnumParam& operator=(const EnumParam&) = delete;
 
     Gtk::Widget * param_newWidget() override {
-        Inkscape::UI::Widget::RegisteredEnum<E> *regenum = Gtk::manage ( 
-            new Inkscape::UI::Widget::RegisteredEnum<E>( param_label, param_tooltip,
-                       param_key, *enumdataconv, *param_wr, param_effect->getRepr(), param_effect->getSPDoc(), sorted ) );
-
+        auto const regenum = Gtk::make_managed<Inkscape::UI::Widget::RegisteredEnum<E>>(param_label, param_tooltip,
+                       param_key, *enumdataconv, *param_wr, param_effect->getRepr(), param_effect->getSPDoc(), sorted);
         regenum->set_active_by_id(value);
         regenum->combobox()->setProgrammatically = false;
         regenum->combobox()->signal_changed().connect(sigc::mem_fun (*this, &EnumParam::_on_change_combo));
         regenum->set_undo_parameters(_("Change enumeration parameter"), INKSCAPE_ICON("dialog-path-effects"));
-        
-        return dynamic_cast<Gtk::Widget *> (regenum);
+        return regenum;
     };
+
     void _on_change_combo() { param_effect->refresh_widgets = true; }
+
     bool param_readSVGValue(const gchar * strvalue) override {
         if (!strvalue) {
             param_set_default();

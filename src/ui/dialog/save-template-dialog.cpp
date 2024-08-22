@@ -11,6 +11,7 @@
 #include "save-template-dialog.h"
 #include "file.h"
 #include "io/resource.h"
+#include "ui/dialog-run.h"
 
 #include <glibmm/i18n.h>
 #include <gtkmm/builder.h>
@@ -68,7 +69,7 @@ void SaveTemplate::save_template(Gtk::Window &parent) {
 void SaveTemplate::save_document_as_template(Gtk::Window &parent) {
 
     SaveTemplate dialog(parent);
-    int response = dialog.dialog->run();
+    int response = dialog_run(*dialog.dialog);
 
     switch (response) {
     case Gtk::RESPONSE_OK:

@@ -745,11 +745,6 @@ void SPHatch::setBBox(unsigned int key, Geom::OptRect const &bbox)
     }
 }
 
-SPHatch::View::View(DrawingItemPtr<Inkscape::DrawingPattern> drawingitem, Geom::OptRect const &bbox, unsigned key)
-    : drawingitem(std::move(drawingitem))
-    , bbox(bbox)
-    , key(key) {}
-
 /*
  Local Variables:
  mode:c++

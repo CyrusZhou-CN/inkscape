@@ -130,9 +130,9 @@ MarkerComboBox::MarkerComboBox(Glib::ustring id, int l) :
 
     _marker_store = Gio::ListStore<MarkerItem>::create();
     _marker_list.bind_list_store(_marker_store, [=](const Glib::RefPtr<MarkerItem>& item){
-        auto image = Gtk::make_managed<Gtk::Image>(item->pix);
-        image->show();
-        auto box = Gtk::make_managed<Gtk::FlowBoxChild>();
+        auto const image = Gtk::make_managed<Gtk::Image>(item->pix);
+        image->set_visible(true);
+        auto const box = Gtk::make_managed<Gtk::FlowBoxChild>();
         box->add(*image);
         if (item->separator) {
             image->set_sensitive(false);
@@ -252,7 +252,7 @@ MarkerComboBox::MarkerComboBox(Glib::ustring id, int l) :
 
     update_scale_link();
     _current_img.set(g_image_none);
-    show();
+    set_visible(true);
 }
 
 MarkerComboBox::~MarkerComboBox() {
@@ -775,7 +775,7 @@ void MarkerComboBox::on_style_updated() {
     auto background = _background_color;
     if (auto wnd = dynamic_cast<Gtk::Window*>(this->get_toplevel())) {
         auto sc = wnd->get_style_context();
-        auto color = get_background_color(sc);
+        auto const color = get_color_with_class(sc, "theme_bg_color");
         background =
             gint32(0xff * color.get_red()) << 24 |
             gint32(0xff * color.get_green()) << 16 |

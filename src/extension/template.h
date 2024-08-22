@@ -13,8 +13,8 @@
 
 #include <exception>
 #include <giomm/file.h>
-#include <glibmm.h>
-#include <glibmm/fileutils.h>
+#include <glibmm/refptr.h>
+#include <glibmm/ustring.h>
 #include <map>
 #include <string>
 
@@ -53,8 +53,8 @@ public:
 
     std::string get_key() const { return _key; }
     std::string get_icon() const { return _icon; }
-    std::string get_name() const { return _name; }
-    std::string get_label() const { return _label; }
+    std::string get_name() const;
+    std::string get_label() const;
     int get_sort_priority() const { return _priority; }
     int get_visibility() const { return _visibility; }
 

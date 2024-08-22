@@ -10,8 +10,8 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_UI_TOOL_CONTROL_POINT_SELECTION_H
-#define SEEN_UI_TOOL_CONTROL_POINT_SELECTION_H
+#ifndef INKSCAPE_UI_TOOL_CONTROL_POINT_SELECTION_H
+#define INKSCAPE_UI_TOOL_CONTROL_POINT_SELECTION_H
 
 #include <list>
 #include <memory>
@@ -32,31 +32,32 @@ class SPDesktop;
 
 namespace Inkscape {
 class CanvasItemGroup;
+class KeyPressEvent;
+class ButtonReleaseEvent;
+
 namespace UI {
 class TransformHandleSet;
 class SelectableControlPoint;
-}
-}
 
-namespace Inkscape {
-namespace UI {
-
-class ControlPointSelection : public Manipulator, public sigc::trackable {
+class ControlPointSelection
+    : public Manipulator
+    , public sigc::trackable
+{
 public:
     ControlPointSelection(SPDesktop *d, Inkscape::CanvasItemGroup *th_group);
     ~ControlPointSelection() override;
-    typedef std::unordered_set<SelectableControlPoint *> set_type;
-    typedef set_type Set; // convenience alias
+    using set_type = std::unordered_set<SelectableControlPoint*>;
+    using Set = set_type; // convenience alias
 
-    typedef set_type::iterator iterator;
-    typedef set_type::const_iterator const_iterator;
-    typedef set_type::size_type size_type;
-    typedef SelectableControlPoint *value_type;
-    typedef SelectableControlPoint *key_type;
+    using iterator = set_type::iterator;
+    using const_iterator = set_type::const_iterator;
+    using size_type = set_type::size_type;
+    using value_type = SelectableControlPoint*;
+    using key_type = SelectableControlPoint*;
 
     // size
-    bool empty() { return _points.empty(); }
-    size_type size() { return _points.size(); }
+    bool empty() const { return _points.empty(); }
+    size_type size() const { return _points.size(); }
 
     // iterators
     iterator begin() { return _points.begin(); }
@@ -95,7 +96,7 @@ public:
     void invertSelection();
     void spatialGrow(SelectableControlPoint *origin, int dir);
 
-    bool event(Inkscape::UI::Tools::ToolBase *, GdkEvent *) override;
+    bool event(Inkscape::UI::Tools::ToolBase *tool, CanvasEvent const &event) override;
 
     void transform(Geom::Affine const &m);
     void align(Geom::Dim2 d, AlignTargetNode target = AlignTargetNode::MID_NODE);
@@ -129,17 +130,17 @@ private:
     // Previously they were connected to handlers when selecting, but this
     // creates problems when dragging a point that was not selected.
     void _pointGrabbed(SelectableControlPoint *);
-    void _pointDragged(Geom::Point &, GdkEventMotion *);
+    void _pointDragged(Geom::Point &, MotionEvent const &);
     void _pointUngrabbed();
-    bool _pointClicked(SelectableControlPoint *, GdkEventButton *);
+    bool _pointClicked(SelectableControlPoint *, ButtonReleaseEvent const &);
     void _mouseoverChanged();
 
     void _update();
     void _updateTransformHandles(bool preserve_center);
     void _updateBounds();
-    bool _keyboardMove(GdkEventKey const &, Geom::Point const &);
-    bool _keyboardRotate(GdkEventKey const &, int);
-    bool _keyboardScale(GdkEventKey const &, int);
+    bool _keyboardMove(KeyPressEvent const &, Geom::Point const &);
+    bool _keyboardRotate(KeyPressEvent const &, int);
+    bool _keyboardScale(KeyPressEvent const &, int);
     bool _keyboardFlip(Geom::Dim2);
     void _keyboardTransform(Geom::Affine const &);
     void _commitHandlesTransform(CommitEvent ce);
@@ -165,7 +166,7 @@ private:
 } // namespace UI
 } // namespace Inkscape
 
-#endif
+#endif // INKSCAPE_UI_TOOL_CONTROL_POINT_SELECTION_H
 
 /*
   Local Variables:

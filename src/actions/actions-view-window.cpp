@@ -55,9 +55,9 @@ void
 add_actions_view_window(InkscapeWindow* win)
 {
     // clang-format off
-    win->add_action( "window-new",                  sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&window_new),       win));
-    win->add_action( "window-previous",             sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&window_previous),  win));
-    win->add_action( "window-next",                 sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&window_next),      win));
+    win->add_action( "window-new",                  sigc::bind(sigc::ptr_fun(&window_new),       win));
+    win->add_action( "window-previous",             sigc::bind(sigc::ptr_fun(&window_previous),  win));
+    win->add_action( "window-next",                 sigc::bind(sigc::ptr_fun(&window_next),      win));
     // clang-format on
 
     // Check if there is already an application instance (GUI or non-GUI).

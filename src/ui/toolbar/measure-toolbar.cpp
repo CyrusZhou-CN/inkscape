@@ -74,7 +74,7 @@ MeasureToolbar::MeasureToolbar(SPDesktop *desktop)
     {
         auto font_size_val = prefs->getDouble("/tools/measure/fontsize", 10.0);
         _font_size_adj = Gtk::Adjustment::create(font_size_val, 1.0, 36.0, 1.0, 4.0);
-        auto font_size_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("measure-fontsize", _("Font Size:"), _font_size_adj, 0, 2));
+        auto const font_size_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("measure-fontsize", _("Font Size:"), _font_size_adj, 0, 2);
         font_size_item->set_tooltip_text(_("The font size to be used in the measurement labels"));
         font_size_item->set_focus_widget(desktop->canvas);
         _font_size_adj->signal_value_changed().connect(sigc::mem_fun(*this, &MeasureToolbar::fontsize_value_changed));
@@ -85,7 +85,7 @@ MeasureToolbar::MeasureToolbar(SPDesktop *desktop)
     {
         auto precision_val = prefs->getDouble("/tools/measure/precision", 2);
         _precision_adj = Gtk::Adjustment::create(precision_val, 0, 10, 1, 0);
-        auto precision_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("measure-precision", _("Precision:"), _precision_adj, 0, 0));
+        auto const precision_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("measure-precision", _("Precision:"), _precision_adj, 0, 0);
         precision_item->set_tooltip_text(_("Decimal precision of measure"));
         precision_item->set_focus_widget(desktop->canvas);
         _precision_adj->signal_value_changed().connect(sigc::mem_fun(*this, &MeasureToolbar::precision_value_changed));
@@ -96,7 +96,7 @@ MeasureToolbar::MeasureToolbar(SPDesktop *desktop)
     {
         auto scale_val = prefs->getDouble("/tools/measure/scale", 100.0);
         _scale_adj = Gtk::Adjustment::create(scale_val, 0.0, 90000.0, 1.0, 4.0);
-        auto scale_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("measure-scale", _("Scale %:"), _scale_adj, 0, 3));
+        auto const scale_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("measure-scale", _("Scale %:"), _scale_adj, 0, 3);
         scale_item->set_tooltip_text(_("Scale the results"));
         scale_item->set_focus_widget(desktop->canvas);
         _scale_adj->signal_value_changed().connect(sigc::mem_fun(*this, &MeasureToolbar::scale_value_changed));
@@ -105,7 +105,7 @@ MeasureToolbar::MeasureToolbar(SPDesktop *desktop)
 
     /* units label */
     {
-        auto unit_label = Gtk::manage(new UI::Widget::LabelToolItem(_("Units:")));
+        auto const unit_label = Gtk::make_managed<UI::Widget::LabelToolItem>(_("Units:"));
         unit_label->set_tooltip_text(_("The units to be used for the measurements"));
         unit_label->set_use_markup(true);
         add(*unit_label);
@@ -118,7 +118,7 @@ MeasureToolbar::MeasureToolbar(SPDesktop *desktop)
         add(*ti);
     }
 
-    add(*Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(*Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* measure only selected */
     {
@@ -165,11 +165,11 @@ MeasureToolbar::MeasureToolbar(SPDesktop *desktop)
         _all_layers_item->signal_toggled().connect(sigc::mem_fun(*this, &MeasureToolbar::toggle_all_layers));
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* toggle start end */
     {
-        _reverse_item = Gtk::manage(new Gtk::ToolButton(_("Reverse measure")));
+        _reverse_item = Gtk::make_managed<Gtk::ToolButton>(_("Reverse measure"));
         _reverse_item->set_tooltip_text(_("Reverse measure"));
         _reverse_item->set_icon_name(INKSCAPE_ICON("draw-geometry-mirror"));
         _reverse_item->signal_clicked().connect(sigc::mem_fun(*this, &MeasureToolbar::reverse_knots));
@@ -178,7 +178,7 @@ MeasureToolbar::MeasureToolbar(SPDesktop *desktop)
 
     /* phantom measure */
     {
-        _to_phantom_item = Gtk::manage(new Gtk::ToolButton(_("Phantom measure")));
+        _to_phantom_item = Gtk::make_managed<Gtk::ToolButton>(_("Phantom measure"));
         _to_phantom_item->set_tooltip_text(_("Phantom measure"));
         _to_phantom_item->set_icon_name(INKSCAPE_ICON("selection-make-bitmap-copy"));
         _to_phantom_item->signal_clicked().connect(sigc::mem_fun(*this, &MeasureToolbar::to_phantom));
@@ -187,7 +187,7 @@ MeasureToolbar::MeasureToolbar(SPDesktop *desktop)
 
     /* to guides */
     {
-        _to_guides_item = Gtk::manage(new Gtk::ToolButton(_("To guides")));
+        _to_guides_item = Gtk::make_managed<Gtk::ToolButton>(_("To guides"));
         _to_guides_item->set_tooltip_text(_("To guides"));
         _to_guides_item->set_icon_name(INKSCAPE_ICON("guides"));
         _to_guides_item->signal_clicked().connect(sigc::mem_fun(*this, &MeasureToolbar::to_guides));
@@ -196,7 +196,7 @@ MeasureToolbar::MeasureToolbar(SPDesktop *desktop)
 
     /* to item */
     {
-        _to_item_item = Gtk::manage(new Gtk::ToolButton(_("Convert to item")));
+        _to_item_item = Gtk::make_managed<Gtk::ToolButton>(_("Convert to item"));
         _to_item_item->set_tooltip_text(_("Convert to item"));
         _to_item_item->set_icon_name(INKSCAPE_ICON("path-reverse"));
         _to_item_item->signal_clicked().connect(sigc::mem_fun(*this, &MeasureToolbar::to_item));
@@ -205,7 +205,7 @@ MeasureToolbar::MeasureToolbar(SPDesktop *desktop)
 
     /* to mark dimensions */
     {
-        _mark_dimension_item = Gtk::manage(new Gtk::ToolButton(_("Mark Dimension")));
+        _mark_dimension_item = Gtk::make_managed<Gtk::ToolButton>(_("Mark Dimension"));
         _mark_dimension_item->set_tooltip_text(_("Mark Dimension"));
         _mark_dimension_item->set_icon_name(INKSCAPE_ICON("tool-pointer"));
         _mark_dimension_item->signal_clicked().connect(sigc::mem_fun(*this, &MeasureToolbar::to_mark_dimension));
@@ -216,7 +216,7 @@ MeasureToolbar::MeasureToolbar(SPDesktop *desktop)
     {
         auto offset_val = prefs->getDouble("/tools/measure/offset", 5.0);
         _offset_adj = Gtk::Adjustment::create(offset_val, 0.0, 90000.0, 1.0, 4.0);
-        auto offset_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("measure-offset", _("Offset:"), _offset_adj, 0, 2));
+        auto const offset_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("measure-offset", _("Offset:"), _offset_adj, 0, 2);
         offset_item->set_tooltip_text(_("Mark dimension offset"));
         offset_item->set_focus_widget(desktop->canvas);
         _offset_adj->signal_value_changed().connect(sigc::mem_fun(*this, &MeasureToolbar::offset_value_changed));

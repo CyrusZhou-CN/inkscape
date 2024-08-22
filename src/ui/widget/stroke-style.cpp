@@ -98,12 +98,12 @@ StrokeStyle::StrokeStyleButton::StrokeStyleButton(Gtk::RadioButtonGroup &grp,
         button_type(button_type),
         stroke_style(stroke_style)
 {
-    show();
+    set_visible(true);
     set_mode(false);
 
     auto px = Gtk::manage(sp_get_icon_image(icon, Gtk::ICON_SIZE_LARGE_TOOLBAR));
     g_assert(px != nullptr);
-    px->show();
+    px->set_visible(true);
     add(*px);
 }
 
@@ -143,12 +143,12 @@ StrokeStyle::StrokeStyle() :
     _old_unit(nullptr)
 {
     set_name("StrokeSelector");
-    table = Gtk::manage(new Gtk::Grid());
+    table = Gtk::make_managed<Gtk::Grid>();
     table->set_border_width(4);
     table->set_row_spacing(4);
     table->set_hexpand(false);
     table->set_halign(Gtk::ALIGN_CENTER);
-    table->show();
+    table->set_visible(true);
     add(*table);
 
     Gtk::Box *hb;
@@ -165,13 +165,13 @@ StrokeStyle::StrokeStyle() :
     widthAdj = new Glib::RefPtr<Gtk::Adjustment>(Gtk::Adjustment::create(1.0, 0.0, 1000.0, 0.1, 10.0, 0.0));
     widthSpin = new Inkscape::UI::Widget::SpinButton(*widthAdj, 0.1, 3);
     widthSpin->set_tooltip_text(_("Stroke width"));
-    widthSpin->show();
+    widthSpin->set_visible(true);
     spw_label(table, C_("Stroke width", "_Width:"), 0, i, widthSpin);
 
     sp_dialog_defocus_on_enter_cpp(widthSpin);
 
     hb->pack_start(*widthSpin, false, false, 0);
-    unitSelector = Gtk::manage(new Inkscape::UI::Widget::UnitMenu());
+    unitSelector = Gtk::make_managed<Inkscape::UI::Widget::UnitMenu>();
     unitSelector->setUnitType(Inkscape::Util::UNIT_TYPE_LINEAR);
     SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 
@@ -184,7 +184,7 @@ StrokeStyle::StrokeStyle() :
     }
     widthSpin->setUnitMenu(unitSelector);
     unitSelector->signal_changed().connect(sigc::mem_fun(*this, &StrokeStyle::unitChangedCB));
-    unitSelector->show();
+    unitSelector->set_visible(true);
 
     hb->pack_start(*unitSelector, FALSE, FALSE, 0);
     (*widthAdj)->signal_value_changed().connect(sigc::mem_fun(*this, &StrokeStyle::setStrokeWidth));
@@ -197,10 +197,10 @@ StrokeStyle::StrokeStyle() :
                                             //   implement a set_mnemonic_source function in the
                                             //   Inkscape::UI::Widget::DashSelector class, so that we do not have to
                                             //   expose any of the underlying widgets?
-    dashSelector = Gtk::manage(new Inkscape::UI::Widget::DashSelector);
+    dashSelector = Gtk::make_managed<Inkscape::UI::Widget::DashSelector>();
     _pattern = Gtk::make_managed<Gtk::Entry>();
 
-    dashSelector->show();
+    dashSelector->set_visible(true);
     dashSelector->set_hexpand();
     dashSelector->set_halign(Gtk::ALIGN_FILL);
     dashSelector->set_valign(Gtk::ALIGN_CENTER);
@@ -238,27 +238,27 @@ StrokeStyle::StrokeStyle() :
     hb = spw_hbox(table, 1, 1, i);
     i++;
 
-    startMarkerCombo = Gtk::manage(new MarkerComboBox("marker-start", SP_MARKER_LOC_START));
+    startMarkerCombo = Gtk::make_managed<MarkerComboBox>("marker-start", SP_MARKER_LOC_START);
     startMarkerCombo->set_tooltip_text(_("Start Markers are drawn on the first node of a path or shape"));
     startMarkerConn = startMarkerCombo->signal_changed().connect([=]() { markerSelectCB(startMarkerCombo, SP_MARKER_LOC_START); });
     startMarkerCombo->edit_signal.connect([=] { enterEditMarkerMode(SP_MARKER_LOC_START); });
-    startMarkerCombo->show();
+    startMarkerCombo->set_visible(true);
 
     hb->pack_start(*startMarkerCombo, true, true, 0);
 
-    midMarkerCombo = Gtk::manage(new MarkerComboBox("marker-mid", SP_MARKER_LOC_MID));
+    midMarkerCombo = Gtk::make_managed<MarkerComboBox>("marker-mid", SP_MARKER_LOC_MID);
     midMarkerCombo->set_tooltip_text(_("Mid Markers are drawn on every node of a path or shape except the first and last nodes"));
     midMarkerConn = midMarkerCombo->signal_changed().connect([=]() { markerSelectCB(midMarkerCombo, SP_MARKER_LOC_MID); });
     midMarkerCombo->edit_signal.connect([=] { enterEditMarkerMode(SP_MARKER_LOC_MID); });
-    midMarkerCombo->show();
+    midMarkerCombo->set_visible(true);
 
     hb->pack_start(*midMarkerCombo, true, true, 0);
 
-    endMarkerCombo = Gtk::manage(new MarkerComboBox("marker-end", SP_MARKER_LOC_END));
+    endMarkerCombo = Gtk::make_managed<MarkerComboBox>("marker-end", SP_MARKER_LOC_END);
     endMarkerCombo->set_tooltip_text(_("End Markers are drawn on the last node of a path or shape"));
     endMarkerConn = endMarkerCombo->signal_changed().connect([=]() { markerSelectCB(endMarkerCombo, SP_MARKER_LOC_END); });
     endMarkerCombo->edit_signal.connect([=] { enterEditMarkerMode(SP_MARKER_LOC_END); });
-    endMarkerCombo->show();
+    endMarkerCombo->set_visible(true);
 
     hb->pack_start(*endMarkerCombo, true, true, 0);
     i++;
@@ -308,7 +308,7 @@ StrokeStyle::StrokeStyle() :
     miterLimitSpin = new Inkscape::UI::Widget::SpinButton(*miterLimitAdj, 0.1, 2);
     miterLimitSpin->set_tooltip_text(_("Maximum length of the miter (in units of stroke width)"));
     miterLimitSpin->set_width_chars(6);
-    miterLimitSpin->show();
+    miterLimitSpin->set_visible(true);
     sp_dialog_defocus_on_enter_cpp(miterLimitSpin);
 
     hb->pack_start(*miterLimitSpin, false, false, 0);
@@ -446,7 +446,7 @@ StrokeStyle::makeRadioButton(Gtk::RadioButtonGroup &grp,
 
     hb->pack_start(*tb, false, false, 0);
 
-    tb->signal_toggled().connect(sigc::bind<StrokeStyleButton *, StrokeStyle *>(
+    tb->signal_toggled().connect(sigc::bind(
                                      sigc::ptr_fun(&StrokeStyle::buttonToggledCB), tb, this));
 
     return tb;
@@ -651,12 +651,12 @@ void StrokeStyle::update_pattern(int ndash, const double* pattern) {
     }
     _pattern->set_text(ost.str().c_str());
     if (ndash > 0) {
-        _pattern_label->show();
-        _pattern->show();
+        _pattern_label->set_visible(true);
+        _pattern->set_visible(true);
     }
     else {
-        _pattern_label->hide();
-        _pattern->hide();
+        _pattern_label->set_visible(false);
+        _pattern->set_visible(false);
     }
 }
 

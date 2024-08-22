@@ -45,6 +45,7 @@
 #include "object/weakptr.h"
 
 #include "ui/icon-names.h"
+#include "ui/dialog-run.h"
 
 #include "xml/repr.h"
 #include "xml/attribute-record.h"
@@ -138,7 +139,7 @@ bool confirm_image_size(TracingEngine const *engine, Geom::IntPoint const &dimen
                             "\n\nContinue the procedure (without saving)?");
         Gtk::MessageDialog dialog(msg, false, Gtk::MESSAGE_WARNING, Gtk::BUTTONS_OK_CANCEL, true);
 
-        if (dialog.run() != Gtk::RESPONSE_OK) {
+        if (Inkscape::UI::dialog_run(dialog) != Gtk::RESPONSE_OK) {
             return false;
         }
     }

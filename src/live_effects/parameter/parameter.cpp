@@ -327,8 +327,8 @@ void ScalarParam::param_set_undo(bool set_undo) { _set_undo = set_undo; }
 Gtk::Widget *ScalarParam::param_newWidget()
 {
     if (widget_is_visible) {
-        Inkscape::UI::Widget::RegisteredScalar *rsu = Gtk::manage(new Inkscape::UI::Widget::RegisteredScalar(
-            param_label, param_tooltip, param_key, *param_wr, param_effect->getRepr(), param_effect->getSPDoc()));
+        auto const rsu = Gtk::make_managed<UI::Widget::RegisteredScalar>(
+            param_label, param_tooltip, param_key, *param_wr, param_effect->getRepr(), param_effect->getSPDoc());
         rsu->setValue(value);
         rsu->setDigits(digits);
         rsu->setIncrements(inc_step, inc_page);
@@ -346,7 +346,7 @@ Gtk::Widget *ScalarParam::param_newWidget()
         if (_set_undo) {
             rsu->set_undo_parameters(_("Change scalar parameter"), INKSCAPE_ICON("dialog-path-effects"));
         }
-        return dynamic_cast<Gtk::Widget *>(rsu);
+        return rsu;
     } else {
         return nullptr;
     }

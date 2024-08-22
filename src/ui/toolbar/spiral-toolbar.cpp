@@ -55,7 +55,7 @@ SpiralToolbar::SpiralToolbar(SPDesktop *desktop)
     auto prefs = Inkscape::Preferences::get();
 
     {
-        _mode_item = Gtk::manage(new UI::Widget::LabelToolItem(_("<b>New:</b>")));
+        _mode_item = Gtk::make_managed<UI::Widget::LabelToolItem>(_("<b>New:</b>"));
         _mode_item->set_use_markup(true);
         add(*_mode_item);
     }
@@ -66,7 +66,7 @@ SpiralToolbar::SpiralToolbar(SPDesktop *desktop)
         std::vector<double>        values = {             0.01, 0.5,                        1,  2,  3,  5, 10, 20, 50, 100};
         auto revolution_val = prefs->getDouble("/tools/shapes/spiral/revolution", 3.0);
         _revolution_adj = Gtk::Adjustment::create(revolution_val, 0.01, 1024.0, 0.1, 1.0);
-        _revolution_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("spiral-revolutions", _("Turns:"), _revolution_adj, 1, 2));
+        _revolution_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("spiral-revolutions", _("Turns:"), _revolution_adj, 1, 2);
         _revolution_item->set_tooltip_text(_("Number of revolutions"));
         _revolution_item->set_custom_numeric_menu_data(values, labels);
         _revolution_item->set_focus_widget(desktop->getCanvas());
@@ -82,7 +82,7 @@ SpiralToolbar::SpiralToolbar(SPDesktop *desktop)
         auto expansion_val = prefs->getDouble("/tools/shapes/spiral/expansion", 1.0);
         _expansion_adj = Gtk::Adjustment::create(expansion_val, 0.0, 1000.0, 0.01, 1.0);
 
-        _expansion_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("spiral-expansion", _("Divergence:"), _expansion_adj));
+        _expansion_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("spiral-expansion", _("Divergence:"), _expansion_adj);
         _expansion_item->set_tooltip_text(_("How much denser/sparser are outer revolutions; 1 = uniform"));
         _expansion_item->set_custom_numeric_menu_data(values, labels);
         _expansion_item->set_focus_widget(desktop->getCanvas());
@@ -97,7 +97,7 @@ SpiralToolbar::SpiralToolbar(SPDesktop *desktop)
         std::vector<double>        values = {                      0,                 0.5,                   0.9};
         auto t0_val = prefs->getDouble("/tools/shapes/spiral/t0", 0.0);
         _t0_adj = Gtk::Adjustment::create(t0_val, 0.0, 0.999, 0.01, 1.0);
-        _t0_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("spiral-t0", _("Inner radius:"), _t0_adj));
+        _t0_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("spiral-t0", _("Inner radius:"), _t0_adj);
         _t0_item->set_tooltip_text(_("Radius of the innermost revolution (relative to the spiral size)"));
         _t0_item->set_custom_numeric_menu_data(values, labels);
         _t0_item->set_focus_widget(desktop->getCanvas());
@@ -106,11 +106,11 @@ SpiralToolbar::SpiralToolbar(SPDesktop *desktop)
         add(*_t0_item);
     }
 
-    add(*Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(*Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Reset */
     {
-        _reset_item = Gtk::manage(new Gtk::ToolButton(_("Defaults")));
+        _reset_item = Gtk::make_managed<Gtk::ToolButton>(_("Defaults"));
         _reset_item->set_icon_name(INKSCAPE_ICON("edit-clear"));
         _reset_item->set_tooltip_text(_("Reset shape parameters to defaults (use Inkscape Preferences > Tools to change defaults)"));
         _reset_item->signal_clicked().connect(sigc::mem_fun(*this, &SpiralToolbar::defaults));

@@ -62,7 +62,7 @@ ObjectProperties::ObjectProperties()
     , _cb_lock(_("L_ock"), true)
     , _cb_aspect_ratio(_("Preserve Ratio"), true)
     , _exp_interactivity(_("_Interactivity"), true)
-    , _attr_table(Gtk::manage(new SPAttributeTable()))
+    , _attr_table(Gtk::make_managed<SPAttributeTable>())
 {
     //initialize labels for the table at the bottom of the dialog
     _int_attrs.emplace_back("onclick");
@@ -92,7 +92,7 @@ void ObjectProperties::_init()
 {
     set_spacing(0);
 
-    auto grid_top = Gtk::manage(new Gtk::Grid());
+    auto const grid_top = Gtk::make_managed<Gtk::Grid>();
     grid_top->set_row_spacing(4);
     grid_top->set_column_spacing(0);
     grid_top->set_border_width(4);
@@ -158,8 +158,8 @@ void ObjectProperties::_init()
     _highlight_color.connectChanged(sigc::mem_fun(*this, &ObjectProperties::_highlightChanged));
 
     /* Create the frame for the object description */
-    Gtk::Label *label_desc = Gtk::manage(new Gtk::Label(_("_Description:"), true));
-    UI::Widget::Frame *frame_desc = Gtk::manage(new UI::Widget::Frame("", FALSE));
+    auto const label_desc = Gtk::make_managed<Gtk::Label>(_("_Description:"), true);
+    auto const frame_desc = Gtk::make_managed<UI::Widget::Frame>("", FALSE);
     frame_desc->set_label_widget(*label_desc);
     frame_desc->set_padding (0,0,0,0);
     pack_start(*frame_desc, true, true, 0);
@@ -230,10 +230,10 @@ void ObjectProperties::_init()
     grid_top->attach(_combo_image_rendering, 1, 5, 1, 1);
 
     /* Check boxes */
-    Gtk::Box *hb_checkboxes = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL));
+    auto const hb_checkboxes = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
     pack_start(*hb_checkboxes, Gtk::PACK_SHRINK, 0);
 
-    auto grid_cb = Gtk::manage(new Gtk::Grid());
+    auto const grid_cb = Gtk::make_managed<Gtk::Grid>();
     grid_cb->set_row_homogeneous();
     grid_cb->set_column_homogeneous(true);
 
@@ -267,7 +267,7 @@ void ObjectProperties::_init()
 
 
     /* Button for setting the object's id, label, title and description. */
-    Gtk::Button *btn_set = Gtk::manage(new Gtk::Button(_("_Set"), true));
+    auto const btn_set = Gtk::make_managed<Gtk::Button>(_("_Set"), true);
     btn_set->set_hexpand();
     btn_set->set_valign(Gtk::ALIGN_CENTER);
     grid_cb->attach(*btn_set, 1, 1, 1, 1);
@@ -358,23 +358,23 @@ void ObjectProperties::update_entries()
 
         /* Image Rendering */
         if (is<SPImage>(item)) {
-            _combo_image_rendering.show();
-            _label_image_rendering.show();
+            _combo_image_rendering.set_visible(true);
+            _label_image_rendering.set_visible(true);
             _combo_image_rendering.set_active(obj->style->image_rendering.value);
             if (obj->getAttribute("inkscape:svg-dpi")) {
                 _spin_dpi.set_value(std::stod(obj->getAttribute("inkscape:svg-dpi")));
-                _spin_dpi.show();
-                _label_dpi.show();
+                _spin_dpi.set_visible(true);
+                _label_dpi.set_visible(true);
             } else {
-                _spin_dpi.hide();
-                _label_dpi.hide();
+                _spin_dpi.set_visible(false);
+                _label_dpi.set_visible(false);
             }
         } else {
-            _combo_image_rendering.hide();
+            _combo_image_rendering.set_visible(false);
             _combo_image_rendering.unset_active();
-            _label_image_rendering.hide();
-            _spin_dpi.hide();
-            _label_dpi.hide();
+            _label_image_rendering.set_visible(false);
+            _spin_dpi.set_visible(false);
+            _label_dpi.set_visible(false);
         }
 
         /* Description */

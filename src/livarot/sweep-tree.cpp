@@ -26,10 +26,7 @@ SweepTree::SweepTree()
 {
     src = nullptr;
     bord = -1;
-    startPoint = -1;
     evt[LEFT] = evt[RIGHT] = nullptr;
-    sens = true;
-    //invDirLength=1;
 }
 
 SweepTree::~SweepTree()
@@ -50,20 +47,6 @@ SweepTree::ConvertTo(Shape *iSrc, int iBord, int iWeight, int iStartPoint)
     src = iSrc;
     bord = iBord;
     evt[LEFT] = evt[RIGHT] = nullptr;
-    startPoint = iStartPoint;
-    if (src->getEdge(bord).st < src->getEdge(bord).en) {
-        if (iWeight >= 0)
-            sens = true;
-        else
-            sens = false;
-    } else {
-        if (iWeight >= 0)
-            sens = false;
-        else
-            sens = true;
-    }
-    //invDirLength=src->eData[bord].isqlength;
-    //invDirLength=1/sqrt(src->getEdge(bord).dx*src->getEdge(bord).dx+src->getEdge(bord).dy*src->getEdge(bord).dy);
 }
 
 
@@ -530,10 +513,8 @@ SweepTree::Relocate(SweepTree * to)
   AVLTree::Relocate(to);
   to->src = src;
   to->bord = bord;
-  to->sens = sens;
   to->evt[LEFT] = evt[LEFT];
   to->evt[RIGHT] = evt[RIGHT];
-  to->startPoint = startPoint;
   if (unsigned(bord) < src->swsData.size())
     src->swsData[bord].misc = to;
   if (unsigned(bord) < src->swrData.size())
@@ -554,52 +535,8 @@ SweepTree::SwapWithRight(SweepTreeList &/*list*/, SweepEventQueue &/*queue*/)
     tL->src->swsData[tL->bord].misc = tR;
     tR->src->swsData[tR->bord].misc = tL;
 
-    {
-        Shape *swap = tL->src;
-        tL->src = tR->src;
-        tR->src = swap;
-    }
-    {
-        int swap = tL->bord;
-        tL->bord = tR->bord;
-        tR->bord = swap;
-    }
-    {
-        int swap = tL->startPoint;
-        tL->startPoint = tR->startPoint;
-        tR->startPoint = swap;
-    }
-    //{double swap=tL->invDirLength;tL->invDirLength=tR->invDirLength;tR->invDirLength=swap;}
-    {
-        bool swap = tL->sens;
-        tL->sens = tR->sens;
-        tR->sens = swap;
-    }
-}
-
-void
-SweepTree::Avance(Shape */*dstPts*/, int /*curPoint*/, Shape */*a*/, Shape */*b*/)
-{
-    return;
-/*	if ( curPoint != startPoint ) {
-		int nb=-1;
-		if ( sens ) {
-//			nb=dstPts->AddEdge(startPoint,curPoint);
-		} else {
-//			nb=dstPts->AddEdge(curPoint,startPoint);
-		}
-		if ( nb >= 0 ) {
-			dstPts->swsData[nb].misc=(void*)((src==b)?1:0);
-			int   wp=waitingPoint;
-			dstPts->eData[nb].firstLinkedPoint=waitingPoint;
-			waitingPoint=-1;
-			while ( wp >= 0 ) {
-				dstPts->pData[wp].edgeOnLeft=nb;
-				wp=dstPts->pData[wp].nextLinkedPoint;
-			}
-		}
-		startPoint=curPoint;
-	}*/
+    std::swap(tL->src, tR->src);
+    std::swap(tL->bord, tR->bord);
 }
 
 /*

@@ -42,7 +42,7 @@ void SPPage::build(SPDocument *document, Inkscape::XML::Node *repr)
     SPObject::build(document, repr);
 
     this->readAttr(SPAttr::INKSCAPE_LABEL);
-    this->readAttr(SPAttr::PAGE_SIZE);
+    this->readAttr(SPAttr::PAGE_SIZE_NAME);
     this->readAttr(SPAttr::X);
     this->readAttr(SPAttr::Y);
     this->readAttr(SPAttr::WIDTH);
@@ -85,7 +85,7 @@ void SPPage::set(SPAttr key, const gchar *value)
         case SPAttr::PAGE_BLEED:
             this->bleed.readOrUnset(value);
             break;
-        case SPAttr::PAGE_SIZE:
+        case SPAttr::PAGE_SIZE_NAME:
             this->_size_label = value ? std::string(value) : "";
             break;
         default:
@@ -335,20 +335,24 @@ std::string SPPage::getBleedLabel() const
  * shouldn't be.
  *
  * @param hidden - Return hidden items (default: true)
+ * @param in_bleed - Use the bleed box instead of the page box
+ * @param in_layers - Should layers be traversed to find items (default: true)
  */
-std::vector<SPItem *> SPPage::getExclusiveItems(bool hidden) const
+std::vector<SPItem *> SPPage::getExclusiveItems(bool hidden, bool in_bleed, bool in_layers) const
 {
-    return document->getItemsInBox(0, getDocumentRect(), hidden, true, true, false);
+    return document->getItemsInBox(0, in_bleed ? getDocumentBleed() : getDocumentRect(), hidden, true, true, false, in_layers);
 }
 
 /**
  * Like ExcludiveItems above but get all the items which are inside or overlapping.
  *
  * @param hidden - Return hidden items (default: true)
+ * @param in_bleed - Use the bleed box instead of the page box
+ * @param in_layers - Should layers be traversed to find items (default: true)
  */
-std::vector<SPItem *> SPPage::getOverlappingItems(bool hidden) const
+std::vector<SPItem *> SPPage::getOverlappingItems(bool hidden, bool in_bleed, bool in_layers) const
 {
-    return document->getItemsPartiallyInBox(0, getDocumentRect(), hidden, true, true, false);
+    return document->getItemsPartiallyInBox(0, in_bleed ? getDocumentBleed() : getDocumentRect(), hidden, true, true, false, in_layers);
 }
 
 /**
@@ -560,7 +564,7 @@ void SPPage::update(SPCtx * /*ctx*/, unsigned int /*flags*/)
     auto lbl = label();
     char *alt = nullptr;
     if (document->getPageManager().showDefaultLabel()) {
-        alt = g_strdup_printf(_("%d"), getPagePosition());
+        alt = g_strdup_printf("%d", getPagePosition());
     }
     _canvas_item->update(getDesktopRect(), getDesktopMargin(), getDesktopBleed(), lbl ? lbl : alt);
     g_free(alt);

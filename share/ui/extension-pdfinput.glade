@@ -20,7 +20,7 @@
       </row>
       <row>
         <col id="0">1</col>
-        <col id="1" translatable="yes">Clip Box</col>
+        <col id="1" translatable="yes">Crop Box</col>
       </row>
       <row>
         <col id="0">2</col>
@@ -60,22 +60,22 @@
     <data>
       <row>
         <col id="0">0</col>
-        <col id="1" translatable="yes">Example</col>
-        <col id="2" translatable="yes">Italic</col>
-        <col id="3" translatable="yes">Bold</col>
-        <col id="4" translatable="yes">Condensed</col>
-        <col id="5" translatable="yes">N/A</col>
+        <col id="1">Example</col>
+        <col id="2">Italic</col>
+        <col id="3">Bold</col>
+        <col id="4">Condensed</col>
+        <col id="5">N/A</col>
         <col id="6">0</col>
         <col id="7">ok</col>
         <col id="8">False</col>
       </row>
       <row>
         <col id="0">0</col>
-        <col id="1" translatable="yes">Example</col>
-        <col id="2" translatable="yes">Normal</col>
-        <col id="3" translatable="yes">Normal</col>
-        <col id="4" translatable="yes">Normal</col>
-        <col id="5" translatable="yes">Thing</col>
+        <col id="1">Example</col>
+        <col id="2">Normal</col>
+        <col id="3">Normal</col>
+        <col id="4">Normal</col>
+        <col id="5">Thing</col>
         <col id="6">1</col>
         <col id="7">cancel</col>
         <col id="8">True</col>
@@ -100,7 +100,7 @@
       </row>
       <row>
         <col id="0">3</col>
-        <col id="1" translatable="yes">Keep missing font names</col>
+        <col id="1" translatable="yes">Keep missing fonts' names</col>
       </row>
       <row>
         <col id="0">4</col>
@@ -173,7 +173,7 @@
                 <property name="halign">start</property>
                 <property name="margin-top">10</property>
                 <property name="margin-bottom">10</property>
-                <property name="label" translatable="yes">&lt;i&gt;Import via internal library. Editable text is reconstructed, pages, layers and margins are preserved, object fills and strokes are recombined and gradient meshes are converted to tiles.&lt;/i&gt;</property>
+                <property name="label" translatable="yes">&lt;i&gt;Import via internal library. Editable text is reconstructed. Pages, layers and margins are preserved, object fills and strokes are recombined and gradient meshes are converted to tiles.&lt;/i&gt;</property>
                 <property name="use-markup">True</property>
                 <property name="wrap">True</property>
                 <property name="max-width-chars">50</property>
@@ -574,7 +574,7 @@
                 <property name="can-focus">False</property>
                 <property name="margin-start">10</property>
                 <property name="margin-end">10</property>
-                <property name="label" translatable="yes">1 / 10</property>
+                <property name="label" translatable="no">1 / 10</property>
                 <property name="use-markup">True</property>
                 <property name="justify">center</property>
               </object>

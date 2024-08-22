@@ -46,8 +46,6 @@ public:
     Shape *src;           /*!< Shape from which the edge comes.  (When doing boolean operation on polygons,
                                edges can come from 2 different polygons.) */
     int bord;             /*!< Edge index in the Shape. */
-    bool sens;            /*!< true = top->bottom; false = bottom->top. */
-    int startPoint;       /*!< point index in the result Shape associated with the upper end of the edge */
 
     SweepTree();
     ~SweepTree() override;
@@ -298,12 +296,6 @@ public:
      * @param queue Reference to the event queue. Useless parameter.
      */
     void SwapWithRight(SweepTreeList &list, SweepEventQueue &queue);
-
-    /**
-     * Useless function. No active code in the function body. I suspected this became
-     * useless after Shape::Avance was implemented.
-     */
-    void Avance(Shape *dst, int nPt, Shape *a, Shape *b);
 
     /**
      * TODO: Probably has to do with some AVL relocation. Only called once from Node removal code.

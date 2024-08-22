@@ -154,7 +154,7 @@ LPEMirrorSymmetry::newWidget()
 {
     // use manage here, because after deletion of Effect object, others might
     // still be pointing to this widget.
-    Gtk::Box *vbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const vbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
 
     vbox->set_border_width(5);
     vbox->set_homogeneous(false);
@@ -163,7 +163,7 @@ LPEMirrorSymmetry::newWidget()
     while (it != param_vector.end()) {
         if ((*it)->widget_is_visible) {
             Parameter *param = *it;
-            Gtk::Widget *widg = dynamic_cast<Gtk::Widget *>(param->param_newWidget());
+            auto const widg = param->param_newWidget();
             Glib::ustring *tip = param->param_getTooltip();
             if (widg && param->param_key != "split_open") {
                 vbox->pack_start(*widg, true, true, 2);
@@ -178,17 +178,17 @@ LPEMirrorSymmetry::newWidget()
 
         ++it;
     }
-    Gtk::Box * hbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL,0));
-    Gtk::Button * center_vert_button = Gtk::manage(new Gtk::Button(Glib::ustring(_("Vertical center"))));
+    auto const hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 0);
+    auto const center_vert_button = Gtk::make_managed<Gtk::Button>(Glib::ustring(_("Vertical center")));
     center_vert_button->signal_clicked().connect(sigc::mem_fun (*this,&LPEMirrorSymmetry::centerVert));
     center_vert_button->set_size_request(110,20);
-    Gtk::Button * center_horiz_button = Gtk::manage(new Gtk::Button(Glib::ustring(_("Horizontal center"))));
+    auto const center_horiz_button = Gtk::make_managed<Gtk::Button>(Glib::ustring(_("Horizontal center")));
     center_horiz_button->signal_clicked().connect(sigc::mem_fun (*this,&LPEMirrorSymmetry::centerHoriz));
     center_horiz_button->set_size_request(110,20);
     vbox->pack_start(*hbox, true,true,2);
     hbox->pack_start(*center_vert_button, false, false,2);
     hbox->pack_start(*center_horiz_button, false, false,2);
-    return dynamic_cast<Gtk::Widget *>(vbox);
+    return vbox;
 }
 
 void

@@ -320,7 +320,7 @@ get_print(gchar const *key)
  * case could apply to modules that are built in (like the SVG load/save functions).
  */
 bool
-build_from_reprdoc(Inkscape::XML::Document *doc, Implementation::Implementation *in_imp, std::string* baseDir)
+build_from_reprdoc(Inkscape::XML::Document *doc, Implementation::Implementation *in_imp, std::string* baseDir, std::string* file_name)
 {
     ModuleImpType module_implementation_type = MODULE_UNKNOWN_IMP;
     ModuleFuncType module_functional_type = MODULE_UNKNOWN_FUNC;
@@ -409,7 +409,7 @@ build_from_reprdoc(Inkscape::XML::Document *doc, Implementation::Implementation 
                 break;
             }
             case MODULE_FILTER: {
-                module = new Effect(repr, imp, baseDir);
+                module = new Effect(repr, imp, baseDir, file_name);
                 break;
             }
             case MODULE_PRINT: {
@@ -452,6 +452,7 @@ void
 build_from_file(gchar const *filename)
 {
     std::string dir = Glib::path_get_dirname(filename);
+    auto file_name = Glib::path_get_basename(filename);
 
     Inkscape::XML::Document *doc = sp_repr_read_file(filename, INKSCAPE_EXTENSION_URI);
     if (!doc) {
@@ -459,7 +460,7 @@ build_from_file(gchar const *filename)
         return;
     }
 
-    if (!build_from_reprdoc(doc, nullptr, &dir)) {
+    if (!build_from_reprdoc(doc, nullptr, &dir, &file_name)) {
         g_warning("Inkscape::Extension::build_from_file() - Could not parse extension from '%s'.", filename);
     }
 
@@ -483,7 +484,7 @@ build_from_mem(gchar const *buffer, Implementation::Implementation *in_imp)
         return;
     }
 
-    if (!build_from_reprdoc(doc, in_imp, nullptr)) {
+    if (!build_from_reprdoc(doc, in_imp, nullptr, nullptr)) {
         g_critical("Inkscape::Extension::build_from_mem() - Could not parse extension from memory buffer.");
     }
 

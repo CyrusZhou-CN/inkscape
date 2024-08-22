@@ -48,12 +48,12 @@ protected:
     const char** _originals;
     SPItem** _imageItems;
 public:
-    ImageMagickDocCache(Inkscape::UI::View::View * view);
+    ImageMagickDocCache(SPDesktop *desktop);
     ~ImageMagickDocCache ( ) override;
 };
 
-ImageMagickDocCache::ImageMagickDocCache(Inkscape::UI::View::View * view) :
-    Inkscape::Extension::Implementation::ImplementationDocumentCache(view),
+ImageMagickDocCache::ImageMagickDocCache(SPDesktop *desktop) :
+    Inkscape::Extension::Implementation::ImplementationDocumentCache(desktop),
     _nodes(NULL),
     _images(NULL),
     _imageCount(0),
@@ -62,7 +62,6 @@ ImageMagickDocCache::ImageMagickDocCache(Inkscape::UI::View::View * view) :
     _originals(NULL),
     _imageItems(NULL)
 {
-    SPDesktop *desktop = (SPDesktop*)view;
     auto selectedItemList = desktop->getSelection()->items();
     int selectCount = (int) boost::distance(selectedItemList);
     
@@ -150,17 +149,17 @@ ImageMagick::load(Inkscape::Extension::Extension */*module*/)
 }
 
 Inkscape::Extension::Implementation::ImplementationDocumentCache *
-ImageMagick::newDocCache (Inkscape::Extension::Extension * /*ext*/, Inkscape::UI::View::View * view) {
-    return new ImageMagickDocCache(view);
+ImageMagick::newDocCache (Inkscape::Extension::Extension * /*ext*/, SPDesktop *desktop) {
+    return new ImageMagickDocCache(desktop);
 }
 
 void
-ImageMagick::effect (Inkscape::Extension::Effect *module, Inkscape::UI::View::View *document, Inkscape::Extension::Implementation::ImplementationDocumentCache * docCache)
+ImageMagick::effect (Inkscape::Extension::Effect *module, SPDesktop *desktop, Inkscape::Extension::Implementation::ImplementationDocumentCache * docCache)
 {
     refreshParameters(module);
 
     if (docCache == NULL) { // should never happen
-        docCache = newDocCache(module, document);
+        docCache = newDocCache(module, desktop);
     }
     ImageMagickDocCache * dc = dynamic_cast<ImageMagickDocCache *>(docCache);
     if (dc == NULL) { // should really never happen
@@ -224,31 +223,26 @@ ImageMagick::effect (Inkscape::Extension::Effect *module, Inkscape::UI::View::Vi
         catch (Magick::Exception &error_) {
             printf("Caught exception: %s \n", error_.what());
         }
-
-        //while(Gtk::Main::events_pending()) {
-        //    Gtk::Main::iteration();
-        //}
     }
 }
 
 /** \brief  A function to get the preferences for the grid
     \param  module  Module which holds the params
-    \param  view     Unused today - may get style information in the future.
+    \param  desktop
 
     Uses AutoGUI for creating the GUI.
 */
 Gtk::Widget *
-ImageMagick::prefs_effect(Inkscape::Extension::Effect *module, Inkscape::UI::View::View * view, sigc::signal<void ()> * changeSignal, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
+ImageMagick::prefs_effect(Inkscape::Extension::Effect *module, SPDesktop *desktop, sigc::signal<void ()> * changeSignal, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
 {
-    SPDocument * current_document = view->doc();
+  SPDocument * current_document = desktop->doc();
 
-    auto selected = ((SPDesktop *) view)->getSelection()->items();
-    Inkscape::XML::Node * first_select = NULL;
-    if (!selected.empty()) {
-        first_select = (selected.front())->getRepr();
-    }
-
-    return module->autogui(current_document, first_select, changeSignal);
+  auto selected = desktop->getSelection()->items();
+  Inkscape::XML::Node * first_select = NULL;
+  if (!selected.empty()) {
+    first_select = (selected.front())->getRepr();
+  }
+  return module->autogui(current_document, first_select, changeSignal);
 }
 
 }; /* namespace Bitmap */

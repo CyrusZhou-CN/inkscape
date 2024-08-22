@@ -223,6 +223,11 @@ FontFactory::~FontFactory()
     g_object_unref(fontServer);
 }
 
+void FontFactory::refreshConfig()
+{
+    pango_fc_font_map_config_changed(PANGO_FC_FONT_MAP(fontServer));
+}
+
 Glib::ustring FontFactory::ConstructFontSpecification(PangoFontDescription *font)
 {
     Glib::ustring pangoString;

@@ -10,21 +10,23 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#include "selected-style.h"
-
+#include <cmath>
 #include <vector>
-
+#include <sigc++/connection.h>
+#include <sigc++/adaptors/bind.h>
+#include <sigc++/functors/mem_fun.h>
+#include <gtkmm/adjustment.h>
+#include <gtkmm/radiomenuitem.h>
 #include <gtkmm/separatormenuitem.h>
 
+#include "selected-style.h"
 
 #include "desktop-style.h"
 #include "document-undo.h"
 #include "gradient-chemistry.h"
 #include "message-context.h"
 #include "selection.h"
-
 #include "include/gtkmm_version.h"
-
 #include "object/sp-hatch.h"
 #include "object/sp-linear-gradient.h"
 #include "object/sp-mesh-gradient.h"
@@ -32,10 +34,9 @@
 #include "object/sp-pattern.h"
 #include "object/sp-radial-gradient.h"
 #include "style.h"
-
 #include "svg/css-ostringstream.h"
 #include "svg/svg-color.h"
-
+#include "ui/controller.h"
 #include "ui/cursor-utils.h"
 #include "ui/dialog/dialog-container.h"
 #include "ui/dialog/dialog-base.h"
@@ -44,11 +45,16 @@
 #include "ui/tools/tool-base.h"
 #include "ui/widget/color-preview.h"
 #include "ui/widget/gradient-image.h"
-
 #include "widgets/paintdef.h"
 #include "widgets/spw-utilities.h"
 
 using Inkscape::Util::unit_table;
+
+static constexpr auto const SELECTED_STYLE_SB_WIDTH     =  48;
+static constexpr auto const SELECTED_STYLE_PLACE_WIDTH  =  50;
+static constexpr auto const SELECTED_STYLE_STROKE_WIDTH =  40;
+static constexpr auto const SELECTED_STYLE_FLAG_WIDTH   =  12;
+static constexpr auto const SELECTED_STYLE_WIDTH        = 250;
 
 static gdouble const _sw_presets[]     = { 32 ,  16 ,  10 ,  8 ,  6 ,  4 ,  3 ,  2 ,  1.5 ,  1 ,  0.75 ,  0.5 ,  0.25 ,  0.1 };
 static gchar const *const _sw_presets_str[] = {"32", "16", "10", "8", "6", "4", "3", "2", "1.5", "1", "0.75", "0.5", "0.25", "0.1"};
@@ -85,12 +91,9 @@ void clearTooltip( Gtk::Widget &widget )
 
 } // namespace
 
-namespace Inkscape {
-namespace UI {
-namespace Widget {
+namespace Inkscape::UI::Widget {
 
-
-struct DropTracker {
+struct SelectedStyleDropTracker final {
     SelectedStyle* parent;
     int item;
 };
@@ -131,7 +134,6 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
     , _opacity_blocked(false)
 {
     set_name("SelectedStyle");
-    _drop[0] = _drop[1] = nullptr;
     _dropEnabled[0] = _dropEnabled[1] = false;
 
     _fill_label.set_halign(Gtk::ALIGN_END);
@@ -185,7 +187,7 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
         _lgradient[i].show_all();
         __lgradient[i] = (i == SS_FILL)? (_("Linear gradient (fill)")) : (_("Linear gradient (stroke)"));
 
-        _gradient_preview_l[i] = Gtk::manage(new GradientImage(nullptr));
+        _gradient_preview_l[i] = Gtk::make_managed<GradientImage>(nullptr);
         _gradient_box_l[i].set_orientation(Gtk::ORIENTATION_HORIZONTAL);
         _gradient_box_l[i].pack_start(_lgradient[i]);
         _gradient_box_l[i].pack_start(*_gradient_preview_l[i]);
@@ -195,7 +197,7 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
         _rgradient[i].show_all();
         __rgradient[i] = (i == SS_FILL)? (_("Radial gradient (fill)")) : (_("Radial gradient (stroke)"));
 
-        _gradient_preview_r[i] = Gtk::manage(new GradientImage(nullptr));
+        _gradient_preview_r[i] = Gtk::make_managed<GradientImage>(nullptr);
         _gradient_box_r[i].set_orientation(Gtk::ORIENTATION_HORIZONTAL);
         _gradient_box_r[i].pack_start(_rgradient[i]);
         _gradient_box_r[i].pack_start(*_gradient_preview_r[i]);
@@ -206,7 +208,7 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
         _mgradient[i].show_all();
         __mgradient[i] = (i == SS_FILL)? (_("Mesh gradient (fill)")) : (_("Mesh gradient (stroke)"));
 
-        _gradient_preview_m[i] = Gtk::manage(new GradientImage(nullptr));
+        _gradient_preview_m[i] = Gtk::make_managed<GradientImage>(nullptr);
         _gradient_box_m[i].set_orientation(Gtk::ORIENTATION_HORIZONTAL);
         _gradient_box_m[i].pack_start(_mgradient[i]);
         _gradient_box_m[i].pack_start(*_gradient_preview_m[i]);
@@ -221,7 +223,7 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
         _unset[i].show_all();
         __unset[i] = (i == SS_FILL)? (_("Unset fill")) : (_("Unset stroke"));
 
-        _color_preview[i] = new Inkscape::UI::Widget::ColorPreview (0);
+        _color_preview[i] = std::make_unique<Inkscape::UI::Widget::ColorPreview>(0);
         __color[i] = (i == SS_FILL)? (_("Flat color (fill)")) : (_("Flat color (stroke)"));
 
         // TRANSLATORS: A means "Averaged"
@@ -312,11 +314,11 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
         Inkscape::Util::UnitTable::UnitMap m = unit_table.units(Inkscape::Util::UNIT_TYPE_LINEAR);
         Inkscape::Util::UnitTable::UnitMap::iterator iter = m.begin();
         while(iter != m.end()) {
-            Gtk::RadioMenuItem *mi = Gtk::manage(new Gtk::RadioMenuItem(_sw_group));
+            auto const mi = Gtk::make_managed<Gtk::RadioMenuItem>(_sw_group);
             mi->add(*(new Gtk::Label(iter->first, Gtk::ALIGN_START)));
             _unit_mis.push_back(mi);
             Inkscape::Util::Unit const *u = unit_table.getUnit(iter->first);
-            mi->signal_activate().connect(sigc::bind<Inkscape::Util::Unit const *>(sigc::mem_fun(*this, &SelectedStyle::on_popup_units), u));
+            mi->signal_activate().connect(sigc::bind(sigc::mem_fun(*this, &SelectedStyle::on_popup_units), u));
             _popup_sw.attach(*mi, 0,1, row, row+1);
             row++;
             ++iter;
@@ -326,9 +328,9 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
         row++;
 
         for (guint i = 0; i < G_N_ELEMENTS(_sw_presets_str); ++i) {
-            Gtk::MenuItem *mi = Gtk::manage(new Gtk::MenuItem());
+            auto const mi = Gtk::make_managed<Gtk::MenuItem>();
             mi->add(*(new Gtk::Label(_sw_presets_str[i], Gtk::ALIGN_START)));
-            mi->signal_activate().connect(sigc::bind<int>(sigc::mem_fun(*this, &SelectedStyle::on_popup_preset), i));
+            mi->signal_activate().connect(sigc::bind(sigc::mem_fun(*this, &SelectedStyle::on_popup_preset), i));
             _popup_sw.attach(*mi, 0,1, row, row+1);
             row++;
         }
@@ -391,52 +393,42 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
 
     set_size_request (SELECTED_STYLE_WIDTH, -1);
 
-    _drop[SS_FILL] = new DropTracker();
-    ((DropTracker*)_drop[SS_FILL])->parent = this;
-    ((DropTracker*)_drop[SS_FILL])->item = SS_FILL;
+    _drop[SS_FILL] = std::make_unique<SelectedStyleDropTracker>();
+    _drop[SS_FILL]->parent = this;
+    _drop[SS_FILL]->item = SS_FILL;
 
-    _drop[SS_STROKE] = new DropTracker();
-    ((DropTracker*)_drop[SS_STROKE])->parent = this;
-    ((DropTracker*)_drop[SS_STROKE])->item = SS_STROKE;
+    _drop[SS_STROKE] = std::make_unique<SelectedStyleDropTracker>();
+    _drop[SS_STROKE]->parent = this;
+    _drop[SS_STROKE]->item = SS_STROKE;
 
     g_signal_connect(_stroke_place.gobj(),
                      "drag_data_received",
                      G_CALLBACK(dragDataReceived),
-                     _drop[SS_STROKE]);
+                     _drop[SS_STROKE].get());
 
     g_signal_connect(_fill_place.gobj(),
                      "drag_data_received",
                      G_CALLBACK(dragDataReceived),
-                     _drop[SS_FILL]);
+                     _drop[SS_FILL].get());
 
-    _fill_place.signal_button_release_event().connect(sigc::mem_fun(*this, &SelectedStyle::on_fill_click));
-    _stroke_place.signal_button_release_event().connect(sigc::mem_fun(*this, &SelectedStyle::on_stroke_click));
-    _opacity_place.signal_button_press_event().connect(sigc::mem_fun(*this, &SelectedStyle::on_opacity_click));
-    _stroke_width_place.signal_button_press_event().connect(sigc::mem_fun(*this, &SelectedStyle::on_sw_click));
-    _stroke_width_place.signal_button_release_event().connect(sigc::mem_fun(*this, &SelectedStyle::on_sw_click));
+    Controller::add_click(_fill_place, {},
+                          sigc::mem_fun(*this, &SelectedStyle::on_fill_click));
+    Controller::add_click(_stroke_place, {},
+                          sigc::mem_fun(*this, &SelectedStyle::on_stroke_click ));
+    Controller::add_click(_opacity_place, {},
+                          sigc::mem_fun(*this, &SelectedStyle::on_opacity_click),
+                          Controller::Button::middle);
+    Controller::add_click(_stroke_width_place, {},
+                          sigc::mem_fun(*this, &SelectedStyle::on_sw_click));
+
     _opacity_sb.signal_populate_popup().connect(sigc::mem_fun(*this, &SelectedStyle::on_opacity_menu));
     _opacity_sb.signal_value_changed().connect(sigc::mem_fun(*this, &SelectedStyle::on_opacity_changed));
 }
 
 SelectedStyle::~SelectedStyle()
 {
-    selection_changed_connection->disconnect();
-    delete selection_changed_connection;
-    selection_modified_connection->disconnect();
-    delete selection_modified_connection;
-    subselection_changed_connection->disconnect();
-    delete subselection_changed_connection;
-    _unit_mis.clear();
-
     _fill_place.remove();
     _stroke_place.remove();
-
-    for (int i = SS_FILL; i <= SS_STROKE; i++) {
-        delete _color_preview[i];
-    }
-
-    delete (DropTracker*)_drop[SS_FILL];
-    delete (DropTracker*)_drop[SS_STROKE];
 }
 
 void
@@ -446,21 +438,15 @@ SelectedStyle::setDesktop(SPDesktop *desktop)
 
     Inkscape::Selection *selection = desktop->getSelection();
 
-    selection_changed_connection = new sigc::connection (selection->connectChanged(
-        sigc::bind (
-            sigc::ptr_fun(&ss_selection_changed),
-            this )
-    ));
-    selection_modified_connection = new sigc::connection (selection->connectModified(
-        sigc::bind (
-            sigc::ptr_fun(&ss_selection_modified),
-            this )
-    ));
-    subselection_changed_connection = new sigc::connection (desktop->connectToolSubselectionChanged(
-        sigc::bind (
-            sigc::ptr_fun(&ss_subselection_changed),
-            this )
-    ));
+    selection_changed_connection = selection->connectChanged(
+        sigc::bind(&ss_selection_changed, this)
+    );
+    selection_modified_connection = selection->connectModified(
+        sigc::bind(&ss_selection_modified, this)
+    );
+    subselection_changed_connection = desktop->connectToolSubselectionChanged(
+        sigc::bind(&ss_subselection_changed, this)
+    );
 
     _sw_unit = desktop->getNamedView()->display_units;
 
@@ -481,7 +467,7 @@ void SelectedStyle::dragDataReceived( GtkWidget */*widget*/,
                                       guint /*event_time*/,
                                       gpointer user_data )
 {
-    DropTracker* tracker = (DropTracker*)user_data;
+    auto const tracker = static_cast<SelectedStyleDropTracker*>(user_data);
 
     // copied from drag-and-drop.cpp, case APP_OSWB_COLOR
     bool worked = false;
@@ -776,72 +762,73 @@ void SelectedStyle::on_stroke_edit() {
         fs->showPageStrokePaint();
 }
 
-bool
-SelectedStyle::on_fill_click(GdkEventButton *event)
+Gtk::EventSequenceState
+SelectedStyle::on_fill_click(Gtk::GestureMultiPress const &click,
+                             int const n_press, double const x, double const y)
 {
-    if (event->button == 1) { // click, open fill&stroke
-
+    auto const button = click.get_current_button();
+    if (button == 1) { // click, open fill&stroke
         if (Dialog::FillAndStroke *fs = get_fill_and_stroke_panel(_desktop))
             fs->showPageFill();
-
-    } else if (event->button == 3) { // right-click, popup menu
-        _popup[SS_FILL].popup_at_pointer(reinterpret_cast<GdkEvent *>(event));
-    } else if (event->button == 2) { // middle click, toggle none/lastcolor
+    } else if (button == 3) { // right-click, popup menu
+        _popup[SS_FILL].popup_at_pointer(Controller::get_last_event(click));
+    } else if (button == 2) { // middle click, toggle none/lastcolor
         if (_mode[SS_FILL] == SS_NONE) {
             on_fill_lastused();
         } else {
             on_fill_remove();
         }
     }
-    return true;
+    return Gtk::EVENT_SEQUENCE_CLAIMED;
 }
 
-bool
-SelectedStyle::on_stroke_click(GdkEventButton *event)
+Gtk::EventSequenceState
+SelectedStyle::on_stroke_click(Gtk::GestureMultiPress const &click,
+                               int const n_press, double const x, double const y)
 {
-    if (event->button == 1) { // click, open fill&stroke
+    auto const button = click.get_current_button();
+    if (button == 1) { // click, open fill&stroke
         if (Dialog::FillAndStroke *fs = get_fill_and_stroke_panel(_desktop))
             fs->showPageStrokePaint();
-    } else if (event->button == 3) { // right-click, popup menu
-        _popup[SS_STROKE].popup_at_pointer(reinterpret_cast<GdkEvent *>(event));
-    } else if (event->button == 2) { // middle click, toggle none/lastcolor
+    } else if (button == 3) { // right-click, popup menu
+        _popup[SS_STROKE].popup_at_pointer(Controller::get_last_event(click));
+    } else if (button == 2) { // middle click, toggle none/lastcolor
         if (_mode[SS_STROKE] == SS_NONE) {
             on_stroke_lastused();
         } else {
             on_stroke_remove();
         }
     }
-    return true;
+    return Gtk::EVENT_SEQUENCE_CLAIMED;
 }
 
-bool
-SelectedStyle::on_sw_click(GdkEventButton *event)
+Gtk::EventSequenceState
+SelectedStyle::on_sw_click(Gtk::GestureMultiPress const &click,
+                           int const n_press, double const x, double const y)
 {
-    if (event->button == 1) { // click, open fill&stroke
+    auto const button = click.get_current_button();
+    if (button == 1) { // click, open fill&stroke
         if (Dialog::FillAndStroke *fs = get_fill_and_stroke_panel(_desktop))
             fs->showPageStrokeStyle();
-    } else if (event->button == 3) { // right-click, popup menu
-        _popup_sw.popup_at_pointer(reinterpret_cast<GdkEvent *>(event));
-    } else if (event->button == 2) { // middle click, toggle none/lastwidth?
+    } else if (button == 3) { // right-click, popup menu
+        _popup_sw.popup_at_pointer(Controller::get_last_event(click));
+    } else if (button == 2) { // middle click, toggle none/lastwidth?
         //
     }
-    return true;
+    return Gtk::EVENT_SEQUENCE_CLAIMED;
 }
 
-bool
-SelectedStyle::on_opacity_click(GdkEventButton *event)
+Gtk::EventSequenceState
+SelectedStyle::on_opacity_click(Gtk::GestureMultiPress const &click,
+                                int const n_press, double const x, double const y)
 {
-    if (event->button == 2) { // middle click
-        const char* opacity = _opacity_sb.get_value() < 50? "0.5" : (_opacity_sb.get_value() == 100? "0" : "1");
-        SPCSSAttr *css = sp_repr_css_attr_new ();
-        sp_repr_css_set_property (css, "opacity", opacity);
-        sp_desktop_set_style (_desktop, css);
-        sp_repr_css_attr_unref (css);
-        DocumentUndo::done(_desktop->getDocument(), _("Change opacity"), INKSCAPE_ICON("dialog-fill-and-stroke"));
-        return true;
-    }
-
-    return false;
+    const char* opacity = _opacity_sb.get_value() < 50? "0.5" : (_opacity_sb.get_value() == 100? "0" : "1");
+    SPCSSAttr *css = sp_repr_css_attr_new ();
+    sp_repr_css_set_property (css, "opacity", opacity);
+    sp_desktop_set_style (_desktop, css);
+    sp_repr_css_attr_unref (css);
+    DocumentUndo::done(_desktop->getDocument(), _("Change opacity"), INKSCAPE_ICON("dialog-fill-and-stroke"));
+    return Gtk::EVENT_SEQUENCE_CLAIMED;
 }
 
 void SelectedStyle::on_popup_units(Inkscape::Util::Unit const *unit) {
@@ -960,7 +947,7 @@ SelectedStyle::update()
                                      SP_SCALE24_TO_FLOAT ((i == SS_FILL)? query.fill_opacity.value : query.stroke_opacity.value));
                 _lastselected[i] = _thisselected[i];
                 _thisselected[i] = color; // include opacity
-                ((Inkscape::UI::Widget::ColorPreview*)_color_preview[i])->setRgba32 (color);
+                _color_preview[i]->setRgba32(color);
                 _color_preview[i]->show_all();
                 place->add(*_color_preview[i]);
                 gchar c_string[64];
@@ -1400,9 +1387,7 @@ Dialog::FillAndStroke *get_fill_and_stroke_panel(SPDesktop *desktop)
     return dynamic_cast<Dialog::FillAndStroke *>(desktop->getContainer()->get_dialog("FillStroke"));
 }
 
-} // namespace Widget
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Widget
 
 /*
   Local Variables:

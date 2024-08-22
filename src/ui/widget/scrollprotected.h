@@ -79,12 +79,16 @@ class ScrollTransfer : public Base
 public:
     using Base::Base;
     using typename Base::BaseObjectType;
+
     ScrollTransfer()
         : Base()
     {}
+
     ScrollTransfer(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &refGlade)
         : Base(cobject){};
+
     ~ScrollTransfer() override{};
+
 protected:
     /**
      * Event handler for "safe" scroll events
@@ -96,7 +100,7 @@ protected:
 
     bool on_scroll_event(GdkEventScroll *event) final
     {
-        auto scrollable = dynamic_cast<Gtk::Widget *>(Inkscape::UI::Widget::get_scrollable_ancestor(this));
+        auto const scrollable = Inkscape::UI::Widget::get_scrollable_ancestor(this);
         auto adj = this->get_vadjustment();
         auto before = adj->get_value();
         bool result = on_safe_scroll_event(event);

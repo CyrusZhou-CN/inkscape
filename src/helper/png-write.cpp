@@ -126,8 +126,8 @@ void PngTextList::add(gchar const* key, gchar const* text)
 static bool
 sp_png_write_rgba_striped(SPDocument *doc,
                           gchar const *filename, unsigned long int width, unsigned long int height, double xdpi, double ydpi,
-                          int (* get_rows)(guchar const **rows, void **to_free, int row, int num_rows, void *data, int color_type, int bit_depth, int antialias),
-                          void *data, bool interlace, int color_type, int bit_depth, int zlib, int antialiasing)
+                          int (* get_rows)(guchar const **rows, void **to_free, int row, int num_rows, void *data, int color_type, int bit_depth),
+                          void *data, bool interlace, int color_type, int bit_depth, int zlib)
 {
     g_return_val_if_fail(filename != nullptr, false);
     g_return_val_if_fail(data != nullptr, false);
@@ -289,7 +289,7 @@ sp_png_write_rgba_striped(SPDocument *doc,
         r = 0;
         while (r < static_cast<png_uint_32>(height)) {
             void *to_free;
-            int n = get_rows((unsigned char const **) row_pointers, &to_free, r, height-r, data, color_type, bit_depth, antialiasing);
+            int n = get_rows((unsigned char const **) row_pointers, &to_free, r, height-r, data, color_type, bit_depth);
             if (!n) break;
             png_write_rows(png_ptr, row_pointers, n);
             g_free(to_free);
@@ -323,7 +323,7 @@ sp_png_write_rgba_striped(SPDocument *doc,
  *
  */
 static int
-sp_export_get_rows(guchar const **rows, void **to_free, int row, int num_rows, void *data, int color_type, int bit_depth, int antialiasing)
+sp_export_get_rows(guchar const **rows, void **to_free, int row, int num_rows, void *data, int color_type, int bit_depth)
 {
     struct SPEBP *ebp = (struct SPEBP *) data;
 
@@ -355,7 +355,7 @@ sp_export_get_rows(guchar const **rows, void **to_free, int row, int num_rows, v
     dc.setOperator(CAIRO_OPERATOR_OVER);
 
     /* Render */
-    ebp->drawing->render(dc, bbox, 0, antialiasing);
+    ebp->drawing->render(dc, bbox, 0);
     cairo_surface_destroy(s);
 
     // PNG stores data as unpremultiplied big-endian RGBA, which means
@@ -443,6 +443,7 @@ ExportResult sp_export_png_file(SPDocument *doc, gchar const *filename,
     drawing.setRoot(doc->getRoot()->invoke_show(drawing, dkey, SP_ITEM_SHOW_DISPLAY));
     drawing.root()->setTransform(affine);
     drawing.setExact(); // export with maximum blur rendering quality
+    drawing.setAntialiasingOverride(static_cast<Inkscape::Antialiasing>(antialiasing));
 
     ebp.drawing = &drawing;
 
@@ -461,7 +462,7 @@ ExportResult sp_export_png_file(SPDocument *doc, gchar const *filename,
     ebp.px = g_try_new(guchar, 4 * ebp.sheight * width);
 
     if (ebp.px) {
-        write_status = sp_png_write_rgba_striped(doc, filename, width, height, xdpi, ydpi, sp_export_get_rows, &ebp, interlace, color_type, bit_depth, zlib, antialiasing);
+        write_status = sp_png_write_rgba_striped(doc, filename, width, height, xdpi, ydpi, sp_export_get_rows, &ebp, interlace, color_type, bit_depth, zlib);
         g_free(ebp.px);
     }
 

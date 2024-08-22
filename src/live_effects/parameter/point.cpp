@@ -148,13 +148,12 @@ PointParam::param_transform_multiply(Geom::Affine const& postmul, bool /*set*/)
 Gtk::Widget *
 PointParam::param_newWidget()
 {
-    Inkscape::UI::Widget::RegisteredTransformedPoint * pointwdg = Gtk::manage(
-        new Inkscape::UI::Widget::RegisteredTransformedPoint( param_label,
-                                                              param_tooltip,
-                                                              param_key,
-                                                              *param_wr,
-                                                              param_effect->getRepr(),
-                                                              param_effect->getSPDoc() ) );
+    auto const pointwdg = Gtk::make_managed<UI::Widget::RegisteredTransformedPoint>( param_label,
+                                                                                     param_tooltip,
+                                                                                     param_key,
+                                                                                    *param_wr,
+                                                                                     param_effect->getRepr(),
+                                                                                     param_effect->getSPDoc() );
     Geom::Affine transf = SP_ACTIVE_DESKTOP->doc2dt();
     pointwdg->setTransform(transf);
     pointwdg->setValue( *this );
@@ -162,10 +161,10 @@ PointParam::param_newWidget()
     pointwdg->set_undo_parameters(_("Change point parameter"), INKSCAPE_ICON("dialog-path-effects"));
     pointwdg->signal_button_release_event().connect(sigc::mem_fun (*this, &PointParam::on_button_release));
 
-    Gtk::Box * hbox = Gtk::manage( new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL) );
+    auto const hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
     hbox->pack_start(*pointwdg, true, true);
     hbox->show_all_children();
-    return dynamic_cast<Gtk::Widget *> (hbox);
+    return hbox;
 }
 
 bool PointParam::on_button_release(GdkEventButton* button_event) {

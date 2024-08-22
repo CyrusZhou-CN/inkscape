@@ -73,19 +73,17 @@ Gtk::Widget *
 BoolParam::param_newWidget()
 {
     if(widget_is_visible){
-        Inkscape::UI::Widget::RegisteredCheckButton * checkwdg = Gtk::manage(
-            new Inkscape::UI::Widget::RegisteredCheckButton( param_label,
-                                                             param_tooltip,
-                                                             param_key,
-                                                             *param_wr,
-                                                             false,
-                                                             param_effect->getRepr(),
-                                                             param_effect->getSPDoc()) );
-
+        auto const checkwdg = Gtk::make_managed<UI::Widget::RegisteredCheckButton>( param_label,
+                                                                                    param_tooltip,
+                                                                                    param_key,
+                                                                                   *param_wr,
+                                                                                    false,
+                                                                                    param_effect->getRepr(),
+                                                                                    param_effect->getSPDoc() );
         checkwdg->setActive(value);
         checkwdg->setProgrammatically = false;
         checkwdg->set_undo_parameters(_("Change bool parameter"), INKSCAPE_ICON("dialog-path-effects"));
-        return dynamic_cast<Gtk::Widget *> (checkwdg);
+        return checkwdg;
     } else {
         return nullptr;
     }

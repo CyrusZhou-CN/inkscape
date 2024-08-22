@@ -45,7 +45,7 @@ FontVariationAxis::FontVariationAxis(Glib::ustring name_, OTVarAxis const &axis)
     precision = 2 - int( log10(axis.maximum - axis.minimum));
     if (precision < 0) precision = 0;
 
-    scale = Gtk::manage( new Gtk::Scale() );
+    scale = Gtk::make_managed<Gtk::Scale>();
     scale->set_range (axis.minimum, axis.maximum);
     scale->set_value (axis.set_val);
     scale->set_digits (precision);
@@ -82,7 +82,7 @@ void FontVariations::update(Glib::ustring const &font_spec)
 
     for (auto &a : res->get_opentype_varaxes()) {
         // std::cout << "Creating axis: " << a.first << std::endl;
-        auto axis = Gtk::make_managed<FontVariationAxis>(a.first, a.second);
+        auto const axis = Gtk::make_managed<FontVariationAxis>(a.first, a.second);
         axes.push_back( axis );
         add( *axis );
         size_group->add_widget( *(axis->get_label()) ); // Keep labels the same width

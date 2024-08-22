@@ -32,11 +32,12 @@ namespace Tools {
 /**
  * PenTool: a context for pen tool events.
  */
-class PenTool : public FreehandBase {
+class PenTool : public FreehandBase
+{
 public:
     PenTool(SPDesktop *desktop,
-        std::string prefs_path = "/tools/freehand/pen",
-        const std::string& cursor_filename = "pen.svg");
+        std::string &&prefs_path = "/tools/freehand/pen",
+        std::string &&cursor_filename = "pen.svg");
     ~PenTool() override;
 
     enum Mode {
@@ -87,9 +88,9 @@ public:
     void waitForLPEMouseClicks(Inkscape::LivePathEffect::EffectType effect_type, unsigned int num_clicks, bool use_polylines = true);
 
 protected:
-    void set(const Inkscape::Preferences::Entry& val) override;
-    bool root_handler(GdkEvent* event) override;
-    bool item_handler(SPItem* item, GdkEvent* event) override;
+    void set(Inkscape::Preferences::Entry const &val) override;
+    bool root_handler(CanvasEvent const &event) override;
+    bool item_handler(SPItem* item, CanvasEvent const &event) override;
 
 private:
     bool _handleButtonPress(GdkEventButton const &bevent);

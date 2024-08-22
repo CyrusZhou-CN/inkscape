@@ -575,3 +575,25 @@ FontList getPdfFonts(std::shared_ptr<PDFDoc> pdf_doc)
     }
     return fontsList;
 }
+
+
+std::string getDictString(Dict *dict, const char *key)
+{
+    Object obj = dict->lookup(key);
+
+    if (!obj.isString()) {
+        return "";
+    }
+
+    const GooString *value = obj.getString();
+    if (value->hasUnicodeMarker()) {
+        return g_convert(value->getCString () + 2, value->getLength () - 2,
+                         "UTF-8", "UTF-16BE", NULL, NULL, NULL);
+    } else if (value->hasUnicodeMarkerLE()) {
+        return g_convert(value->getCString () + 2, value->getLength () - 2,
+                         "UTF-8", "UTF-16LE", NULL, NULL, NULL);
+    }
+    return value->toStr();
+}
+
+

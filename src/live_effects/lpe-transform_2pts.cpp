@@ -290,24 +290,24 @@ Gtk::Widget *LPETransform2Pts::newWidget()
 {
     // use manage here, because after deletion of Effect object, others might
     // still be pointing to this widget.
-    Gtk::Box *vbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const vbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
 
     vbox->set_border_width(5);
     vbox->set_homogeneous(false);
     vbox->set_spacing(6);
 
     std::vector<Parameter *>::iterator it = param_vector.begin();
-    Gtk::Box * button1 = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL,0));
-    Gtk::Box * button2 = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL,0));
-    Gtk::Box * button3 = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL,0));
-    Gtk::Box * button4 = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL,0));
+    auto const button1 = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL,0);
+    auto const button2 = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL,0);
+    auto const button3 = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL,0);
+    auto const button4 = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL,0);
     while (it != param_vector.end()) {
         if ((*it)->widget_is_visible) {
             Parameter *param = *it;
-            Gtk::Widget *widg = dynamic_cast<Gtk::Widget *>(param->param_newWidget());
+            auto widg = param->param_newWidget();
             Glib::ustring *tip = param->param_getTooltip();
             if (param->param_key == "first_knot" || param->param_key == "last_knot") {
-                Inkscape::UI::Widget::Scalar *registered_widget = Gtk::manage(dynamic_cast<Inkscape::UI::Widget::Scalar *>(widg));
+                auto const registered_widget = Gtk::manage(dynamic_cast<Inkscape::UI::Widget::Scalar *>(widg));
                 registered_widget->signal_value_changed().connect(sigc::mem_fun(*this, &LPETransform2Pts::updateIndex));
                 widg = registered_widget;
                 if (widg) {
@@ -369,14 +369,16 @@ Gtk::Widget *LPETransform2Pts::newWidget()
 
         ++it;
     }
-    Gtk::Button *reset = Gtk::manage(new Gtk::Button(Glib::ustring(_("Reset"))));
+
+    auto const reset = Gtk::make_managed<Gtk::Button>(Glib::ustring(_("Reset")));
     reset->signal_clicked().connect(sigc::mem_fun(*this, &LPETransform2Pts::reset));
     button4->pack_start(*reset, true, true, 2);
+
     vbox->pack_start(*button1, true, true, 2);
     vbox->pack_start(*button2, true, true, 2);
     vbox->pack_start(*button3, true, true, 2);
     vbox->pack_start(*button4, true, true, 2);
-    return dynamic_cast<Gtk::Widget *>(vbox);
+    return vbox;
 }
 
 Geom::Piecewise<Geom::D2<Geom::SBasis> >

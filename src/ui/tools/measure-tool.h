@@ -36,12 +36,13 @@ class CanvasItemCurve;
 namespace UI {
 namespace Tools {
 
-class MeasureTool : public ToolBase {
+class MeasureTool : public ToolBase
+{
 public:
     MeasureTool(SPDesktop *desktop);
     ~MeasureTool() override;
 
-    bool root_handler(GdkEvent* event) override;
+    bool root_handler(CanvasEvent const &event) override;
     virtual void showCanvasItems(bool to_guides = false, bool to_item = false, bool to_phantom = false, Inkscape::XML::Node *measure_repr = nullptr);
     virtual void reverseKnots();
     virtual void toGuides();
@@ -86,7 +87,7 @@ private:
     std::optional<Geom::Point> last_end;
     SPKnot *knot_start = nullptr;
     SPKnot *knot_end   = nullptr;
-    gint dimension_offset = 20;
+    int dimension_offset = 20;
     Geom::Point start_p;
     Geom::Point end_p;
     Geom::Point last_pos;

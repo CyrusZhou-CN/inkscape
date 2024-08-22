@@ -17,9 +17,10 @@
 #include <memory>
 #include <vector>
 #include <2geom/rect.h>
+
+#include "object-view.h"
 #include "sp-object-group.h"
 #include "uri-references.h"
-#include "display/drawing-item-ptr.h"
 #include "xml/node.h"
 
 namespace Inkscape {
@@ -67,13 +68,7 @@ private:
     bool maskContentUnits_set : 1;
     bool maskContentUnits : 1;
 
-    struct View
-    {
-        DrawingItemPtr<Inkscape::DrawingGroup> drawingitem;
-        Geom::OptRect bbox;
-        unsigned key;
-        View(DrawingItemPtr<Inkscape::DrawingGroup> drawingitem, Geom::OptRect const &bbox, unsigned key);
-    };
+    using View = ObjectView<Inkscape::DrawingGroup>;
     std::vector<View> views;
     void update_view(View &v);
 };

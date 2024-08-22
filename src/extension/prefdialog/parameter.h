@@ -16,11 +16,9 @@
 
 #include "widget.h"
 
-
 namespace Glib {
 class ustring;
 }
-
 
 namespace Inkscape {
 namespace Extension {
@@ -118,8 +116,7 @@ public:
     virtual const std::string &set(const std::string &in);
 
     /** Recommended spacing between the widgets making up a single Parameter (e.g. label and input) (in px) */
-    const static int GUI_PARAM_WIDGETS_SPACING = 4;
-
+    static constexpr int const GUI_PARAM_WIDGETS_SPACING = 4;
 
     /** An error class for when a parameter is called on a type it is not */
     class param_no_name {};
@@ -131,7 +128,6 @@ public:
     class param_not_optiongroup_param {};
     class param_not_string_param {};
 
-
 protected:
     /** The name of this parameter. */
     char *_name = nullptr;
@@ -141,7 +137,6 @@ protected:
 
     /** Extended description of the parameter (currently shown as tooltip on hover). */
     char *_description = nullptr;
-
 
     /* **** member functions **** */
 

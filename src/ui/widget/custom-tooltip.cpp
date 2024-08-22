@@ -7,6 +7,8 @@
 #include <chrono>
 #include <gdk/gdk.h>
 
+static gint timeoutid = -1;
+
 static 
 gboolean
 delaytooltip (gpointer data)
@@ -16,23 +18,28 @@ delaytooltip (gpointer data)
     return true;
 }
 
-bool
-sp_query_custom_tooltip(int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltipw, gint id, Glib::ustring tooltip, Glib::ustring icon, Gtk::IconSize iconsize, int delaytime){
-    
-    static gint last = -1;
-    static gint timeoutid = -1;
-    static auto start = std::chrono::steady_clock::now();
-    auto end = std::chrono::steady_clock::now();
+void sp_clear_custom_tooltip()
+{
     if (timeoutid != -1) {
         g_source_remove(timeoutid);
         timeoutid = -1;
     }
+}
+
+bool
+sp_query_custom_tooltip(int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltipw, gint id, Glib::ustring tooltip, Glib::ustring icon, Gtk::IconSize iconsize, int delaytime)
+{
+    sp_clear_custom_tooltip();
+
+    static gint last = -1;
+    static auto start = std::chrono::steady_clock::now();
+    auto end = std::chrono::steady_clock::now();
     if (last != id) {
         start = std::chrono::steady_clock::now();
         last = id;
     }
-    Gtk::Box *box = Gtk::make_managed<Gtk::Box>();
-    Gtk::Label *label = Gtk::make_managed<Gtk::Label>();
+    auto const box = Gtk::make_managed<Gtk::Box>();
+    auto const label = Gtk::make_managed<Gtk::Label>();
     label->set_line_wrap(true);
     label->set_markup(tooltip);
     label->set_max_width_chars(40);

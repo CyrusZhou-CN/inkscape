@@ -60,7 +60,7 @@ unsigned DrawingGroup::_updateItem(Geom::IntRect const &area, UpdateContext cons
         child_ctx.ctm = *_child_transform * ctx.ctm;
     }
 
-    _bbox = Geom::OptIntRect();
+    _bbox = {};
 
     for (auto &c : _children) {
         c.update(area, child_ctx, flags, reset);
@@ -68,6 +68,7 @@ unsigned DrawingGroup::_updateItem(Geom::IntRect const &area, UpdateContext cons
             _bbox.unionWith(outline ? c.bbox() : c.drawbox());
         }
         _update_complexity += c.getUpdateComplexity();
+        _contains_unisolated_blend |= c.unisolatedBlend();
     }
 
     return STATE_ALL;
@@ -75,7 +76,7 @@ unsigned DrawingGroup::_updateItem(Geom::IntRect const &area, UpdateContext cons
 
 unsigned DrawingGroup::_renderItem(DrawingContext &dc, RenderContext &rc, Geom::IntRect const &area, unsigned flags, DrawingItem const *stop_at) const
 {
-    if (stop_at == nullptr) {
+    if (!stop_at) {
         // normal rendering
         for (auto &i : _children) {
             i.render(dc, rc, area, flags, stop_at);
@@ -83,8 +84,9 @@ unsigned DrawingGroup::_renderItem(DrawingContext &dc, RenderContext &rc, Geom::
     } else {
         // background rendering
         for (auto &i : _children) {
-            if (&i == stop_at)
+            if (&i == stop_at) {
                 return RENDER_OK; // do not render the stop_at item at all
+            }
             if (i.isAncestorOf(stop_at)) {
                 // render its ancestors without masks, opacity or filters
                 i.render(dc, rc, area, flags | RENDER_FILTER_BACKGROUND, stop_at);

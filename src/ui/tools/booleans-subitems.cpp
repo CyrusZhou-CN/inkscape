@@ -25,6 +25,7 @@
 #include "object/sp-text.h"
 #include "object/sp-use.h"
 #include "object/sp-image.h"
+#include "object/sp-clippath.h"
 #include "path/path-boolop.h"
 #include "style.h"
 
@@ -51,110 +52,68 @@ static Geom::PathVector clean_pathvector(Geom::PathVector &&pathv)
  */
 SubItem &SubItem::operator+=(SubItem const &other)
 {
-    _paths = clean_pathvector(sp_pathvector_boolop(_paths, other._paths, bool_op_union, fill_nonZero, fill_nonZero, true));
+    _paths = clean_pathvector(flattened(sp_pathvector_boolop(_paths, other._paths, bool_op_union, fill_nonZero, fill_nonZero, true), fill_nonZero));
     return *this;
 }
 
-using ExtractPathvectorsResult = std::vector<std::pair<Geom::PathVector, SPStyle*>>;
+/**
+ * Test if this sub item is a special image type.
+ */
+bool SubItem::_get_is_image(SPItem const *item)
+{
+    return is<SPImage>(item) || is<SPUse>(item);
+}
 
-static void extract_pathvectors_recursive(SPItem *item, ExtractPathvectorsResult &result, Geom::Affine const &transform)
+/**
+ * A structure containing all the detected shapes and their respective spitems
+ */
+struct PathvectorItem {
+    PathvectorItem(Geom::PathVector path, SPItem* item_root, SPItem* item_actual)
+        : pathv(std::move(path))
+        , root(item_root)
+        , item(item_actual)
+    {}
+    Geom::PathVector pathv;
+    SPItem* root;
+    SPItem* item;
+};
+using PathvectorItems = std::vector<PathvectorItem>;
+
+static void extract_pathvectors_recursive(SPItem *root, SPItem *item, PathvectorItems &result, Geom::Affine const &transform)
 {
     if (is<SPGroup>(item)) {
         for (auto &child : item->children | boost::adaptors::reversed) {
             if (auto child_item = cast<SPItem>(&child)) {
-                extract_pathvectors_recursive(child_item, result, child_item->transform * transform);
+                extract_pathvectors_recursive(root, child_item, result, child_item->transform * transform);
             }
         }
     } else if (auto img = cast<SPImage>(item)) {
-        result.emplace_back(img->get_curve()->get_pathvector() * transform, item->style);
+        if (auto clip = img->getClipObject()) {
+            // This needs to consume the clipping region because get_curse is empty in this case
+            result.emplace_back(clip->getPathVector(transform), root, item);
+        } else {
+            result.emplace_back(img->get_curve()->get_pathvector() * transform, root, item);
+        }
     } else if (auto shape = cast<SPShape>(item)) {
         if (auto curve = shape->curve()) {
-            result.emplace_back(curve->get_pathvector() * transform, item->style);
+            result.emplace_back(curve->get_pathvector() * transform, root, item);
         }
     } else if (auto text = cast<SPText>(item)) {
-        result.emplace_back(text->getNormalizedBpath().get_pathvector() * transform, item->style);
+        result.emplace_back(text->getNormalizedBpath().get_pathvector() * transform, root, item);
     } else if (auto use = cast<SPUse>(item)) {
-        if (use->child) {
-            extract_pathvectors_recursive(use->child, result, use->child->transform * Geom::Translate(use->x.computed, use->y.computed) * transform);
+        auto clip = use->getClipObject();
+        if (clip && is<SPImage>(use->get_original())) {
+            // A clipped clone of an image is consumed as a single object
+            result.emplace_back(clip->getPathVector(transform), root, item);
+        } else if (use->child) {
+            extract_pathvectors_recursive(root, use->child, result, use->child->transform * Geom::Translate(use->x.computed, use->y.computed) * transform);
         }
     }
-}
-
-// Return all pathvectors found within an item, along with their styles, sorted top-to-bottom.
-static ExtractPathvectorsResult extract_pathvectors(SPItem *item)
-{
-    ExtractPathvectorsResult result;
-    extract_pathvectors_recursive(item, result, item->i2dt_affine());
-    return result;
 }
 
 static FillRule sp_to_livarot(SPWindRule fillrule)
 {
     return fillrule == SP_WIND_RULE_NONZERO ? fill_nonZero : fill_oddEven;
-}
-
-static double diameter(Geom::PathVector const &path)
-{
-    auto rect = path.boundsExact();
-    if (!rect) {
-        return 1;
-    }
-    return std::hypot(rect->width(), rect->height());
-}
-
-// Cut the given pathvector along the lines into several smaller pathvectors.
-static std::vector<Geom::PathVector> improved_cut(Geom::PathVector const &pathv, Geom::PathVector const &lines)
-{
-    Path patha;
-    patha.LoadPathVector(pathv);
-    patha.ConvertWithBackData(diameter(pathv) * 1e-3);
-
-    Path pathb;
-    pathb.LoadPathVector(lines);
-    pathb.ConvertWithBackData(diameter(lines) * 1e-3);
-
-    Shape shapea;
-    {
-        Shape tmp;
-        patha.Fill(&tmp, 0);
-        shapea.ConvertToShape(&tmp);
-    }
-
-    Shape shapeb;
-    {
-        Shape tmp;
-        bool isline = pathb.pts.size() == 2 && pathb.pts[0].isMoveTo && !pathb.pts[1].isMoveTo;
-        pathb.Fill(&tmp, 1, false, isline);
-        shapeb.ConvertToShape(&tmp, fill_justDont);
-    }
-
-    Shape shape;
-    shape.Booleen(&shapeb, &shapea, bool_op_cut, 1);
-
-    Path path;
-    int num_nesting = 0;
-    int *nesting = nullptr;
-    int *conts = nullptr;
-    {
-        path.SetBackData(false);
-        Path *paths[2] = { &patha, &pathb };
-        shape.ConvertToFormeNested(&path, 2, paths, 1, num_nesting, nesting, conts);
-    }
-
-    int num_paths;
-    auto paths = path.SubPathsWithNesting(num_paths, false, num_nesting, nesting, conts);
-
-    std::vector<Geom::PathVector> result;
-
-    for (int i = 0; i < num_paths; i++) {
-        result.emplace_back(paths[i]->MakePathVector());
-    }
-
-    g_free(paths);
-    g_free(conts);
-    g_free(nesting);
-
-    return result;
 }
 
 /**
@@ -170,26 +129,26 @@ WorkItems SubItem::build_mosaic(std::vector<SPItem*> &&items)
 
     // Extract all individual pathvectors within the collection of items,
     // keeping track of their associated item and style, again sorted topmost-first.
-    using AugmentedItem = std::tuple<Geom::PathVector, SPItem*, SPStyle*>;
-    std::vector<AugmentedItem> augmented;
+    PathvectorItems augmented;
 
     for (auto item : items) {
         // Get the correctly-transformed pathvectors, together with their corresponding styles.
-        auto extracted = extract_pathvectors(item);
-
-        // Append to the list of augmented items.
-        for (auto &[pathv, style] : extracted) {
-            augmented.emplace_back(std::move(pathv), item, style);
-        }
+        extract_pathvectors_recursive(item, item, augmented, item->i2dt_affine());
     }
+
+    // We want the images to be the first items in augmented, so they get the priority for the style.
+    // Bubble them to the front, otherwise preserving order.
+    std::stable_partition(augmented.begin(), augmented.end(), [] (auto &pvi) {
+        return is<SPImage>(pvi.item) || is<SPUse>(pvi.item);
+    });
 
     // Compute a slightly expanded bounding box, collect together all lines, and cut the former by the latter.
     Geom::OptRect bounds;
     Geom::PathVector lines;
 
-    for (auto &[pathv, item, style] : augmented) {
-        bounds |= pathv.boundsExact();
-        for (auto &path : pathv) {
+    for (auto &pvi : augmented) {
+        bounds |= pvi.pathv.boundsExact();
+        for (auto &path : pvi.pathv) {
             lines.push_back(path);
         }
     }
@@ -202,7 +161,7 @@ WorkItems SubItem::build_mosaic(std::vector<SPItem*> &&items)
     bounds->expandBy(expansion);
 
     auto bounds_pathv = Geom::PathVector(Geom::Path(*bounds));
-    auto pieces = improved_cut(bounds_pathv, lines);
+    auto pieces = pathvector_cut(bounds_pathv, lines);
 
     // Construct the SubItems, attempting to guess the corresponding augmented item for each piece.
     WorkItems result;
@@ -239,23 +198,22 @@ WorkItems SubItem::build_mosaic(std::vector<SPItem*> &&items)
 
         // Determine the corresponding augmented item.
         // Fixme: (Wishlist) This is done unreliably and hackily, but livarot/2geom seemingly offer no alternative.
-        std::unordered_map<AugmentedItem*, int> hits;
+        std::unordered_map<PathvectorItem*, int> hits;
 
         auto rect = piece.boundsExact();
 
         auto add_hit = [&] (Geom::Point const &pt) {
             // Find an augmented item containing the point.
-            for (auto &aug : augmented) {
-                auto &[pathv, item, style] = aug;
-                auto fill_rule = style->fill_rule.computed;
-                auto winding = pathv.winding(pt);
+            for (auto &pvi : augmented) {
+                auto fill_rule = pvi.item->style->fill_rule.computed;
+                auto winding = pvi.pathv.winding(pt);
                 if (fill_rule == SP_WIND_RULE_NONZERO ? winding : winding % 2) {
-                    hits[&aug]++;
+                    hits[&pvi]++;
                     return;
                 }
             }
 
-            // If none exists, register a background hit.
+            // If none exists, register a background hit with nullptr.
             hits[nullptr]++;
         };
 
@@ -269,7 +227,7 @@ WorkItems SubItem::build_mosaic(std::vector<SPItem*> &&items)
         }
 
         // Pick the augmented item with the most hits.
-        AugmentedItem *found = nullptr;
+        PathvectorItem *found = nullptr;
         int max_hits = 0;
 
         for (auto &[a, h] : hits) {
@@ -280,9 +238,10 @@ WorkItems SubItem::build_mosaic(std::vector<SPItem*> &&items)
         }
 
         // Add the SubItem.
-        auto item = found ? std::get<1>(*found) : nullptr;
-        auto style = found ? std::get<2>(*found) : nullptr;
-        result.emplace_back(std::make_shared<SubItem>(std::move(piece), item, style));
+        auto root = found ? found->root : nullptr;
+        auto item = found ? found->item : nullptr;
+        auto style = item ? item->style : nullptr;
+        result.emplace_back(std::make_shared<SubItem>(std::move(piece), root, item, style));
     }
 
     return result;
@@ -303,9 +262,10 @@ WorkItems SubItem::build_flatten(std::vector<SPItem*> &&items)
 
     for (auto item : items) {
         // Get the correctly-transformed pathvectors, together with their corresponding styles.
-        auto extracted = extract_pathvectors(item);
+        PathvectorItems extracted;
+        extract_pathvectors_recursive(item, item, extracted, item->i2dt_affine());
 
-        for (auto &[pathv, style] : extracted) {
+        for (auto &[pathv, root, subitem] : extracted) {
             // Remove lines.
             for (auto it = pathv.begin(); it != pathv.end(); ) {
                 if (!it->closed()) {
@@ -321,7 +281,7 @@ WorkItems SubItem::build_flatten(std::vector<SPItem*> &&items)
             }
 
             // Flatten the remaining pathvector according to its fill rule.
-            auto fillrule = style->fill_rule.computed;
+            auto fillrule = subitem->style->fill_rule.computed;
             sp_flatten(pathv, sp_to_livarot(fillrule));
 
             // Remove the union so far from the shape, then add the shape to the union so far.
@@ -336,7 +296,7 @@ WorkItems SubItem::build_flatten(std::vector<SPItem*> &&items)
             }
 
             // Add the new SubItem.
-            result.emplace_back(std::make_shared<SubItem>(std::move(uniq), item, style));
+            result.emplace_back(std::make_shared<SubItem>(std::move(uniq), root, subitem, subitem->style));
         }
     }
 

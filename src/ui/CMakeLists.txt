@@ -3,12 +3,15 @@ set(ui_SRC
 	builder-utils.cpp
 	clipboard.cpp
 	contextmenu.cpp
+	controller.cpp
 	cursor-utils.cpp
 	dialog-events.cpp
+	dialog-run.cpp
 	draw-anchor.cpp
 	drag-and-drop.cpp
 	icon-loader.cpp
 	interface.cpp
+	manage.cpp
 	monitor.cpp
 	selected-color.cpp
 	shape-editor.cpp
@@ -36,7 +39,6 @@ set(ui_SRC
 	tool/control-point-selection.cpp
 	tool/control-point.cpp
 	tool/curve-drag-point.cpp
-	tool/event-utils.cpp
 	tool/modifier-tracker.cpp
 	tool/multi-path-manipulator.cpp
 	tool/node.cpp
@@ -69,6 +71,11 @@ set(ui_SRC
 	toolbar/toolbar.cpp
 	toolbar/tweak-toolbar.cpp
 	toolbar/zoom-toolbar.cpp
+
+	toolbar/command-toolbar.cpp
+	toolbar/tool-toolbar.cpp
+	toolbar/snap-toolbar.cpp
+	toolbar/toolbars.cpp
 
 	tools/arc-tool.cpp
 	tools/box3d-tool.cpp
@@ -121,6 +128,7 @@ set(ui_SRC
 	dialog/export.cpp
 	dialog/export-batch.cpp
 	dialog/export-single.cpp
+	dialog/extensions-gallery.cpp
 	dialog/filedialog.cpp
 	dialog/filedialogimpl-gtkmm.cpp
 	dialog/fill-and-stroke.cpp
@@ -135,7 +143,6 @@ set(ui_SRC
 	dialog/guides.cpp
 	dialog/icon-preview.cpp
 	dialog/inkscape-preferences.cpp
-	dialog/input.cpp
 	dialog/knot-properties.cpp
 	dialog/layer-properties.cpp
 	dialog/livepatheffect-add.cpp
@@ -196,6 +203,7 @@ set(ui_SRC
 	widget/color-slider.cpp
 	widget/combo-box-entry-tool-item.cpp
 	widget/combo-tool-item.cpp
+	widget/css-name-class-init.cpp
 	widget/custom-tooltip.cpp
 	widget/dash-selector.cpp
 	widget/entity-entry.cpp
@@ -236,6 +244,8 @@ set(ui_SRC
 	widget/paint-selector.cpp
 	widget/pattern-editor.cpp
 	widget/point.cpp
+	widget/popover-menu.cpp
+	widget/popover-menu-item.cpp
 	widget/preferences-widget.cpp
 	widget/random.cpp
 	widget/registered-widget.cpp
@@ -261,8 +271,6 @@ set(ui_SRC
 	widget/unit-tracker.cpp
 
 	view/svg-view-widget.cpp
-	view/view.cpp
-	view/view-widget.cpp
 
 
 	# -------
@@ -270,16 +278,18 @@ set(ui_SRC
 	builder-utils.h
 	clipboard.h
 	contextmenu.h
+	controller.h
 	cursor-utils.h
 	control-types.h
 	dialog-events.h
+	dialog-run.h
 	drag-and-drop.h
 	draw-anchor.h
-	event-debug.h
 	filtered-store.h
 	icon-names.h
 	icon-loader.h
 	interface.h
+	manage.h
 	monitor.h
 	selected-color.h
 	shape-editor.h
@@ -317,6 +327,7 @@ set(ui_SRC
 	dialog/export.h
 	dialog/export-batch.h
 	dialog/export-single.h
+	dialog/extensions-gallery.h
 	dialog/filedialog.h
 	dialog/filedialogimpl-gtkmm.h
 	dialog/filedialogimpl-win32.h
@@ -331,7 +342,6 @@ set(ui_SRC
 	dialog/guides.h
 	dialog/icon-preview.h
 	dialog/inkscape-preferences.h
-	dialog/input.h
 	dialog/knot-properties.h
 	dialog/layer-properties.h
 	dialog/livepatheffect-add.h
@@ -373,7 +383,6 @@ set(ui_SRC
 	tool/control-point-selection.h
 	tool/control-point.h
 	tool/curve-drag-point.h
-	tool/event-utils.h
 	tool/manipulator.h
 	tool/modifier-tracker.h
 	tool/multi-path-manipulator.h
@@ -409,6 +418,12 @@ set(ui_SRC
 	toolbar/toolbar.h
 	toolbar/tweak-toolbar.h
 	toolbar/zoom-toolbar.h
+
+	toolbar/toolbar-constants.h
+	toolbar/toolbars.h
+	toolbar/command-toolbar.h
+	toolbar/tool-toolbar.h
+	toolbar/snap-toolbar.h
 
 	tools/arc-tool.h
 	tools/box3d-tool.h
@@ -473,10 +488,14 @@ set(ui_SRC
 	widget/combo-enums.h
 	widget/combo-box-entry-tool-item.h
 	widget/combo-tool-item.h
+	widget/css-name-class-init.h
 	widget/custom-tooltip.h
 	widget/dash-selector.h
 	widget/entity-entry.h
 	widget/entry.h
+	widget/events/canvas-event.h
+	widget/events/debug.h
+	widget/events/enums.h
 	widget/export-lists.h
 	widget/export-preview.h
 	widget/fill-style.h
@@ -512,6 +531,8 @@ set(ui_SRC
 	widget/paint-selector.h
 	widget/pattern-editor.h
 	widget/point.h
+	widget/popover-menu.h
+	widget/popover-menu-item.h
 	widget/preferences-widget.h
 	widget/random.h
 	widget/registered-enums.h
@@ -539,8 +560,6 @@ set(ui_SRC
 	widget/unit-tracker.h
 
 	view/svg-view-widget.h
-	view/view.h
-	view/view-widget.h
 )
 
 if(WIN32)

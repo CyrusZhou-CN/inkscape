@@ -298,7 +298,7 @@ std::vector<std::vector<Glib::ustring>> raw_data_edit = {
     {"app.paste-width-separately",              N_("Paste Width Separately"),           "Edit",     N_("Scale each selected object horizontally to match the width of the copied object")},
     {"app.paste-height-separately",             N_("Paste Height Separately"),          "Edit",     N_("Scale each selected object vertically to match the height of the copied object")},
     {"app.duplicate",                           N_("Duplicate"),                        "Edit",     N_("Duplicate Selected Objects")},
-    {"app.duplicate-transform",                 N_("Duplicate and Transform"),          "Edit",     N_("Duplicate Selected Objects and reapply last transform")},
+    {"app.duplicate-transform",                 N_("Duplicate and Transform"),          "Edit",     N_("Duplicate selected objects and reapply last transformation")},
     {"app.clone",                               N_("Create Clone"),                     "Edit",     N_("Create a clone (a copy linked to the original) of selected object")},
     {"app.clone-unlink",                        N_("Unlink Clone"),                     "Edit",     N_("Cut the selected clones' links to the originals, turning them into standalone objects")},
     {"app.clone-unlink-recursively",            N_("Unlink Clones recursively"),        "Edit",     N_("Unlink all clones in the selection, even if they are in groups.")},
@@ -324,34 +324,34 @@ add_actions_edit(InkscapeApplication* app)
     auto *gapp = app->gio_app();
 
     // clang-format off
-    gapp->add_action( "object-to-pattern",               sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&object_to_pattern), app));
-    gapp->add_action( "pattern-to-object",               sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&pattern_to_object), app));
-    gapp->add_action( "object-to-marker",                sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&object_to_marker), app));
-    gapp->add_action( "object-to-guides",                sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&object_to_guides), app));
-    gapp->add_action( "cut",                             sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&cut), app));
-    gapp->add_action( "copy",                            sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&copy), app));
-    gapp->add_action( "paste-style",                     sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&paste_style), app));
-    gapp->add_action( "paste-size",                      sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&paste_size), app));
-    gapp->add_action( "paste-width",                     sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&paste_width), app));
-    gapp->add_action( "paste-height",                    sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&paste_height), app));
-    gapp->add_action( "paste-size-separately",           sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&paste_size_separately), app));
-    gapp->add_action( "paste-width-separately",          sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&paste_width_separately), app));
-    gapp->add_action( "paste-height-separately",         sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&paste_height_separately), app));
-    gapp->add_action( "duplicate",                       sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&duplicate), app));
-    gapp->add_action( "duplicate-transform",             sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&duplicate_transform), app));
+    gapp->add_action( "object-to-pattern",               sigc::bind(sigc::ptr_fun(&object_to_pattern), app));
+    gapp->add_action( "pattern-to-object",               sigc::bind(sigc::ptr_fun(&pattern_to_object), app));
+    gapp->add_action( "object-to-marker",                sigc::bind(sigc::ptr_fun(&object_to_marker), app));
+    gapp->add_action( "object-to-guides",                sigc::bind(sigc::ptr_fun(&object_to_guides), app));
+    gapp->add_action( "cut",                             sigc::bind(sigc::ptr_fun(&cut), app));
+    gapp->add_action( "copy",                            sigc::bind(sigc::ptr_fun(&copy), app));
+    gapp->add_action( "paste-style",                     sigc::bind(sigc::ptr_fun(&paste_style), app));
+    gapp->add_action( "paste-size",                      sigc::bind(sigc::ptr_fun(&paste_size), app));
+    gapp->add_action( "paste-width",                     sigc::bind(sigc::ptr_fun(&paste_width), app));
+    gapp->add_action( "paste-height",                    sigc::bind(sigc::ptr_fun(&paste_height), app));
+    gapp->add_action( "paste-size-separately",           sigc::bind(sigc::ptr_fun(&paste_size_separately), app));
+    gapp->add_action( "paste-width-separately",          sigc::bind(sigc::ptr_fun(&paste_width_separately), app));
+    gapp->add_action( "paste-height-separately",         sigc::bind(sigc::ptr_fun(&paste_height_separately), app));
+    gapp->add_action( "duplicate",                       sigc::bind(sigc::ptr_fun(&duplicate), app));
+    gapp->add_action( "duplicate-transform",             sigc::bind(sigc::ptr_fun(&duplicate_transform), app));
     // explicit namespace reference added because NetBSD provides a conflicting clone() function in its libc headers
-    gapp->add_action( "clone",                           sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&ActionsEdit::clone), app));
-    gapp->add_action( "clone-unlink",                    sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&clone_unlink), app));
-    gapp->add_action( "clone-unlink-recursively",        sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&clone_unlink_recursively), app));
-    gapp->add_action( "clone-link",                      sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&clone_link), app));
-    gapp->add_action( "select-original",                 sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&select_original), app));
-    gapp->add_action( "clone-link-lpe",                  sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&clone_link_lpe), app));
-    gapp->add_action( "delete",                          sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&edit_delete), app));
-    gapp->add_action( "delete-selection",                sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&edit_delete_selection), app));
-    gapp->add_action( "paste-path-effect",               sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&paste_path_effect), app));
-    gapp->add_action( "remove-path-effect",              sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&remove_path_effect), app));
-    gapp->add_action( "swap-fill-and-stroke",            sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&swap_fill_and_stroke), app));
-    gapp->add_action( "fit-canvas-to-selection",         sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&fit_canvas_to_selection), app));
+    gapp->add_action( "clone",                           sigc::bind(sigc::ptr_fun(&ActionsEdit::clone), app));
+    gapp->add_action( "clone-unlink",                    sigc::bind(sigc::ptr_fun(&clone_unlink), app));
+    gapp->add_action( "clone-unlink-recursively",        sigc::bind(sigc::ptr_fun(&clone_unlink_recursively), app));
+    gapp->add_action( "clone-link",                      sigc::bind(sigc::ptr_fun(&clone_link), app));
+    gapp->add_action( "select-original",                 sigc::bind(sigc::ptr_fun(&select_original), app));
+    gapp->add_action( "clone-link-lpe",                  sigc::bind(sigc::ptr_fun(&clone_link_lpe), app));
+    gapp->add_action( "delete",                          sigc::bind(sigc::ptr_fun(&edit_delete), app));
+    gapp->add_action( "delete-selection",                sigc::bind(sigc::ptr_fun(&edit_delete_selection), app));
+    gapp->add_action( "paste-path-effect",               sigc::bind(sigc::ptr_fun(&paste_path_effect), app));
+    gapp->add_action( "remove-path-effect",              sigc::bind(sigc::ptr_fun(&remove_path_effect), app));
+    gapp->add_action( "swap-fill-and-stroke",            sigc::bind(sigc::ptr_fun(&swap_fill_and_stroke), app));
+    gapp->add_action( "fit-canvas-to-selection",         sigc::bind(sigc::ptr_fun(&fit_canvas_to_selection), app));
     // clang-format on
 
     if (!app) {

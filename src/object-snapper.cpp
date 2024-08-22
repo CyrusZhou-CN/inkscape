@@ -114,6 +114,10 @@ void Inkscape::ObjectSnapper::_collectNodes(SnapSourceType const &t,
                         SNAPSOURCE_UNDEFINED, SNAPTARGET_PAGE_MARGIN_CORNER,
                         SNAPSOURCE_UNDEFINED, SNAPTARGET_UNDEFINED, // No edges
                         SNAPSOURCE_UNDEFINED, SNAPTARGET_PAGE_MARGIN_CENTER);
+                    getBBoxPoints(page->getDesktopBleed(), _points_to_snap_to.get(), true,
+                        SNAPSOURCE_UNDEFINED, SNAPTARGET_PAGE_BLEED_CORNER,
+                        SNAPSOURCE_UNDEFINED, SNAPTARGET_UNDEFINED, // No edges or center
+                        SNAPSOURCE_UNDEFINED, SNAPTARGET_UNDEFINED);
                 }
             }
             if (_snapmanager->snapprefs.isTargetSnappable(SNAPTARGET_PAGE_EDGE_CORNER)) {
@@ -302,12 +306,27 @@ void Inkscape::ObjectSnapper::_collectPaths(Geom::Point /*p*/,
                 SPItem::VISUAL_BBOX : SPItem::GEOMETRIC_BBOX;
         }
 
-        // Consider the page border for snapping
-        if (_snapmanager->snapprefs.isTargetSnappable(SNAPTARGET_PAGE_EDGE_BORDER) && _snapmanager->snapprefs.isAnyCategorySnappable()) {
-            _paths_to_snap_to->push_back(SnapCandidatePath(_getBorderPathv(), SNAPTARGET_PAGE_EDGE_BORDER, Geom::OptRect()));
+        auto document = _snapmanager->getDocument();
+        auto &pm = document->getPageManager();
+        for (auto page : document->getPageManager().getPages()) {
+            if (_snapmanager->snapprefs.isTargetSnappable(SNAPTARGET_PAGE_EDGE_BORDER) && _snapmanager->snapprefs.isAnyCategorySnappable()) {
+                auto pathv = _getPathvFromRect(page->getDesktopRect());
+                _paths_to_snap_to->push_back(SnapCandidatePath(pathv, SNAPTARGET_PAGE_EDGE_BORDER, Geom::OptRect()));
+            }
+            if (_snapmanager->snapprefs.isTargetSnappable(SNAPTARGET_PAGE_MARGIN_BORDER) && _snapmanager->snapprefs.isAnyCategorySnappable()) {
+                auto margin = _getPathvFromRect(page->getDesktopMargin());
+                _paths_to_snap_to->push_back(SnapCandidatePath(margin, SNAPTARGET_PAGE_MARGIN_BORDER, Geom::OptRect()));
+                auto bleed = _getPathvFromRect(page->getDesktopBleed());
+                _paths_to_snap_to->push_back(SnapCandidatePath(bleed, SNAPTARGET_PAGE_BLEED_BORDER, Geom::OptRect()));
+            }
         }
-        if (_snapmanager->snapprefs.isTargetSnappable(SNAPTARGET_PAGE_MARGIN_BORDER) && _snapmanager->snapprefs.isAnyCategorySnappable()) {
-            _paths_to_snap_to->push_back(SnapCandidatePath(_getBorderPathv(), SNAPTARGET_PAGE_MARGIN_BORDER, Geom::OptRect()));
+
+        if (!pm.hasPages()) {
+            // Consider the page border for snapping
+            if (_snapmanager->snapprefs.isTargetSnappable(SNAPTARGET_PAGE_EDGE_BORDER) && _snapmanager->snapprefs.isAnyCategorySnappable()) {
+                auto pathv = _getPathvFromRect(*(_snapmanager->getDocument()->preferredBounds()));
+                _paths_to_snap_to->push_back(SnapCandidatePath(pathv, SNAPTARGET_PAGE_EDGE_BORDER, Geom::OptRect()));
+            }
         }
 
         for (const auto & _candidate : *_snapmanager->_obj_snapper_candidates) {
@@ -715,12 +734,6 @@ bool Inkscape::ObjectSnapper::ThisSnapperMightSnap() const
 void Inkscape::ObjectSnapper::_clear_paths() const
 {
     _paths_to_snap_to->clear();
-}
-
-Geom::PathVector Inkscape::ObjectSnapper::_getBorderPathv() const
-{
-    Geom::Rect const border_rect = *(_snapmanager->getDocument()->preferredBounds());
-    return _getPathvFromRect(border_rect);
 }
 
 Geom::PathVector Inkscape::ObjectSnapper::_getPathvFromRect(Geom::Rect const rect) const

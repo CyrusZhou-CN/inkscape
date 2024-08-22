@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifndef SEEN_GRADIENT_EDITOR_H
 #define SEEN_GRADIENT_EDITOR_H
 
+#include <glibmm/refptr.h>
 #include <gtkmm/box.h>
-#include <gtkmm/grid.h>
-#include <gtkmm/button.h>
-#include <gtkmm/spinbutton.h>
-#include <gtkmm/popover.h>
-#include <gtkmm/image.h>
-#include <gtkmm/expander.h>
-#include <gtkmm/liststore.h>
 #include <gtkmm/treemodelcolumn.h>
-#include <gtkmm/builder.h>
 #include <optional>
 
 #include "object/sp-gradient.h"
@@ -22,9 +16,22 @@
 #include "gradient-selector-interface.h"
 #include "ui/operation-blocker.h"
 
-namespace Inkscape {
-namespace UI {
-namespace Widget {
+namespace Gtk {
+class Adjustment;
+class Builder;
+class Button;
+class Expander;
+class Grid;
+class Image;
+class ListStore;
+class Popover;
+class SpinButton;
+class ToggleButton;
+class TreeRow;
+class TreeView;
+} // namespace Gtk
+
+namespace Inkscape::UI::Widget {
 
 class GradientSelector;
 
@@ -67,6 +74,7 @@ private:
     void set_repeat_mode(SPGradientSpread mode);
     void set_repeat_icon(SPGradientSpread mode);
     void reverse_gradient();
+    void turn_gradient(double angle, bool relative);
     void set_stop_color(SPColor color, float opacity);
     std::optional<Gtk::TreeRow> current_stop();
     SPStop* get_nth_stop(size_t index);
@@ -89,6 +97,8 @@ private:
     Gtk::TreeModelColumn<Glib::ustring> _stopID;
     Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf>> _stop_color;
     Gtk::TreeView& _stop_tree;
+    Gtk::Button& _turn_gradient;
+    Glib::RefPtr<Gtk::Adjustment> _angle_adj;
     Gtk::SpinButton& _offset_btn;
     Gtk::Button& _add_stop;
     Gtk::Button& _delete_stop;
@@ -106,9 +116,6 @@ private:
     Glib::ustring _prefs;
 };
 
+} // namespace Inkscape::UI::Widget
 
-} // namespace Widget
-} // namespace UI
-} // namespace Inkscape
-
-#endif
+#endif // SEEN_GRADIENT_EDITOR_H

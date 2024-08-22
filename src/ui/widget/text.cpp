@@ -38,7 +38,7 @@ void Text::setText(Glib::ustring const text)
     static_cast<Gtk::Entry*>(_widget)->set_text(text); // FIXME: set correctly
 }
 
-Glib::SignalProxy0<void> Text::signal_activate()
+Glib::SignalProxy<void> Text::signal_activate()
 {
     return static_cast<Gtk::Entry*>(_widget)->signal_activate();
 }

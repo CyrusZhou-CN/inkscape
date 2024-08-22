@@ -3,8 +3,8 @@
 #include <iostream>
 #include <vector>
 #include "bezier-fit.h"
-#include "point.h"
 #include <2geom/bezier-utils.h>
+#include <2geom/point.h>
 
 extern "C" {
     #include "splinefit.h"

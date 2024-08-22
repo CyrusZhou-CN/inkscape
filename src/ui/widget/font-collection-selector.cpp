@@ -13,6 +13,8 @@
 
 #include "libnrtype/font-lister.h"
 
+#include "ui/dialog-run.h"
+
 // For updating from selection
 #include "util/document-fonts.h"
 
@@ -23,7 +25,7 @@ namespace Widget {
 FontCollectionSelector::FontCollectionSelector()
 {
     // Step 1: Initialize the treeview.
-    treeview = Gtk::manage(new Gtk::TreeView());
+    treeview = Gtk::make_managed<Gtk::TreeView>();
 
     // Step 2: Setup the treeview.
     setup_tree_view(treeview);
@@ -331,26 +333,34 @@ void FontCollectionSelector::populate_fonts(const Glib::ustring& collection_name
 
 void FontCollectionSelector::on_delete_icon_clicked(Glib::ustring const &path)
 {
-    FontCollections *collections = Inkscape::FontCollections::get();
-    Gtk::TreeModel::iterator iter = store->get_iter(path);
+    auto collections = Inkscape::FontCollections::get();
+    auto iter = store->get_iter(path);
     auto parent = (*iter)->parent();
-    if(!parent) {
+
+    if (!parent) {
         // It is a collection.
+
         // No need to confirm in case of empty collections.
-        if (!collections->get_fonts((*iter)[FontCollection.name]).empty()) {
-            // Warn the user and then proceed.
-            int response = deleltion_warning_message_dialog((*iter)[FontCollection.name]);
-            if (response != Gtk::RESPONSE_YES) {
-                return;
-            }
+        if (collections->get_fonts((*iter)[FontCollection.name]).empty()) {
+            collections->remove_collection((*iter)[FontCollection.name]);
+            store->erase(iter);
+            return;
         }
-        collections->remove_collection((*iter)[FontCollection.name]);
+
+        // Warn the user and then proceed.
+        deletion_warning_message_dialog((*iter)[FontCollection.name], [this, iter] (int response) {
+            if (response == Gtk::RESPONSE_YES) {
+                auto collections = Inkscape::FontCollections::get();
+                collections->remove_collection((*iter)[FontCollection.name]);
+                store->erase(iter);
+            }
+        });
     }
     else {
         // It is a font.
         collections->remove_font((*parent)[FontCollection.name], (*iter)[FontCollection.name]);
+        store->erase(iter);
     }
-    store->erase(iter);
 }
 
 void FontCollectionSelector::on_create_collection()
@@ -408,37 +418,36 @@ void FontCollectionSelector::on_delete_button_pressed()
     Gtk::TreeModel::Row row = *iter;
     auto parent = row->parent();
 
-    FontCollections *collections = Inkscape::FontCollections::get();
+    auto collections = Inkscape::FontCollections::get();
 
-    if(!parent) {
+    if (!parent) {
         // It is a collection.
         // Check if it is a system collection.
         bool is_system = collections->find_collection((*iter)[FontCollection.name], true);
-        if(is_system) {
+        if (is_system) {
             return;
         }
 
         // Warn the user and then proceed.
-        int response = deleltion_warning_message_dialog((*iter)[FontCollection.name]);
-
-        if (response != Gtk::RESPONSE_YES) {
-            return;
-        }
-
-        collections->remove_collection((*iter)[FontCollection.name]);
-    }
-    else {
+        deletion_warning_message_dialog((*iter)[FontCollection.name], [this, iter] (int response) {
+            if (response == Gtk::RESPONSE_YES) {
+                auto collections = Inkscape::FontCollections::get();
+                collections->remove_collection((*iter)[FontCollection.name]);
+                store->erase(iter);
+            }
+        });
+    } else {
         // It is a font.
         // Check if it belongs to a system collection.
         bool is_system = collections->find_collection((*parent)[FontCollection.name], true);
-
-        if(is_system) {
+        if (is_system) {
             return;
         }
 
         collections->remove_font((*parent)[FontCollection.name], row[FontCollection.name]);
+
+        store->erase(iter);
     }
-    store->erase(iter);
 }
 
 // Function to edit the name of the collection or font.
@@ -463,13 +472,12 @@ void FontCollectionSelector::on_edit_button_pressed()
     }
 }
 
-int FontCollectionSelector::deleltion_warning_message_dialog(const Glib::ustring &collection_name)
+void FontCollectionSelector::deletion_warning_message_dialog(Glib::ustring const &collection_name, sigc::slot<void(int)> onresponse)
 {
-    Glib::ustring message =
-        Glib::ustring::compose(_("Are you sure want to delete the \"%1\" font collection?\n"), collection_name);
-    Gtk::MessageDialog dialog(message, false, Gtk::MESSAGE_WARNING, Gtk::BUTTONS_YES_NO, true);
-    dialog.set_transient_for(*dynamic_cast<Gtk::Window *>(get_toplevel()));
-    return dialog.run();
+    auto message = Glib::ustring::compose(_("Are you sure want to delete the \"%1\" font collection?\n"), collection_name);
+    auto dialog = std::make_unique<Gtk::MessageDialog>(message, false, Gtk::MESSAGE_WARNING, Gtk::BUTTONS_YES_NO, true);
+    dialog->signal_response().connect(onresponse);
+    dialog_show_modal_and_selfdestruct(std::move(dialog), get_toplevel());
 }
 
 bool FontCollectionSelector::on_key_pressed(GdkEventKey *event)

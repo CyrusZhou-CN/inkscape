@@ -11,16 +11,20 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#include "ui/dialog/memory.h"
+#include <sigc++/functors/mem_fun.h>
 #include <glibmm/i18n.h>
 #include <glibmm/main.h>
-
+#include <glibmm/refptr.h>
+#include <glibmm/ustring.h>
+#include <gtkmm/box.h>
+#include <gtkmm/button.h>
 #include <gtkmm/liststore.h>
+#include <gtkmm/treemodelcolumn.h>
 #include <gtkmm/treeview.h>
-#include <gtkmm/dialog.h>
 
-#include "inkgc/gc-core.h"
+#include "ui/dialog/memory.h"
 #include "debug/heap.h"
+#include "inkgc/gc-core.h"
 #include "util/format_size.h"
 
 using Inkscape::Util::format_size;
@@ -159,7 +163,6 @@ Memory::Memory()
     : DialogBase("/dialogs/memory", "Memory")
     , _private(std::make_unique<Private>())
 {
-    // Private conf
     pack_start(_private->view);
 
     _private->update();
@@ -167,18 +170,16 @@ Memory::Memory()
     signal_show().connect(sigc::mem_fun(*_private, &Private::start_update_task));
     signal_hide().connect(sigc::mem_fun(*_private, &Private::stop_update_task));
 
-    // Add button
-    auto button = Gtk::make_managed<Gtk::Button>(_("Recalculate"));
-    button->signal_button_press_event().connect(sigc::mem_fun(*this, &Memory::_apply));
+    auto const button = Gtk::make_managed<Gtk::Button>(_("Recalculate"));
+    button->signal_clicked().connect(sigc::mem_fun(*this, &Memory::apply));
 
-    auto button_box = Gtk::make_managed<Gtk::ButtonBox>();
-    button_box->set_layout(Gtk::BUTTONBOX_END);
+    auto const button_box = Gtk::make_managed<Gtk::Box>();
+    button_box->set_halign(Gtk::ALIGN_END);
     button_box->set_spacing(6);
     button_box->set_border_width(4);
     button_box->pack_end(*button);
     pack_end(*button_box, Gtk::PACK_SHRINK, 0);
 
-    // Start
     _private->start_update_task();
 
     show_all_children();
@@ -189,11 +190,10 @@ Memory::~Memory()
     _private->stop_update_task();
 }
 
-bool Memory::_apply(GdkEventButton*)
+void Memory::apply()
 {
     GC::Core::gcollect();
     _private->update();
-    return false;
 }
 
 } // namespace Dialog

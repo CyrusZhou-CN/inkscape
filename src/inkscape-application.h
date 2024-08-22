@@ -21,6 +21,7 @@
  */
 
 #include <gtkmm.h>
+#include <vector>
 
 #include "document.h"
 #include "selection.h"
@@ -67,7 +68,7 @@ public:
     void on_quit(); // Check for data loss.
     void on_quit_immediate(); // Don't check for data loss.
 
-    // Gio::Actions need to know what document, selection, view to work on.
+    // Gio::Actions need to know what document, selection, desktop to work on.
     // In headless mode, these are set for each file processed.
     // With GUI, these are set everytime the cursor enters an InkscapeWindow.
     SPDocument*           get_active_document() { return _active_document; };
@@ -77,15 +78,15 @@ public:
     void                  set_active_selection(Inkscape::Selection* selection)
                                                                {_active_selection = selection;};
 
-    // A view should track selection and canvas to document transform matrix. This is partially
-    // redundant with the selection functions above. Maybe we should get rid of view altogether.
-    // Canvas to document transform matrix should be stored in InkscapeWindow.
-    Inkscape::UI::View::View* get_active_view() { return _active_view; }
-    void                  set_active_view(Inkscape::UI::View::View* view) { _active_view = view; }
+    // A desktop should track selection and canvas to document transform matrix. This is partially
+    // redundant with the selection functions above.
+    // Canvas to document transform matrix should be stored in the canvas, itself.
+    SPDesktop*            get_active_desktop() { return _active_desktop; }
+    void                  set_active_desktop(SPDesktop* desktop) { _active_desktop = desktop; }
 
     // The currently focused window (nominally corresponding to _active_document).
     // A window must have a document but a document may have zero, one, or more windows.
-    // This will replace _active_view.
+    // This will replace _active_desktop.
     InkscapeWindow*       get_active_window() { return _active_window; }
     void                  set_active_window(InkscapeWindow* window) { _active_window = window; }
 
@@ -151,7 +152,7 @@ protected:
     // We keep track of these things so we don't need a window to find them (for headless operation).
     SPDocument*               _active_document   = nullptr;
     Inkscape::Selection*      _active_selection  = nullptr;
-    Inkscape::UI::View::View* _active_view       = nullptr;
+    SPDesktop*                _active_desktop       = nullptr;
     InkscapeWindow*           _active_window     = nullptr;
 
     InkFileExportCmd _file_export;
@@ -181,6 +182,10 @@ protected:
     void shell(bool active_window = false);
 
     void _start_main_option_section(const Glib::ustring& section_name = "");
+    
+private:
+    void init_extension_action_data();
+    std::vector<Glib::RefPtr<Gio::SimpleAction>> _effect_actions;
 };
 
 #endif // INKSCAPE_APPLICATION_H

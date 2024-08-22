@@ -1,11 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+/** @file
+ * @brief Color item used in palettes and swatches UI.
+ */
+/* Authors: PBS <pbs3141@gmail.com>
+ * Copyright (C) 2022 PBS
+ * Released under GNU GPL v2+, read the file 'COPYING' for more information.
+ */
+
 #include "color-item.h"
 
+#include <cassert>
 #include <cstdint>
+#include <sigc++/functors/mem_fun.h>
 #include <cairomm/cairomm.h>
 #include <glibmm/convert.h>
 #include <glibmm/i18n.h>
 #include <gdkmm/general.h>
+#include <gtkmm/gesturemultipress.h>
 
 #include "helper/sigc-track-obj.h"
 #include "inkscape-preferences.h"
@@ -18,6 +29,7 @@
 #include "desktop-style.h"
 #include "actions/actions-tools.h"
 #include "message-context.h"
+#include "ui/controller.h"
 #include "ui/dialog/dialog-base.h"
 #include "ui/dialog/dialog-container.h"
 #include "ui/icon-names.h"
@@ -34,7 +46,8 @@ class Globals
 
     void load_removecolor()
     {
-        auto path_utf8 = (Glib::ustring)Inkscape::IO::Resource::get_path(Inkscape::IO::Resource::SYSTEM, Inkscape::IO::Resource::PIXMAPS, "remove-color.png");
+        auto path_utf8 = (Glib::ustring)Inkscape::IO::Resource::get_path(Inkscape::IO::Resource::SYSTEM,
+            Inkscape::IO::Resource::UIS, "resources", "remove-color.png");
         auto path = Glib::filename_from_utf8(path_utf8);
         auto pixbuf = Gdk::Pixbuf::create_from_file(path);
         if (!pixbuf) {
@@ -80,7 +93,7 @@ ColorItem::ColorItem(PaintDef const &paintdef, DialogBase *dialog)
         data = RGBData{paintdef.get_rgb()};
     } else {
         pinned_default = true;
-        data = NoneData{};
+        data = std::monostate{};
     }
     description = paintdef.get_description();
     color_id = paintdef.get_color_id();
@@ -96,7 +109,7 @@ ColorItem::ColorItem(SPGradient *gradient, DialogBase *dialog)
     color_id = gradient->getId();
 
     gradient->connectRelease(SIGC_TRACKING_ADAPTOR([this] (SPObject*) {
-        boost::get<GradientData>(data).gradient = nullptr;
+        std::get<GradientData>(data).gradient = nullptr;
     }, *this));
 
     gradient->connectModified(SIGC_TRACKING_ADAPTOR([this] (SPObject *obj, unsigned flags) {
@@ -120,10 +133,19 @@ void ColorItem::common_setup()
 {
     set_name("ColorItem");
     set_tooltip_text(description);
+
     add_events(Gdk::ENTER_NOTIFY_MASK |
-               Gdk::LEAVE_NOTIFY_MASK |
-               Gdk::BUTTON_PRESS_MASK |
-               Gdk::BUTTON_RELEASE_MASK);
+               Gdk::LEAVE_NOTIFY_MASK);
+
+    Controller::add_motion<&ColorItem::on_motion_enter,
+                           nullptr,
+                           &ColorItem::on_motion_leave>
+                          (*this, *this, Gtk::PHASE_TARGET);
+
+    Controller::add_click(*this,
+                          sigc::mem_fun(*this, &ColorItem::on_click_pressed),
+                          sigc::mem_fun(*this, &ColorItem::on_click_released));
+
     drag_source_set(Globals::get().mimetargets, Gdk::BUTTON1_MASK, Gdk::ACTION_MOVE | Gdk::ACTION_COPY);
 }
 
@@ -134,7 +156,7 @@ void ColorItem::set_pinned_pref(const std::string &path)
 
 void ColorItem::draw_color(Cairo::RefPtr<Cairo::Context> const &cr, int w, int h) const
 {
-    if (boost::get<NoneData>(&data)) {
+    if (std::holds_alternative<std::monostate>(data)) {
         if (auto surface = Globals::get().removecolor) {
             const auto device_scale = get_scale_factor();
             cr->save();
@@ -143,11 +165,11 @@ void ColorItem::draw_color(Cairo::RefPtr<Cairo::Context> const &cr, int w, int h
             cr->paint();
             cr->restore();
         }
-    } else if (auto rgbdata = boost::get<RGBData>(&data)) {
+    } else if (auto const rgbdata = std::get_if<RGBData>(&data)) {
         auto [r, g, b] = rgbdata->rgb;
         cr->set_source_rgb(r / 255.0, g / 255.0, b / 255.0);
         cr->paint();
-    } else if (auto graddata = boost::get<GradientData>(&data)) {
+    } else if (auto const graddata = std::get_if<GradientData>(&data)) {
         // Gradient pointer may be null if the gradient was destroyed.
         auto grad = graddata->gradient;
         if (!grad) return;
@@ -168,7 +190,7 @@ bool ColorItem::on_draw(Cairo::RefPtr<Cairo::Context> const &cr)
     auto h = get_height();
 
     // Only using caching for none and gradients. None is included because the image is huge.
-    bool use_cache = boost::get<NoneData>(&data) || boost::get<GradientData>(&data);
+    bool const use_cache = std::holds_alternative<std::monostate>(data) || std::holds_alternative<GradientData>(data);
 
     if (use_cache) {
         auto scale = get_scale_factor();
@@ -225,43 +247,47 @@ void ColorItem::on_size_allocate(Gtk::Allocation &allocation)
     cache_dirty = true;
 }
 
-bool ColorItem::on_enter_notify_event(GdkEventCrossing*)
+void ColorItem::on_motion_enter(GtkEventControllerMotion const * const motion,
+                                double const x, double const y)
 {
     mouse_inside = true;
     if (auto desktop = dialog->getDesktop()) {
         auto msg = Glib::ustring::compose(_("Color: <b>%1</b>; <b>Click</b> to set fill, <b>Shift+click</b> to set stroke"), description);
         desktop->tipsMessageContext()->set(Inkscape::INFORMATION_MESSAGE, msg.c_str());
     }
-    return false;
 }
 
-bool ColorItem::on_leave_notify_event(GdkEventCrossing*)
+void ColorItem::on_motion_leave(GtkEventControllerMotion const * const motion)
 {
     mouse_inside = false;
     if (auto desktop = dialog->getDesktop()) {
         desktop->tipsMessageContext()->clear();
     }
-    return false;
 }
 
-bool ColorItem::on_button_press_event(GdkEventButton *event)
+Gtk::EventSequenceState ColorItem::on_click_pressed(Gtk::GestureMultiPress const &click,
+                                                    int const n_press, double const x, double const y)
 {
-    if (event->button == 3) {
+    if (click.get_current_button() == 3) {
+        auto const event = Controller::get_last_event(click);
         on_rightclick(event);
-        return true;
+        return Gtk::EVENT_SEQUENCE_CLAIMED;
     }
     // Return true necessary to avoid stealing the canvas focus.
-    return true;
+    return Gtk::EVENT_SEQUENCE_CLAIMED;
 }
 
-bool ColorItem::on_button_release_event(GdkEventButton* event)
+Gtk::EventSequenceState ColorItem::on_click_released(Gtk::GestureMultiPress const &click,
+                                                     int const n_press, double const x, double const y)
 {
-    if (mouse_inside && (event->button == 1 || event->button == 2)) {
-        bool stroke = event->button == 2 || (event->state & GDK_SHIFT_MASK);
+    auto const button = click.get_current_button();
+    if (mouse_inside && (button == 1 || button == 2)) {
+        auto const state = Controller::get_current_event_state(click);
+        auto const stroke = button == 2 || (state & Gdk::SHIFT_MASK) != 0;
         on_click(stroke);
-        return true;
+        return Gtk::EVENT_SEQUENCE_CLAIMED;
     }
-    return false;
+    return Gtk::EVENT_SEQUENCE_NONE;
 }
 
 void ColorItem::on_click(bool stroke)
@@ -273,17 +299,17 @@ void ColorItem::on_click(bool stroke)
     auto css = std::unique_ptr<SPCSSAttr, void(*)(SPCSSAttr*)>(sp_repr_css_attr_new(), [] (auto p) {sp_repr_css_attr_unref(p);});
 
     Glib::ustring descr;
-    if (boost::get<NoneData>(&data)) {
+    if (std::holds_alternative<std::monostate>(data)) {
         sp_repr_css_set_property(css.get(), attr_name, "none");
         descr = stroke ? _("Set stroke color to none") : _("Set fill color to none");
-    } else if (auto rgbdata = boost::get<RGBData>(&data)) {
+    } else if (auto const rgbdata = std::get_if<RGBData>(&data)) {
         auto [r, g, b] = rgbdata->rgb;
         uint32_t rgba = (r << 24) | (g << 16) | (b << 8) | 0xff;
         char buf[64];
         sp_svg_write_color(buf, sizeof(buf), rgba);
         sp_repr_css_set_property(css.get(), attr_name, buf);
         descr = stroke ? _("Set stroke color from swatch") : _("Set fill color from swatch");
-    } else if (auto graddata = boost::get<GradientData>(&data)) {
+    } else if (auto const graddata = std::get_if<GradientData>(&data)) {
         auto grad = graddata->gradient;
         if (!grad) return;
         auto colorspec = "url(#" + Glib::ustring(grad->getId()) + ")";
@@ -296,13 +322,13 @@ void ColorItem::on_click(bool stroke)
     DocumentUndo::done(desktop->getDocument(), descr.c_str(), INKSCAPE_ICON("swatches"));
 }
 
-void ColorItem::on_rightclick(GdkEventButton *event)
+void ColorItem::on_rightclick(GdkEvent const *event)
 {
     auto menu_gobj = gtk_menu_new(); /* C */
     auto menu = Glib::wrap(GTK_MENU(menu_gobj)); /* C */
 
     auto additem = [&, this] (Glib::ustring const &name, sigc::slot<void()> slot) {
-        auto item = Gtk::make_managed<Gtk::MenuItem>(name);
+        auto const item = Gtk::make_managed<Gtk::MenuItem>(name);
         menu->append(*item);
         item->signal_activate().connect(SIGC_TRACKING_ADAPTOR(slot, *this));
     };
@@ -311,19 +337,19 @@ void ColorItem::on_rightclick(GdkEventButton *event)
     additem(_("Set fill"), [this] { on_click(false); });
     additem(_("Set stroke"), [this] { on_click(true); });
 
-    if (boost::get<GradientData>(&data)) {
+    if (auto const graddata = std::get_if<GradientData>(&data)) {
         menu->append(*Gtk::make_managed<Gtk::SeparatorMenuItem>());
 
-        additem(_("Delete"), [this] {
-            auto grad = boost::get<GradientData>(data).gradient;
+        additem(_("Delete"), [=, this] {
+            auto const grad = graddata->gradient;
             if (!grad) return;
 
             grad->setSwatch(false);
             DocumentUndo::done(grad->document, _("Delete swatch"), INKSCAPE_ICON("color-gradient"));
         });
 
-        additem(_("Edit..."), [this] {
-            auto grad = boost::get<GradientData>(data).gradient;
+        additem(_("Edit..."), [=, this] {
+            auto const grad = graddata->gradient;
             if (!grad) return;
 
             auto desktop = dialog->getDesktop();
@@ -349,8 +375,8 @@ void ColorItem::on_rightclick(GdkEventButton *event)
     }
 
     additem(is_pinned() ? _("Unpin Color") : _("Pin Color"), [this] {
-        if (boost::get<GradientData>(&data)) {
-            auto grad = boost::get<GradientData>(data).gradient;
+        if (auto const graddata = std::get_if<GradientData>(&data)) {
+            auto const grad = graddata->gradient;
             if (!grad) return;
 
             grad->setPinned(!is_pinned());
@@ -365,7 +391,7 @@ void ColorItem::on_rightclick(GdkEventButton *event)
     auto create_convert_submenu = [&] {
         menu->append(*Gtk::make_managed<Gtk::SeparatorMenuItem>());
 
-        auto convert_item = Gtk::make_managed<Gtk::MenuItem>(_("Convert"));
+        auto const convert_item = Gtk::make_managed<Gtk::MenuItem>(_("Convert"));
         menu->append(*convert_item);
 
         convert_submenu = Gtk::make_managed<Gtk::Menu>();
@@ -377,7 +403,7 @@ void ColorItem::on_rightclick(GdkEventButton *event)
             create_convert_submenu();
         }
 
-        auto item = Gtk::make_managed<Gtk::MenuItem>(name);
+        auto const item = Gtk::make_managed<Gtk::MenuItem>(name);
         convert_submenu->append(*item);
         item->signal_activate().connect(slot);
     };
@@ -401,7 +427,7 @@ void ColorItem::on_rightclick(GdkEventButton *event)
     }
 
     menu->show_all();
-    menu->popup_at_pointer(reinterpret_cast<GdkEvent*>(event));
+    menu->popup_at_pointer(event);
 
     // Todo: All lines marked /* C */ in this function are required in order for the menu to
     // self-destruct after it has finished. Please replace upon discovery of a better method.
@@ -411,16 +437,18 @@ void ColorItem::on_rightclick(GdkEventButton *event)
 
 PaintDef ColorItem::to_paintdef() const
 {
-    if (boost::get<NoneData>(&data)) {
+    if (std::holds_alternative<std::monostate>(data)) {
         return PaintDef();
-    } else if (auto rgbdata = boost::get<RGBData>(&data)) {
+    } else if (auto const rgbdata = std::get_if<RGBData>(&data)) {
         return PaintDef(rgbdata->rgb, description);
-    } else if (boost::get<GradientData>(&data)) {
-        auto grad = boost::get<GradientData>(data).gradient;
+    } else if (auto const graddata = std::get_if<GradientData>(&data)) {
+        auto const grad = graddata->gradient;
+        assert(grad != nullptr);
         return PaintDef({0, 0, 0}, grad->getId());
     }
 
     // unreachable
+    assert(false);
     return {};
 }
 
@@ -431,8 +459,8 @@ void ColorItem::on_drag_data_get(Glib::RefPtr<Gdk::DragContext> const &context, 
         g_warning("ERROR: unknown value (%d)", info);
         return;
     }
-    auto &key = mimetypes[info];
 
+    auto &key = mimetypes[info];
     auto def = to_paintdef();
     auto [vec, format] = def.getMIMEData(key);
     if (vec.empty()) return;
@@ -447,7 +475,6 @@ void ColorItem::on_drag_begin(Glib::RefPtr<Gdk::DragContext> const &context)
 
     auto surface = Cairo::ImageSurface::create(Cairo::FORMAT_ARGB32, w, h);
     draw_color(Cairo::Context::create(surface), w, h);
-
     context->set_icon(Gdk::Pixbuf::create(surface, 0, 0, w, h), 0, 0);
 }
 
@@ -465,12 +492,9 @@ void ColorItem::set_stroke(bool b)
 
 bool ColorItem::is_pinned() const
 {
-    if (boost::get<GradientData>(&data)) {
-        auto grad = boost::get<GradientData>(data).gradient;
-        if (!grad) {
-            return false;
-        }
-        return grad->isPinned();
+    if (auto const graddata = std::get_if<GradientData>(&data)) {
+        auto const grad = graddata->gradient;
+        return grad && grad->isPinned();
     } else {
         return Inkscape::Preferences::get()->getBool(pinned_pref, pinned_default);
     }
@@ -478,12 +502,12 @@ bool ColorItem::is_pinned() const
 
 std::array<double, 3> ColorItem::average_color() const
 {
-    if (boost::get<NoneData>(&data)) {
+    if (std::holds_alternative<std::monostate>(data)) {
         return {1.0, 1.0, 1.0};
-    } else if (auto rgbdata = boost::get<RGBData>(&data)) {
+    } else if (auto const rgbdata = std::get_if<RGBData>(&data)) {
         auto [r, g, b] = rgbdata->rgb;
         return {r / 255.0, g / 255.0, b / 255.0};
-    } else if (auto graddata = boost::get<GradientData>(&data)) {
+    } else if (auto const graddata = std::get_if<GradientData>(&data)) {
         auto grad = graddata->gradient;
         auto pat = Cairo::RefPtr<Cairo::Pattern>(new Cairo::Pattern(grad->create_preview_pattern(1), true));
         auto img = Cairo::ImageSurface::create(Cairo::FORMAT_ARGB32, 1, 1);
@@ -498,9 +522,21 @@ std::array<double, 3> ColorItem::average_color() const
     }
 
     // unreachable
+    assert(false);
     return {1.0, 1.0, 1.0};
 }
 
 } // namespace Dialog
 } // namespace UI
 } // namespace Inkscape
+
+/*
+  Local Variables:
+  mode:c++
+  c-file-style:"stroustrup"
+  c-file-offsets:((innamespace . 0)(inline-open . 0)(case-label . +))
+  indent-tabs-mode:nil
+  fill-column:99
+  End:
+*/
+// vim: filetype=cpp:expandtab:shiftwidth=4:tabstop=8:softtabstop=4:fileencoding=utf-8:textwidth=99 :

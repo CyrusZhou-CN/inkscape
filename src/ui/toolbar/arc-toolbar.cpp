@@ -68,7 +68,7 @@ ArcToolbar::ArcToolbar(SPDesktop *desktop)
     auto prefs = Inkscape::Preferences::get();
 
     {
-        _mode_item = Gtk::manage(new UI::Widget::LabelToolItem(_("<b>New:</b>")));
+        _mode_item = Gtk::make_managed<UI::Widget::LabelToolItem>(_("<b>New:</b>"));
         _mode_item->set_use_markup(true);
         add(*_mode_item);
     }
@@ -80,7 +80,7 @@ ArcToolbar::ArcToolbar(SPDesktop *desktop)
         rx_val = Quantity::convert(rx_val, "px", init_units);
 
         _rx_adj = Gtk::Adjustment::create(rx_val, 0, 1e6, SPIN_STEP, SPIN_PAGE_STEP);
-        _rx_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("arc-rx", _("Rx:"), _rx_adj));
+        _rx_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("arc-rx", _("Rx:"), _rx_adj);
         _rx_item->set_tooltip_text(_("Horizontal radius of the circle, ellipse, or arc"));
         _rx_item->set_custom_numeric_menu_data(values);
         _tracker->addAdjustment(_rx_adj->gobj());
@@ -99,7 +99,7 @@ ArcToolbar::ArcToolbar(SPDesktop *desktop)
         ry_val = Quantity::convert(ry_val, "px", init_units);
 
         _ry_adj = Gtk::Adjustment::create(ry_val, 0, 1e6, SPIN_STEP, SPIN_PAGE_STEP);
-        _ry_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("arc-ry", _("Ry:"), _ry_adj));
+        _ry_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("arc-ry", _("Ry:"), _ry_adj);
         _ry_item->set_tooltip_text(_("Vertical radius of the circle, ellipse, or arc"));
         _ry_item->set_custom_numeric_menu_data(values);
         _tracker->addAdjustment(_ry_adj->gobj());
@@ -117,13 +117,13 @@ ArcToolbar::ArcToolbar(SPDesktop *desktop)
         add(*unit_menu);
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Start */
     {
         auto start_val = prefs->getDouble("/tools/shapes/arc/start", 0.0);
         _start_adj = Gtk::Adjustment::create(start_val, -360.0, 360.0, 1.0, 10.0);
-        auto eact = Gtk::manage(new UI::Widget::SpinButtonToolItem("arc-start", _("Start:"), _start_adj));
+        auto const eact = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("arc-start", _("Start:"), _start_adj);
         eact->set_tooltip_text(_("The angle (in degrees) from the horizontal to the arc's start point"));
         eact->set_focus_widget(desktop->canvas);
         add(*eact);
@@ -133,7 +133,7 @@ ArcToolbar::ArcToolbar(SPDesktop *desktop)
     {
         auto end_val = prefs->getDouble("/tools/shapes/arc/end", 0.0);
         _end_adj = Gtk::Adjustment::create(end_val, -360.0, 360.0, 1.0, 10.0);
-        auto eact = Gtk::manage(new UI::Widget::SpinButtonToolItem("arc-end", _("End:"), _end_adj));
+        auto const eact = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("arc-end", _("End:"), _end_adj);
         eact->set_tooltip_text(_("The angle (in degrees) from the horizontal to the arc's end point"));
         eact->set_focus_widget(desktop->canvas);
         add(*eact);
@@ -143,23 +143,23 @@ ArcToolbar::ArcToolbar(SPDesktop *desktop)
     _end_adj->signal_value_changed().connect(  sigc::bind(sigc::mem_fun(*this, &ArcToolbar::startend_value_changed),
                                                           _end_adj,   "end",   _start_adj));
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Arc: Slice, Arc, Chord */
     {
         Gtk::RadioToolButton::Group type_group;
 
-        auto slice_btn = Gtk::manage(new Gtk::RadioToolButton(_("Slice")));
+        auto const slice_btn = Gtk::make_managed<Gtk::RadioToolButton>(_("Slice"));
         slice_btn->set_tooltip_text(_("Switch to slice (closed shape with two radii)"));
         slice_btn->set_icon_name(INKSCAPE_ICON("draw-ellipse-segment"));
         _type_buttons.push_back(slice_btn);
 
-        auto arc_btn = Gtk::manage(new Gtk::RadioToolButton(_("Arc (Open)")));
+        auto const arc_btn = Gtk::make_managed<Gtk::RadioToolButton>(_("Arc >(Open)"));
         arc_btn->set_tooltip_text(_("Switch to arc (unclosed shape)"));
         arc_btn->set_icon_name(INKSCAPE_ICON("draw-ellipse-arc"));
         _type_buttons.push_back(arc_btn);
 
-        auto chord_btn = Gtk::manage(new Gtk::RadioToolButton(_("Chord")));
+        auto const chord_btn = Gtk::make_managed<Gtk::RadioToolButton>(_("Chord"));
         chord_btn->set_tooltip_text(_("Switch to chord (closed shape)"));
         chord_btn->set_icon_name(INKSCAPE_ICON("draw-ellipse-chord"));
         _type_buttons.push_back(chord_btn);
@@ -180,11 +180,11 @@ ArcToolbar::ArcToolbar(SPDesktop *desktop)
         }
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Make Whole */
     {
-        _make_whole = Gtk::manage(new Gtk::ToolButton(_("Make whole")));
+        _make_whole = Gtk::make_managed<Gtk::ToolButton>(_("Make whole"));
         _make_whole->set_tooltip_text(_("Make the shape a whole ellipse, not arc or segment"));
         _make_whole->set_icon_name(INKSCAPE_ICON("draw-ellipse-whole"));
         _make_whole->signal_clicked().connect(sigc::mem_fun(*this, &ArcToolbar::defaults));
@@ -381,7 +381,7 @@ ArcToolbar::type_changed( int type )
     }
 
     if (modmade) {
-        DocumentUndo::done(_desktop->getDocument(), _("Arc: Changed arc type"), INKSCAPE_ICON("draw-ellipse"));
+        DocumentUndo::done(_desktop->getDocument(), _("Arc: Change arc type"), INKSCAPE_ICON("draw-ellipse"));
     }
 
     _freeze = false;

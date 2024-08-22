@@ -170,30 +170,30 @@ void ExportList::setup()
     prefs = Inkscape::Preferences::get();
     default_dpi = prefs->getDouble("/dialogs/export/defaultxdpi/value", DPI_BASE);
 
-    Gtk::Button *add_button = Gtk::manage(new Gtk::Button());
+    auto const add_button = Gtk::make_managed<Gtk::Button>();
     Glib::ustring label = _("Add Export");
     add_button->set_label(label);
     this->attach(*add_button, 0, 0, 4, 1);
 
     this->insert_row(0);
 
-    Gtk::Label *suffix_label = Gtk::manage(new Gtk::Label(_("Suffix")));
+    auto const suffix_label = Gtk::make_managed<Gtk::Label>(_("Suffix"));
     this->attach(*suffix_label, _suffix_col, 0, 1, 1);
-    suffix_label->show();
+    suffix_label->set_visible(true);
 
-    Gtk::Label *extension_label = Gtk::manage(new Gtk::Label(_("Format")));
+    auto const extension_label = Gtk::make_managed<Gtk::Label>(_("Format"));
     this->attach(*extension_label, _extension_col, 0, 2, 1);
-    extension_label->show();
+    extension_label->set_visible(true);
 
-    Gtk::Label *dpi_label = Gtk::manage(new Gtk::Label(_("DPI")));
+    auto const dpi_label = Gtk::make_managed<Gtk::Label>(_("DPI"));
     this->attach(*dpi_label, _dpi_col, 0, 1, 1);
-    dpi_label->show();
+    dpi_label->set_visible(true);
 
     append_row();
 
     add_button->signal_clicked().connect(sigc::mem_fun(*this, &ExportList::append_row));
     add_button->set_hexpand(true);
-    add_button->show();
+    add_button->set_visible(true);
 
     this->set_row_spacing(5);
     this->set_column_spacing(2);
@@ -213,18 +213,18 @@ void ExportList::append_row()
     int current_row = _num_rows + 1; // because we have label row at top
     this->insert_row(current_row);
 
-    Gtk::Entry *suffix = Gtk::manage(new Gtk::Entry());
+    auto const suffix = Gtk::make_managed<Gtk::Entry>();
     this->attach(*suffix, _suffix_col, current_row, 1, 1);
     suffix->set_width_chars(2);
     suffix->set_hexpand(true);
     suffix->set_placeholder_text(_("Suffix"));
-    suffix->show();
+    suffix->set_visible(true);
 
-    ExtensionList *extension = Gtk::manage(new ExtensionList());
-    SpinButton *dpi_sb = Gtk::manage(new SpinButton());
+    auto const extension = Gtk::make_managed<ExtensionList>();
+    auto const dpi_sb = Gtk::make_managed<SpinButton>();
 
     extension->setup();
-    extension->show();
+    extension->set_visible(true);
     this->attach(*extension, _extension_col, current_row, 1, 1);
     this->attach(*extension->getPrefButton(), _prefs_col, current_row, 1, 1);
 
@@ -242,11 +242,11 @@ void ExportList::append_row()
     dpi_sb->set_sensitive(true);
     dpi_sb->set_width_chars(6);
     dpi_sb->set_max_width_chars(6);
-    dpi_sb->show();
+    dpi_sb->set_visible(true);
     this->attach(*dpi_sb, _dpi_col, current_row, 1, 1);
 
-    Gtk::Image *pIcon = Gtk::manage(sp_get_icon_image("window-close", Gtk::ICON_SIZE_SMALL_TOOLBAR));
-    Gtk::Button *delete_btn = Gtk::manage(new Gtk::Button());
+    auto const pIcon = Gtk::manage(sp_get_icon_image("window-close", Gtk::ICON_SIZE_SMALL_TOOLBAR));
+    auto const delete_btn = Gtk::make_managed<Gtk::Button>();
     delete_btn->set_relief(Gtk::RELIEF_NONE);
     delete_btn->add(*pIcon);
     delete_btn->show_all();
@@ -269,9 +269,9 @@ void ExportList::delete_row(Gtk::Widget *widget)
     this->remove_row(row);
     _num_rows--;
     if (_num_rows <= 1) {
-        Gtk::Widget *d_button_0 = dynamic_cast<Gtk::Widget *>(this->get_child_at(_delete_col, 1));
+        auto const d_button_0 = this->get_child_at(_delete_col, 1);
         if (d_button_0) {
-            d_button_0->hide();
+            d_button_0->set_visible(false);
         }
     }
 }

@@ -12,6 +12,8 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#include <memory>
+
 #include "undo-history.h"
 
 #include "actions/actions-tools.h"
@@ -37,24 +39,18 @@ void CellRendererSPIcon::render_vfunc(const Cairo::RefPtr<Cairo::Context>& cr,
 
     // if the icon isn't cached, render it to a pixbuf
     if ( !_icon_cache[_property_icon_name] ) {
-
-        Gtk::Image* icon = Gtk::manage(new Gtk::Image());
-        icon = sp_get_icon_image(_property_icon_name, Gtk::ICON_SIZE_MENU);
+        auto const icon = std::unique_ptr<Gtk::Image>{sp_get_icon_image(_property_icon_name, Gtk::ICON_SIZE_MENU)};
 
         if (icon) {
-
             // check icon type (inkscape, gtk, none)
             if ( GTK_IS_IMAGE(icon->gobj()) ) {
                 _property_icon = sp_get_icon_pixbuf(_property_icon_name, 16);
             } else {
-                delete icon;
                 return;
             }
 
-            delete icon;
             property_pixbuf() = _icon_cache[_property_icon_name] = _property_icon.get_value();
         }
-
     } else {
         property_pixbuf() = _icon_cache[_property_icon_name];
     }
@@ -62,7 +58,6 @@ void CellRendererSPIcon::render_vfunc(const Cairo::RefPtr<Cairo::Context>& cr,
     Gtk::CellRendererPixbuf::render_vfunc(cr, widget, background_area,
                                           cell_area, flags);
 }
-
 
 void CellRendererInt::render_vfunc(const Cairo::RefPtr<Cairo::Context>& cr,
                                    Gtk::Widget& widget,
@@ -99,7 +94,7 @@ UndoHistory::UndoHistory()
     _event_list_view.set_enable_search(false);
     _event_list_view.set_headers_visible(false);
 
-    CellRendererSPIcon* icon_renderer = Gtk::manage(new CellRendererSPIcon());
+    auto const icon_renderer = Gtk::make_managed<CellRendererSPIcon>();
     icon_renderer->property_xpad() = 2;
     icon_renderer->property_width() = 24;
     int cols_count = _event_list_view.append_column("Icon", *icon_renderer);
@@ -107,7 +102,7 @@ UndoHistory::UndoHistory()
     Gtk::TreeView::Column* icon_column = _event_list_view.get_column(cols_count-1);
     icon_column->add_attribute(icon_renderer->property_icon_name(), _columns->icon_name);
 
-    CellRendererInt* children_renderer = Gtk::manage(new CellRendererInt(greater_than_1));
+    auto const children_renderer = Gtk::make_managed<CellRendererInt>(greater_than_1);
     children_renderer->property_weight() = 600; // =Pango::WEIGHT_SEMIBOLD (not defined in old versions of pangomm)
     children_renderer->property_xalign() = 1.0;
     children_renderer->property_xpad() = 2;
@@ -117,7 +112,7 @@ UndoHistory::UndoHistory()
     Gtk::TreeView::Column* children_column = _event_list_view.get_column(cols_count-1);
     children_column->add_attribute(children_renderer->property_number(), _columns->child_count);
 
-    Gtk::CellRendererText* description_renderer = Gtk::manage(new Gtk::CellRendererText());
+    auto const description_renderer = Gtk::make_managed<Gtk::CellRendererText>();
     description_renderer->property_ellipsize() = Pango::ELLIPSIZE_END;
 
     cols_count = _event_list_view.append_column("Description", *description_renderer);

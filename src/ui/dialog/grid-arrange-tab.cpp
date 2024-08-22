@@ -129,9 +129,10 @@ static std::vector<SPItem *> grid_item_sort(Inkscape::ObjectSet *items)
         SPDesktop *desktop = Parent->getDesktop();
         desktop->getDocument()->ensureUpToDate();
         Inkscape::Selection *selection = desktop->getSelection();
-        if (!selection) return;
+        if (!selection || selection->isEmpty()) return;
 
         auto sel_box = selection->documentBounds(SPItem::VISUAL_BBOX);
+        if (sel_box.empty()) return;
         double grid_left = sel_box->min()[Geom::X];
         double grid_top = sel_box->min()[Geom::Y];
 
@@ -472,7 +473,7 @@ GridArrangeTab::GridArrangeTab(ArrangeDialog *parent)
     : Parent(parent),
       XPadding(_("X:"), _("Horizontal spacing between columns."), UNIT_TYPE_LINEAR, "", "object-columns", &PaddingUnitMenu),
       YPadding(_("Y:"), _("Vertical spacing between rows."), XPadding, "", "object-rows"),
-      PaddingTable(Gtk::manage(new Gtk::Grid()))
+      PaddingTable(Gtk::make_managed<Gtk::Grid>())
 {
      // bool used by spin button callbacks to stop loops where they change each other.
     updating = false;

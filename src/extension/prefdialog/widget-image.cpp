@@ -76,7 +76,7 @@ Gtk::Widget *WidgetImage::get_widget(sigc::signal<void ()> * /*changeSignal*/)
 
     Gtk::Image *image = nullptr;
     if (!_image_path.empty()) {
-        image = Gtk::manage(new Gtk::Image(_image_path));
+        image = Gtk::make_managed<Gtk::Image>(_image_path);
 
         // resize if requested
         if (_width && _height) {
@@ -90,9 +90,8 @@ Gtk::Widget *WidgetImage::get_widget(sigc::signal<void ()> * /*changeSignal*/)
         image = sp_get_icon_image(_icon_name, Gtk::ICON_SIZE_DIALOG);
     }
 
-    image->show();
-
-    return dynamic_cast<Gtk::Widget *>(image);
+    image->set_visible(true);
+    return image;
 }
 
 }  /* namespace Extension */

@@ -18,7 +18,7 @@
     </columns>
     <data>
       <row>
-        <col id="0" translatable="yes">Example Item</col>
+        <col id="0">Example Item</col>
         <col id="1">Label</col>
       </row>
     </data>

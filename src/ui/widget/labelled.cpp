@@ -25,7 +25,7 @@ Labelled::Labelled(Glib::ustring const &label, Glib::ustring const &tooltip,
                    bool mnemonic)
     : Gtk::Box(Gtk::ORIENTATION_HORIZONTAL),
       _widget(widget),
-      _label(new Gtk::Label(label, Gtk::ALIGN_START, Gtk::ALIGN_CENTER, mnemonic)),
+      _label(Gtk::make_managed<Gtk::Label>(label, Gtk::ALIGN_START, Gtk::ALIGN_CENTER, mnemonic)),
       _suffix(nullptr)
 {
     _widget->drag_dest_unset();
@@ -39,7 +39,7 @@ Labelled::Labelled(Glib::ustring const &label, Glib::ustring const &tooltip,
     // Setting margins separately allows for more control over them
     // set_margin_start(6);
     // set_margin_end(6);
-    pack_start(*Gtk::manage(_label), Gtk::PACK_SHRINK);
+    pack_start(*_label, Gtk::PACK_SHRINK);
     pack_start(*Gtk::manage(_widget), Gtk::PACK_SHRINK);
     if (mnemonic) {
         _label->set_mnemonic_widget(*_widget);
@@ -52,8 +52,6 @@ void Labelled::setWidgetSizeRequest(int width, int height)
 {
     if (_widget)
         _widget->set_size_request(width, height);
-
-
 }
 
 Gtk::Label const *

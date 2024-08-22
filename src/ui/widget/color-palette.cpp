@@ -421,15 +421,15 @@ void ColorPalette::set_up_scrolling() {
             // horizontal scrolling with single row
             _normal_box.set_min_children_per_line(normal_count);
 
-            _scroll_btn.hide();
+            _scroll_btn.set_visible(false);
 
             if (_force_scrollbar) {
-                _scroll_left.hide();
-                _scroll_right.hide();
+                _scroll_left.set_visible(false);
+                _scroll_right.set_visible(false);
             }
             else {
-                _scroll_left.show();
-                _scroll_right.show();
+                _scroll_left.set_visible(true);
+                _scroll_right.set_visible(true);
             }
 
             // ideally we should be able to use POLICY_AUTOMATIC, but on some themes this leads to a scrollbar
@@ -440,9 +440,9 @@ void ColorPalette::set_up_scrolling() {
             // vertical scrolling with multiple rows
             // 'external' allows scrollbar to shrink vertically
             _scroll.set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_EXTERNAL);
-            _scroll_left.hide();
-            _scroll_right.hide();
-            _scroll_btn.show();
+            _scroll_left.set_visible(false);
+            _scroll_right.set_visible(false);
+            _scroll_btn.set_visible(true);
         }
 
         int div = _large_pinned_panel ? (_rows > 2 ? 2 : 1) : _rows;
@@ -457,9 +457,9 @@ void ColorPalette::set_up_scrolling() {
         set_valign(Gtk::ALIGN_FILL);
         set_vexpand(true);
 
-        _scroll_left.hide();
-        _scroll_right.hide();
-        _scroll_btn.hide();
+        _scroll_left.set_visible(false);
+        _scroll_right.set_visible(false);
+        _scroll_btn.set_visible(false);
 
         _normal_box.set_valign(Gtk::ALIGN_START);
         _scroll.set_valign(Gtk::ALIGN_FILL);
@@ -590,8 +590,8 @@ Gtk::Widget *ColorPalette::_get_widget(Dialog::ColorItem *item) {
     }
     if (_show_labels) {
         item->set_valign(Gtk::ALIGN_CENTER);
-        auto box = Gtk::make_managed<Gtk::Box>();
-        auto label = Gtk::make_managed<Gtk::Label>(item->get_description());
+        auto const box = Gtk::make_managed<Gtk::Box>();
+        auto const label = Gtk::make_managed<Gtk::Label>(item->get_description());
         box->add(*item);
         box->add(*label);
         return box;
@@ -689,7 +689,7 @@ void ColorPalette::set_palettes(const std::vector<ColorPalette::palette_t>& pale
     Gtk::RadioMenuItem::Group group;
     for (auto it = palettes.rbegin(); it != palettes.rend(); ++it) {
         auto& name = it->name;
-        auto item = Gtk::manage(new CustomMenuItem(group, name, it->colors));
+        auto const item = Gtk::make_managed<CustomMenuItem>(group, name, it->colors);
         item->signal_activate().connect([=](){
             if (!_in_update) {
                 _in_update = true;
@@ -697,7 +697,7 @@ void ColorPalette::set_palettes(const std::vector<ColorPalette::palette_t>& pale
                 _in_update = false;
             }
         });
-        item->show();
+        item->set_visible(true);
         _menu.prepend(*item);
     }
 }

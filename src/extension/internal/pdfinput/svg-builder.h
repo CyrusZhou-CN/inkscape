@@ -165,7 +165,7 @@ public:
     void setClip(GfxState *state, GfxClipType clip, bool is_bbox = false);
 
     // Layers i.e Optional Groups
-    void addOptionalGroup(const char *oc, const char *label, bool visible = true);
+    void addOptionalGroup(const std::string &oc, const std::string &label, bool visible = true);
     void beginMarkedContent(const char *name = nullptr, const char *group = nullptr);
     void endMarkedContent();
 

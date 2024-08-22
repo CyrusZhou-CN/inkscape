@@ -48,6 +48,7 @@
 #include "ui/icon-names.h"
 #include "ui/tools/lpe-tool.h" // TODO: Remove in the future
 #include "ui/tools/pencil-tool.h" // TODO: Remove in the future
+#include "ui/widget/events/canvas-event.h"
 
 #define MIN_PRESSURE      0.0
 #define MAX_PRESSURE      1.0
@@ -69,8 +70,8 @@ static void spdc_flush_white(FreehandBase *dc, std::shared_ptr<SPCurve> gc);
 
 static void spdc_free_colors(FreehandBase *dc);
 
-FreehandBase::FreehandBase(SPDesktop *desktop, std::string prefs_path, const std::string &cursor_filename)
-    : ToolBase(desktop, prefs_path, cursor_filename)
+FreehandBase::FreehandBase(SPDesktop *desktop, std::string &&prefs_path, std::string &&cursor_filename)
+    : ToolBase(desktop, std::move(prefs_path), std::move(cursor_filename))
     , selection(nullptr)
     , red_color(0xff00007f)
     , blue_color(0x0000ff7f)
@@ -133,7 +134,9 @@ FreehandBase::~FreehandBase()
 void FreehandBase::set(const Inkscape::Preferences::Entry& /*value*/) {
 }
 
-bool FreehandBase::root_handler(GdkEvent* event) {
+bool FreehandBase::root_handler(CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     gint ret = FALSE;
 
     switch (event->type) {
@@ -157,7 +160,7 @@ bool FreehandBase::root_handler(GdkEvent* event) {
     }
 
     if (!ret) {
-    	ret = ToolBase::root_handler(event);
+        ret = ToolBase::root_handler(canvas_event);
     }
 
     return ret;
@@ -373,6 +376,7 @@ static void spdc_check_for_and_apply_waiting_LPE(FreehandBase *dc, SPItem *item,
         if(simplify && mode != 2){
             double tol = prefs->getDoubleLimited("/tools/freehand/pencil/tolerance", 10.0, 1.0, 100.0);
             tol = tol/(100.0*(102.0-tol));
+            tol *= 10000;
             std::ostringstream ss;
             ss << tol;
             spdc_apply_simplify(ss.str(), dc, item);

@@ -4,7 +4,7 @@
 
 /**
  * @file
- * Some things pertinent to all visible shapes: SPItem, SPItemView, SPItemCtx, SPItemClass, SPEvent.
+ * Some things pertinent to all visible shapes: SPItem, SPItemView, SPItemCtx.
  */
 
 /*
@@ -21,11 +21,11 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#include <cstdint>
+#include <vector>
 #include <2geom/forward.h>
 #include <2geom/affine.h>
 #include <2geom/rect.h>
-#include "live_effects/effect-enum.h"
-#include <vector>
 
 #include "sp-object.h"
 #include "sp-marker-loc.h"
@@ -40,52 +40,18 @@ class SPMaskReference;
 class SPAvoidRef;
 class SPPattern;
 struct SPPrintContext;
-typedef unsigned int guint32;
 
 namespace Inkscape {
-
 class Drawing;
 class DrawingItem;
 class URIReference;
 class SnapCandidatePoint;
 class SnapPreferences;
-
-namespace UI {
-namespace View {
-class SVGViewWidget;
-}
-}
-}
+} // namespace Inkscape
 
 // TODO make a completely new function that transforms either the fill or
 // stroke of any SPItem  without adding an extra parameter to adjust_pattern.
 enum PaintServerTransform { TRANSFORM_BOTH, TRANSFORM_FILL, TRANSFORM_STROKE };
-
-/**
- * Event structure.
- *
- * @todo This is just placeholder. Plan:
- * We do extensible event structure, that hold applicable (ui, non-ui)
- * data pointers. So it is up to given object/arena implementation
- * to process correct ones in meaningful way.
- * Also, this probably goes to SPObject base class.
- *
- * GUI Code should not be here!
- */
-class SPEvent {
-
-public:
-    enum Type {
-        INVALID,
-        NONE,
-        ACTIVATE,
-        MOUSEOVER,
-        MOUSEOUT
-    };
-
-    Type type;
-    Inkscape::UI::View::SVGViewWidget* view;
-};
 
 struct SPItemView
 {
@@ -120,8 +86,8 @@ enum SPItemKey
 /**
  * Contains transformations to document/viewport and the viewport size.
  */
-class SPItemCtx : public SPCtx {
-public:
+struct SPItemCtx : SPCtx
+{
     /** Item to document transformation */
     Geom::Affine i2doc;
 
@@ -137,9 +103,11 @@ public:
  * SPItem is an abstract base class for all graphic (visible) SVG nodes. It
  * is a subclass of SPObject, with great deal of specific functionality.
  */
-class SPItem : public SPObject {
+class SPItem : public SPObject
+{
 public:
-    enum BBoxType {
+    enum BBoxType
+    {
         // legacy behavior: includes crude stroke, markers; excludes long miters, blur margin; is known to be wrong for caps
         APPROXIMATE_BBOX,
         // includes only the bare path bbox, no stroke, no nothing
@@ -177,14 +145,15 @@ public:
 
     SPAvoidRef &getAvoidRef();
     std::vector<std::pair <Glib::ustring, Glib::ustring> > rootsatellites;
-  private:
+
+private:
     SPClipPathReference *clip_ref;
     SPMaskReference *mask_ref;
 
     // Used for object-avoiding connectors
     SPAvoidRef *avoidRef;
 
-  public:
+public:
     std::vector<SPItemView> views;
 
     sigc::signal<void (Geom::Affine const *, SPItem *)> _transformed_signal;
@@ -200,9 +169,9 @@ public:
         return sensitive;
     };
 
-    void setHighlight(guint32 color);
+    void setHighlight(uint32_t color);
     bool isHighlightSet() const;
-    virtual guint32 highlight_color() const;
+    virtual uint32_t highlight_color() const;
 
     //====================
 
@@ -405,13 +374,11 @@ public:
      */
     void set_item_transform(Geom::Affine const &transform_matrix);
 
-    int emitEvent (SPEvent &event);
-
     /**
      * Return the arenaitem corresponding to the given item in the display
      * with the given key
      */
-    Inkscape::DrawingItem *get_arenaitem(unsigned int key);
+    Inkscape::DrawingItem *get_arenaitem(unsigned key);
 
     /**
      * Returns the accumulated transformation of the item and all its ancestors, including root's viewport.
@@ -431,7 +398,7 @@ public:
      */
     Geom::Affine dt2i_affine() const;
 
-    guint32 _highlightColor;
+    uint32_t _highlightColor;
 
     bool isExpanded() const { return _is_expanded; }
     void setExpanded(bool expand) { _is_expanded = expand; }
@@ -476,8 +443,6 @@ public:
     virtual Geom::Affine set_transform(Geom::Affine const &transform);
 
     virtual void convert_to_guides() const;
-
-    virtual int event(SPEvent *event);
 };
 
 // Utility
@@ -490,7 +455,7 @@ Geom::Affine i2anc_affine(SPObject const *item, SPObject const *ancestor);
 
 Geom::Affine i2i_affine(SPObject const *src, SPObject const *dest);
 
-Geom::Affine sp_item_transform_repr (SPItem *item);
+Geom::Affine sp_item_transform_repr(SPItem *item);
 
 /* fixme: - these are evil, but OK */
 
@@ -498,12 +463,11 @@ int sp_item_repr_compare_position(SPItem const *first, SPItem const *second);
 
 inline bool sp_item_repr_compare_position_bool(SPObject const *first, SPObject const *second)
 {
-    return sp_repr_compare_position(first->getRepr(),
-            second->getRepr())<0;
+    return sp_repr_compare_position(first->getRepr(), second->getRepr()) < 0;
 }
 
-SPItem *sp_item_first_item_child (SPObject *obj);
-SPItem const *sp_item_first_item_child (SPObject const *obj);
+SPItem *sp_item_first_item_child(SPObject *obj);
+SPItem const *sp_item_first_item_child(SPObject const *obj);
 
 #endif // SEEN_SP_ITEM_H
 

@@ -50,8 +50,8 @@ bool Filter::load(Inkscape::Extension::Extension * /*module*/)
     return true;
 }
 
-Inkscape::Extension::Implementation::ImplementationDocumentCache *Filter::newDocCache(Inkscape::Extension::Extension * /*ext*/,
-										      Inkscape::UI::View::View * /*doc*/)
+Inkscape::Extension::Implementation::ImplementationDocumentCache *
+Filter::newDocCache(Inkscape::Extension::Extension * /*ext*/, SPDesktop * /*desktop*/)
 {
     return nullptr;
 }
@@ -67,17 +67,16 @@ Filter::get_filter (Inkscape::Extension::Extension * ext) {
     return sp_repr_read_mem(filter, strlen(filter), nullptr);
 }
 
-void
-Filter::merge_filters( Inkscape::XML::Node * to, Inkscape::XML::Node * from,
+void merge_filters( Inkscape::XML::Node * to, Inkscape::XML::Node * from,
 		       Inkscape::XML::Document * doc,
-		       gchar const * srcGraphic, gchar const * srcGraphicAlpha)
+		       gchar const * srcGraphic = nullptr, gchar const * srcGraphicAlpha = nullptr)
 {
     if (from == nullptr) return;
 
     // copy attributes
     for ( const auto & iter : from->attributeList()) {
         gchar const * attr = g_quark_to_string(iter.key);
-        //printf("Attribute List: %s\n", attr);
+
         if (!strcmp(attr, "id")) continue; // nope, don't copy that one!
         to->setAttribute(attr, from->attribute(attr));
 
@@ -109,10 +108,30 @@ Filter::merge_filters( Inkscape::XML::Node * to, Inkscape::XML::Node * from,
     }
 }
 
+void create_and_apply_filter(SPItem* item, Inkscape::XML::Document* filterdoc) {
+    if (!item) return;
+
+    Inkscape::XML::Node* node = item->getRepr();
+    auto document = item->document;
+    Inkscape::XML::Document * xmldoc = document->getReprDoc();
+    Inkscape::XML::Node * defsrepr = document->getDefs()->getRepr();
+    Inkscape::XML::Node * newfilterroot = xmldoc->createElement("svg:filter");
+    merge_filters(newfilterroot, filterdoc->root(), xmldoc);
+    defsrepr->appendChild(newfilterroot);
+    document->resources_changed_signals[g_quark_from_string("filter")].emit();
+
+    Glib::ustring url = "url(#"; url += newfilterroot->attribute("id"); url += ")";
+    Inkscape::GC::release(newfilterroot);
+
+    SPCSSAttr* css = sp_repr_css_attr(node, "style");
+    sp_repr_css_set_property(css, "filter", url.c_str());
+    sp_repr_css_set(node, css, "style");
+}
+
 #define FILTER_SRC_GRAPHIC       "fbSourceGraphic"
 #define FILTER_SRC_GRAPHIC_ALPHA "fbSourceGraphicAlpha"
 
-void Filter::effect(Inkscape::Extension::Effect *module, Inkscape::UI::View::View *document,
+void Filter::effect(Inkscape::Extension::Effect *module, SPDesktop *desktop,
                     Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
 {
     Inkscape::XML::Document *filterdoc = get_filter(module);
@@ -120,14 +139,13 @@ void Filter::effect(Inkscape::Extension::Effect *module, Inkscape::UI::View::Vie
         return; // could not parse the XML source of the filter; typically parser will stderr a warning
     }
 
-    //printf("Calling filter effect\n");
-    Inkscape::Selection * selection = static_cast<SPDesktop *>(document)->getSelection();
+    Inkscape::Selection * selection = desktop->getSelection();
 
     // TODO need to properly refcount the items, at least
     std::vector<SPItem*> items(selection->items().begin(), selection->items().end());
 
-    Inkscape::XML::Document * xmldoc = document->doc()->getReprDoc();
-    Inkscape::XML::Node * defsrepr = document->doc()->getDefs()->getRepr();
+    Inkscape::XML::Document * xmldoc = desktop->doc()->getReprDoc();
+    Inkscape::XML::Node * defsrepr = desktop->doc()->getDefs()->getRepr();
 
     for(auto spitem : items) {
         Inkscape::XML::Node *node = spitem->getRepr();
@@ -136,19 +154,7 @@ void Filter::effect(Inkscape::Extension::Effect *module, Inkscape::UI::View::Vie
         gchar const * filter = sp_repr_css_property(css, "filter", nullptr);
 
         if (filter == nullptr) {
-
-            Inkscape::XML::Node * newfilterroot = xmldoc->createElement("svg:filter");
-            merge_filters(newfilterroot, filterdoc->root(), xmldoc);
-            defsrepr->appendChild(newfilterroot);
-            document->doc()->resources_changed_signals[g_quark_from_string("filter")].emit();
-
-            Glib::ustring url = "url(#"; url += newfilterroot->attribute("id"); url += ")";
-
-
-            Inkscape::GC::release(newfilterroot);
-
-            sp_repr_css_set_property(css, "filter", url.c_str());
-            sp_repr_css_set(node, css, "style");
+            create_and_apply_filter(spitem, filterdoc);
         } else {
             if (strncmp(filter, "url(#", strlen("url(#")) || filter[strlen(filter) - 1] != ')') {
                 // This is not url(#id) -- we can't handle it
@@ -218,6 +224,16 @@ Filter::filter_init (gchar const * id, gchar const * name, gchar const * submenu
     Inkscape::Extension::build_from_mem(xml_str, new Filter(filter));
     g_free(xml_str);
     return;
+}
+
+bool Filter::apply_filter(Inkscape::Extension::Effect* module, SPItem* item) {
+    if (!item) return false;
+
+    Inkscape::XML::Document* filterdoc = get_filter(module);
+    if (!filterdoc) return false;
+
+    create_and_apply_filter(item, filterdoc);
+    return true;
 }
 
 }; /* namespace Filter */

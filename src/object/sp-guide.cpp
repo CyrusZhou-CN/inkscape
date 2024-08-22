@@ -301,7 +301,7 @@ void SPGuide::showSPGuide(Inkscape::CanvasItemGroup *group)
 
     // Ensure event forwarding by the guide handle ("the dot") to the corresponding line
     auto dot = item->dot();
-    auto dot_handler = [=](GdkEvent *ev) { return sp_dt_guide_event(ev, item, this); };
+    auto dot_handler = [=](Inkscape::CanvasEvent const &ev) { return sp_dt_guide_event(ev, item, this); };
     dot->connect_event(dot_handler);
 
     views.emplace_back(item);
@@ -310,7 +310,7 @@ void SPGuide::showSPGuide(Inkscape::CanvasItemGroup *group)
 void SPGuide::showSPGuide()
 {
     for (auto &view : views) {
-        view->show();
+        view->set_visible(true);
     }
 }
 
@@ -331,7 +331,7 @@ void SPGuide::hideSPGuide(Inkscape::UI::Widget::Canvas *canvas)
 void SPGuide::hideSPGuide()
 {
     for (auto &view : views) {
-        view->hide();
+        view->set_visible(false);
     }
 }
 

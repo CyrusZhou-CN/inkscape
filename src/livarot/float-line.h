@@ -17,7 +17,6 @@
 #include <vector>
 #include "livarot/LivarotDefs.h"
 
-class IntLigne;
 
 /// A coverage portion ("run") with floating point boundaries.
 struct float_ligne_run {
@@ -99,7 +98,6 @@ public:
     
     void Over(FloatLigne *a, float tresh);
 	
-    void Copy(IntLigne *a);
     void Copy(FloatLigne *a);
 
     float RemainingValAt(float at, int pending);

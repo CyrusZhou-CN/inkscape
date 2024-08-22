@@ -49,10 +49,10 @@ namespace Widget {
 
 void show_widget(Gtk::Widget& widget, bool show) {
     if (show) {
-        widget.show();
+        widget.set_visible(true);
     }
     else {
-        widget.hide();
+        widget.set_visible(false);
     }
 };
 
@@ -129,8 +129,8 @@ public:
         _page_units->signal_changed().connect([=](){ set_page_unit(); });
 
         for (auto&& page : PaperSize::getPageSizes()) {
-            auto item = Gtk::manage(new Gtk::MenuItem(page.getDescription(false)));
-            item->show();
+            auto const item = Gtk::make_managed<Gtk::MenuItem>(page.getDescription(false));
+            item->set_visible(true);
             _page_templates_menu.append(*item);
             item->signal_activate().connect([=](){ set_page_template(page); });
         }
@@ -198,7 +198,7 @@ public:
         page_resize.signal_clicked().connect([=](){ _signal_resize_to_fit.emit(); });
 
         add(_main_grid);
-        show();
+        set_visible(true);
     }
 
 private:
@@ -303,7 +303,7 @@ private:
         }
 
         auto templ = find_page_template(width, height, *unit);
-        _template_name.set_label(templ ? templ->name : _("Custom"));
+        _template_name.set_label(templ && !templ->name.empty() ? _(templ->name.c_str()) : _("Custom"));
 
         if (!pending) {
             _signal_dimmension_changed.emit(width, height, unit, template_selected ? Dimension::PageTemplate : Dimension::PageSize);

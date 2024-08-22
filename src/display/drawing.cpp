@@ -215,6 +215,15 @@ void Drawing::setClip(std::optional<Geom::PathVector> &&clip)
     });
 }
 
+void Drawing::setAntialiasingOverride(std::optional<Antialiasing> antialiasing_override)
+{
+    defer([=] {
+        _antialiasing_override = antialiasing_override;
+        _root->_markForUpdate(DrawingItem::STATE_ALL, true);
+        _clearCache();
+    });
+}
+
 void Drawing::update(Geom::IntRect const &area, Geom::Affine const &affine, unsigned flags, unsigned reset)
 {
     if (_root) {
@@ -226,15 +235,11 @@ void Drawing::update(Geom::IntRect const &area, Geom::Affine const &affine, unsi
     }
 }
 
-void Drawing::render(DrawingContext &dc, Geom::IntRect const &area, unsigned flags, int antialiasing_override) const
+void Drawing::render(DrawingContext &dc, Geom::IntRect const &area, unsigned flags) const
 {
-    int antialias = _root->antialiasing();
-    if (antialiasing_override >= 0) {
-        antialias = antialiasing_override;
-    }
-    apply_antialias(dc, antialias);
+    apply_antialias(dc, _antialiasing_override.value_or(Antialiasing(_root->_antialias)));
 
-    auto rc = RenderContext{ 0xff }; // black outlines
+    auto rc = RenderContext{ 0xff, _antialiasing_override }; // black outlines
     flags |= rendermode_to_renderflags(_rendermode);
 
     if (_clip) {
@@ -374,6 +379,14 @@ void Drawing::setExact()
 {
     setFilterQuality(Filters::FILTER_QUALITY_BEST);
     setBlurQuality(BLUR_QUALITY_BEST);
+}
+
+/*
+ * Set the opacity of the drawing root drawing-item
+ */
+void Drawing::setOpacity(double opacity)
+{
+    _root->setOpacity(opacity);
 }
 
 } // namespace Inkscape

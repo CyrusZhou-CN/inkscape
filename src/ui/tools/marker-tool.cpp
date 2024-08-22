@@ -23,10 +23,10 @@
 #include "object/sp-marker.h"
 
 #include "ui/shape-editor.h"
-#include "ui/tool/event-utils.h"
 #include "ui/tool/multi-path-manipulator.h"
 #include "ui/tool/path-manipulator.h"
 #include "ui/tools/marker-tool.h"
+#include "ui/widget/events/canvas-event.h"
 
 
 namespace Inkscape {
@@ -122,7 +122,9 @@ void MarkerTool::selection_changed(Inkscape::Selection *selection) {
 }
 
 // handles selection of new items
-bool MarkerTool::root_handler(GdkEvent* event) {
+bool MarkerTool::root_handler(CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     g_assert(_desktop != nullptr);
 
     Inkscape::Selection *selection = _desktop->getSelection();
@@ -159,10 +161,10 @@ bool MarkerTool::root_handler(GdkEvent* event) {
             break;
     }
 
-    return (!ret? ToolBase::root_handler(event): ret);
+    return ret || ToolBase::root_handler(canvas_event);
 }
 
-/* 
+/*
 - this function uses similar logic that exists in sp_shape_update_marker_view
 - however, the tangent angle needs to be saved here and parent_item->i2dt_affine() needs to also be accounted for in the right places
 - calculate where the shape-editor knotholders need to go based on the reference shape

@@ -34,7 +34,6 @@ SPConnEnd::SPConnEnd(SPObject *const owner)
     , _changed_connection()
     , _delete_connection()
     , _transformed_connection()
-    , _group_connection()
 {
 }
 
@@ -166,14 +165,12 @@ static void sp_conn_get_route_and_redraw(SPPath *const path, const bool updatePa
     }
 }
 
-
-static void sp_conn_end_shape_modified(SPObject */*moved_item*/, int /*flags*/, SPPath *const path)
+static void sp_conn_end_shape_modified(SPPath *path)
 {
     if (path->connEndPair.isAutoRoutingConn()) {
         path->connEndPair.tellLibavoidNewEndpoints();
     }
 }
-
 
 void sp_conn_reroute_path(SPPath *const path)
 {
@@ -257,39 +254,21 @@ void SPConnEnd::setAttacherSubHref(gchar const *value)
     }
 }
 
-
-
-void sp_conn_end_href_changed(SPObject */*old_ref*/, SPObject */*ref*/,
-        SPConnEnd *connEndPtr, SPPath *const path, unsigned const handle_ix)
+void sp_conn_end_href_changed(SPObject */*old_ref*/, SPObject */*ref*/, SPConnEnd *connEnd, SPPath *path, unsigned handle_ix)
 {
-    g_return_if_fail(connEndPtr != nullptr);
-    SPConnEnd &connEnd = *connEndPtr;
-    connEnd._delete_connection.disconnect();
-    connEnd._transformed_connection.disconnect();
-    connEnd._group_connection.disconnect();
+    if (!connEnd) return;
+    connEnd->_delete_connection.disconnect();
+    connEnd->_transformed_connection.disconnect();
 
-    if (connEnd.href) {
-        SPObject *refobj = connEnd.ref.getObject();
-        if (refobj) {
-            connEnd._delete_connection
-                = refobj->connectDelete(sigc::bind(sigc::ptr_fun(&sp_conn_end_deleted),
-                                                   path, handle_ix));
-            // This allows the connector tool to dive into a group's children
-            // And connect to their children's centers.
-            SPObject *parent = refobj->parent;
-            if (is<SPGroup>(parent) && ! SP_IS_LAYER(parent)) {
-                connEnd._group_connection
- = cast<SPItem>(parent)->connectModified(sigc::bind(sigc::ptr_fun(&sp_conn_end_shape_modified),
-                                                                 path));
-            }
-            connEnd._transformed_connection
- = cast<SPItem>(refobj)->connectModified(sigc::bind(sigc::ptr_fun(&sp_conn_end_shape_modified),
-                                                                 path));
+    if (connEnd->href) {
+        if (auto refobj = connEnd->ref.getObject()) {
+            connEnd->_delete_connection = refobj->connectDelete(sigc::bind(sigc::ptr_fun(&sp_conn_end_deleted), path, handle_ix));
+            connEnd->_transformed_connection = refobj->connectModified([path] (SPObject *, unsigned) {
+                sp_conn_end_shape_modified(path);
+            });
         }
     }
 }
-
-
 
 /*
   Local Variables:

@@ -1,7 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef INKSCAPE_LIVEPATHEFFECT_PARAMETER_ENUMARRAY_H
-#define INKSCAPE_LIVEPATHEFFECT_PARAMETER_ENUMARRAY_H
-
 /*
  * Inkscape::LivePathEffectParameters
  *
@@ -9,6 +6,8 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#ifndef INKSCAPE_LIVEPATHEFFECT_PARAMETER_ENUMARRAY_H
+#define INKSCAPE_LIVEPATHEFFECT_PARAMETER_ENUMARRAY_H
 
 #include <glib.h>
 #include "live_effects/lpeobject.h"
@@ -45,46 +44,54 @@ public:
 
     Gtk::Widget *param_newWidget() override {
         if (widget_is_visible) {
-            Inkscape::UI::Widget::RegisteredEnum<E> *regenum = Gtk::manage ( 
-                new Inkscape::UI::Widget::RegisteredEnum<E>( param_label, param_tooltip,
-                        param_key, *enumdataconv, *param_wr, param_effect->getRepr(), param_effect->getSPDoc(), sorted ) );
+            auto const regenum = Gtk::make_managed<UI::Widget::RegisteredEnum<E>>(param_label, param_tooltip,
+                        param_key, *enumdataconv, *param_wr, param_effect->getRepr(), param_effect->getSPDoc(), sorted);
             regenum->combobox()->setProgrammatically = true;
             regenum->set_active_by_id(enumdataconv->get_id_from_key(_vector[_active_index]));
             regenum->combobox()->setProgrammatically = true;
             regenum->combobox()->signal_changed().connect(sigc::bind(sigc::mem_fun (*this, &EnumArrayParam::_on_change_combo),regenum));
             regenum->set_undo_parameters(_("Change enumeration parameter"), INKSCAPE_ICON("dialog-path-effects"));
             regenum->combobox()->setProgrammatically = true;
-            return dynamic_cast<Gtk::Widget *> (regenum);
+            return regenum;
         } else {
             return nullptr;
         }
     };
+
     void _on_change_combo(Inkscape::UI::Widget::RegisteredEnum<E> *regenum) { 
         regenum->combobox()->setProgrammatically = true;
         _vector[_active_index] = regenum->combobox()->get_active_data()->key.c_str();
         param_set_and_write_new_value(_vector);
     }
+
     void param_setActive(size_t index) {
         _active_index = index;
         param_effect->refresh_widgets = true;
     }
+
     Glib::ustring param_getDefaultSVGValue() const override {
         return enumdataconv->get_key(defvalue).c_str();
     };
+
     void param_set_default() override {
         for (auto &vec : _vector) {
             vec = enumdataconv->get_key(defvalue).c_str();
         }
     };
+
     void param_update_default(E default_value) { 
         defvalue = default_value; 
     };
+
     void param_update_default(const gchar *default_value) override {
         param_update_default(enumdataconv->get_id_from_key(Glib::ustring(default_value)));
     }
+
     ParamType paramType() const override { return ParamType::ENUM_ARRAY; };
+
 protected:
     friend class LPETaperStroke;
+
 private:
     size_t _active_index = 0;
     E defvalue;
@@ -95,11 +102,11 @@ private:
 };
 
 
-} //namespace LivePathEffect
+} // namespace LivePathEffect
 
-} //namespace Inkscape
+} // namespace Inkscape
 
-#endif
+#endif // INKSCAPE_LIVEPATHEFFECT_PARAMETER_ENUMARRAY_H
 
 /*
   Local Variables:

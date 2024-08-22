@@ -32,7 +32,6 @@
 #include "color.h"
 #include "desktop-events.h"
 #include "desktop-style.h"
-#include "device-manager.h"
 #include "document-undo.h"
 #include "event-log.h"
 #include "inkscape-window.h"
@@ -65,6 +64,7 @@
 #include "ui/tools/box3d-tool.h"
 #include "ui/tools/select-tool.h"
 #include "ui/widget/canvas.h"
+#include "ui/widget/events/canvas-event.h"
 
 #include "widgets/desktop-widget.h"
 
@@ -75,7 +75,7 @@
 namespace Inkscape { namespace XML { class Node; }}
 
 // Callback declarations
-static bool _drawing_handler (GdkEvent *event, Inkscape::DrawingItem *item, SPDesktop *desktop);
+static bool _drawing_handler(Inkscape::CanvasEvent const &event, Inkscape::DrawingItem *item, SPDesktop *desktop);
 static void _reconstruction_start(SPDesktop * desktop);
 static void _reconstruction_finish(SPDesktop * desktop);
 
@@ -125,6 +125,31 @@ SPDesktop::SPDesktop()
     // is accessed before it is initialized
     _layer_manager = std::make_unique<Inkscape::LayerManager>(this);
     _selection = std::make_unique<Inkscape::Selection>(this);
+
+    // Formerly in View::View VVVVVVVVVVVVVVVVVVV
+    _message_stack = std::make_shared<Inkscape::MessageStack>();
+    _tips_message_context = std::make_unique<Inkscape::MessageContext>(_message_stack);
+
+    _message_changed_connection = _message_stack->connectChanged([this] (Inkscape::MessageType type, const gchar *message) {
+        onStatusMessage(type, message);
+    });
+
+}
+
+SPDesktop::~SPDesktop()
+{
+    // Formerly in View::View VVVVVVVVVVVVVVVVVVV
+    _message_changed_connection.disconnect();
+
+    _tips_message_context = nullptr;
+
+    _message_stack = nullptr;
+
+    if (document) {
+        _document_uri_set_connection.disconnect();
+        INKSCAPE.remove_document(document);
+        document = nullptr;
+    }
 }
 
 void
@@ -134,8 +159,6 @@ SPDesktop::init (SPNamedView *nv, Inkscape::UI::Widget::Canvas *acanvas, SPDeskt
     canvas = acanvas;
     _widget = widget;
 
-    // Temporary workaround for link order issues:
-    Inkscape::DeviceManager::getManager().getDevices();
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
 
     _guides_message_context = std::unique_ptr<Inkscape::MessageContext>(new Inkscape::MessageContext(messageStack()));
@@ -211,7 +234,8 @@ SPDesktop::init (SPNamedView *nv, Inkscape::UI::Widget::Canvas *acanvas, SPDeskt
     canvas_group_sketch->set_pickable(false);  // Temporary items are not pickable!
     canvas_group_temp->set_pickable(false);    // Temporary items are not pickable!
 
-    // The root should never emit events. The "catchall" should get it! (CHECK)
+    // The root should never emit events. The "catchall" should get it!
+    // But somehow there are still exceptions, e.g. Ctrl+scroll to zoom.
     canvas_item_root->connect_event(sigc::bind(sigc::ptr_fun(sp_desktop_root_handler), this));
     canvas_catchall->connect_event(sigc::bind(sigc::ptr_fun(sp_desktop_root_handler), this));
 
@@ -284,6 +308,7 @@ void SPDesktop::destroy()
 
     _reconstruction_start_connection.disconnect();
     _reconstruction_finish_connection.disconnect();
+    _schedule_zoom_from_document_connection.disconnect();
 
     if (zoomgesture) {
         g_signal_handlers_disconnect_by_data(zoomgesture, this);
@@ -297,7 +322,6 @@ void SPDesktop::destroy()
     _guides_message_context = nullptr;
 }
 
-SPDesktop::~SPDesktop() = default;
 
 //--------------------------------------------------------------------
 /* Public methods */
@@ -740,6 +764,26 @@ SPDesktop::zoom_selection()
     set_display_area(*d, 10);
 }
 
+/**
+ * Schedule the zoom/view settings from the document to be applied to the desktop
+ * at the latest possible moment before the the canvas is next drawn.
+ *
+ * By doing things this way, we ensure that all necessary size updates have been
+ * applied to the canvas, and our calculated zoom/view settings will be correct.
+ */
+void SPDesktop::schedule_zoom_from_document()
+{
+    if (_schedule_zoom_from_document_connection) {
+        return;
+    }
+
+    _schedule_zoom_from_document_connection = canvas->signal_draw().connect([this] (Cairo::RefPtr<Cairo::Context> const &) {
+        sp_namedview_zoom_and_view_from_document(this);
+        _schedule_zoom_from_document_connection.disconnect(); // one-shot
+        return false; // don't block draw
+    }, false); // run before draw
+}
+
 Geom::Point SPDesktop::current_center() const {
     return Geom::Rect(canvas->get_area_world()).midpoint() * _current_affine.w2d();
 }
@@ -761,16 +805,17 @@ void SPDesktop::zoom_quick(bool enable)
 
         // TODO This needs to migrate into the node tool, but currently the design
         // of this method is sufficiently wrong to prevent this.
-        if (!zoomed && INK_IS_NODE_TOOL(event_context)) {
-            Inkscape::UI::Tools::NodeTool *nt = static_cast<Inkscape::UI::Tools::NodeTool*>(event_context);
-            if (!nt->_selected_nodes->empty()) {
-                Geom::Rect nodes = *nt->_selected_nodes->bounds();
-                double area = nodes.area();
-                // do not zoom if a single cusp node is selected aand the bounds
-                // have zero area.
-                if (!Geom::are_near(area, 0)) {
-                    set_display_area(nodes, true);
-                    zoomed = true;
+        if (!zoomed) {
+            if (auto nt = dynamic_cast<Inkscape::UI::Tools::NodeTool*>(event_context)) {
+                if (!nt->_selected_nodes->empty()) {
+                    Geom::Rect nodes = *nt->_selected_nodes->bounds();
+                    double area = nodes.area();
+                    // do not zoom if a single cusp node is selected aand the bounds
+                    // have zero area.
+                    if (!Geom::are_near(area, 0)) {
+                        set_display_area(nodes, true);
+                        zoomed = true;
+                    }
                 }
             }
         }
@@ -1151,23 +1196,22 @@ void SPDesktop::setTempHideOverlays(bool hide)
     }
 
     if (hide) {
-        canvas_group_controls->hide();
-        canvas_group_grids->hide();
+        canvas_group_controls->set_visible(false);
+        canvas_group_grids->set_visible(false);
         _saved_guides_visible = namedview->getShowGuides();
         if (_saved_guides_visible) {
             namedview->temporarily_show_guides(false);
         }
         if (canvas && !canvas->has_focus()) {
             canvas->grab_focus(); // Ensure we receive the key up event
-            canvas->redraw_all();
         }
         _overlays_visible = false;
     } else {
-        canvas_group_controls->show();
+        canvas_group_controls->set_visible(true);
         if (_saved_guides_visible) {
             namedview->temporarily_show_guides(true);
         }
-        canvas_group_grids->show();
+        canvas_group_grids->set_visible(true);
         _overlays_visible = true;
     }
 }
@@ -1325,29 +1369,13 @@ void SPDesktop::clearWaitingCursor() {
   }
 }
 
-void SPDesktop::toggleColorProfAdjust()
-{
-    _widget->toggle_color_prof_adj();
-}
-
 void SPDesktop::toggleLockGuides()
 {
     namedview->toggleLockGuides();
 }
 
-bool SPDesktop::colorProfAdjustEnabled()
-{
-    return _widget->get_color_prof_adj_enabled();
-}
-
 //----------------------------------------------------------------------
 // Callback implementations. The virtual ones are connected by the view.
-
-void
-SPDesktop::onResized (double /*x*/, double /*y*/)
-{
-   // Nothing called here
-}
 
 /**
  * Associate document with desktop.
@@ -1390,7 +1418,20 @@ SPDesktop::setDocument (SPDocument *doc)
     }
 
     // set new document before firing signal, so handlers can see new value if they query desktop
-    View::setDocument(doc);
+    // View::setDocument(doc);
+    // Formerly in View::View VVVVVVVVVVVVVVVVVVV
+    if (document) {
+        _document_uri_set_connection.disconnect();
+        INKSCAPE.remove_document(document);
+    }
+    INKSCAPE.add_document(doc);
+    document = doc;
+
+    _document_uri_set_connection = document->connectFilenameSet([this] (const gchar *filename) {
+        onDocumentFilenameSet(filename);
+    });
+    _document_filename_set_signal.emit(document->getDocumentFilename());
+    // End Fomerly in View::View ^^^^^^^^^^^^^^^
 
     sp_namedview_update_layers_from_document(this);
 
@@ -1421,10 +1462,10 @@ SPDesktop::onDocumentFilenameSet (gchar const* filename)
 /**
  * Calls event handler of current event context.
  */
-static bool
-_drawing_handler (GdkEvent *event, Inkscape::DrawingItem *drawing_item, SPDesktop *desktop)
+static bool _drawing_handler(Inkscape::CanvasEvent const &event, Inkscape::DrawingItem *drawing_item, SPDesktop *desktop)
 {
-    if (event->type == GDK_KEY_PRESS && Inkscape::UI::Tools::get_latin_keyval(&event->key) == GDK_KEY_space &&
+    if (event.type() == Inkscape::EventType::KEY_PRESS &&
+        Inkscape::UI::Tools::get_latin_keyval(static_cast<Inkscape::KeyPressEvent const &>(event).original()) == GDK_KEY_space &&
         desktop->event_context->is_space_panning())
     {
         return true;
@@ -1437,6 +1478,7 @@ _drawing_handler (GdkEvent *event, Inkscape::DrawingItem *drawing_item, SPDeskto
             return ec->start_root_handler(event);
         }
     }
+
     return false;
 }
 

@@ -685,7 +685,8 @@ void SPLPEItem::addPathEffect(std::string value, bool reset)
         if( is<SPGenericEllipse>(this)) {
             cast<SPGenericEllipse>(this)->write( this->getRepr()->document(), this->getRepr(), SP_OBJECT_WRITE_EXT );
         }
-
+        // make sure there is an original-d for paths!!!
+        sp_lpe_item_create_original_path_recursive(this);
 
         LivePathEffectObject *lpeobj = this->path_effect_list->back()->lpeobject;
         if (lpeobj && lpeobj->get_lpe()) {
@@ -695,10 +696,6 @@ void SPLPEItem::addPathEffect(std::string value, bool reset)
                 // has to be called when all the subitems have their lpes applied
                 lpe->resetDefaults(this);
             }
-            // Moved here to fix #1299461, we can call previous function twice after
-            // if anyone find necessary
-            // make sure there is an original-d for paths!!!
-            sp_lpe_item_create_original_path_recursive(this);
             // perform this once when the effect is applied
             lpe->doOnApply_impl(this);
         }

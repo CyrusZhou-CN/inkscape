@@ -7,6 +7,7 @@
  * Copyright (C) 2018 Authors
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
+
 #include "toolbar.h"
 
 #include <gtkmm/label.h>
@@ -22,10 +23,10 @@ namespace Toolbar {
 Gtk::ToolItem *
 Toolbar::add_label(const Glib::ustring &label_text)
 {
-    auto ti = Gtk::manage(new Gtk::ToolItem());
+    auto const ti = Gtk::make_managed<Gtk::ToolItem>();
 
     // For now, we always enable mnemonic
-    auto label = Gtk::manage(new Gtk::Label(label_text, true));
+    auto const label = Gtk::make_managed<Gtk::Label>(label_text, true);
 
     ti->add(*label);
     add(*ti);
@@ -45,7 +46,7 @@ Gtk::ToggleToolButton *
 Toolbar::add_toggle_button(const Glib::ustring &label_text,
                            const Glib::ustring &tooltip_text)
 {
-    auto btn = Gtk::manage(new Gtk::ToggleToolButton(label_text));
+    auto const btn = Gtk::make_managed<Gtk::ToggleToolButton>(label_text);
     btn->set_tooltip_text(tooltip_text);
     add(*btn);
     return btn;
@@ -60,7 +61,7 @@ Toolbar::add_toggle_button(const Glib::ustring &label_text,
 void
 Toolbar::add_separator()
 {
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 }
 
 GtkWidget *
@@ -72,6 +73,7 @@ Toolbar::create(SPDesktop *desktop)
 }
 }
 }
+
 /*
   Local Variables:
   mode:c++

@@ -16,7 +16,6 @@
  */
 #include <iomanip>
 #include <glibmm/i18n.h>
-#include <gtkmm/main.h>
 #include <potracelib.h>
 
 #include "inkscape-potrace.h"
@@ -380,17 +379,28 @@ TraceResult PotraceTracingEngine::traceQuant(Glib::RefPtr<Gdk::Pixbuf> const &pi
 {
     auto imap = filterIndexed(pixbuf);
 
+    // Create and clear a gray map
+    auto gm = GrayMap(imap.width, imap.height);
+    for (int row = 0; row < gm.height; row++) {
+        for (int col = 0; col < gm.width; col++) {
+            gm.setPixel(col, row, GrayMap::WHITE);
+        }
+    }
+
     TraceResult results;
 
     for (int colorIndex = 0; colorIndex < imap.nrColors; colorIndex++) {
         auto subprogress = Async::SubProgress(progress, (double)colorIndex / imap.nrColors, 1.0 / imap.nrColors);
 
-        // Make a graymap for each color index
-        auto gm = GrayMap(imap.width, imap.height);
+        // Update the graymap for the current color index
         for (int row = 0; row < imap.height; row++) {
             for (int col = 0; col < imap.width; col++) {
                 int index = imap.getPixel(col, row);
-                gm.setPixel(col, row, index == colorIndex ? GrayMap::BLACK : GrayMap::WHITE);
+                if (index == colorIndex) {
+                    gm.setPixel(col, row, GrayMap::BLACK);
+                } else if (!multiScanStack) {
+                    gm.setPixel(col, row, GrayMap::WHITE);
+                }
             }
         }
 

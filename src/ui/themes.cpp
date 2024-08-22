@@ -12,38 +12,37 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#include "themes.h"
-#include "inkscape.h"
-#include "preferences.h"
-#include "io/resource.h"
-#include "svg/svg-color.h"
 #include <cstddef>
 #include <cstring>
+#include <regex>
+#include <string>
+#include <utility>
 #include <gio/gio.h>
-#include <glibmm.h>
 #include <glibmm/ustring.h>
-#include <gtkmm.h>
-#include <map>
+#include <gtk/gtk.h>
+#include <gtkmm/cssprovider.h>
+#include <gtkmm/csssection.h>
+#include <gtkmm/stylecontext.h>
+#include <gtkmm/window.h>
 #include <pangomm/font.h>
 #include <pangomm/fontdescription.h>
-#include <utility>
-#include <vector>
-#include <regex>
+
+#include "config.h"
+#include "inkscape.h"
+#include "io/resource.h"
+#include "preferences.h"
 #include "svg/css-ostringstream.h"
+#include "svg/svg-color.h"
+#include "themes.h"
 #include "ui/dialog/dialog-manager.h"
 #include "ui/dialog/dialog-window.h"
 #include "ui/util.h"
-#include "config.h"
+
 #if WITH_GSOURCEVIEW
 #   include <gtksourceview/gtksource.h>
 #endif
 
-namespace Inkscape {
-namespace UI {
-
-ThemeContext::ThemeContext()
-{
-}
+namespace Inkscape::UI {
 
 /**
  * Inkscape fill gtk, taken from glib/gtk code with our own checks.
@@ -167,7 +166,7 @@ ThemeContext::get_symbolic_colors()
     if we not override the color we use defautt theme colors*/
     bool overridebasecolor = !prefs->getBool("/theme/symbolicDefaultBaseColors", true);
     if (overridebasecolor) {
-        css_str += "#InkRuler,";
+        css_str += "#InkRuler:not(.shadow):not(.page):not(.selection),";
         css_str += ":not(.rawstyle) > image";
         css_str += "{color:";
         css_str += colornamed;
@@ -481,30 +480,29 @@ void ThemeContext::add_gtk_css(bool only_providers, bool cached)
  * property other than preferDarkTheme, so theme should be set before calling
  * this function as it may otherwise return outdated result.
  */
-bool ThemeContext::isCurrentThemeDark(Gtk::Container *window)
+bool ThemeContext::isCurrentThemeDark(Gtk::Window * const window)
 {
-    bool dark = false;
-    if (window) {
-        Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-        Glib::ustring current_theme =
-            prefs->getString("/theme/gtkTheme", prefs->getString("/theme/defaultGtkTheme", ""));
-        auto settings = Gtk::Settings::get_default();
-        if (settings) {
-            settings->property_gtk_application_prefer_dark_theme() = prefs->getBool("/theme/preferDarkTheme", false);
-        }
-        dark = current_theme.find(":dark") != std::string::npos;
-        // if theme is dark or we use contrast slider feature and have set preferDarkTheme we force the theme dark
-        // and avoid color check, this fix a issue with low contrast themes bad switch of dark theme toggle
-        dark = dark || (prefs->getInt("/theme/contrast", 10) != 10 && prefs->getBool("/theme/preferDarkTheme", false));
-        if (!dark) {
-            Glib::RefPtr<Gtk::StyleContext> stylecontext = window->get_style_context();
-            Gdk::RGBA rgba;
-            bool background_set = stylecontext->lookup_color("theme_bg_color", rgba);
-            if (background_set && (0.299 * rgba.get_red() + 0.587 * rgba.get_green() + 0.114 * rgba.get_blue()) < 0.5) {
-                dark = true;
-            }
-        }
+    if (!window) return false;
+
+    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    Glib::ustring current_theme =
+        prefs->getString("/theme/gtkTheme", prefs->getString("/theme/defaultGtkTheme", ""));
+
+    if (auto const settings = Gtk::Settings::get_default()) {
+        settings->property_gtk_application_prefer_dark_theme() = prefs->getBool("/theme/preferDarkTheme", false);
     }
+
+    auto dark = current_theme.find(":dark") != std::string::npos;
+
+    // if theme is dark or we use contrast slider feature and have set preferDarkTheme we force the theme dark
+    // and avoid color check, this fix a issue with low contrast themes bad switch of dark theme toggle
+    dark = dark || (prefs->getInt("/theme/contrast", 10) != 10 && prefs->getBool("/theme/preferDarkTheme", false));
+    if (dark) return true;
+
+    // Otherwise, check the foreground color, and if that has luminance >= 50%, we conclude the theme is dark.
+    // Note: Use @theme_fg_color, since currentColor might not be set or correct
+    auto const rgba = get_color_with_class(window->get_style_context(), "theme_fg_color");
+    dark = get_luminance(rgba) >= 0.5;
     return dark;
 }
 
@@ -570,27 +568,26 @@ std::vector<guint32> ThemeContext::getHighlightColors(Gtk::Window *window)
     std::vector<guint32> colors;
     if (!window) return colors;
 
+    auto const child = window->get_child();
+    if (!child) return colors;
+
+    auto const context = child->get_style_context();
     Glib::ustring name = "highlight-color-";
 
     for (int i = 1; i <= 8; ++i) {
-        auto context = Gtk::StyleContext::create();
-
         // The highlight colors will be attached to a GtkWidget
         // but it isn't neccessary to use this in the .css file.
-        auto path = window->get_style_context()->get_path();
-        path.path_append_type(Gtk::Widget::get_type());
-        path.iter_add_class(-1, name + Glib::ustring::format(i));
-        context->set_path(path);
+        // N.B. We must use Window:child; Window itself gives a constant color.
 
-        // Get the color from the new context
-        auto color = context->get_color();
-        guint32 rgba =
-            gint32(0xff * color.get_red()) << 24 |
-            gint32(0xff * color.get_green()) << 16 |
-            gint32(0xff * color.get_blue()) << 8 |
-            gint32(0xff * color.get_alpha());
-        colors.push_back(rgba);
+        auto const css_class = name + std::to_string(i);
+        context->add_class(css_class);
+
+        auto const rgba = get_foreground_color(context);
+        colors.push_back( to_guint32(rgba) );
+
+        context->remove_class(css_class);
     }
+
     return colors;
 }
 
@@ -672,8 +669,7 @@ void ThemeContext::saveFontScale(double scale)
     Preferences::get()->setDouble(get_font_scale_pref_path(), scale);
 }
 
-} // UI
-} // Inkscape
+} // namespace Inkscape::UI
 
 /*
   Local Variables:

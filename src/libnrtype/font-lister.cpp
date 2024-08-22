@@ -70,6 +70,16 @@ FontLister::FontLister()
 
     style_list_store = Gtk::ListStore::create(FontStyleList);
     init_default_styles();
+
+    // Watch gtk for the fonts-changed signal and refresh our pango configuration
+    if (auto settings = Gtk::Settings::get_default()) {
+        settings->property_gtk_fontconfig_timestamp().signal_changed().connect([this]() {
+            FontFactory::get().refreshConfig();
+            pango_family_map = FontFactory::get().GetUIFamilies();
+            init_font_families(-1);
+            new_fonts_signal.emit();
+        });
+    }
 }
 
 FontLister::~FontLister()

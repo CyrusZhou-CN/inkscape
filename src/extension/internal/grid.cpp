@@ -82,9 +82,8 @@ Glib::ustring build_lines(Geom::Rect bounding_area,
     \param  document What should be edited.
 */
 void
-Grid::effect (Inkscape::Extension::Effect *module, Inkscape::UI::View::View *view, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
+Grid::effect (Inkscape::Extension::Effect *module, SPDesktop *desktop, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
 {
-    auto desktop = dynamic_cast<SPDesktop *>(view);
     Inkscape::Selection *selection = desktop->getSelection();
     SPDocument *doc = desktop->doc();
 
@@ -165,16 +164,16 @@ PrefAdjustment::val_changed ()
 
 /** \brief  A function to get the preferences for the grid
     \param  module  Module which holds the params
-    \param  view     Unused today - may get style information in the future.
+    \param  desktop  The desktop containing the document.
 
     Uses AutoGUI for creating the GUI.
 */
 Gtk::Widget *
-Grid::prefs_effect(Inkscape::Extension::Effect *module, Inkscape::UI::View::View * view, sigc::signal<void ()> * changeSignal, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
+Grid::prefs_effect(Inkscape::Extension::Effect *module, SPDesktop *desktop, sigc::signal<void ()> * changeSignal, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
 {
-    SPDocument * current_document = view->doc();
+    SPDocument * current_document = desktop->doc();
 
-    auto selected = ((SPDesktop *) view)->getSelection()->items();
+    auto selected = desktop->getSelection()->items();
     Inkscape::XML::Node * first_select = nullptr;
     if (!selected.empty()) {
         first_select = selected.front()->getRepr();

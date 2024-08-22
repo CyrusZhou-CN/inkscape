@@ -17,12 +17,6 @@
 
 #include <glib/gstdio.h>
 #include <glibmm.h>
-#include <glibmm/convert.h>
-#include <glibmm/miscutils.h>
-#include <gtkmm/main.h>
-#include <gtkmm/messagedialog.h>
-#include <gtkmm/scrolledwindow.h>
-#include <gtkmm/textview.h>
 
 #include "desktop.h"
 #include "extension/db.h"
@@ -48,12 +42,12 @@
 #include "io/dir-util.h"
 #include "ui/desktop/menubar.h"
 #include "ui/dialog-events.h"
+#include "ui/dialog-run.h"
 #include "ui/tool/control-point-selection.h"
 #include "ui/tool/multi-path-manipulator.h"
 #include "ui/tool/path-manipulator.h"
 #include "ui/tools/node-tool.h"
 #include "ui/util.h"
-#include "ui/view/view.h"
 #include "widgets/desktop-widget.h"
 #include "xml/attribute-record.h"
 #include "xml/rebase-hrefs.h"
@@ -69,10 +63,9 @@ namespace Implementation {
     update and look pretty.
 */
 void Script::pump_events () {
-    while ( Gtk::Main::events_pending() ) {
-        Gtk::Main::iteration();
+    auto main_context = Glib::MainContext::get_default();
+    while (main_context->iteration(false)) {
     }
-    return;
 }
 
 
@@ -534,16 +527,15 @@ void Script::export_raster(Inkscape::Extension::Output *module,
     point both should be full, and the second one is loaded.
 */
 void Script::effect(Inkscape::Extension::Effect *module,
-               Inkscape::UI::View::View *doc,
+               SPDesktop *desktop,
                ImplementationDocumentCache * docCache)
 {
-    if (doc == nullptr)
+    if (desktop == nullptr)
     {
-        g_warning("Script::effect: View not defined");
+        g_warning("Script::effect: Desktop not defined");
         return;
     }
 
-    SPDesktop *desktop = reinterpret_cast<SPDesktop *>(doc);
     sp_namedview_document_from_window(desktop);
 
     if (module->no_doc) {
@@ -686,7 +678,7 @@ void Script::showPopupError (const Glib::ustring &data,
     Gtk::TextView * textview = new Gtk::TextView();
     textview->set_editable(false);
     textview->set_wrap_mode(Gtk::WRAP_WORD);
-    textview->show();
+    textview->set_visible(true);
 
     textview->get_buffer()->set_text(data.c_str());
 
@@ -694,12 +686,12 @@ void Script::showPopupError (const Glib::ustring &data,
     scrollwindow->add(*textview);
     scrollwindow->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
     scrollwindow->set_shadow_type(Gtk::SHADOW_IN);
-    scrollwindow->show();
+    scrollwindow->set_visible(true);
     scrollwindow->set_size_request(0, 60);
 
     vbox->pack_start(*scrollwindow, true, true, 5 /* fix these */);
 
-    warning.run();
+    Inkscape::UI::dialog_run(warning);
 
     delete textview;
     delete scrollwindow;

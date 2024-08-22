@@ -11,6 +11,8 @@
  */
 
 #include <2geom/line.h>
+#include <cairomm/enums.h>
+#include <cmath>
 
 #include "canvas-item-grid.h"
 #include "color.h"
@@ -507,6 +509,119 @@ void CanvasItemGridAxonom::_render(Inkscape::CanvasItemBuffer &buf) const
 
     buf.cr->restore();
 }
+
+CanvasItemGridTiles::CanvasItemGridTiles(Inkscape::CanvasItemGroup* group)
+    : CanvasItemGrid(group)
+{
+    _name = "CanvasItemGridTiles";
+}
+
+void CanvasItemGridTiles::set_gap_size(Geom::Point gap_size) {
+    defer([=] {
+        if (_gap == gap_size) return;
+        _gap = gap_size;
+        request_update();
+    });
+}
+
+void CanvasItemGridTiles::set_margin_size(Geom::Point margin_size) {
+    defer([=] {
+        if (_margin == margin_size) return;
+        _margin = margin_size;
+        request_update();
+    });
+}
+
+void CanvasItemGridTiles::_update(bool) {
+    _bounds = Geom::Rect(-Geom::infinity(), -Geom::infinity(), Geom::infinity(), Geom::infinity());
+
+    // Queue redraw of grid area
+    _world_origin = _origin * affine();
+    auto tile = _spacing;
+    auto pitch = tile + _gap;
+
+    _world_pitch = Geom::Point(pitch.x(), pitch.y()) * affine().withoutTranslation();
+    _world_tile = Geom::Point(tile.x(), tile.y()) * affine().withoutTranslation();
+    _world_gap = Geom::Point(_gap.x(), _gap.y()) * affine().withoutTranslation();
+    _world_margin = Geom::Point(_margin.x(), _margin.y()) * affine().withoutTranslation();
+
+    request_redraw();
+}
+
+void CanvasItemGridTiles::_render(Inkscape::CanvasItemBuffer &buf) const {
+    // minute tiles bring no real value, they look like noise, skip them
+    if (_world_pitch.x() < 3 || _world_pitch.y() < 3) return;
+
+    buf.cr->save();
+    buf.cr->translate(-buf.rect.left(), -buf.rect.top());
+    buf.cr->set_line_width(1.0);
+    buf.cr->set_line_cap(Cairo::LINE_CAP_BUTT);
+
+    // Add a 2px margin to the buffer rectangle to avoid missing rectangles (in case of rounding errors, and due to adding 0.5 below)
+    auto const buf_rect_with_margin = expandedBy(buf.rect, 2);
+
+    auto mod = [](double v, double m){
+        return v >= 0 ? fmod(v, m) : m - fmod(-v, m);
+    };
+    auto min = Geom::Point(buf_rect_with_margin.min());
+    auto start = min;
+    start.x() -= mod(start.x(), _world_pitch.x());
+    start.y() -= mod(start.y(), _world_pitch.y());
+    start.x() += mod(_world_origin.x(), _world_pitch.x());
+    start.y() += mod(_world_origin.y(), _world_pitch.y());
+    if (start.x() > min.x()) start.x() -= _world_pitch.x();
+    if (start.y() > min.y()) start.y() -= _world_pitch.y();
+
+    auto end = Geom::Point(buf_rect_with_margin.max());
+    // pixel grid align coordinates for drawing lines with Cairo
+    auto pix_grid = [](double p){ return floor(p) + 0.5; };
+
+    if (_world_tile.x() >= 2 && _world_tile.y() >= 2) {
+        for (auto x = start.x(); x < end.x(); x += _world_pitch.x()) {
+            for (auto y = start.y(); y < end.y(); y += _world_pitch.y()) {
+                auto left = pix_grid(x + _world_gap.x() / 2);
+                auto top =  pix_grid(y + _world_gap.y() / 2);
+                auto right =  pix_grid(x + _world_gap.x() / 2 + _world_tile.x());
+                auto bottom = pix_grid(y + _world_gap.y() / 2 + _world_tile.y());
+                auto width = right - left;
+                auto height = bottom - top;
+                if (width > 0 && height > 0) {
+                    buf.cr->rectangle(left, top, width, height);
+                }
+            }
+        }
+
+        uint32_t rgba = _major_color;
+        buf.cr->set_source_rgba(SP_RGBA32_R_F(rgba), SP_RGBA32_G_F(rgba),
+                               SP_RGBA32_B_F(rgba), SP_RGBA32_A_F(rgba));
+        buf.cr->stroke();
+    }
+
+    auto size = _world_tile + _world_margin;
+    if (size.x() >= 2 && size.y() >= 2 && (_world_margin.x() != 0 || _world_margin.y() != 0)) {
+        for (auto x = start.x(); x < end.x(); x += _world_pitch.x()) {
+            for (auto y = start.y(); y < end.y(); y += _world_pitch.y()) {
+                auto left = pix_grid(x + _world_gap.x() / 2 - _world_margin.x());
+                auto top =  pix_grid(y + _world_gap.y() / 2 - _world_margin.y());
+                auto right =  pix_grid(x + _world_gap.x() / 2 + _world_margin.x() + _world_tile.x());
+                auto bottom =  pix_grid(y + _world_gap.y() / 2 + _world_margin.y() + _world_tile.y());
+                auto width = right - left;
+                auto height = bottom - top;
+                if (width > 0 && height > 0) {
+                    buf.cr->rectangle(left, top, width, height);
+                }
+            }
+        }
+
+        uint32_t rgba = _minor_color;
+        buf.cr->set_source_rgba(SP_RGBA32_R_F(rgba), SP_RGBA32_G_F(rgba),
+                               SP_RGBA32_B_F(rgba), SP_RGBA32_A_F(rgba));
+        buf.cr->stroke();
+    }
+
+    buf.cr->restore();
+}
+
 
 } // namespace Inkscape
 

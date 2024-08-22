@@ -137,7 +137,7 @@ ParamInt::get_widget(sigc::signal<void ()> *changeSignal)
         return nullptr;
     }
 
-    Gtk::Box *hbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, GUI_PARAM_WIDGETS_SPACING));
+    auto const hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, GUI_PARAM_WIDGETS_SPACING);
 
     auto pia = new ParamIntAdjustment(this, changeSignal);
     Glib::RefPtr<Gtk::Adjustment> fadjust(pia);
@@ -147,23 +147,22 @@ ParamInt::get_widget(sigc::signal<void ()> *changeSignal)
         Glib::ustring text;
         if (_text != nullptr)
             text = _text;
-        UI::Widget::SpinScale *scale = Gtk::manage(new UI::Widget::SpinScale(text, fadjust, 0));
+        auto const scale = Gtk::make_managed<UI::Widget::SpinScale>(text, fadjust, 0);
         scale->set_size_request(400, -1);
-        scale->show();
+        scale->set_visible(true);
         hbox->pack_start(*scale, true, true);
     } else if (_mode == DEFAULT) {
-        Gtk::Label *label = Gtk::manage(new Gtk::Label(_text, Gtk::ALIGN_START));
-        label->show();
+        auto const label = Gtk::make_managed<Gtk::Label>(_text, Gtk::ALIGN_START);
+        label->set_visible(true);
         hbox->pack_start(*label, true, true);
 
-        auto spin = Gtk::manage(new Inkscape::UI::Widget::SpinButton(fadjust, 1.0, 0));
-        spin->show();
+        auto const spin = Gtk::make_managed<Inkscape::UI::Widget::SpinButton>(fadjust, 1.0, 0);
+        spin->set_visible(true);
         hbox->pack_start(*spin, false, false);
     }
 
-    hbox->show();
-
-    return dynamic_cast<Gtk::Widget *>(hbox);
+    hbox->set_visible(true);
+    return hbox;
 }
 
 std::string ParamInt::value_to_string() const

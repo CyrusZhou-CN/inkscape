@@ -93,7 +93,7 @@ void DialogManager::set_floating_dialog_visibility(DialogWindow* wnd, bool show)
         if (wnd->is_visible()) return;
 
         // wnd->present(); - not sure which one is better, show or present...
-        wnd->show();
+        wnd->set_visible(true);
         _hidden_dlg_windows.erase(wnd);
         // re-add it to application; hiding removed it
         if (auto app = InkscapeApplication::instance()) {
@@ -104,7 +104,7 @@ void DialogManager::set_floating_dialog_visibility(DialogWindow* wnd, bool show)
         if (!wnd->is_visible()) return;
 
         _hidden_dlg_windows.insert(wnd);
-        wnd->hide();
+        wnd->set_visible(false);
     }
 }
 

@@ -35,7 +35,6 @@
 namespace Gtk {
 class Box;
 class Button;
-class ButtonBox;
 class Label;
 class Notebook;
 class TextBuffer;

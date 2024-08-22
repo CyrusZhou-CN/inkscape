@@ -14,14 +14,12 @@
  *
  */
 
+#include <iostream>
+#include <vector>
+#include <gtkmm/box.h>
+#include <gtkmm/menubar.h>
 
 #include "inkscape-window.h"
-#include "inkscape.h"   // SP_ACTIVE_DESKTOP
-#include "desktop-events.h" // Handle key events
-#include "enums.h"      // PREFS_WINDOW_GEOMETRY_NONE
-
-#include "inkscape-application.h"
-
 #include "actions/actions-canvas-mode.h"
 #include "actions/actions-canvas-snapping.h"
 #include "actions/actions-canvas-transform.h"
@@ -31,34 +29,30 @@
 #include "actions/actions-help-url.h"
 #include "actions/actions-layer.h"
 #include "actions/actions-node-align.h" // Node alignment.
+#include "actions/actions-pages.h"
 #include "actions/actions-paths.h"  // TEMP
 #include "actions/actions-selection-window.h"
 #include "actions/actions-tools.h"
 #include "actions/actions-view-mode.h"
 #include "actions/actions-view-window.h"
-#include "actions/actions-pages.h"
-
+#include "desktop-events.h" // Handle key events
+#include "enums.h"      // PREFS_WINDOW_GEOMETRY_NONE
+#include "inkscape-application.h"
+#include "inkscape.h"   // SP_ACTIVE_DESKTOP
 #include "object/sp-namedview.h"  // TODO Remove need for this!
-
+#include "ui/desktop/menubar.h"
+#include "ui/desktop/menu-icon-shift.h"
 #include "ui/dialog/dialog-container.h"
 #include "ui/dialog/dialog-manager.h"
 #include "ui/dialog/dialog-window.h"
+#include "ui/drag-and-drop.h"
 #include "ui/drag-and-drop.h"  // Move to canvas?
 #include "ui/interface.h" // main menu, sp_ui_close_view()
-
 #include "ui/monitor.h" // get_monitor_geometry_at_point()
-
-#include "ui/desktop/menubar.h"
-#include "ui/desktop/menu-icon-shift.h"
-
-#include "ui/drag-and-drop.h"
-
-#include "ui/event-debug.h"
 #include "ui/shortcuts.h"
-
-#include "widgets/desktop-widget.h"
 #include "ui/util.h"
 #include "ui/widget/canvas.h"
+#include "widgets/desktop-widget.h"
 
 using Inkscape::UI::Dialog::DialogManager;
 using Inkscape::UI::Dialog::DialogContainer;
@@ -73,7 +67,6 @@ static gboolean _resize_children(Gtk::Window *win)
 
 InkscapeWindow::InkscapeWindow(SPDocument* document)
     : _document(document)
-    , _app(nullptr)
 {
     if (!_document) {
         std::cerr << "InkscapeWindow::InkscapeWindow: null document!" << std::endl;
@@ -88,15 +81,15 @@ InkscapeWindow::InkscapeWindow(SPDocument* document)
     // =============== Build interface ===============
 
     // Main box
-    _mainbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    _mainbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     _mainbox->set_name("DesktopMainBox");
-    _mainbox->show();
+    _mainbox->set_visible(true);
     add(*_mainbox);
 
     // Desktop widget (=> MultiPaned)
     _desktop_widget = new SPDesktopWidget(this, _document);
     _desktop_widget->window = this;
-    _desktop_widget->show();
+    _desktop_widget->set_visible(true);
     _desktop = _desktop_widget->desktop;
 
     // =================== Actions ===================
@@ -133,10 +126,6 @@ InkscapeWindow::InkscapeWindow(SPDocument* document)
 
     // ========== Drag and Drop of Documents =========
     ink_drag_setup(_desktop_widget);
-
-    // Pallet
-
-    // Status bar
 
     // The main section
     _mainbox->pack_start(*Gtk::manage(_desktop_widget), true, true);
@@ -216,10 +205,10 @@ InkscapeWindow::setup_view()
     // Showing after resizing/moving allows the window manager to correct an invalid size/position of the window
     // TODO: This does *not* work when called from 'change_document()', i.e. when the window is already visible.
     //       This can result in off-screen windows! We previously worked around this by hiding and re-showing
-    //       the window, but a call to hide() causes Inkscape to just exit since the migration to Gtk::Application
-    show();
+    //       the window, but a call to set_visible(false) causes Inkscape to just exit since the migration to Gtk::Application
+    set_visible(true);
     
-    sp_namedview_zoom_and_view_from_document(_desktop);
+    _desktop->schedule_zoom_from_document();
     sp_namedview_update_layers_from_document(_desktop);
 
     SPNamedView *nv = _desktop->namedview;
@@ -228,12 +217,14 @@ InkscapeWindow::setup_view()
     }
 }
 
-bool
-InkscapeWindow::on_key_press_event(GdkEventKey* event)
+bool InkscapeWindow::on_key_press_event(GdkEventKey *event)
 {
-#ifdef EVENT_DEBUG
-    ui_dump_event(reinterpret_cast<GdkEvent *>(event), "\nInkscapeWindow::on_key_press_event");
-#endif
+    if constexpr (false) {
+        std::cout << "InkscapeWindow::on_key_press_event: GDK_KEY_PRESS: " << std::hex
+                  << " hardware: " << event->hardware_keycode
+                  << " state: "    << event->state
+                  << " keyval: "   << event->keyval << std::endl;
+    }
 
     // Key press and release events are normally sent first to Gtk::Window for processing as
     // accelerators and menomics before bubbling up from the "grab" or "focus" widget (unlike other
@@ -297,7 +288,7 @@ InkscapeWindow::on_focus_in_event(GdkEventFocus* event)
     if (_app) {
         _app->set_active_window(this);
         _app->set_active_document(_document);
-        _app->set_active_view(_desktop);
+        _app->set_active_desktop(_desktop);
         _app->set_active_selection(_desktop->getSelection());
         _app->windows_update(_document);
         update_dialogs();

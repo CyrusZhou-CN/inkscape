@@ -17,21 +17,16 @@
 #define INKSCAPE_UI_DIALOG_SYMBOLS_H
 
 #include <cstddef>
+#include <string>
+#include <vector>
 #include <glibmm/refptr.h>
 #include <glibmm/ustring.h>
 #include <gtkmm.h>
 #include <gtkmm/builder.h>
 #include <gtkmm/cellrendererpixbuf.h>
-#include <gtkmm/checkbutton.h>
-#include <gtkmm/iconview.h>
-#include <gtkmm/label.h>
-#include <gtkmm/menubutton.h>
 #include <gtkmm/treeiter.h>
 #include <gtkmm/treemodel.h>
 #include <gtkmm/treemodelcolumn.h>
-#include <sigc++/connection.h>
-#include <string>
-#include <vector>
 #include <boost/compute/detail/lru_cache.hpp>
 
 #include "desktop.h"
@@ -41,6 +36,13 @@
 #include "selection.h"
 #include "ui/dialog/dialog-base.h"
 #include "ui/operation-blocker.h"
+
+namespace Gtk {
+class CheckButton;
+class IconView;
+class Label;
+class MenuButton;
+}
 
 class SPObject;
 class SPSymbol;
@@ -69,8 +71,6 @@ namespace Dialog {
  * new symbols documents to be constructed and if saved in the prefs folder will
  * make those symbols available for all future documents.
  */
-
-
 class SymbolsDialog : public DialogBase
 {
 public:
@@ -80,7 +80,6 @@ public:
 private:
     void documentReplaced() override;
     void selectionChanged(Inkscape::Selection *selection) override;
-    void on_unrealize() override;
     void rebuild();
     void rebuild(Gtk::TreeIter current);
     void insertSymbol();
@@ -92,7 +91,7 @@ private:
     SPDocument* get_symbol_document(const std::optional<Gtk::TreeIter>& it) const;
     void iconDragDataGet(const Glib::RefPtr<Gdk::DragContext>& context, Gtk::SelectionData& selection_data, guint info, guint time);
     void onDragStart();
-    void addSymbol(SPSymbol* symbol, Glib::ustring set_id, Glib::ustring doc_title, SPDocument* document);
+    void addSymbol(SPSymbol* symbol, Glib::ustring doc_title, SPDocument* document);
     SPDocument* symbolsPreviewDoc();
     void useInDoc(SPObject *r, std::vector<SPUse*> &l);
     std::vector<SPUse*> useInDoc( SPDocument* document);
@@ -127,7 +126,6 @@ private:
     OperationBlocker _update;
     double previous_height;
     double previous_width;
-    Geom::Point _last_mousedown; ///< Last button press position in the icon view coordinates.
     Glib::RefPtr<Gtk::ListStore> _store;
     Gtk::MenuButton& _symbols_popup;
     Gtk::SearchEntry& _set_search;
@@ -147,8 +145,9 @@ private:
     Gtk::CheckButton* fit_symbol;
     Gtk::CellRendererPixbuf _renderer;
     Gtk::CellRendererPixbuf _renderer2;
-    SPDocument* preview_document = nullptr; /* Document to render single symbol */
+    SPDocument *preview_document = nullptr; /* Document to render single symbol */
     Glib::RefPtr<Gtk::ListStore> _symbol_sets;
+
     struct Store {
         Glib::RefPtr<Gtk::ListStore> _store;
         Glib::RefPtr<Gtk::TreeModelFilter> _filtered;
@@ -167,7 +166,6 @@ private:
     /* For rendering the template drawing */
     unsigned key;
     Inkscape::Drawing renderDrawing;
-    std::vector<sigc::connection> gtk_connections;
     auto_connection _defs_modified;
     auto_connection _doc_resource_changed;
     auto_connection _idle_refresh;

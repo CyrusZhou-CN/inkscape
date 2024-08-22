@@ -13,9 +13,9 @@
 #define UI_DIALOG_SWATCHES_H
 
 #include <array>
+#include <variant>
 #include <vector>
 #include <boost/unordered_map.hpp>
-#include <boost/variant.hpp>
 #include <glibmm/ustring.h>
 
 #include "ui/dialog/dialog-base.h"
@@ -86,8 +86,7 @@ private:
 
     // A map from colors to their respective widgets. Used to quickly find the widgets corresponding
     // to the current fill/stroke color, in order to update their fill/stroke indicators.
-     // TODO: Upgrade to boost::variant2 or std::variant when possible.
-    using ColorKey = boost::variant<std::monostate, std::array<unsigned, 3>, SPGradient*>;
+    using ColorKey = std::variant<std::monostate, std::array<unsigned, 3>, SPGradient *>;
     boost::unordered_multimap<ColorKey, ColorItem*> widgetmap; // need boost for array hash
     std::vector<ColorItem*> current_fill;
     std::vector<ColorItem*> current_stroke;

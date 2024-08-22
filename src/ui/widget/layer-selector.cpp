@@ -63,11 +63,11 @@ public:
     void setState(bool state) {
         _state = state;
         if (_state) {
-            if (_a) _a->hide();
-            if (_b) _b->show();
+            if (_a) _a->set_visible(false);
+            if (_b) _b->set_visible(true);
         } else {
-            if (_a) _a->show();
-            if (_b) _b->hide();
+            if (_a) _a->set_visible(true);
+            if (_b) _b->set_visible(false);
         }
     }
 private:
@@ -88,8 +88,8 @@ LayerSelector::LayerSelector(SPDesktop *desktop)
     _layer_name.set_tooltip_text(_("Current layer"));
     pack_start(_layer_name, Gtk::PACK_EXPAND_WIDGET);
 
-    _eye_label = Gtk::manage(new AlternateIcons(Gtk::ICON_SIZE_MENU,
-        INKSCAPE_ICON("object-visible"), INKSCAPE_ICON("object-hidden")));
+    _eye_label = Gtk::make_managed<AlternateIcons>(Gtk::ICON_SIZE_MENU,
+        INKSCAPE_ICON("object-visible"), INKSCAPE_ICON("object-hidden"));
     _eye_toggle.add(*_eye_label);
     _hide_layer_connection = _eye_toggle.signal_toggled().connect(sigc::mem_fun(*this, &LayerSelector::_hideLayer));
 
@@ -97,8 +97,8 @@ LayerSelector::LayerSelector(SPDesktop *desktop)
     _eye_toggle.set_tooltip_text(_("Toggle current layer visibility"));
     pack_start(_eye_toggle, Gtk::PACK_EXPAND_PADDING);
 
-    _lock_label = Gtk::manage(new AlternateIcons(Gtk::ICON_SIZE_MENU,
-        INKSCAPE_ICON("object-unlocked"), INKSCAPE_ICON("object-locked")));
+    _lock_label = Gtk::make_managed<AlternateIcons>(Gtk::ICON_SIZE_MENU,
+        INKSCAPE_ICON("object-unlocked"), INKSCAPE_ICON("object-locked"));
     _lock_toggle.add(*_lock_label);
     _lock_layer_connection = _lock_toggle.signal_toggled().connect(sigc::mem_fun(*this, &LayerSelector::_lockLayer));
 

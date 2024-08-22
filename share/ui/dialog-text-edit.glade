@@ -105,7 +105,7 @@
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
-                    <property name="tooltip-text" translatable="yes">Reset the font list and selected collections</property>
+                    <property name="tooltip-text" translatable="yes">Reset filters and show all available fonts</property>
                     <property name="margin-start">2</property>
                     <property name="image">reset_image</property>
                     <property name="always-show-image">True</property>
@@ -148,7 +148,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="halign">start</property>
-                <property name="label" translatable="yes">label</property>
+                <property name="label" translatable="no">label</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -267,11 +267,11 @@
       </packing>
     </child>
     <child>
-      <object class="GtkButtonBox">
+      <object class="GtkBox">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="spacing">4</property>
-        <property name="layout-style">start</property>
+        <property name="homogeneous">False</property>
         <child>
           <object class="GtkButton" id="setasdefault_button">
             <property name="label" translatable="yes">Set as _default</property>
@@ -298,7 +298,7 @@
             <property name="expand">False</property>
             <property name="fill">True</property>
             <property name="position">1</property>
-            <property name="secondary">True</property>
+            <property name="pack-type">end</property>
           </packing>
         </child>
       </object>
@@ -310,4 +310,13 @@
       </packing>
     </child>
   </object>
+
+  <object class="GtkSizeGroup">
+   <property name="mode">horizontal</property>
+    <widgets>
+      <widget name="setasdefault_button"/>
+      <widget name="apply_button"/>
+    </widgets>
+  </object>
+
 </interface>

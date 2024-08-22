@@ -46,6 +46,7 @@
 #include "svg/svg-length.h"
 #include "svg/svg.h"
 #include "text-editing.h"
+#include "util/safe-printf.h"
 #include "util/units.h"
 #include "xml/node.h"
 #include "xml/sp-css-attr.h"
@@ -213,24 +214,24 @@ Gtk::Widget *
 LPEMeasureSegments::newWidget()
 {
     // use manage here, because after deletion of Effect object, others might still be pointing to this widget.
-    Gtk::Box * vbox = Gtk::manage( new Gtk::Box(Gtk::ORIENTATION_VERTICAL) );
+    auto const vbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     vbox->set_border_width(0);
     vbox->set_homogeneous(false);
     vbox->set_spacing(0);
-    Gtk::Box *vbox0 = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const vbox0 = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     vbox0->set_border_width(5);
     vbox0->set_homogeneous(false);
     vbox0->set_spacing(2);
-    Gtk::Box *vbox1 = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const vbox1 = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     vbox1->set_border_width(5);
     vbox1->set_homogeneous(false);
     vbox1->set_spacing(2);
-    Gtk::Box *vbox2 = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const vbox2 = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     vbox2->set_border_width(5);
     vbox2->set_homogeneous(false);
     vbox2->set_spacing(2);
     //Help page
-    Gtk::Box *vbox3 = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const vbox3 = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     vbox3->set_border_width(5);
     vbox3->set_homogeneous(false);
     vbox3->set_spacing(2);
@@ -281,7 +282,7 @@ LPEMeasureSegments::newWidget()
         ++it;
     }
 
-    Gtk::Notebook * notebook = Gtk::manage(new Gtk::Notebook());
+    auto const notebook = Gtk::make_managed<Gtk::Notebook>();
     notebook->append_page (*vbox0, Glib::ustring(_("General")));
     notebook->append_page (*vbox1, Glib::ustring(_("Projection")));
     notebook->append_page (*vbox2, Glib::ustring(_("Options")));
@@ -293,7 +294,7 @@ LPEMeasureSegments::newWidget()
     vbox->pack_start(*notebook, true, true, 2);
     notebook->set_current_page(pagenumber);
     notebook->signal_switch_page().connect(sigc::mem_fun(*this, &LPEMeasureSegments::on_my_switch_page));
-    return dynamic_cast<Gtk::Widget *>(vbox);
+    return vbox;
 }
 
 void 
@@ -442,7 +443,7 @@ LPEMeasureSegments::createTextLabel(Geom::Point pos, size_t counter, double leng
     font_size <<  fontsize << "px";
     setlocale (LC_NUMERIC, locale_base);           
     gchar c[32];
-    sprintf(c, "#%06x", rgb32 >> 8);
+    safeprintf(c, "#%06x", rgb32 >> 8);
     sp_repr_css_set_property (css, "fill",c);
     Inkscape::SVGOStringStream os;
     os << SP_RGBA32_A_F(coloropacity.get_value());
@@ -619,7 +620,7 @@ LPEMeasureSegments::createLine(Geom::Point start,Geom::Point end, Glib::ustring 
     style  += "stroke-width:";
     style  += stroke_w.str();
     gchar c[32];
-    sprintf(c, "#%06x", rgb32 >> 8);
+    safeprintf(c, "#%06x", rgb32 >> 8);
     style += ";stroke:";
     style += Glib::ustring(c);
     Inkscape::SVGOStringStream os;

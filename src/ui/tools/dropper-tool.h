@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef __SP_DROPPER_CONTEXT_H__
-#define __SP_DROPPER_CONTEXT_H__
+#ifndef INKSCAPE_UI_TOOLS_DROPPER_TOOL_H
+#define INKSCAPE_UI_TOOLS_DROPPER_TOOL_H
 
 /*
  * Tool for picking colors from drawing
@@ -19,38 +19,21 @@
 #include "display/control/canvas-item-ptr.h"
 #include "ui/tools/tool-base.h"
 
-struct SPCanvasItem;
+namespace Inkscape { class CanvasItemBpath; }
+namespace Inkscape::UI::Tools {
 
-#define SP_DROPPER_CONTEXT(obj) (dynamic_cast<Inkscape::UI::Tools::DropperTool*>((Inkscape::UI::Tools::ToolBase*)obj))
-#define SP_IS_DROPPER_CONTEXT(obj) (dynamic_cast<const Inkscape::UI::Tools::DropperTool*>((const Inkscape::UI::Tools::ToolBase*)obj) != NULL)
-
-enum {
-      SP_DROPPER_PICK_VISIBLE,
-      SP_DROPPER_PICK_ACTUAL  
-};
-enum {
-  DONT_REDRAW_CURSOR,
-  DRAW_FILL_CURSOR,
-  DRAW_STROKE_CURSOR
-};
-
-namespace Inkscape {
-
-class CanvasItemBpath;
-
-namespace UI {
-namespace Tools {
-
-class DropperTool : public ToolBase {
+class DropperTool : public ToolBase
+{
 public:
     DropperTool(SPDesktop *desktop);
     ~DropperTool() override;
 
-    guint32 get_color(bool invert = false, bool non_dropping = false);
+    uint32_t get_color(bool invert = false, bool non_dropping = false) const;
+
     sigc::signal<void (ColorRGBA *)> onetimepick_signal;
 
 protected:
-    bool root_handler(GdkEvent *event) override;
+    bool root_handler(CanvasEvent const &event) override;
 
 private:
     // Stored color.
@@ -58,6 +41,7 @@ private:
     double G = 0.0;
     double B = 0.0;
     double alpha = 0.0;
+
     // Stored color taken from canvas. Used by clipboard.
     // Identical to R, G, B, alpha if dropping disabled.
     double non_dropping_R = 0.0;
@@ -72,15 +56,12 @@ private:
 
     double radius = 0.0;                       ///< Size of region under dragging mode
     CanvasItemPtr<CanvasItemBpath> area;       ///< Circle depicting region's borders in dragging mode
-    Geom::Point centre {0, 0};                 ///< Center of region in dragging mode
-
+    Geom::Point centre;                        ///< Center of region in dragging mode
 };
 
-}
-}
-}
+} // namespace Inkscape::UI::Tools
 
-#endif
+#endif // INKSCAPE_UI_TOOLS_DROPPER_TOOL_H
 
 /*
   Local Variables:

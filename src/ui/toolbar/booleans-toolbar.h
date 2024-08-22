@@ -31,6 +31,7 @@ public:
     void on_parent_changed(Gtk::Widget *) override;
 private:
     Glib::RefPtr<Gtk::Builder> _builder;
+    Glib::RefPtr<Gtk::Adjustment> _adj_opacity;
 
     Gtk::ToolButton &_btn_confirm;
     Gtk::ToolButton &_btn_cancel;

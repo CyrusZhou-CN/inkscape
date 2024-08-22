@@ -104,23 +104,22 @@ VectorParam::param_getDefaultSVGValue() const
 Gtk::Widget *
 VectorParam::param_newWidget()
 {
-    Inkscape::UI::Widget::RegisteredVector * pointwdg = Gtk::manage(
-        new Inkscape::UI::Widget::RegisteredVector( param_label,
-                                                    param_tooltip,
-                                                    param_key,
-                                                    *param_wr,
-                                                    param_effect->getRepr(),
-                                                    param_effect->getSPDoc() ) );
+    auto const pointwdg = Gtk::make_managed<UI::Widget::RegisteredVector>( param_label,
+                                                                           param_tooltip,
+                                                                           param_key,
+                                                                          *param_wr,
+                                                                           param_effect->getRepr(),
+                                                                           param_effect->getSPDoc() );
     pointwdg->setPolarCoords();
     pointwdg->setValue( vector, origin );
     pointwdg->clearProgrammatically();
     pointwdg->set_undo_parameters(_("Change vector parameter"), INKSCAPE_ICON("dialog-path-effects"));
 
-    Gtk::Box * hbox = Gtk::manage( new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL) );
+    auto const hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
     hbox->pack_start(*pointwdg, true, true);
     hbox->show_all_children();
 
-    return dynamic_cast<Gtk::Widget *> (hbox);
+    return hbox;
 }
 
 void

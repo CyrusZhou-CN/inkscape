@@ -47,6 +47,7 @@
 #include "ui/widget/combo-tool-item.h"
 #include "ui/widget/gradient-image.h"
 #include "ui/widget/spin-button-tool-item.h"
+#include "ui/dialog-run.h"
 
 using Inkscape::DocumentUndo;
 using Inkscape::UI::Tools::MeshTool;
@@ -162,12 +163,12 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
 
         Gtk::RadioToolButton::Group new_type_group;
 
-        auto normal_type_btn = Gtk::manage(new Gtk::RadioToolButton(new_type_group, _("normal")));
+        auto const normal_type_btn = Gtk::make_managed<Gtk::RadioToolButton>(new_type_group, _("normal"));
         normal_type_btn->set_tooltip_text(_("Create mesh gradient"));
         normal_type_btn->set_icon_name(INKSCAPE_ICON("paint-gradient-mesh"));
         _new_type_buttons.push_back(normal_type_btn);
 
-        auto conical_type_btn = Gtk::manage(new Gtk::RadioToolButton(new_type_group, _("conical")));
+        auto const conical_type_btn = Gtk::make_managed<Gtk::RadioToolButton>(new_type_group, _("conical"));
         conical_type_btn->set_tooltip_text(_("Create conical gradient"));
         conical_type_btn->set_icon_name(INKSCAPE_ICON("paint-gradient-conical"));
         _new_type_buttons.push_back(conical_type_btn);
@@ -187,12 +188,12 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
     {
         Gtk::RadioToolButton::Group new_fillstroke_group;
 
-        auto fill_button = Gtk::manage(new Gtk::RadioToolButton(new_fillstroke_group, _("fill")));
+        auto const fill_button = Gtk::make_managed<Gtk::RadioToolButton>(new_fillstroke_group, _("fill"));
         fill_button->set_tooltip_text(_("Create gradient in the fill"));
         fill_button->set_icon_name(INKSCAPE_ICON("object-fill"));
         _new_fillstroke_buttons.push_back(fill_button);
 
-        auto stroke_btn = Gtk::manage(new Gtk::RadioToolButton(new_fillstroke_group, _("stroke")));
+        auto const stroke_btn = Gtk::make_managed<Gtk::RadioToolButton>(new_fillstroke_group, _("stroke"));
         stroke_btn->set_tooltip_text(_("Create gradient in the stroke"));
         stroke_btn->set_icon_name(INKSCAPE_ICON("object-stroke"));
         _new_fillstroke_buttons.push_back(stroke_btn);
@@ -213,7 +214,7 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
         std::vector<double> values = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         auto rows_val = prefs->getDouble("/tools/mesh/mesh_rows", 1);
         _row_adj = Gtk::Adjustment::create(rows_val, 1, 20, 1, 1);
-        auto row_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("mesh-row", _("Rows:"), _row_adj, 1.0, 0));
+        auto const row_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("mesh-row", _("Rows:"), _row_adj, 1.0, 0);
         row_item->set_tooltip_text(_("Number of rows in new mesh"));
         row_item->set_custom_numeric_menu_data(values);
         row_item->set_focus_widget(desktop->canvas);
@@ -227,7 +228,7 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
         std::vector<double> values = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         auto col_val = prefs->getDouble("/tools/mesh/mesh_cols", 1);
         _col_adj = Gtk::Adjustment::create(col_val, 1, 20, 1, 1);
-        auto col_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("mesh-col", _("Columns:"), _col_adj, 1.0, 0));
+        auto const col_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("mesh-col", _("Columns:"), _col_adj, 1.0, 0);
         col_item->set_tooltip_text(_("Number of columns in new mesh"));
         col_item->set_custom_numeric_menu_data(values);
         col_item->set_focus_widget(desktop->canvas);
@@ -236,7 +237,7 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
         col_item->set_sensitive(true);
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     // TODO: These were disabled in the UI file.  Either activate or delete
 #if 0
@@ -271,7 +272,7 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
     desktop->connectEventContextChanged(sigc::mem_fun(*this, &MeshToolbar::watch_ec));
 
     {
-        auto btn = Gtk::manage(new Gtk::ToolButton(_("Toggle Sides")));
+        auto const btn = Gtk::make_managed<Gtk::ToolButton>(_("Toggle Sides"));
         btn->set_tooltip_text(_("Toggle selected sides between Beziers and lines."));
         btn->set_icon_name(INKSCAPE_ICON("node-segment-line"));
         btn->signal_clicked().connect(sigc::mem_fun(*this, &MeshToolbar::toggle_sides));
@@ -279,7 +280,7 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
     }
 
     {
-        auto btn = Gtk::manage(new Gtk::ToolButton(_("Make elliptical")));
+        auto const btn = Gtk::make_managed<Gtk::ToolButton>(_("Make elliptical"));
         btn->set_tooltip_text(_("Make selected sides elliptical by changing length of handles. Works best if handles already approximate ellipse."));
         btn->set_icon_name(INKSCAPE_ICON("node-segment-curve"));
         btn->signal_clicked().connect(sigc::mem_fun(*this, &MeshToolbar::make_elliptical));
@@ -287,7 +288,7 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
     }
 
     {
-        auto btn = Gtk::manage(new Gtk::ToolButton(_("Pick colors:")));
+        auto const btn = Gtk::make_managed<Gtk::ToolButton>(_("Pick colors:"));
         btn->set_tooltip_text(_("Pick colors for selected corner nodes from underneath mesh."));
         btn->set_icon_name(INKSCAPE_ICON("color-picker"));
         btn->signal_clicked().connect(sigc::mem_fun(*this, &MeshToolbar::pick_colors));
@@ -296,22 +297,22 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
 
 
     {
-        auto btn = Gtk::manage(new Gtk::ToolButton(_("Scale mesh to bounding box:")));
+        auto const btn = Gtk::make_managed<Gtk::ToolButton>(_("Scale mesh to bounding box:"));
         btn->set_tooltip_text(_("Scale mesh to fit inside bounding box."));
         btn->set_icon_name(INKSCAPE_ICON("mesh-gradient-fit"));
         btn->signal_clicked().connect(sigc::mem_fun(*this, &MeshToolbar::fit_mesh));
         add(*btn);
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Warning */
     {
-        auto btn = Gtk::manage(new Gtk::ToolButton(_("WARNING: Mesh SVG Syntax Subject to Change")));
+        auto const btn = Gtk::make_managed<Gtk::ToolButton>(_("WARNING: Mesh SVG Syntax Subject to Change"));
         btn->set_tooltip_text(_("WARNING: Mesh SVG Syntax Subject to Change"));
         btn->set_icon_name(INKSCAPE_ICON("dialog-warning"));
         add(*btn);
-        btn->signal_clicked().connect(sigc::mem_fun(*this, &MeshToolbar::warning_popup));
+        btn->signal_clicked().connect([this] { warning_popup(); });
         btn->set_sensitive(true);
     }
 
@@ -526,8 +527,7 @@ MeshToolbar::selection_changed(Inkscape::Selection * /* selection */)
     }
 }
 
-void
-MeshToolbar::warning_popup()
+void MeshToolbar::warning_popup()
 {
     char *msg = _("Mesh gradients are part of SVG 2:\n"
                   "* Syntax may change.\n"
@@ -535,9 +535,8 @@ MeshToolbar::warning_popup()
                   "\n"
                   "For web: convert to bitmap (Edit->Make bitmap copy).\n"
                   "For print: export to PDF.");
-    Gtk::MessageDialog dialog(msg, false, Gtk::MESSAGE_WARNING,
-                              Gtk::BUTTONS_OK, true);
-    dialog.run();
+    auto dialog = std::make_unique<Gtk::MessageDialog>(msg, false, Gtk::MESSAGE_WARNING, Gtk::BUTTONS_OK, true);
+    dialog_show_modal_and_selfdestruct(std::move(dialog), get_toplevel());
 }
 
 /**

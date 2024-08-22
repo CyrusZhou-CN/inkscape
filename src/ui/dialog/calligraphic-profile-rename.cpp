@@ -19,13 +19,14 @@
 #include <gtkmm/grid.h>
 
 #include "desktop.h"
+#include "ui/dialog-run.h"
 
 namespace Inkscape {
 namespace UI {
 namespace Dialog {
 
 CalligraphicProfileRename::CalligraphicProfileRename() :
-    _layout_table(Gtk::manage(new Gtk::Grid())),
+    _layout_table(Gtk::make_managed<Gtk::Grid>()),
     _applied(false)
 {
     set_title(_("Edit profile"));
@@ -97,7 +98,7 @@ void CalligraphicProfileRename::_delete()
 
 void CalligraphicProfileRename::_close()
 {
-    this->Gtk::Dialog::hide();
+    this->Gtk::Dialog::set_visible(false);
 }
 
 void CalligraphicProfileRename::show(SPDesktop *desktop, const Glib::ustring profile_name)
@@ -105,7 +106,6 @@ void CalligraphicProfileRename::show(SPDesktop *desktop, const Glib::ustring pro
     CalligraphicProfileRename &dial = instance();
     dial._applied=false;
     dial._deleted=false;
-    dial.set_modal(true);
 
     dial._profile_name = profile_name;
     dial._profile_name_entry.set_text(profile_name);
@@ -121,9 +121,7 @@ void CalligraphicProfileRename::show(SPDesktop *desktop, const Glib::ustring pro
 
     desktop->setWindowTransient (dial.gobj());
     dial.property_destroy_with_parent() = true;
-    //  dial.Gtk::Dialog::show();
-    //dial.present();
-    dial.run();
+    Inkscape::UI::dialog_run(dial);
 }
 
 } // namespace Dialog

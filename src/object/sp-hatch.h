@@ -21,11 +21,11 @@
 #include <glibmm/ustring.h>
 #include <sigc++/connection.h>
 
+#include "object-view.h"
 #include "svg/svg-length.h"
 #include "svg/svg-angle.h"
 #include "sp-paint-server.h"
 #include "uri-references.h"
-#include "display/drawing-item-ptr.h"
 
 class SPHatchReference;
 class SPHatchPath;
@@ -98,13 +98,7 @@ protected:
     void modified(unsigned int flags) override;
 
 private:
-    struct View
-    {
-        DrawingItemPtr<Inkscape::DrawingPattern> drawingitem;
-        Geom::OptRect bbox;
-        unsigned key;
-        View(DrawingItemPtr<Inkscape::DrawingPattern> drawingitem, Geom::OptRect const &bbox, unsigned key);
-    };
+    using View = ObjectView<Inkscape::DrawingPattern>;
     std::vector<View> views;
 
     static bool _hasHatchPatchChildren(SPHatch const *hatch);

@@ -230,22 +230,22 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
 
     /* Font Collections popover */
     {
-        auto font_collection_item = Gtk::manage(new Gtk::ToolItem);
+        auto const font_collection_item = Gtk::make_managed<Gtk::ToolItem>();
         add(*font_collection_item);
 
-        auto font_collection_button = Gtk::manage(new Gtk::MenuButton);
+        auto const font_collection_button = Gtk::make_managed<Gtk::MenuButton>();
         font_collection_button->set_image_from_icon_name(INKSCAPE_ICON("font_collections"));
         font_collection_button->set_always_show_image(true);
         font_collection_button->set_tooltip_text(_("Select Font Collections"));
         font_collection_item->add(*font_collection_button);
 
         // Popover.
-        auto font_collection_popover = Gtk::manage(new Gtk::Popover(*font_collection_button));
+        auto const font_collection_popover = Gtk::make_managed<Gtk::Popover>(*font_collection_button);
         // font_collection_popover->set_modal(false); // Stay open until button clicked again.
         font_collection_button->set_popover(*font_collection_popover);
 
         // Grid inside the popover.
-        auto popover_grid = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+        auto const popover_grid = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
         popover_grid->set_margin_top(4);
         popover_grid->set_margin_bottom(4);
         popover_grid->set_margin_start(4);
@@ -253,20 +253,20 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
         popover_grid->show_all();
 
         // This frame will contain the list of the font collections.
-        auto popover_frame = Gtk::manage(new Gtk::Frame);
+        auto const popover_frame = Gtk::make_managed<Gtk::Frame>();
         popover_frame->show_all();
         popover_frame->set_label(_("Font Collections"));
         popover_frame->set_margin_top(4);
         popover_grid->add(*popover_frame);
 
         // The ListBox widget will display the names of the font collections.
-        font_collections_list = Gtk::manage(new Gtk::ListBox);
+        font_collections_list = Gtk::make_managed<Gtk::ListBox>();
         popover_frame->add(*font_collections_list);
         font_collections_list->show_all();
 
         // To open the Font Collections Manager dialogue.
-        auto fcm_btn = Gtk::manage(new Gtk::Button);
-        fcm_btn->set_tooltip_text(_("Open the Font Collections Manager dialogue"));
+        auto const fcm_btn = Gtk::make_managed<Gtk::Button>();
+        fcm_btn->set_tooltip_text(_("Open the Font Collections Manager dialog"));
         fcm_btn->set_label(_("Open Collections Editor"));
         fcm_btn->set_margin_top(4);
         popover_grid->add(*fcm_btn);
@@ -274,11 +274,11 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
         fcm_btn->signal_clicked().connect([=](){ TextToolbar::on_fcm_button_pressed(); });
 
         // To reset the selected font collections and the font list.
-        auto reset_item = Gtk::manage(new Gtk::ToolItem);
+        auto const reset_item = Gtk::make_managed<Gtk::ToolItem>();
         add(*reset_item);
 
-        auto reset_btn = Gtk::manage(new Gtk::Button);
-        reset_btn->set_tooltip_text(_("Reset selected collections"));
+        auto const reset_btn = Gtk::make_managed<Gtk::Button>();
+        reset_btn->set_tooltip_text(_("Show all available fonts"));
         reset_btn->set_image_from_icon_name(INKSCAPE_ICON("view-refresh"));
         reset_btn->set_always_show_image(true);
         reset_item->add(*reset_btn);
@@ -311,16 +311,21 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
         Glib::RefPtr<Gtk::ListStore> store = fontlister->get_font_list();
         GtkListStore* model = store->gobj();
 
+        // Keep font list up to date with document fonts when refreshed.
+        _fonts_updated_signal = fontlister->connectNewFonts([=](){
+            fontlister->update_font_list(desktop->getDocument());
+        });
+
         _font_family_item =
-            Gtk::manage(new UI::Widget::ComboBoxEntryToolItem( "TextFontFamilyAction",
-                                                               _("Font Family"),
-                                                               _("Select Font Family (Alt-X to access)"),
-                                                               GTK_TREE_MODEL(model),
-                                                               -1,                // Entry width
-                                                               50,                // Extra list width
-                                                               (gpointer)font_lister_cell_data_func2, // Cell layout
-                                                               (gpointer)font_lister_separator_func2,
-                                                               GTK_WIDGET(desktop->getCanvas()->gobj()))); // Focus widget
+            Gtk::make_managed<UI::Widget::ComboBoxEntryToolItem>( "TextFontFamilyAction",
+                                                                 _("Font Family"),
+                                                                 _("Select Font Family (Alt-X to access)"),
+                                                                 GTK_TREE_MODEL(model),
+                                                                 -1,                // Entry width
+                                                                 50,                // Extra list width
+                                                                 (gpointer)font_lister_cell_data_func2, // Cell layout
+                                                                 (gpointer)font_lister_separator_func2,
+                                                                 GTK_WIDGET(desktop->getCanvas()->gobj())); // Focus widget
         _font_family_item->popup_enable(); // Enable entry completion
         gchar *const info = _("Select all text with this font-family");
         _font_family_item->set_info( info ); // Show selection icon
@@ -356,15 +361,15 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
         GtkListStore* model_style = store->gobj();
 
         _font_style_item =
-            Gtk::manage(new UI::Widget::ComboBoxEntryToolItem( "TextFontStyleAction",
-                                                               _("Font Style"),
-                                                               _("Font style"),
-                                                               GTK_TREE_MODEL(model_style),
-                                                               12,     // Width in characters
-                                                               0,      // Extra list width
-                                                               nullptr,   // Cell layout
-                                                               nullptr,   // Separator
-                                                               GTK_WIDGET(desktop->getCanvas()->gobj()))); // Focus widget
+            Gtk::make_managed<UI::Widget::ComboBoxEntryToolItem>( "TextFontStyleAction",
+                                                                 _("Font Style"),
+                                                                 _("Font style"),
+                                                                 GTK_TREE_MODEL(model_style),
+                                                                 12,     // Width in characters
+                                                                 0,      // Extra list width
+                                                                 nullptr,   // Cell layout
+                                                                 nullptr,   // Separator
+                                                                 GTK_WIDGET(desktop->getCanvas()->gobj())); // Focus widget
 
         _font_style_item->signal_changed().connect([=](){ fontstyle_value_changed(); });
         _font_style_item->focus_on_click(false);
@@ -386,15 +391,15 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
         Glib::ustring tooltip = Glib::ustring::format(_("Font size"), " (", unit_str, ")");
 
         _font_size_item =
-            Gtk::manage(new UI::Widget::ComboBoxEntryToolItem( "TextFontSizeAction",
-                                                               _("Font Size"),
-                                                               tooltip,
-                                                               GTK_TREE_MODEL(model_size),
-                                                               8,      // Width in characters
-                                                               0,      // Extra list width
-                                                               nullptr,   // Cell layout
-                                                               nullptr,   // Separator
-                                                               GTK_WIDGET(desktop->getCanvas()->gobj()))); // Focus widget
+            Gtk::make_managed<UI::Widget::ComboBoxEntryToolItem>( "TextFontSizeAction",
+                                                                 _("Font Size"),
+                                                                 tooltip,
+                                                                 GTK_TREE_MODEL(model_size),
+                                                                 8,      // Width in characters
+                                                                 0,      // Extra list width
+                                                                 nullptr,   // Cell layout
+                                                                 nullptr,   // Separator
+                                                                 GTK_WIDGET(desktop->getCanvas()->gobj())); // Focus widget
 
         _font_size_item->signal_changed().connect([=](){ fontsize_value_changed(); });
         _font_size_item->focus_on_click(false);
@@ -416,7 +421,7 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
         auto line_height_val = 1.25;
         _line_height_adj = Gtk::Adjustment::create(line_height_val, 0.0, 1000.0, 0.1, 1.0);
         _line_height_item =
-            Gtk::manage(new UI::Widget::SpinButtonToolItem("text-line-height", "", _line_height_adj, 0.1, 2));
+            Gtk::make_managed<UI::Widget::SpinButtonToolItem>("text-line-height", "", _line_height_adj, 0.1, 2);
         _line_height_item->set_tooltip_text(_("Spacing between baselines"));
         _line_height_item->set_custom_numeric_menu_data(values, labels);
         _line_height_item->set_focus_widget(desktop->getCanvas());
@@ -483,7 +488,7 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
 
     /* Style - Superscript */
     {
-        _superscript_item = Gtk::manage(new Gtk::ToggleToolButton());
+        _superscript_item = Gtk::make_managed<Gtk::ToggleToolButton>();
         _superscript_item->set_label(_("Toggle superscript"));
         _superscript_item->set_tooltip_text(_("Toggle superscript"));
         _superscript_item->set_icon_name(INKSCAPE_ICON("text_superscript"));
@@ -495,7 +500,7 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
 
     /* Style - Subscript */
     {
-        _subscript_item = Gtk::manage(new Gtk::ToggleToolButton());
+        _subscript_item = Gtk::make_managed<Gtk::ToggleToolButton>();
         _subscript_item->set_label(_("Toggle subscript"));
         _subscript_item->set_tooltip_text(_("Toggle subscript"));
         _subscript_item->set_icon_name(INKSCAPE_ICON("text_subscript"));
@@ -507,21 +512,21 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
 
     /* Character positioning popover */
 
-    auto positioning_item = Gtk::manage(new Gtk::ToolItem);
+    auto const positioning_item = Gtk::make_managed<Gtk::ToolItem>();
     add(*positioning_item);
 
-    auto positioning_button = Gtk::manage(new Gtk::MenuButton);
+    auto const positioning_button = Gtk::make_managed<Gtk::MenuButton>();
     positioning_button->set_image_from_icon_name(INKSCAPE_ICON("text_horz_kern"));
     positioning_button->set_always_show_image(true);
     positioning_button->set_tooltip_text(_("Kerning, word spacing, character positioning"));
     positioning_button->set_label(_("Spacing"));
     positioning_item->add(*positioning_button);
 
-    auto positioning_popover = Gtk::manage(new Gtk::Popover(*positioning_button));
+    auto const positioning_popover = Gtk::make_managed<Gtk::Popover>(*positioning_button);
     positioning_popover->set_modal(false); // Stay open until button clicked again.
     positioning_button->set_popover(*positioning_popover);
 
-    auto positioning_grid = Gtk::manage(new Gtk::Grid);
+    auto const positioning_grid = Gtk::make_managed<Gtk::Grid>();
     positioning_popover->add(*positioning_grid);
 
     /* Letter spacing */
@@ -531,7 +536,7 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
         std::vector<double>        values = {                 -2.0, -1.5, -1.0, -0.5,                         0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0,                   5.0};
         auto letter_spacing_val = prefs->getDouble("/tools/text/letterspacing", 0.0);
         _letter_spacing_adj = Gtk::Adjustment::create(letter_spacing_val, -1000.0, 1000.0, 0.01, 0.10);
-        _letter_spacing_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("text-letter-spacing", _("Letter:"), _letter_spacing_adj, 0.1, 2));
+        _letter_spacing_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("text-letter-spacing", _("Letter:"), _letter_spacing_adj, 0.1, 2);
         _letter_spacing_item->set_tooltip_text(_("Spacing between letters (px)"));
         _letter_spacing_item->set_custom_numeric_menu_data(values, labels);
         _letter_spacing_item->set_focus_widget(desktop->getCanvas());
@@ -549,7 +554,7 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
         std::vector<double>        values = {                 -2.0, -1.5, -1.0, -0.5,                         0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0,                   5.0};
         auto word_spacing_val = prefs->getDouble("/tools/text/wordspacing", 0.0);
         _word_spacing_adj = Gtk::Adjustment::create(word_spacing_val, -1000.0, 1000.0, 0.01, 0.10);
-        _word_spacing_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("text-word-spacing", _("Word:"), _word_spacing_adj, 0.1, 2));
+        _word_spacing_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("text-word-spacing", _("Word:"), _word_spacing_adj, 0.1, 2);
         _word_spacing_item->set_tooltip_text(_("Spacing between words (px)"));
         _word_spacing_item->set_custom_numeric_menu_data(values, labels);
         _word_spacing_item->set_focus_widget(desktop->getCanvas());
@@ -566,7 +571,7 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
         std::vector<double> values = { -2.0, -1.5, -1.0, -0.5,   0,  0.5,  1.0,  1.5,  2.0, 2.5 };
         auto dx_val = prefs->getDouble("/tools/text/dx", 0.0);
         _dx_adj = Gtk::Adjustment::create(dx_val, -1000.0, 1000.0, 0.01, 0.1);
-        _dx_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("text-dx", _("Kern:"), _dx_adj, 0.1, 2));
+        _dx_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("text-dx", _("Kern:"), _dx_adj, 0.1, 2);
         _dx_item->set_custom_numeric_menu_data(values);
         _dx_item->set_tooltip_text(_("Horizontal kerning (px)"));
         _dx_item->set_focus_widget(desktop->getCanvas());
@@ -583,7 +588,7 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
         std::vector<double> values = { -2.0, -1.5, -1.0, -0.5,   0,  0.5,  1.0,  1.5,  2.0, 2.5 };
         auto dy_val = prefs->getDouble("/tools/text/dy", 0.0);
         _dy_adj = Gtk::Adjustment::create(dy_val, -1000.0, 1000.0, 0.01, 0.1);
-        _dy_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("text-dy", _("Vert:"), _dy_adj, 0.1, 2));
+        _dy_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("text-dy", _("Vert:"), _dy_adj, 0.1, 2);
         _dy_item->set_tooltip_text(_("Vertical kerning (px)"));
         _dy_item->set_custom_numeric_menu_data(values);
         _dy_item->set_focus_widget(desktop->getCanvas());
@@ -599,7 +604,7 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
         std::vector<double> values = { -90, -45, -30, -15,   0,  15,  30,  45,  90, 180 };
         auto rotation_val = prefs->getDouble("/tools/text/rotation", 0.0);
         _rotation_adj = Gtk::Adjustment::create(rotation_val, -180.0, 180.0, 0.1, 1.0);
-        _rotation_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("text-rotation", _("Rot:"), _rotation_adj, 0.1, 2));
+        _rotation_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("text-rotation", _("Rot:"), _rotation_adj, 0.1, 2);
         _rotation_item->set_tooltip_text(_("Character rotation (degrees)"));
         _rotation_item->set_custom_numeric_menu_data(values);
         _rotation_item->set_focus_widget(desktop->getCanvas());
@@ -2472,7 +2477,7 @@ void TextToolbar::display_font_collections()
 
     // Insert system collections.
     for(auto const& col: font_collections->get_collections(true)) {
-        auto btn = Gtk::make_managed<Gtk::CheckButton>(col);
+        auto const btn = Gtk::make_managed<Gtk::CheckButton>(col);
         btn->set_margin_bottom(2);
         btn->set_active(font_collections->is_collection_selected(col));
         btn->signal_toggled().connect([=](){
@@ -2480,7 +2485,7 @@ void TextToolbar::display_font_collections()
             font_collections->update_selected_collections(col);
         });
 // g_message("tag: %s", tag.display_name.c_str());
-        auto row = Gtk::make_managed<Gtk::ListBoxRow>();
+        auto const row = Gtk::make_managed<Gtk::ListBoxRow>();
         row->set_can_focus(false);
         row->add(*btn);
         row->show_all();
@@ -2488,9 +2493,9 @@ void TextToolbar::display_font_collections()
     }
 
     // Insert row separator.
-    auto sep = Gtk::manage(new Gtk::Separator());
+    auto const sep = Gtk::make_managed<Gtk::Separator>();
     sep->set_margin_bottom(2);
-    auto sep_row = Gtk::make_managed<Gtk::ListBoxRow>();
+    auto const sep_row = Gtk::make_managed<Gtk::ListBoxRow>();
     sep_row->set_can_focus(false);
     sep_row->add(*sep);
     sep_row->show_all();
@@ -2498,7 +2503,7 @@ void TextToolbar::display_font_collections()
 
     // Insert user collections.
     for (auto const& col: font_collections->get_collections()) {
-        auto btn = Gtk::make_managed<Gtk::CheckButton>(col);
+        auto const btn = Gtk::make_managed<Gtk::CheckButton>(col);
         btn->set_margin_bottom(2);
         btn->set_active(font_collections->is_collection_selected(col));
         btn->signal_toggled().connect([=](){
@@ -2506,7 +2511,7 @@ void TextToolbar::display_font_collections()
             font_collections->update_selected_collections(col);
         });
 // g_message("tag: %s", tag.display_name.c_str());
-        auto row = Gtk::make_managed<Gtk::ListBoxRow>();
+        auto const row = Gtk::make_managed<Gtk::ListBoxRow>();
         row->set_can_focus(false);
         row->add(*btn);
         row->show_all();
@@ -2630,6 +2635,7 @@ void TextToolbar::subselection_changed(Inkscape::UI::Tools::TextTool* tc)
     std::cout << "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&" << std::endl;
     std::cout << std::endl;
 #endif
+
 }
 }
 }

@@ -12,15 +12,14 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <memory>
 #include <gtkmm.h>
+
 #include <2geom/rect.h>
 #include <2geom/int-rect.h>
+
 #include "display/rendermode.h"
+#include "events/enums.h"
 #include "optglarea.h"
 
 class SPDesktop;
@@ -29,6 +28,7 @@ namespace Inkscape {
 
 class CanvasItem;
 class CanvasItemGroup;
+class CMSTransform;
 class Drawing;
 
 namespace UI {
@@ -81,10 +81,9 @@ public:
     Inkscape::ColorMode  get_color_mode()  const { return _color_mode; }
     Inkscape::SplitMode  get_split_mode()  const { return _split_mode; }
     void set_clip_to_page_mode(bool clip);
+    void set_antialiasing_enabled(bool enabled);
 
     // CMS
-    void set_cms_key(std::string key);
-    const std::string &get_cms_key() const { return _cms_key; }
     void set_cms_active(bool active) { _cms_active = active; }
     bool get_cms_active() const { return _cms_active; }
 
@@ -121,7 +120,7 @@ public:
         _current_canvas_item = item;
     }
     Inkscape::CanvasItem *get_grabbed_canvas_item() const { return _grabbed_canvas_item; }
-    void                  set_grabbed_canvas_item(Inkscape::CanvasItem *item, Gdk::EventMask mask) {
+    void                  set_grabbed_canvas_item(Inkscape::CanvasItem *item, EventMask mask) {
         _grabbed_canvas_item = item;
         _grabbed_event_mask = mask;
     }
@@ -133,17 +132,26 @@ protected:
     void get_preferred_width_vfunc (int &minimum_width,  int &natural_width ) const override;
     void get_preferred_height_vfunc(int &minimum_height, int &natural_height) const override;
 
-    // Event handlers
-    bool on_scroll_event        (GdkEventScroll*  ) override;
-    bool on_button_event        (GdkEventButton*  );
-    bool on_button_press_event  (GdkEventButton*  ) override;
-    bool on_button_release_event(GdkEventButton*  ) override;
-    bool on_enter_notify_event  (GdkEventCrossing*) override;
-    bool on_leave_notify_event  (GdkEventCrossing*) override;
-    bool on_focus_in_event      (GdkEventFocus*   ) override;
-    bool on_key_press_event     (GdkEventKey*     ) override;
-    bool on_key_release_event   (GdkEventKey*     ) override;
-    bool on_motion_notify_event (GdkEventMotion*  ) override;
+    // Event controllers
+    Glib::RefPtr<Gtk::EventController> scroll_controller, key_controller, motion_controller;
+    Glib::RefPtr<Gtk::Gesture> click_gesture;
+
+    // EventControllerScroll
+    bool on_scroll(GtkEventControllerScroll *controller, double dx, double dy);
+
+    // GtkGestureMultiPress
+    bool on_button_pressed (GtkGestureMultiPress *controller, int n_press, double x, double y);
+    bool on_button_released(GtkGestureMultiPress *controller, int n_press, double x, double y);
+
+    // EventControllerMotion
+    bool on_motion(GtkEventControllerMotion *controller, double x, double y);
+    bool on_enter (GtkEventControllerMotion *controller, double x, double y);
+    bool on_leave (GtkEventControllerMotion *controller);
+
+    // EventControllerKey
+    bool on_focus_in    (GtkEventControllerKey *controller);
+    bool on_key_pressed (GtkEventControllerKey *controller, unsigned keyval, unsigned keycode, GdkModifierType *state);
+    bool on_key_released(GtkEventControllerKey *controller, unsigned keyval, unsigned keycode, GdkModifierType *state);
 
     void on_realize() override;
     void on_unrealize() override;
@@ -169,17 +177,17 @@ private:
     Inkscape::RenderMode _render_mode = Inkscape::RenderMode::NORMAL;
     Inkscape::SplitMode  _split_mode  = Inkscape::SplitMode::NORMAL;
     Inkscape::ColorMode  _color_mode  = Inkscape::ColorMode::NORMAL;
+    bool _antialiasing_enabled = true;
 
     // CMS
-    std::string _cms_key;
     bool _cms_active = false;
+    std::shared_ptr<CMSTransform const> _cms_transform; ///< The lcms transform to apply to canvas.
+    void set_cms_transform(); ///< Set the lcms transform.
 
     /* Internal state */
 
     // Event handling/item picking
-    GdkEvent _pick_event;        ///< Event used to find currently selected item.
-    bool     _in_repick;         ///< For tracking recursion of pick_current_item().
-    bool     _left_grabbed_item; ///< ?
+    bool     _left_grabbed_item; ///< Relied upon by connector tool.
     bool     _all_enter_events;  ///< Keep all enter events. Only set true in connector-tool.cpp.
     bool     _is_dragging;       ///< Used in selection-chemistry to block undo/redo.
     int      _state;             ///< Last known modifier state (SHIFT, CTRL, etc.).
@@ -187,7 +195,7 @@ private:
     Inkscape::CanvasItem *_current_canvas_item;     ///< Item containing cursor, nullptr if none.
     Inkscape::CanvasItem *_current_canvas_item_new; ///< Item to become _current_item, nullptr if none.
     Inkscape::CanvasItem *_grabbed_canvas_item;     ///< Item that holds a pointer grab; nullptr if none.
-    Gdk::EventMask _grabbed_event_mask;
+    EventMask _grabbed_event_mask;
 
     // Drawing
     bool _need_update = true; // Set true so setting CanvasItem bounds are calculated at least once.

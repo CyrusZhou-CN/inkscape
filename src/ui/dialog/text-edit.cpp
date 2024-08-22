@@ -29,7 +29,6 @@
 #include <gtkmm/box.h>
 #include <gtkmm/builder.h>
 #include <gtkmm/button.h>
-#include <gtkmm/buttonbox.h>
 #include <gtkmm/label.h>
 #include <gtkmm/notebook.h>
 #include <gtkmm/textbuffer.h>
@@ -507,7 +506,7 @@ void TextEdit::display_font_collections()
 
     // Insert system collections.
     for(auto const& col: font_collections->get_collections(true)) {
-        auto btn = Gtk::make_managed<Gtk::CheckButton>(col);
+        auto const btn = Gtk::make_managed<Gtk::CheckButton>(col);
         btn->set_margin_bottom(2);
         btn->set_active(font_collections->is_collection_selected(col));
         btn->signal_toggled().connect([=](){
@@ -515,7 +514,7 @@ void TextEdit::display_font_collections()
             font_collections->update_selected_collections(col);
         });
 // g_message("tag: %s", tag.display_name.c_str());
-        auto row = Gtk::make_managed<Gtk::ListBoxRow>();
+        auto const row = Gtk::make_managed<Gtk::ListBoxRow>();
         row->set_can_focus(false);
         row->add(*btn);
         row->show_all();
@@ -523,9 +522,9 @@ void TextEdit::display_font_collections()
     }
 
     // Insert row separator.
-    auto sep = Gtk::make_managed<Gtk::Separator>();
+    auto const sep = Gtk::make_managed<Gtk::Separator>();
     sep->set_margin_bottom(2);
-    auto sep_row = Gtk::make_managed<Gtk::ListBoxRow>();
+    auto const sep_row = Gtk::make_managed<Gtk::ListBoxRow>();
     sep_row->set_can_focus(false);
     sep_row->add(*sep);
     sep_row->show_all();
@@ -533,7 +532,7 @@ void TextEdit::display_font_collections()
 
     // Insert user collections.
     for (auto const& col: font_collections->get_collections()) {
-        auto btn = Gtk::make_managed<Gtk::CheckButton>(col);
+        auto const btn = Gtk::make_managed<Gtk::CheckButton>(col);
         btn->set_margin_bottom(2);
         btn->set_active(font_collections->is_collection_selected(col));
         btn->signal_toggled().connect([=](){
@@ -541,7 +540,7 @@ void TextEdit::display_font_collections()
             font_collections->update_selected_collections(col);
         });
 // g_message("tag: %s", tag.display_name.c_str());
-        auto row = Gtk::make_managed<Gtk::ListBoxRow>();
+        auto const row = Gtk::make_managed<Gtk::ListBoxRow>();
         row->set_can_focus(false);
         row->add(*btn);
         row->show_all();

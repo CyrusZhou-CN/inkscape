@@ -19,7 +19,7 @@
 #include <glibmm/timer.h>
 #include <glibmm/main.h>
 
-#include <gtkmm/buttonbox.h>
+#include <gtkmm/box.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/frame.h>
 
@@ -147,7 +147,7 @@ IconPreviewPanel::IconPreviewPanel()
 
     Gtk::Box* magBox = new Gtk::Box(Gtk::ORIENTATION_VERTICAL);
 
-    UI::Widget::Frame *magFrame = Gtk::manage(new UI::Widget::Frame(_("Magnified:")));
+    auto const magFrame = Gtk::make_managed<UI::Widget::Frame>(_("Magnified:"));
     magFrame->add( magnified );
 
     magBox->pack_start( *magFrame, Gtk::PACK_EXPAND_WIDGET );
@@ -169,17 +169,17 @@ IconPreviewPanel::IconPreviewPanel()
         buttons[i] = new Gtk::ToggleToolButton(label);
         buttons[i]->set_active( i == hot );
         if ( prefs->getBool("/iconpreview/showFrames", true) ) {
-            Gtk::Frame *frame = new Gtk::Frame();
+            auto const frame = Gtk::make_managed<Gtk::Frame>();
             frame->set_shadow_type(Gtk::SHADOW_ETCHED_IN);
             frame->add(*images[i]);
-            buttons[i]->set_icon_widget(*Gtk::manage(frame));
+            buttons[i]->set_icon_widget(*frame);
         } else {
             buttons[i]->set_icon_widget(*images[i]);
         }
 
         buttons[i]->set_tooltip_text(label);
 
-        buttons[i]->signal_clicked().connect( sigc::bind<int>( sigc::mem_fun(*this, &IconPreviewPanel::on_button_clicked), i) );
+        buttons[i]->signal_clicked().connect( sigc::bind( sigc::mem_fun(*this, &IconPreviewPanel::on_button_clicked), i) );
 
         buttons[i]->set_halign(Gtk::ALIGN_CENTER);
         buttons[i]->set_valign(Gtk::ALIGN_CENTER);
@@ -198,7 +198,7 @@ IconPreviewPanel::IconPreviewPanel()
             }
             if (sizes[i] <= avail) {
                 if (!horiz) {
-                    horiz = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL));
+                    horiz = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
                     avail = previous;
                     verts->pack_end(*horiz, Gtk::PACK_SHRINK);
                 }
@@ -214,7 +214,7 @@ IconPreviewPanel::IconPreviewPanel()
 
     iconBox.pack_start(splitter);
     splitter.pack1( *magBox, true, false );
-    UI::Widget::Frame *actuals = Gtk::manage(new UI::Widget::Frame (_("Actual Size:")));
+    auto const actuals = Gtk::make_managed<UI::Widget::Frame>(_("Actual Size:"));
     actuals->set_border_width(4);
     actuals->add(*verts);
     splitter.pack2( *actuals, false, false );

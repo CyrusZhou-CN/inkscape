@@ -45,7 +45,6 @@ enum Type {
     FILTERS,
     THEMES,
     UIS,
-    PIXMAPS,
     DOCS
 };
 
@@ -58,11 +57,15 @@ enum Domain {
 };
 
 Util::ptr_shared get_path(Domain domain, Type type,
-                                char const *filename=nullptr);
+                                char const *filename=nullptr,
+                                char const *extra=nullptr);
 
 Glib::ustring get_path_ustring(Domain domain, Type type,
-                                char const *filename=nullptr);
-std::string get_path_string(Domain domain, Type type, char const *filename = nullptr);
+                                char const *filename=nullptr,
+                                char const *extra=nullptr);
+std::string get_path_string(Domain domain, Type type,
+                                char const *filename = nullptr,
+                                char const *extra=nullptr);
 
 std::string get_filename_string(Type type, char const *filename, bool localized = false, bool silent = false);
 Glib::ustring get_filename(Type type, char const *filename, bool localized = false, bool silent = false);

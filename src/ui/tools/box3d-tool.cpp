@@ -19,18 +19,13 @@
 #include <gdk/gdkkeysyms.h>
 #include <glibmm/i18n.h>
 
-
 #include "context-fns.h"
-#include "desktop-style.h"
 #include "desktop.h"
 #include "document-undo.h"
 #include "document.h"
 #include "message-context.h"
 #include "perspective-line.h"
-#include "selection-chemistry.h"
 #include "selection.h"
-
-#include "include/macros.h"
 
 #include "object/box3d-side.h"
 #include "object/box3d.h"
@@ -40,66 +35,57 @@
 #include "ui/icon-names.h"
 #include "ui/shape-editor.h"
 #include "ui/tools/box3d-tool.h"
+#include "ui/widget/events/canvas-event.h"
 
 using Inkscape::DocumentUndo;
 
-namespace Inkscape {
-namespace UI {
-namespace Tools {
+namespace Inkscape::UI::Tools {
 
 Box3dTool::Box3dTool(SPDesktop *desktop)
     : ToolBase(desktop, "/tools/shapes/3dbox", "box.svg")
-    , _vpdrag(nullptr)
-    , box3d(nullptr)
-    , ctrl_dragged(false)
-    , extruded(false)
 {
-    this->shape_editor = new ShapeEditor(_desktop);
+    shape_editor = new ShapeEditor(_desktop);
 
-    SPItem *item = desktop->getSelection()->singleItem();
-    if (item) {
-        this->shape_editor->set_item(item);
+    if (auto item = desktop->getSelection()->singleItem()) {
+        shape_editor->set_item(item);
     }
 
-    this->sel_changed_connection.disconnect();
-    this->sel_changed_connection = desktop->getSelection()->connectChanged(
+    sel_changed_connection = desktop->getSelection()->connectChanged(
         sigc::mem_fun(*this, &Box3dTool::selection_changed)
     );
 
-    this->_vpdrag = new Box3D::VPDrag(desktop->getDocument());
+    _vpdrag = std::make_unique<Box3D::VPDrag>(desktop->getDocument());
 
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    auto prefs = Preferences::get();
 
     if (prefs->getBool("/tools/shapes/selcue")) {
-        this->enableSelectionCue();
+        enableSelectionCue();
     }
 
     if (prefs->getBool("/tools/shapes/gradientdrag")) {
-        this->enableGrDrag();
+        enableGrDrag();
     }
 }
 
-Box3dTool::~Box3dTool() {
+Box3dTool::~Box3dTool()
+{
     ungrabCanvasEvents();
-    this->finishItem();
-    this->sel_changed_connection.disconnect();
+    finishItem();
 
-    this->enableGrDrag(false);
+    enableGrDrag(false);
 
-    delete (this->_vpdrag);
-    this->_vpdrag = nullptr;
-
-    delete this->shape_editor;
-    this->shape_editor = nullptr;
+    delete shape_editor;
+    shape_editor = nullptr;
 }
 
 /**
  * Callback that processes the "changed" signal on the selection;
  * destroys old and creates new knotholder.
  */
-void Box3dTool::selection_changed(Inkscape::Selection* selection) {
-    this->shape_editor->unset_item();
-    this->shape_editor->set_item(selection->singleItem());
+void Box3dTool::selection_changed(Selection *selection)
+{
+    shape_editor->unset_item();
+    shape_editor->set_item(selection->singleItem());
 
     if (selection->perspList().size() == 1) {
         // selecting a single box changes the current perspective
@@ -110,220 +96,200 @@ void Box3dTool::selection_changed(Inkscape::Selection* selection) {
 /* Create a default perspective in document defs if none is present (which can happen, among other
  * circumstances, after 'vacuum defs' or when a pre-0.46 file is opened).
  */
-static void sp_box3d_context_ensure_persp_in_defs(SPDocument *document)
+static void ensure_persp_in_defs(SPDocument *document)
 {
     auto defs = document->getDefs();
 
-    bool has_persp = false;
-    for (auto &child : defs->children) {
+    for (auto const &child : defs->children) {
         if (is<Persp3D>(&child)) {
-            has_persp = true;
-            break;
+            return;
         }
     }
 
-    if (!has_persp) {
-        document->setCurrentPersp3D(Persp3D::create_xml_element (document));
-    }
+    document->setCurrentPersp3D(Persp3D::create_xml_element(document));
 }
 
-bool Box3dTool::item_handler(SPItem* item, GdkEvent* event) {
-    gint ret = FALSE;
-
-    switch (event->type) {
-    case GDK_BUTTON_PRESS:
-        if ( event->button.button == 1) {
-            this->setup_for_drag_start(event);
-            //ret = TRUE;
+bool Box3dTool::item_handler(SPItem *item, CanvasEvent const &event)
+{
+    if (event.type() == EventType::BUTTON_PRESS) {
+        auto &button_event = static_cast<ButtonPressEvent const &>(event);
+        if (button_event.numPress() == 1 && button_event.button() == 1) {
+            setup_for_drag_start(event.original());
         }
-        break;
-        // motion and release are always on root (why?)
-    default:
-        break;
     }
 
-//    if (((ToolBaseClass *) sp_box3d_context_parent_class)->item_handler) {
-//        ret = ((ToolBaseClass *) sp_box3d_context_parent_class)->item_handler(event_context, item, event);
-//    }
-    // CPPIFY: ret is always overwritten...
-    ret = ToolBase::item_handler(item, event);
-
-    return ret;
+    return ToolBase::item_handler(item, event);
 }
 
-bool Box3dTool::root_handler(GdkEvent* event) {
-    static bool dragging;
-
-    SPDocument *document = _desktop->getDocument();
+bool Box3dTool::root_handler(CanvasEvent const &event)
+{
+    auto document = _desktop->getDocument();
     auto const y_dir = _desktop->yaxisdir();
-    Inkscape::Selection *selection = _desktop->getSelection();
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    auto selection = _desktop->getSelection();
+
+    auto prefs = Preferences::get();
     int const snaps = prefs->getInt("/options/rotationsnapsperpi/value", 12);
+    tolerance = prefs->getIntLimited("/options/dragtolerance/value", 0, 0, 100);
 
-    Persp3D *cur_persp = document->getCurrentPersp3D();
+    auto cur_persp = document->getCurrentPersp3D();
 
-    this->tolerance = prefs->getIntLimited("/options/dragtolerance/value", 0, 0, 100);
+    bool ret = false;
 
-    gint ret = FALSE;
-    switch (event->type) {
-    case GDK_BUTTON_PRESS:
-        if ( event->button.button == 1) {
-            Geom::Point const button_w(event->button.x, event->button.y);
-            Geom::Point button_dt(_desktop->w2d(button_w));
+    inspect_event(event,
+        [&] (ButtonPressEvent const &event) {
+            if (event.numPress() != 1 || event.button() != 1) {
+                return;
+            }
 
-            // save drag origin
-            this->xp = (gint) button_w[Geom::X];
-            this->yp = (gint) button_w[Geom::Y];
-            this->within_tolerance = true;
+            auto const button_w = event.eventPos();
+            auto button_dt = _desktop->w2d(button_w);
+
+            saveDragOrigin(button_w);
 
             // remember clicked box3d, *not* disregarding groups (since a 3D box is a group), honoring Alt
-            this->item_to_select = sp_event_context_find_item (_desktop, button_w, event->button.state & GDK_MOD1_MASK, event->button.state & GDK_CONTROL_MASK);
+            item_to_select = sp_event_context_find_item(_desktop, button_w, event.modifiers() & GDK_MOD1_MASK, event.modifiers() & GDK_CONTROL_MASK);
 
             dragging = true;
 
-            SnapManager &m = _desktop->namedview->snap_manager;
-            m.setup(_desktop, true, this->box3d);
+            auto &m = _desktop->namedview->snap_manager;
+            m.setup(_desktop, true, box3d.get());
             m.freeSnapReturnByRef(button_dt, Inkscape::SNAPSOURCE_NODE_HANDLE);
             m.unSetup();
-            this->center = button_dt;
+            center = button_dt;
 
-            this->drag_origin = button_dt;
-            this->drag_ptB = button_dt;
-            this->drag_ptC = button_dt;
+            drag_origin = button_dt;
+            drag_ptB = button_dt;
+            drag_ptC = button_dt;
 
             // This can happen after saving when the last remaining perspective was purged and must be recreated.
             if (!cur_persp) {
-                sp_box3d_context_ensure_persp_in_defs(document);
+                ensure_persp_in_defs(document);
                 cur_persp = document->getCurrentPersp3D();
             }
 
-            /* Projective preimages of clicked point under current perspective */
-            this->drag_origin_proj = cur_persp->perspective_impl->tmat.preimage (button_dt, 0, Proj::Z);
-            this->drag_ptB_proj = this->drag_origin_proj;
-            this->drag_ptC_proj = this->drag_origin_proj;
-            this->drag_ptC_proj.normalize();
-            this->drag_ptC_proj[Proj::Z] = 0.25;
+            // Projective preimages of clicked point under current perspective.
+            drag_origin_proj = cur_persp->perspective_impl->tmat.preimage(button_dt, 0, Proj::Z);
+            drag_ptB_proj = drag_origin_proj;
+            drag_ptC_proj = drag_origin_proj;
+            drag_ptC_proj.normalize();
+            drag_ptC_proj[Proj::Z] = 0.25;
 
             grabCanvasEvents();
-            ret = TRUE;
-        }
-        break;
+            ret = true;
+        },
 
-    case GDK_MOTION_NOTIFY:
-        if (dragging && ( event->motion.state & GDK_BUTTON1_MASK )) {
+    [&] (MotionEvent const &event) {
+        if (dragging && event.modifiers() & GDK_BUTTON1_MASK) {
             if (!cur_persp) {
                 // Can happen if perspective is deleted while dragging, e.g. on document closure.
                 ret = true;
-                break;
+                return;
             }
-            if ( this->within_tolerance
-                 && ( abs( (gint) event->motion.x - this->xp ) < this->tolerance )
-                 && ( abs( (gint) event->motion.y - this->yp ) < this->tolerance ) ) {
-                break; // do not drag if we're within tolerance from origin
+
+            if (!checkDragMoved(event.eventPos())) {
+                return;
             }
-            // Once the user has moved farther than tolerance from the original location
-            // (indicating they intend to draw, not click), then always process the
-            // motion notify coordinates as given (no snapping back to origin)
-            this->within_tolerance = false;
 
-            Geom::Point const motion_w(event->motion.x,
-                                       event->motion.y);
-            Geom::Point motion_dt(_desktop->w2d(motion_w));
+            auto const motion_w = event.eventPos();
+            auto motion_dt = _desktop->w2d(motion_w);
 
-            SnapManager &m = _desktop->namedview->snap_manager;
-            m.setup(_desktop, true, this->box3d);
+            auto &m = _desktop->namedview->snap_manager;
+            m.setup(_desktop, true, box3d.get());
             m.freeSnapReturnByRef(motion_dt, Inkscape::SNAPSOURCE_NODE_HANDLE);
-            this->ctrl_dragged  = event->motion.state & GDK_CONTROL_MASK;
+            ctrl_dragged  = event.modifiers() & GDK_CONTROL_MASK;
 
-            if ((event->motion.state & GDK_SHIFT_MASK) && !this->extruded && this->box3d) {
-                // once shift is pressed, set this->extruded
-                this->extruded = true;
+            if (event.modifiers() & GDK_SHIFT_MASK && box3d) {
+                // once shift is pressed, set extruded
+                extruded = true;
             }
 
-            if (!this->extruded) {
-                this->drag_ptB = motion_dt;
-                this->drag_ptC = motion_dt;
+            if (!extruded) {
+                drag_ptB = motion_dt;
+                drag_ptC = motion_dt;
 
-                this->drag_ptB_proj = cur_persp->perspective_impl->tmat.preimage (motion_dt, 0, Proj::Z);
-                this->drag_ptC_proj = this->drag_ptB_proj;
-                this->drag_ptC_proj.normalize();
-                this->drag_ptC_proj[Proj::Z] = 0.25;
+                drag_ptB_proj = cur_persp->perspective_impl->tmat.preimage(motion_dt, 0, Proj::Z);
+                drag_ptC_proj = drag_ptB_proj;
+                drag_ptC_proj.normalize();
+                drag_ptC_proj[Proj::Z] = 0.25;
             } else {
                 // Without Ctrl, motion of the extruded corner is constrained to the
                 // perspective line from drag_ptB to vanishing point Y.
-                if (!this->ctrl_dragged) {
-                    /* snapping */
-                    Box3D::PerspectiveLine pline (this->drag_ptB, Proj::Z, document->getCurrentPersp3D());
-                    this->drag_ptC = pline.closest_to (motion_dt);
+                if (!ctrl_dragged) {
+                    // snapping
+                    auto pline = Box3D::PerspectiveLine(drag_ptB, Proj::Z, document->getCurrentPersp3D());
+                    drag_ptC = pline.closest_to(motion_dt);
 
-                    this->drag_ptB_proj.normalize();
-                    this->drag_ptC_proj = cur_persp->perspective_impl->tmat.preimage (this->drag_ptC, this->drag_ptB_proj[Proj::X], Proj::X);
+                    drag_ptB_proj.normalize();
+                    drag_ptC_proj = cur_persp->perspective_impl->tmat.preimage(drag_ptC, drag_ptB_proj[Proj::X], Proj::X);
                 } else {
-                    this->drag_ptC = motion_dt;
+                    drag_ptC = motion_dt;
 
-                    this->drag_ptB_proj.normalize();
-                    this->drag_ptC_proj = cur_persp->perspective_impl->tmat.preimage (motion_dt, this->drag_ptB_proj[Proj::X], Proj::X);
+                    drag_ptB_proj.normalize();
+                    drag_ptC_proj = cur_persp->perspective_impl->tmat.preimage(motion_dt, drag_ptB_proj[Proj::X], Proj::X);
                 }
 
-                m.freeSnapReturnByRef(this->drag_ptC, Inkscape::SNAPSOURCE_NODE_HANDLE);
+                m.freeSnapReturnByRef(drag_ptC, Inkscape::SNAPSOURCE_NODE_HANDLE);
             }
 
             m.unSetup();
 
-            this->drag(event->motion.state);
+            drag();
 
-            ret = TRUE;
-        } else if (!this->sp_event_context_knot_mouseover()) {
-            SnapManager &m = _desktop->namedview->snap_manager;
+            ret = true;
+        } else if (!sp_event_context_knot_mouseover()) {
+            auto &m = _desktop->namedview->snap_manager;
             m.setup(_desktop);
 
-            Geom::Point const motion_w(event->motion.x, event->motion.y);
-            Geom::Point motion_dt(_desktop->w2d(motion_w));
+            auto const motion_w = event.eventPos();
+            auto motion_dt = _desktop->w2d(motion_w);
             m.preSnap(Inkscape::SnapCandidatePoint(motion_dt, Inkscape::SNAPSOURCE_NODE_HANDLE));
             m.unSetup();
         }
-        break;
+    },
 
-    case GDK_BUTTON_RELEASE:
-        this->xp = this->yp = 0;
+        [&] (ButtonReleaseEvent const &event) {
+            xyp = {};
 
-        if (event->button.button == 1) {
+            if (event.button() != 1) {
+                return;
+            }
+
             dragging = false;
-            this->discard_delayed_snap_event();
+            discard_delayed_snap_event();
 
-            if (!this->within_tolerance) {
+            if (!within_tolerance) {
                 // we've been dragging (or switched tools if !box3d), finish the box
-                if (this->box3d) {
-                    _desktop->getSelection()->set(this->box3d); // Updating the selection will send signals to the box3d-toolbar ...
+                if (box3d) {
+                    _desktop->getSelection()->set(box3d.get()); // Updating the selection will send signals to the box3d-toolbar ...
                 }
-                this->finishItem(); // .. but finishItem() will be called from the deconstructor too and shall NOT fire such signals!
-            } else if (this->item_to_select) {
+                finishItem(); // .. but finishItem() will be called from the destructor too and shall NOT fire such signals!
+            } else if (item_to_select) {
                 // no dragging, select clicked box3d if any
-                if (event->button.state & GDK_SHIFT_MASK) {
-                    selection->toggle(this->item_to_select);
+                if (event.modifiers() & GDK_SHIFT_MASK) {
+                    selection->toggle(item_to_select);
                 } else {
-                    selection->set(this->item_to_select);
+                    selection->set(item_to_select);
                 }
             } else {
                 // click in an empty space
                 selection->clear();
             }
 
-            this->item_to_select = nullptr;
-            ret = TRUE;
+            item_to_select = nullptr;
+            ret = true;
             ungrabCanvasEvents();
-        }
-        break;
+        },
 
-    case GDK_KEY_PRESS:
-        switch (get_latin_keyval (&event->key)) {
+    [&] (KeyPressEvent const &event) {
+        switch (get_latin_keyval(event.original())) {
         case GDK_KEY_Up:
         case GDK_KEY_Down:
         case GDK_KEY_KP_Up:
         case GDK_KEY_KP_Down:
             // prevent the zoom field from activation
-            if (!MOD__CTRL_ONLY(event))
-                ret = TRUE;
+            if (!MOD__CTRL_ONLY(event)) {
+                ret = true;
+            }
             break;
 
         case GDK_KEY_bracketright:
@@ -384,11 +350,11 @@ bool Box3dTool::root_handler(GdkEvent* event) {
         case GDK_KEY_X:
             if (MOD__ALT_ONLY(event)) {
                 _desktop->setToolboxFocusTo("box3d-angle-x");
-                ret = TRUE;
+                ret = true;
             }
             if (MOD__SHIFT_ONLY(event)) {
                 Persp3D::toggle_VPs(selection->perspList(), Proj::X);
-                this->_vpdrag->updateLines(); // FIXME: Shouldn't this be done automatically?
+                _vpdrag->updateLines(); // FIXME: Shouldn't this be done automatically?
                 ret = true;
             }
             break;
@@ -397,7 +363,7 @@ bool Box3dTool::root_handler(GdkEvent* event) {
         case GDK_KEY_Y:
             if (MOD__SHIFT_ONLY(event)) {
                 Persp3D::toggle_VPs(selection->perspList(), Proj::Y);
-                this->_vpdrag->updateLines(); // FIXME: Shouldn't this be done automatically?
+                _vpdrag->updateLines(); // FIXME: Shouldn't this be done automatically?
                 ret = true;
             }
             break;
@@ -406,7 +372,7 @@ bool Box3dTool::root_handler(GdkEvent* event) {
         case GDK_KEY_Z:
             if (MOD__SHIFT_ONLY(event)) {
                 Persp3D::toggle_VPs(selection->perspList(), Proj::Z);
-                this->_vpdrag->updateLines(); // FIXME: Shouldn't this be done automatically?
+                _vpdrag->updateLines(); // FIXME: Shouldn't this be done automatically?
                 ret = true;
             }
             break;
@@ -420,13 +386,13 @@ bool Box3dTool::root_handler(GdkEvent* event) {
             if (dragging) {
                 ungrabCanvasEvents();
                 dragging = false;
-                this->discard_delayed_snap_event();
-                if (!this->within_tolerance) {
+                discard_delayed_snap_event();
+                if (!within_tolerance) {
                     // we've been dragging (or switched tools if !box3d), finish the box
-                    if (this->box3d) {
-                        _desktop->getSelection()->set(this->box3d); // Updating the selection will send signals to the box3d-toolbar ...
+                    if (box3d) {
+                        _desktop->getSelection()->set(box3d.get()); // Updating the selection will send signals to the box3d-toolbar ...
                     }
-                    this->finishItem(); // .. but finishItem() will be called from the deconstructor too and shall NOT fire such signals!
+                    finishItem(); // .. but finishItem() will be called from the destructor too and shall NOT fire such signals!
                 }
                 // do not return true, so that space would work switching to selector
             }
@@ -435,53 +401,49 @@ bool Box3dTool::root_handler(GdkEvent* event) {
         case GDK_KEY_Delete:
         case GDK_KEY_KP_Delete:
         case GDK_KEY_BackSpace:
-            ret = this->deleteSelectedDrag(MOD__CTRL_ONLY(event));
+            ret = deleteSelectedDrag(MOD__CTRL_ONLY(event));
             break;
 
         default:
             break;
         }
-        break;
+    },
 
-    default:
-        break;
-    }
+    [&] (CanvasEvent const &event) {}
+    );
 
-    if (!ret) {
-        ret = ToolBase::root_handler(event);
-    }
-
-    return ret;
+    return ret || ToolBase::root_handler(event);
 }
 
-void Box3dTool::drag(guint /*state*/) {
-    if (!this->box3d) {
-        if (Inkscape::have_viable_layer(_desktop, defaultMessageContext()) == false) {
+void Box3dTool::drag()
+{
+    if (!box3d) {
+        if (!have_viable_layer(_desktop, defaultMessageContext())) {
             return;
         }
 
         // Create object
-        SPBox3D *box3d = SPBox3D::createBox3D(currentLayer());
+        auto newbox3d = SPBox3D::createBox3D(currentLayer());
 
         // Set style
-        _desktop->applyCurrentOrToolStyle(box3d, "/tools/shapes/3dbox", false);
+        _desktop->applyCurrentOrToolStyle(newbox3d, "/tools/shapes/3dbox", false);
 
-        this->box3d = box3d;
+        box3d = newbox3d;
 
         // TODO: Incorporate this in box3d-side.cpp!
         for (int i = 0; i < 6; ++i) {
-            Box3DSide *side = Box3DSide::createBox3DSide(box3d);
+            auto side = Box3DSide::createBox3DSide(newbox3d);
             
-            guint desc = Box3D::int_to_face(i);
+            unsigned desc = Box3D::int_to_face(i);
 
-            Box3D::Axis plane = (Box3D::Axis) (desc & 0x7);
-            plane = (Box3D::is_plane(plane) ? plane : Box3D::orth_plane_or_axis(plane));
+            auto plane = static_cast<Box3D::Axis>(desc & 0x7);
+            plane = Box3D::is_plane(plane) ? plane : Box3D::orth_plane_or_axis(plane);
             side->dir1 = Box3D::extract_first_axis_direction(plane);
             side->dir2 = Box3D::extract_second_axis_direction(plane);
-            side->front_or_rear = (Box3D::FrontOrRear) (desc & 0x8);
+            side->front_or_rear = static_cast<Box3D::FrontOrRear>(desc & 0x8);
 
             // Set style
-            Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+            auto prefs = Preferences::get();
 
             Glib::ustring descr = "/desktop/";
             descr += side->axes_string();
@@ -496,67 +458,63 @@ void Box3dTool::drag(guint /*state*/) {
                 side->setAttribute("style", cur_style);
             } else {
                 // use default style 
-                Glib::ustring tool_path = Glib::ustring::compose("/tools/shapes/3dbox/%1",
-                        side->axes_string());
+                auto tool_path = Glib::ustring::compose("/tools/shapes/3dbox/%1", side->axes_string());
                 _desktop->applyCurrentOrToolStyle(side, tool_path, false);
             }
 
             side->updateRepr(); // calls Box3DSide::write() and updates, e.g., the axes string description
         }
 
-        this->box3d->set_z_orders();
-        this->box3d->updateRepr();
+        box3d->set_z_orders();
+        box3d->updateRepr();
 
         // TODO: It would be nice to show the VPs during dragging, but since there is no selection
         //       at this point (only after finishing the box), we must do this "manually"
-        /* this._vpdrag->updateDraggers(); */
+        // _vpdrag->updateDraggers();
     }
 
-    g_assert(this->box3d);
+    box3d->orig_corner0 = drag_origin_proj;
+    box3d->orig_corner7 = drag_ptC_proj;
 
-    this->box3d->orig_corner0 = this->drag_origin_proj;
-    this->box3d->orig_corner7 = this->drag_ptC_proj;
+    box3d->check_for_swapped_coords();
 
-    this->box3d->check_for_swapped_coords();
+    // we need to call this from here (instead of from SPBox3D::position_set(), for example)
+    // because z-order setting must not interfere with display updates during undo/redo.
+    box3d->set_z_orders();
 
-    /* we need to call this from here (instead of from SPBox3D::position_set(), for example)
-       because z-order setting must not interfere with display updates during undo/redo */
-    this->box3d->set_z_orders ();
-
-    this->box3d->position_set();
+    box3d->position_set();
 
     // status text
-    this->message_context->setF(Inkscape::NORMAL_MESSAGE, "%s", _("<b>3D Box</b>; with <b>Shift</b> to extrude along the Z axis"));
+    message_context->setF(Inkscape::NORMAL_MESSAGE, "%s", _("<b>3D Box</b>; with <b>Shift</b> to extrude along the Z axis"));
 }
 
-void Box3dTool::finishItem() {
-    this->message_context->clear();
-    this->ctrl_dragged = false;
-    this->extruded = false;
+void Box3dTool::finishItem()
+{
+    message_context->clear();
+    ctrl_dragged = false;
+    extruded = false;
 
-    if (this->box3d != nullptr) {
-        SPDocument *doc = _desktop->getDocument();
+    if (box3d) {
+        auto doc = _desktop->getDocument();
 
         if (!doc || !doc->getCurrentPersp3D()) {
             return;
         }
 
-        this->box3d->orig_corner0 = this->drag_origin_proj;
-        this->box3d->orig_corner7 = this->drag_ptC_proj;
+        box3d->orig_corner0 = drag_origin_proj;
+        box3d->orig_corner7 = drag_ptC_proj;
 
-        this->box3d->updateRepr();
+        box3d->updateRepr();
 
-        this->box3d->relabel_corners();
+        box3d->relabel_corners();
 
         DocumentUndo::done(_desktop->getDocument(), _("Create 3D box"), INKSCAPE_ICON("draw-cuboid"));
 
-        this->box3d = nullptr;
+        box3d = nullptr;
     }
 }
 
-}
-}
-}
+} // namespace Inkscape::UI::Tools
 
 /*
   Local Variables:

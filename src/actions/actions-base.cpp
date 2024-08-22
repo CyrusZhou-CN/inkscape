@@ -201,8 +201,8 @@ std::vector<std::vector<Glib::ustring>> raw_data_base =
 {
     // clang-format off
     {"app.inkscape-version",          N_("Inkscape Version"),        "Base",       N_("Print Inkscape version and exit")                   },
-    {"app.active-window-start",       N_("Active W. Call start"),    "Base",       N_("Call active window start")                          },
-    {"app.active-window-end",         N_("Active W. Call end"),      "Base",       N_("Call active window end")                            },
+    {"app.active-window-start",       N_("Active Window: Start Call"), "Base",     N_("Start execution in active window")                          },
+    {"app.active-window-end",         N_("Active Window: End Call"), "Base",       N_("End execution in active window")                            },
     {"app.debug-info",                N_("Debug Info"),              "Base",       N_("Print debugging information and exit")              },
     {"app.system-data-directory",     N_("System Directory"),        "Base",       N_("Print system data directory and exit")              },
     {"app.user-data-directory",       N_("User Directory"),          "Base",       N_("Print user data directory and exit")                },
@@ -236,7 +236,7 @@ add_actions_base(InkscapeApplication* app)
     gapp->add_action(               "system-data-directory",                               sigc::ptr_fun(&print_system_data_directory)            );
     gapp->add_action(               "user-data-directory",                                 sigc::ptr_fun(&print_user_data_directory)              );
     gapp->add_action(               "action-list",        sigc::mem_fun(*app, &InkscapeApplication::print_action_list)                            );
-    gapp->add_action(               "vacuum-defs",        sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&vacuum_defs),               app)        );
+    gapp->add_action(               "vacuum-defs",        sigc::bind(sigc::ptr_fun(&vacuum_defs),               app)        );
     gapp->add_action(               "quit",               sigc::mem_fun(*app, &InkscapeApplication::on_quit)                                      );
     gapp->add_action(               "quit-immediate",     sigc::mem_fun(*app, &InkscapeApplication::on_quit_immediate)                            );
 
@@ -245,11 +245,11 @@ add_actions_base(InkscapeApplication* app)
     gapp->add_action(               "no-convert-baseline",                                 sigc::ptr_fun(&no_convert_baseline)                    );
 
 
-    gapp->add_action(               "query-x",            sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&query_x),                   app)        );
-    gapp->add_action(               "query-y",            sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&query_y),                   app)        );
-    gapp->add_action(               "query-width",        sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&query_width),               app)        );
-    gapp->add_action(               "query-height",       sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&query_height),              app)        );
-    gapp->add_action(               "query-all",          sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&query_all),                 app)        );
+    gapp->add_action(               "query-x",            sigc::bind(sigc::ptr_fun(&query_x),                   app)        );
+    gapp->add_action(               "query-y",            sigc::bind(sigc::ptr_fun(&query_y),                   app)        );
+    gapp->add_action(               "query-width",        sigc::bind(sigc::ptr_fun(&query_width),               app)        );
+    gapp->add_action(               "query-height",       sigc::bind(sigc::ptr_fun(&query_height),              app)        );
+    gapp->add_action(               "query-all",          sigc::bind(sigc::ptr_fun(&query_all),                 app)        );
     // clang-format on
 
     // Revision string is going to be added to the actions interface so it can be queried for existance by GApplication

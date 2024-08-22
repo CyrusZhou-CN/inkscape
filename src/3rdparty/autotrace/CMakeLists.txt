@@ -1,7 +1,5 @@
 set ( autotrace_SRC
 config.h
-atou.c
-atou.h
 autotrace.c
 autotrace.h
 bitmap.c
@@ -11,8 +9,6 @@ color.c
 color.h
 curve.c
 curve.h
-datetime.c
-datetime.h
 despeckle.c
 despeckle.h
 epsilon-equal.c

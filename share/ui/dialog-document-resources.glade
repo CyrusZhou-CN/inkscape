@@ -46,7 +46,7 @@
         <col id="3">0</col>
       </row>
       <row>
-        <col id="0" translatable="yes">-</col>
+        <col id="0" translatable="no">-</col>
         <col id="1">-</col>
         <col id="2">-</col>
         <col id="3">0</col>
@@ -172,7 +172,7 @@
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
-            <property name="tooltip-text" translatable="yes">Select item on canvas or XML dialog</property>
+            <property name="tooltip-text" translatable="yes">Select this on canvas (if applicable) or in the XML dialog (e.g. a pattern in the 'defs' section)</property>
             <property name="image">image-select</property>
             <property name="relief">none</property>
           </object>

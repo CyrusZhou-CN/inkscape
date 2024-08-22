@@ -71,7 +71,7 @@ class Parameter {
     bool getUpdating() const { return _updating; }
     virtual void param_set_default() = 0;
     virtual void param_update_default(const gchar *default_value) = 0;
-    // This creates a new widget (newed with Gtk::manage(new ...);)
+    // This creates a new widget (newed with Gtk::make_managed<...);>()
     virtual Gtk::Widget *param_newWidget() = 0;
     virtual Glib::ustring *param_getTooltip() { return &param_tooltip; };
 

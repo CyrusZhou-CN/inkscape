@@ -33,6 +33,8 @@
 #include "inkview-window.h"
 #include "util/statics.h"
 
+#include "ui/dialog-run.h"
+
 #ifdef ENABLE_NLS
 // Native Language Support - shouldn't this always be used?
 #include "helper/gettext.h"   // gettext init
@@ -123,7 +125,7 @@ InkviewApplication::on_activate()
     file_filter->set_name(_("Scalable Vector Graphics"));
     file_chooser.add_filter(file_filter);
 
-    int res = file_chooser.run();
+    int res = Inkscape::UI::dialog_run(file_chooser);
     if (res == 42) {
         auto files = file_chooser.get_files();
         if (!files.empty()) {

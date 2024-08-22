@@ -151,6 +151,7 @@ void Scalar::setValue(double value, bool setProg)
         setProgrammatically = true; // callback is supposed to reset back, if it cares
     }
     static_cast<SpinButton*>(_widget)->set_value(value);
+    setProgrammatically = false;
 }
 
 void Scalar::setWidthChars(unsigned chars)
@@ -172,19 +173,19 @@ void Scalar::addSlider()
     pack_start(*manage (scale));
 }
 
-Glib::SignalProxy0<void> Scalar::signal_value_changed()
+Glib::SignalProxy<void> Scalar::signal_value_changed()
 {
     return static_cast<SpinButton*>(_widget)->signal_value_changed();
 }
 
-Glib::SignalProxy1<bool, GdkEventButton*> Scalar::signal_button_release_event()
+Glib::SignalProxy<bool, GdkEventButton*> Scalar::signal_button_release_event()
 {
     return static_cast<SpinButton*>(_widget)->signal_button_release_event();
 }
 
 void Scalar::hide_label() {
     if (auto label = const_cast<Gtk::Label*>(getLabel())) {
-        label->hide();
+        label->set_visible(false);
         label->set_no_show_all();
         label->set_hexpand(true);
     }

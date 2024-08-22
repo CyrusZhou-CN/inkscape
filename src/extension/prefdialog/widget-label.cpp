@@ -83,7 +83,7 @@ Gtk::Widget *WidgetLabel::get_widget(sigc::signal<void ()> * /*changeSignal*/)
 
     Glib::ustring newtext = _value;
 
-    Gtk::Label *label = Gtk::manage(new Gtk::Label());
+    auto const label = Gtk::make_managed<Gtk::Label>();
     if (_mode == HEADER) {
         label->set_markup(Glib::ustring("<b>") + Glib::Markup::escape_text(newtext) + Glib::ustring("</b>"));
         label->set_margin_top(5);
@@ -108,11 +108,11 @@ Gtk::Widget *WidgetLabel::get_widget(sigc::signal<void ()> * /*changeSignal*/)
     int len = newtext.length();
     label->set_width_chars(len > GUI_MAX_LINE_LENGTH ? GUI_MAX_LINE_LENGTH : len);
 
-    label->show();
+    label->set_visible(true);
 
-    Gtk::Box *hbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL));
+    auto const hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
     hbox->pack_start(*label, true, true);
-    hbox->show();
+    hbox->set_visible(true);
 
     return hbox;
 }

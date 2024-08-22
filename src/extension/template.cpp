@@ -13,12 +13,12 @@
 #include <glibmm/i18n.h>
 #include <glibmm/regex.h>
 
+#include "document.h"
 #include "implementation/implementation.h"
 #include "io/file.h"
 #include "io/resource.h"
 #include "xml/attribute-record.h"
 #include "xml/repr.h"
-#include "document.h"
 
 using namespace Inkscape::IO::Resource;
 using Inkscape::Util::unit_table;
@@ -45,7 +45,7 @@ TemplatePreset::TemplatePreset(Template *mod, const Inkscape::XML::Node *repr, T
             std::string name = g_quark_to_string(iter.key);
             std::string value = std::string(iter.value);
             if (name == "name")
-                _name = value;
+                _name = value.empty() ? "?" : value;
             else if (name == "label")
                 _label = value;
             else if (name == "icon")
@@ -100,6 +100,8 @@ Glib::ustring TemplatePreset::_get_icon_path(const std::string &name) const
  * Setup the preferences and ask the user to fill in the remaineder.
  *
  * @param others - populate with these prefs on top of internal prefs.
+ *
+ * @return True if preferences have been shown or not using GUI, False is canceled.
  *
  * Can cause a GUI popup.
  */
@@ -402,6 +404,14 @@ SPDocument *Template::get_template_document() const
         return ink_file_new(file->get_path());
     }
     return nullptr;
+}
+
+std::string TemplatePreset::get_name() const {
+    return _name;
+}
+
+std::string TemplatePreset::get_label() const {
+    return _label;
 }
 
 } // namespace Extension

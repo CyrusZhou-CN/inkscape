@@ -37,6 +37,7 @@ typedef unsigned int guint32;
 
 namespace Inkscape {
 class CanvasItemCtrl;
+class CanvasEvent;
 }
 
 /**
@@ -174,7 +175,7 @@ public:
     /**
      * Event handler (from CanvasItem's).
      */
-    bool eventHandler(GdkEvent *event);
+    bool eventHandler(Inkscape::CanvasEvent const &event);
 
     bool is_visible()   const { return (flags & SP_KNOT_VISIBLE)   != 0; }
     bool is_selected()  const { return (flags & SP_KNOT_SELECTED)  != 0; }

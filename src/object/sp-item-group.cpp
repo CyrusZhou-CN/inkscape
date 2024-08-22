@@ -313,7 +313,7 @@ const char *SPGroup::displayName() const {
 gchar *SPGroup::description() const {
     gint len = this->getItemCount();
     return g_strdup_printf(
-        ngettext(_("of <b>%d</b> object"), _("of <b>%d</b> objects"), len), len);
+        ngettext("of <b>%d</b> object", "of <b>%d</b> objects", len), len);
 }
 
 void SPGroup::set(SPAttr key, gchar const* value) {
@@ -335,7 +335,7 @@ void SPGroup::set(SPAttr key, gchar const* value) {
 }
 
 Inkscape::DrawingItem *SPGroup::show (Inkscape::Drawing &drawing, unsigned int key, unsigned int flags) {
-    // std::cout << "SPGroup::show(): " << (getId()?getId():"null") << std::endl;
+    // std::cout << "SPGroup::set_visible(true): " << (getId()?getId():"null") << std::endl;
     Inkscape::DrawingGroup *ai;
 
     ai = new Inkscape::DrawingGroup(drawing);
@@ -570,8 +570,9 @@ sp_item_group_ungroup (SPGroup *group, std::vector<SPItem*> &children)
         if (clip_obj) {
             tmp_clip_set.unsetMask(true, false, true);
             tmp_clip_set.remove(group);
-            tmp_clip_set.group();
             clip = tmp_clip_set.singleItem();
+            // TODO: handle multiple children of a <clipPath>. Currently,
+            // ObjectSet::setMask() can only set a single item as clip.
         } 
         if (mask_obj) {
             tmp_mask_set.unsetMask(false, false, true);

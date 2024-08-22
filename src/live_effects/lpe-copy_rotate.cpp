@@ -394,7 +394,7 @@ Gtk::Widget * LPECopyRotate::newWidget()
 {
     // use manage here, because after deletion of Effect object, others might
     // still be pointing to this widget.
-    Gtk::Box *vbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
+    auto const vbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
 
     vbox->set_border_width(5);
     vbox->set_homogeneous(false);
@@ -403,7 +403,7 @@ Gtk::Widget * LPECopyRotate::newWidget()
     while (it != param_vector.end()) {
         if ((*it)->widget_is_visible) {
             Parameter *param = *it;
-            Gtk::Widget *widg = dynamic_cast<Gtk::Widget *>(param->param_newWidget());
+            auto const widg = param->param_newWidget();
             Glib::ustring *tip = param->param_getTooltip();
             if (widg) {
                 vbox->pack_start(*widg, true, true, 2);
@@ -418,7 +418,8 @@ Gtk::Widget * LPECopyRotate::newWidget()
 
         ++it;
     }
-    return dynamic_cast<Gtk::Widget *>(vbox);
+
+    return vbox;
 }
 
 

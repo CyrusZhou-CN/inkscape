@@ -168,7 +168,7 @@ public:
     Inkscape::XML::Node *      get_repr     ();
     gchar *       get_id       () const;
     const gchar * get_name     () const;
-    void          deactivate   ();
+    virtual void  deactivate   ();
     bool          deactivated  ();
     void          printFailure (Glib::ustring reason);
     std::string const &getErrorReason() { return _error_reason; };
@@ -192,7 +192,7 @@ private:
 public:
     /** \brief  A function to get the number of visible parameters of the extension.
         \return The number of visible parameters. */
-    unsigned int widget_visible_count ( );
+    unsigned int widget_visible_count() const;
 
 public:
     /** An error class for when a parameter is looked for that just

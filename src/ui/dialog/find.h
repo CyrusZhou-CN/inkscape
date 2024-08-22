@@ -14,7 +14,6 @@
 #define INKSCAPE_UI_DIALOG_FIND_H
 
 #include <gtkmm/box.h>
-#include <gtkmm/buttonbox.h>
 #include <gtkmm/expander.h>
 #include <gtkmm/label.h>
 #include <gtkmm/radiobutton.h>
@@ -283,7 +282,7 @@ private:
     Gtk::Label status;
     Gtk::Button button_find;
     Gtk::Button button_replace;
-    Gtk::ButtonBox box_buttons;
+    Gtk::Box box_buttons;
     Gtk::Box hboxbutton_row;
 
     /**

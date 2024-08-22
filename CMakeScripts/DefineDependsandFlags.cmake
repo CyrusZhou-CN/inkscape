@@ -260,6 +260,7 @@ endif()
 pkg_check_modules(
     GTK3
     REQUIRED
+    glibmm-2.4>=2.58
     gtkmm-3.0>=3.24
     gdkmm-3.0>=3.24
     gtk+-3.0>=3.24

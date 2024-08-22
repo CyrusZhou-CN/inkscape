@@ -46,8 +46,8 @@ public:
      *     This returns a DrawingPaintServer instance holding a copy of the paint server's resources which is
      *     used to produce a pattern on-demand using create_pattern().
      *
-     *  2. The other paint servers (patterns and hatches) implement show(), hide() and setBBox().
-     *     The drawing item subtree returned by show() is attached as a fill/stroke child of the
+     *  2. The other paint servers (patterns and hatches) implement set_visible(true), set_visible(false) and setBBox().
+     *     The drawing item subtree returned by set_visible(true) is attached as a fill/stroke child of the
      *     drawing item the paint server is applied to, and used directly when rendering.
      *
      *  Paint servers only need to implement one method. If both are implemented, then option 2 is used.

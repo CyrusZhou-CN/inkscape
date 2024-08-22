@@ -140,37 +140,36 @@ static void ink_drag_data_received(GtkWidget *widget,
                     bool fillnotstroke = (gdk_drag_context_get_actions (drag_context) != GDK_ACTION_MOVE);
                     if (fillnotstroke &&
                         (is<SPShape>(item) || is<SPText>(item) || is<SPFlowtext>(item))) {
-                        Path *livarot_path = Path_for_item(item, true, true);
-                        livarot_path->ConvertWithBackData(0.04);
+                        if (auto livarot_path = Path_for_item(item, true, true)) {
+                            livarot_path->ConvertWithBackData(0.04);
 
-                        std::optional<Path::cut_position> position = get_nearest_position_on_Path(livarot_path, button_doc);
-                        if (position) {
-                            Geom::Point nearest = get_point_on_Path(livarot_path, position->piece, position->t);
-                            Geom::Point delta = nearest - button_doc;
-                            Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-                            delta = desktop->d2w(delta);
-                            double stroke_tolerance =
-                                ( !item->style->stroke.isNone() ?
-                                  desktop->current_zoom() *
-                                  item->style->stroke_width.computed *
-                                  item->i2dt_affine().descrim() * 0.5
-                                  : 0.0)
-                                + prefs->getIntLimited("/options/dragtolerance/value", 0, 0, 100);
+                            if (auto position = get_nearest_position_on_Path(livarot_path.get(), button_doc)) {
+                                Geom::Point nearest = get_point_on_Path(livarot_path.get(), position->piece, position->t);
+                                Geom::Point delta = nearest - button_doc;
+                                Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+                                delta = desktop->d2w(delta);
+                                double stroke_tolerance =
+                                    (!item->style->stroke.isNone() ?
+                                     desktop->current_zoom() *
+                                     item->style->stroke_width.computed *
+                                     item->i2dt_affine().descrim() * 0.5
+                                     : 0.0)
+                                    + prefs->getIntLimited("/options/dragtolerance/value", 0, 0, 100);
 
-                            if (Geom::L2 (delta) < stroke_tolerance) {
-                                fillnotstroke = false;
+                                if (Geom::L2 (delta) < stroke_tolerance) {
+                                    fillnotstroke = false;
+                                }
                             }
                         }
-                        delete livarot_path;
+
+                        SPCSSAttr *css = sp_repr_css_attr_new();
+                        sp_repr_css_set_property(css, fillnotstroke ? "fill" : "stroke", colorspec);
+
+                        sp_desktop_apply_css_recursive(item, css, true);
+                        item->updateRepr();
+
+                        DocumentUndo::done(doc ,  _("Drop color"), "");
                     }
-
-                    SPCSSAttr *css = sp_repr_css_attr_new();
-                    sp_repr_css_set_property( css, fillnotstroke ? "fill":"stroke", colorspec );
-
-                    sp_desktop_apply_css_recursive( item, css, true );
-                    item->updateRepr();
-
-                    DocumentUndo::done( doc ,  _("Drop color"), "" );
                 }
             }
         }
@@ -238,12 +237,12 @@ static void ink_drag_data_received(GtkWidget *widget,
                     bool fillnotstroke = (gdk_drag_context_get_actions (drag_context) != GDK_ACTION_MOVE);
                     if (fillnotstroke &&
                         (is<SPShape>(item) || is<SPText>(item) || is<SPFlowtext>(item))) {
-                        Path *livarot_path = Path_for_item(item, true, true);
+                        auto livarot_path = Path_for_item(item, true, true);
                         livarot_path->ConvertWithBackData(0.04);
 
-                        std::optional<Path::cut_position> position = get_nearest_position_on_Path(livarot_path, button_doc);
+                        std::optional<Path::cut_position> position = get_nearest_position_on_Path(livarot_path.get(), button_doc);
                         if (position) {
-                            Geom::Point nearest = get_point_on_Path(livarot_path, position->piece, position->t);
+                            Geom::Point nearest = get_point_on_Path(livarot_path.get(), position->piece, position->t);
                             Geom::Point delta = nearest - button_doc;
                             Inkscape::Preferences *prefs = Inkscape::Preferences::get();
                             delta = desktop->d2w(delta);
@@ -259,7 +258,6 @@ static void ink_drag_data_received(GtkWidget *widget,
                                 fillnotstroke = false;
                             }
                         }
-                        delete livarot_path;
                     }
 
                     SPCSSAttr *css = sp_repr_css_attr_new();

@@ -15,7 +15,6 @@
 #include "inkscape.h"
 #include "io/resource.h"
 #include "svg/svg-color.h"
-#include "widgets/toolbox.h"
 
 #include <gdkmm/display.h>
 #include <gdkmm/screen.h>

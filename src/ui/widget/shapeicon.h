@@ -25,7 +25,8 @@ using OverlayState = int;
 enum OverlayStates : OverlayState {
     OVERLAY_NONE = 0,     // Nothing special about the object.
     OVERLAY_CLIP = 1,     // Object has a clip
-    OVERLAY_MASK = 2      // Object has a mask
+    OVERLAY_MASK = 2,     // Object has a mask
+    OVERLAY_BOTH = 3,     // Object has both clip and mask
 };
 
 /* Custom cell renderer for type icon */
@@ -39,7 +40,8 @@ public:
         _property_color(*this, "color", 0),
         _property_clipmask(*this, "clipmask", 0),
         _clip_overlay(nullptr),
-        _mask_overlay(nullptr)
+        _mask_overlay(nullptr),
+        _both_overlay(nullptr)
     {
         Gtk::IconSize::lookup(Gtk::ICON_SIZE_MENU, _size, _size);
     } 
@@ -91,6 +93,7 @@ private:
     // Overlay indicators
     Glib::RefPtr<Gdk::Pixbuf> _mask_overlay;
     Glib::RefPtr<Gdk::Pixbuf> _clip_overlay;
+    Glib::RefPtr<Gdk::Pixbuf> _both_overlay;
 };
 
 } // namespace Widget

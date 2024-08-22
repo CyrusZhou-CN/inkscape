@@ -536,7 +536,7 @@ std::unique_ptr<SPDocument> SPDocument::copy() const
 }
 
 /*
-    Rebase the document with de a new XMLDoc.
+    Rebase the document with a new XMLDoc.
     passing the same file is like revert but keep history
 */
 void SPDocument::rebase(const gchar * file, bool keep_namedview)
@@ -1533,7 +1533,18 @@ static bool overlaps(Geom::Rect const &area, Geom::Rect const &box)
 }
 
 /**
+ * Return a vector list of items in a given area.
+ *
+ * @param s The returned list
+ * @param group The starting group
+ * @param dkey The display control group to traverse
  * @param area Area in document coordinates
+ * @param test A function called for each item's bbox
+ * @param take_hidden (false) picks hidden items
+ * @param take_insensitive (false) picks insensitive items
+ * @param take_groups (true) doesn't tranverse into groups
+ * @param enter_groups (false) traverse into regular groups
+ * @param enter_layers (true) traverse into layer groups
  */
 static std::vector<SPItem*> &find_items_in_area(std::vector<SPItem*> &s,
                                                 SPGroup *group, unsigned int dkey,
@@ -1542,7 +1553,8 @@ static std::vector<SPItem*> &find_items_in_area(std::vector<SPItem*> &s,
                                                 bool take_hidden = false,
                                                 bool take_insensitive = false,
                                                 bool take_groups = true,
-                                                bool enter_groups = false)
+                                                bool enter_groups = false,
+                                                bool enter_layers = true)
 {
     g_return_val_if_fail(group, s);
 
@@ -1558,10 +1570,10 @@ static std::vector<SPItem*> &find_items_in_area(std::vector<SPItem*> &s,
 
             if (auto childgroup = cast<SPGroup>(item)) {
                 bool is_layer = childgroup->effectiveLayerMode(dkey) == SPGroup::LAYER;
-                if (is_layer || (enter_groups)) {
-                    s = find_items_in_area(s, childgroup, dkey, area, test, take_hidden, take_insensitive, take_groups, enter_groups);
+                if ((enter_layers && is_layer) || (enter_groups)) {
+                    s = find_items_in_area(s, childgroup, dkey, area, test, take_hidden, take_insensitive, take_groups, enter_groups, enter_layers);
                 }
-                if (!take_groups || is_layer) {
+                if (!take_groups || (enter_layers && is_layer)) {
                     continue;
                 }
             }
@@ -1724,10 +1736,10 @@ static SPItem *find_group_at_point(unsigned dkey, SPGroup *group, Geom::Point co
  * @param box area to find items, in document coordinates
  */
 
-std::vector<SPItem*> SPDocument::getItemsInBox(unsigned int dkey, Geom::Rect const &box, bool take_hidden, bool take_insensitive, bool take_groups, bool enter_groups) const
+std::vector<SPItem*> SPDocument::getItemsInBox(unsigned int dkey, Geom::Rect const &box, bool take_hidden, bool take_insensitive, bool take_groups, bool enter_groups, bool enter_layers) const
 {
     std::vector<SPItem*> x;
-    return find_items_in_area(x, this->root, dkey, box, is_within, take_hidden, take_insensitive, take_groups, enter_groups);
+    return find_items_in_area(x, this->root, dkey, box, is_within, take_hidden, take_insensitive, take_groups, enter_groups, enter_layers);
 }
 
 /**
@@ -1741,10 +1753,10 @@ std::vector<SPItem*> SPDocument::getItemsInBox(unsigned int dkey, Geom::Rect con
  * @return Return list of items, that the parts of the item contained in box
  */
 
-std::vector<SPItem*> SPDocument::getItemsPartiallyInBox(unsigned int dkey, Geom::Rect const &box, bool take_hidden, bool take_insensitive, bool take_groups, bool enter_groups) const
+std::vector<SPItem*> SPDocument::getItemsPartiallyInBox(unsigned int dkey, Geom::Rect const &box, bool take_hidden, bool take_insensitive, bool take_groups, bool enter_groups, bool enter_layers) const
 {
     std::vector<SPItem*> x;
-    return find_items_in_area(x, this->root, dkey, box, overlaps, take_hidden, take_insensitive, take_groups, enter_groups);
+    return find_items_in_area(x, this->root, dkey, box, overlaps, take_hidden, take_insensitive, take_groups, enter_groups, enter_layers);
 }
 
 std::vector<SPItem*> SPDocument::getItemsAtPoints(unsigned const key, std::vector<Geom::Point> points, bool all_layers, bool topmost_only, size_t limit) const
@@ -1975,10 +1987,13 @@ void SPDocument::setModifiedSinceSave(bool modified) {
     this->modified_since_save = modified;
     this->modified_since_autosave = modified;
     if (SP_ACTIVE_DESKTOP) {
-        InkscapeWindow *window = SP_ACTIVE_DESKTOP->getInkscapeWindow();
-        if (window) { // during load, SP_ACTIVE_DESKTOP may be !nullptr, but parent might still be nullptr
-            SPDesktopWidget *dtw = window->get_desktop_widget();
-            dtw->updateTitle( this->getDocumentName() );
+        if (InkscapeWindow *window = SP_ACTIVE_DESKTOP->getInkscapeWindow()) {
+            // During load, SP_ACTIVE_DESKTOP may be != nullptr, but parent might still be nullptr.
+            // Moreover, the desktop widget may still not be fully constructed, in which case
+            // window->get_desktop_widget() will return nullptr.
+            if (auto *dtw = window->get_desktop_widget()) {
+                dtw->updateTitle(getDocumentName());
+            }
         }
     }
 }

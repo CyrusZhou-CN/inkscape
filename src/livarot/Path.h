@@ -139,7 +139,7 @@ public:
                   No need to set this manually though. When Path::Convert or any of its variants is called, it's set automatically. */
 
   Path();
-  virtual ~Path();
+  ~Path();
 
   // creation of the path description
 

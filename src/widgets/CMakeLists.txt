@@ -6,7 +6,6 @@ set(widgets_SRC
 	sp-attribute-widget.cpp
 	sp-xmlview-tree.cpp
 	spw-utilities.cpp
-	toolbox.cpp
 
 	# -------
 	# Headers
@@ -15,7 +14,6 @@ set(widgets_SRC
 	sp-attribute-widget.h
 	sp-xmlview-tree.h
 	spw-utilities.h
-	toolbox.h
 	widget-sizes.h
 )
 

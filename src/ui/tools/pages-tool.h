@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef __UI_TOOLS_PAGES_CONTEXT_H__
-#define __UI_TOOLS_PAGES_CONTEXT_H__
+#ifndef INKSCAPE_UI_TOOLS_PAGES_TOOL_H
+#define INKSCAPE_UI_TOOLS_PAGES_TOOL_H
 
 /*
  * Page editing tool
@@ -42,8 +42,9 @@ public:
     PagesTool(SPDesktop *desktop);
     ~PagesTool() override;
 
-    bool root_handler(GdkEvent *event) override;
-    void menu_popup(GdkEvent *event, SPObject *obj = nullptr) override;
+    bool root_handler(CanvasEvent const &event) override;
+    void menu_popup(CanvasEvent const &event, SPObject *obj = nullptr) override;
+
 private:
     void selectionChanged(SPDocument *doc, SPPage *page);
     void connectDocument(SPDocument *doc);
@@ -96,4 +97,4 @@ private:
 } // namespace UI
 } // namespace Inkscape
 
-#endif
+#endif // INKSCAPE_UI_TOOLS_PAGES_TOOL_H

@@ -93,7 +93,7 @@ void Licensor::init (Registry& wr)
 
     LicenseItem *i;
     wr.setUpdating (true);
-    i = Gtk::manage (new LicenseItem (&_proprietary_license, _eentry, wr, nullptr));
+    i = Gtk::make_managed<LicenseItem >(&_proprietary_license, _eentry, wr, nullptr);
     Gtk::RadioButtonGroup group = i->get_group();
     add (*i);
     LicenseItem *pd = i;
@@ -101,17 +101,17 @@ void Licensor::init (Registry& wr)
     for (struct rdf_license_t * license = rdf_licenses;
              license && license->name;
              license++) {
-        i = Gtk::manage (new LicenseItem (license, _eentry, wr, &group));
+        i = Gtk::make_managed<LicenseItem >(license, _eentry, wr, &group);
         add(*i);
     }
     // add Other at the end before the URI field for the confused ppl.
-    LicenseItem *io = Gtk::manage (new LicenseItem (&_other_license, _eentry, wr, &group));
+    auto const io = Gtk::make_managed<LicenseItem>(&_other_license, _eentry, wr, &group);
     add (*io);
 
     pd->set_active();
     wr.setUpdating (false);
 
-    Gtk::Box *box = Gtk::manage (new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL));
+    auto const box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
     pack_start (*box, true, true, 0);
 
     box->pack_start (_eentry->_label, false, false, 5);

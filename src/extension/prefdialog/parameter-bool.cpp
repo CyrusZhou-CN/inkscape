@@ -115,16 +115,15 @@ Gtk::Widget *ParamBool::get_widget(sigc::signal<void ()> *changeSignal)
         return nullptr;
     }
 
-    auto hbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, GUI_PARAM_WIDGETS_SPACING));
+    auto const hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, GUI_PARAM_WIDGETS_SPACING);
     hbox->set_homogeneous(false);
 
-    ParamBoolCheckButton * checkbox = Gtk::manage(new ParamBoolCheckButton(this, _text, changeSignal));
-    checkbox->show();
+    auto const checkbox = Gtk::make_managed<ParamBoolCheckButton>(this, _text, changeSignal);
+    checkbox->set_visible(true);
     hbox->pack_start(*checkbox, false, false);
 
-    hbox->show();
-
-    return dynamic_cast<Gtk::Widget *>(hbox);
+    hbox->set_visible(true);
+    return hbox;
 }
 
 }  /* namespace Extension */

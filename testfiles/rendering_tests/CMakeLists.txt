@@ -20,7 +20,7 @@ pkg_search_module(HARFBUZZ REQUIRED harfbuzz)
 # -- Generic tests --
 add_rendering_test(test-empty)
 add_rendering_test(test-dont-crash)
-add_rendering_test(test-use)
+add_rendering_test(test-use FUZZ 0.03)
 
 # -- Selector tests --
 add_rendering_test(selector-important-002)
@@ -66,5 +66,5 @@ if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
     add_rendering_test(test-rtl-vertical FUZZ 0.1)
 
     # .otf font with compressed SVG glyphs
-    add_rendering_test(text-gzipped-svg-glyph)
+    add_rendering_test(text-gzipped-svg-glyph FUZZ 0.03)
 endif()

@@ -420,34 +420,33 @@ GlyphsPanel::GlyphsPanel()
     , instanceConns()
 {
     set_orientation(Gtk::ORIENTATION_VERTICAL);
-    auto table = new Gtk::Grid();
+    auto const table = Gtk::make_managed<Gtk::Grid>();
     table->set_row_spacing(4);
     table->set_column_spacing(4);
-    pack_start(*Gtk::manage(table), Gtk::PACK_EXPAND_WIDGET);
+    pack_start(*table, Gtk::PACK_EXPAND_WIDGET);
     guint row = 0;
 
 // -------------------------------
 
     {
-        fontSelector = new Inkscape::UI::Widget::FontSelector (false, false);
+        fontSelector = Gtk::make_managed<UI::Widget::FontSelector>(false, false);
         fontSelector->set_name ("UnicodeCharacters");
 
         sigc::connection conn =
             fontSelector->connectChanged(sigc::hide(sigc::mem_fun(*this, &GlyphsPanel::rebuild)));
         instanceConns.push_back(conn);
 
-        table->attach(*Gtk::manage(fontSelector), 0, row, 3, 1);
+        table->attach(*fontSelector, 0, row, 3, 1);
         row++;
     }
 
 // -------------------------------
 
     {
-        auto label = new Gtk::Label(_("Script: "));
+        auto const label = Gtk::make_managed<Gtk::Label>(_("Script: "));
+        table->attach(*label, 0, row, 1, 1);
 
-        table->attach( *Gtk::manage(label), 0, row, 1, 1);
-
-        scriptCombo = Gtk::manage(new Inkscape::UI::Widget::ScrollProtected<Gtk::ComboBoxText>());
+        scriptCombo = Gtk::make_managed<Inkscape::UI::Widget::ScrollProtected<Gtk::ComboBoxText>>();
         for (auto & it : getScriptToName())
         {
             scriptCombo->append(it.second);
@@ -468,10 +467,10 @@ GlyphsPanel::GlyphsPanel()
 // -------------------------------
 
     {
-        auto label = new Gtk::Label(_("Range: "));
-        table->attach( *Gtk::manage(label), 0, row, 1, 1);
+        auto const label = Gtk::make_managed<Gtk::Label>(_("Range: "));
+        table->attach(*label, 0, row, 1, 1);
 
-        rangeCombo = Gtk::manage(new Inkscape::UI::Widget::ScrollProtected<Gtk::ComboBoxText>());
+        rangeCombo = Gtk::make_managed<Inkscape::UI::Widget::ScrollProtected<Gtk::ComboBoxText>>();
         for (auto & it : getRanges()) {
             rangeCombo->append(it.second);
         }
@@ -492,7 +491,7 @@ GlyphsPanel::GlyphsPanel()
 
     GlyphColumns *columns = getColumns();
 
-    iconView = new Gtk::IconView(static_cast<Glib::RefPtr<Gtk::TreeModel> >(store));
+    iconView = Gtk::make_managed<Gtk::IconView>(static_cast<Glib::RefPtr<Gtk::TreeModel> >(store));
     iconView->set_name("UnicodeIconView");
     iconView->set_markup_column(columns->name);
     iconView->set_tooltip_column(2); // Uses Pango markup, must use column number.
@@ -508,18 +507,18 @@ GlyphsPanel::GlyphsPanel()
     instanceConns.push_back(conn);
 
 
-    Gtk::ScrolledWindow *scroller = new Gtk::ScrolledWindow();
+    auto const scroller = Gtk::make_managed<Gtk::ScrolledWindow>();
     scroller->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_ALWAYS);
-    scroller->add(*Gtk::manage(iconView));
+    scroller->add(*iconView);
     scroller->set_hexpand();
     scroller->set_vexpand();
-    table->attach(*Gtk::manage(scroller), 0, row, 3, 1);
+    table->attach(*scroller, 0, row, 3, 1);
 
     row++;
 
 // -------------------------------
 
-    Gtk::Box *box = new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL);
+    auto const box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
 
     entry = std::make_shared<Gtk::Entry>();
     conn = entry->signal_changed().connect(sigc::mem_fun(*this, &GlyphsPanel::calcCanInsert));
@@ -527,14 +526,14 @@ GlyphsPanel::GlyphsPanel()
     entry->set_width_chars(18);
     box->pack_start(*entry.get(), Gtk::PACK_SHRINK);
 
-    Gtk::Label *pad = new Gtk::Label("    ");
-    box->pack_start(*Gtk::manage(pad), Gtk::PACK_SHRINK);
+    auto pad = Gtk::make_managed<Gtk::Label>("    ");
+    box->pack_start(*pad, Gtk::PACK_SHRINK);
 
     label = std::make_shared<Gtk::Label>("      ");
     box->pack_start(*label.get(), Gtk::PACK_SHRINK);
 
-    pad = new Gtk::Label("");
-    box->pack_start(*Gtk::manage(pad), Gtk::PACK_EXPAND_WIDGET);
+    pad = Gtk::make_managed<Gtk::Label>();
+    box->pack_start(*pad, Gtk::PACK_EXPAND_WIDGET);
 
     insertBtn = std::make_shared<Gtk::Button>(_("Append"));
     conn = insertBtn->signal_clicked().connect(sigc::mem_fun(*this, &GlyphsPanel::insertText));
@@ -544,7 +543,7 @@ GlyphsPanel::GlyphsPanel()
 
     box->pack_end(*insertBtn.get(), Gtk::PACK_SHRINK);
     box->set_hexpand();
-    table->attach( *Gtk::manage(box), 0, row, 3, 1);
+    table->attach(*box, 0, row, 3, 1);
 
     row++;
 

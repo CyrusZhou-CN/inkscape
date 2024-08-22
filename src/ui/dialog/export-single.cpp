@@ -380,7 +380,7 @@ void SingleExport::onPagesChanged()
     auto &pm = _document->getPageManager();
     if (pm.getPageCount() > 1) {
         for (auto page : pm.getPages()) {
-            auto item = Gtk::manage(new BatchItem(page, _preview_drawing));
+            auto const item = Gtk::make_managed<BatchItem>(page, _preview_drawing);
             pages_list->insert(*item, -1);
         }
     }
@@ -939,17 +939,18 @@ void SingleExport::setExporting(bool exporting, Glib::ustring const &text)
     if (exporting) {
         set_sensitive(false);
         set_opacity(0.2);
-        progress_box->show();
+        progress_box->set_visible(true);
         _prog->set_text(text);
         _prog->set_fraction(0.0);
     } else {
         set_sensitive(true);
         set_opacity(1.0);
-        progress_box->hide();
+        progress_box->set_visible(false);
         _prog->set_text("");
         _prog->set_fraction(0.0);
     }
-    Gtk::Main::iteration(false);
+    auto main_context = Glib::MainContext::get_default();
+    main_context->iteration(false);
 }
 
 // Called for every progress iteration
@@ -957,7 +958,8 @@ unsigned int SingleExport::onProgressCallback(float value, void *data)
 {
     if (auto si = static_cast<SingleExport *>(data)) {
         si->_prog->set_fraction(value);
-        Gtk::Main::iteration(false);
+        auto main_context = Glib::MainContext::get_default();
+        main_context->iteration(false);
         return !si->interrupted;
     }
     return false;

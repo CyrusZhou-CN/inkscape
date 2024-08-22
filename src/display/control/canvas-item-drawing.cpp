@@ -25,6 +25,7 @@
 
 #include "helper/geom.h"
 #include "ui/widget/canvas.h"
+#include "ui/widget/events/canvas-event.h"
 #include "ui/modifiers.h"
 
 namespace Inkscape {
@@ -84,31 +85,26 @@ void CanvasItemDrawing::_update(bool)
 
     _bounds = expandedBy(_drawing->root()->drawbox(), 1); // Avoid aliasing artifacts
 
-    // Todo: This should be managed elsewhere.
     if (_cursor) {
         /* Mess with enter/leave notifiers */
-        DrawingItem *new_drawing_item = _drawing->pick(_c, _delta, _sticky * DrawingItem::PICK_STICKY | _pick_outline * DrawingItem::PICK_OUTLINE);
+        auto new_drawing_item = _drawing->pick(_c, _delta, _sticky * DrawingItem::PICK_STICKY | _pick_outline * DrawingItem::PICK_OUTLINE);
         if (_active_item != new_drawing_item) {
+            // Fixme: These crossing events have no modifier state set.
 
-            GdkEventCrossing ec;
-            ec.window = get_canvas()->get_window()->gobj();
-            ec.send_event = true;
-            ec.subwindow = ec.window;
-            ec.time = GDK_CURRENT_TIME;
-            ec.x = _c.x();
-            ec.y = _c.y();
-
-            /* fixme: Why? */
             if (_active_item) {
-                ec.type = GDK_LEAVE_NOTIFY;
-                _drawing_event_signal.emit((GdkEvent *) &ec, _active_item);
+                auto gdkevent = GdkEventUniqPtr(gdk_event_new(GDK_LEAVE_NOTIFY));
+                auto event = LeaveEvent(std::move(gdkevent), {});
+                _drawing_event_signal.emit(event, _active_item);
             }
 
             _active_item = new_drawing_item;
 
             if (_active_item) {
-                ec.type = GDK_ENTER_NOTIFY;
-                _drawing_event_signal.emit((GdkEvent *) &ec, _active_item);
+                auto gdkevent = GdkEventUniqPtr(gdk_event_new(GDK_ENTER_NOTIFY));
+                gdkevent->crossing.x = _c.x();
+                gdkevent->crossing.y = _c.y();
+                auto event = EnterEvent(std::move(gdkevent), {});
+                _drawing_event_signal.emit(event, _active_item);
             }
         }
     }
@@ -126,12 +122,12 @@ void CanvasItemDrawing::_render(Inkscape::CanvasItemBuffer &buf) const
 /**
  * Handle events directed at the drawing. We first attempt to handle them here.
  */
-bool CanvasItemDrawing::handle_event(GdkEvent *event)
+bool CanvasItemDrawing::handle_event(CanvasEvent const &event)
 {
     bool retval = false;
     
-    switch (event->type) {
-        case GDK_ENTER_NOTIFY:
+    inspect_event(event,
+        [&] (EnterEvent const &event) {
             if (!_cursor) {
                 if (_active_item) {
                     std::cerr << "CanvasItemDrawing::event_handler: cursor entered drawing with an active item!" << std::endl;
@@ -139,69 +135,62 @@ bool CanvasItemDrawing::handle_event(GdkEvent *event)
                 _cursor = true;
 
                 /* TODO ... event -> arena transform? */
-                _c = Geom::Point(event->crossing.x, event->crossing.y);
+                _c = event.eventPos();
 
                 _active_item = _drawing->pick(_c, _drawing->cursorTolerance(), _sticky * DrawingItem::PICK_STICKY | _pick_outline * DrawingItem::PICK_OUTLINE);
                 retval = _drawing_event_signal.emit(event, _active_item);
             }
-            break;
+        },
 
-        case GDK_LEAVE_NOTIFY:
+        [&] (LeaveEvent const &event) {
             if (_cursor) {
                 retval = _drawing_event_signal.emit(event, _active_item);
                 _active_item = nullptr;
                 _cursor = false;
             }
-            break;
+        },
 
-        case GDK_MOTION_NOTIFY:
-        {
+        [&] (MotionEvent const &event) {
             /* TODO ... event -> arena transform? */
-            _c = Geom::Point(event->motion.x, event->motion.y);
+            _c = event.eventPos();
 
             auto new_drawing_item = _drawing->pick(_c, _drawing->cursorTolerance(), _sticky * DrawingItem::PICK_STICKY | _pick_outline * DrawingItem::PICK_OUTLINE);
             if (_active_item != new_drawing_item) {
 
-                GdkEventCrossing ec;
-                ec.window = event->motion.window;
-                ec.send_event = event->motion.send_event;
-                ec.subwindow = event->motion.window;
-                ec.time = event->motion.time;
-                ec.x = event->motion.x;
-                ec.y = event->motion.y;
-
                 /* fixme: What is wrong? */
                 if (_active_item) {
-                    ec.type = GDK_LEAVE_NOTIFY;
-                    retval = _drawing_event_signal.emit((GdkEvent *) &ec, _active_item);
+                    auto gdkevent = GdkEventUniqPtr(gdk_event_new(GDK_LEAVE_NOTIFY));
+                    auto event = LeaveEvent(std::move(gdkevent), {});
+                    retval = _drawing_event_signal.emit(event, _active_item);
                 }
 
                 _active_item = new_drawing_item;
 
                 if (_active_item) {
-                    ec.type = GDK_ENTER_NOTIFY;
-                    retval = _drawing_event_signal.emit((GdkEvent *) &ec, _active_item);
+                    auto gdkevent = GdkEventUniqPtr(gdk_event_new(GDK_ENTER_NOTIFY));
+                    gdkevent->crossing.x = event.eventX();
+                    gdkevent->crossing.y = event.eventY();
+                    auto event = EnterEvent(std::move(gdkevent), {});
+                    retval = _drawing_event_signal.emit(event, _active_item);
                 }
             }
             retval = retval || _drawing_event_signal.emit(event, _active_item);
-            break;
-        }
+        },
 
-        case GDK_SCROLL:
-        {
-            if (Modifiers::Modifier::get(Modifiers::Type::CANVAS_ZOOM)->active(event->scroll.state)) {
+        [&] (ScrollEvent const &event) {
+            if (Modifiers::Modifier::get(Modifiers::Type::CANVAS_ZOOM)->active(event.modifiers())) {
                 /* Zoom is emitted by the canvas as well, ignore here */
-                return false;
+                retval = false;
+                return;
             }
             retval = _drawing_event_signal.emit(event, _active_item);
-            break;
-        }
+        },
 
-        default:
-            /* Just send event */
+        [&] (CanvasEvent const &event) {
+            // Just send event.
             retval = _drawing_event_signal.emit(event, _active_item);
-            break;
-    }
+        }
+    );
 
     return retval;
 }

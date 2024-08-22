@@ -57,19 +57,16 @@
 #include "display/curve.h"
 #include "display/control/canvas-item-bpath.h"
 
-#include "include/macros.h"
-
 #include "object/sp-clippath.h"
 #include "object/sp-image.h"
 #include "object/sp-item-group.h"
 #include "object/sp-path.h"
 #include "object/sp-rect.h"
-#include "object/sp-root.h"
 #include "object/sp-shape.h"
-#include "object/sp-text.h"
 #include "object/sp-use.h"
 
 #include "ui/icon-names.h"
+#include "ui/widget/events/canvas-event.h"
 
 #include "svg/svg.h"
 
@@ -355,8 +352,9 @@ void EraserTool::_cancel()
     repr = nullptr;
 }
 
-bool EraserTool::root_handler(GdkEvent* event)
+bool EraserTool::root_handler(CanvasEvent const &canvas_event)
 {
+    auto event = canvas_event.original();
     bool ret = false;
     switch (event->type) {
         case GDK_BUTTON_PRESS:
@@ -490,8 +488,9 @@ bool EraserTool::root_handler(GdkEvent* event)
     }
 
     if (!ret) {
-        ret = DynamicBase::root_handler(event);
+        ret = DynamicBase::root_handler(canvas_event);
     }
+
     return ret;
 }
 
@@ -1368,8 +1367,8 @@ void EraserTool::_fitDrawLastPoint()
     segments.emplace_back(cbp);
 
     if (mode == EraserToolMode::DELETE) {
-        cbp->hide();
-        currentshape->hide();
+        cbp->set_visible(false);
+        currentshape->set_visible(false);
     }
 }
 

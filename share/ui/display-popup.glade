@@ -83,7 +83,7 @@
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">False</property>
-            <property name="tooltip-text" translatable="yes">Show an outline overlay</property>
+            <property name="tooltip-text" translatable="yes">Show objects as outlines, and the actual drawing below them with reduced opacity</property>
             <property name="halign">start</property>
             <property name="action-name">win.canvas-display-mode</property>
             <property name="action-target">4</property>
@@ -201,7 +201,7 @@
           <object class="GtkLabel">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="tooltip-text" translatable="yes">Press and hold a key to activate quick zoom</property>
+            <property name="tooltip-text" translatable="yes">Hold this key to activate quick zoom</property>
             <property name="halign">center</property>
             <property name="margin-top">1</property>
             <property name="margin-bottom">1</property>
@@ -222,7 +222,7 @@
           <object class="GtkLabel">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="tooltip-text" translatable="yes">Press and hold a key to show print preview, hide grid, guide lines and selection handles</property>
+            <property name="tooltip-text" translatable="yes">Hold this key for document preview, hiding grids, guides, handles etc.</property>
             <property name="halign">center</property>
             <property name="margin-top">1</property>
             <property name="margin-bottom">1</property>

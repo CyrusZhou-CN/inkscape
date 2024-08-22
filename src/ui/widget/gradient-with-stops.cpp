@@ -111,7 +111,7 @@ void GradientWithStops::update() {
 void GradientWithStops::on_style_updated() {
     if (auto wnd = dynamic_cast<Gtk::Window*>(this->get_toplevel())) {
         auto sc = wnd->get_style_context();
-        _background_color = get_background_color(sc);
+        _background_color = get_color_with_class(sc, "theme_bg_color");
     }
 
     // load and cache cursors
@@ -460,8 +460,8 @@ bool GradientWithStops::on_draw(const Cairo::RefPtr<Cairo::Context>& cr) {
 
     cr->begin_new_path();
 
-    Gdk::RGBA fg = context->get_color(get_state_flags());
-    Gdk::RGBA bg = _background_color;
+    auto const fg = get_foreground_color(context);
+    auto const &bg = _background_color;
 
     // stop handle outlines and selection indicator use theme colors:
     _template.set_style(".outer", "fill", rgba_to_css_color(fg));

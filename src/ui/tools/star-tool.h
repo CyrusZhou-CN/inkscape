@@ -19,6 +19,7 @@
 #include <sigc++/sigc++.h>
 #include <2geom/point.h>
 #include "ui/tools/tool-base.h"
+#include "object/weakptr.h"
 
 class SPStar;
 
@@ -29,40 +30,41 @@ class Selection;
 namespace UI {
 namespace Tools {
 
-class StarTool : public ToolBase {
+class StarTool : public ToolBase
+{
 public:
     StarTool(SPDesktop *desktop);
     ~StarTool() override;
 
-    void set(const Inkscape::Preferences::Entry &val) override;
-    bool root_handler(GdkEvent *event) override;
+    void set(Preferences::Entry const &val) override;
+    bool root_handler(CanvasEvent const &event) override;
 
 private:
-    SPStar *star;
+    SPWeakPtr<SPStar> star;
 
     Geom::Point center;
 
     /* Number of corners */
-    gint magnitude;
+    int magnitude;
 
     /* Outer/inner radius ratio */
-    gdouble proportion;
+    double proportion;
 
     /* flat sides or not? */
     bool isflatsided;
 
     /* rounded corners ratio */
-    gdouble rounded;
+    double rounded;
 
     // randomization
-    gdouble randomized;
+    double randomized;
 
     sigc::connection sel_changed_connection;
 
-	void drag(Geom::Point p, guint state);
+    void drag(Geom::Point p, unsigned state);
 	void finishItem();
 	void cancel();
-	void selection_changed(Inkscape::Selection* selection);
+    void selection_changed(Selection *selection);
 };
 
 }

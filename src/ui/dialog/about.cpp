@@ -34,7 +34,7 @@ static Gtk::Window *window = nullptr;
 static Gtk::Notebook *tabs = nullptr;
 
 void close_about_screen() {
-    window->hide();
+    window->set_visible(false);
 }
 bool show_copy_button(Gtk::Button *button, Gtk::Label *label) {
     reveal_widget(button, true);
@@ -119,7 +119,7 @@ void AboutDialog::show_about() {
             //SVGViewWidget *viewer;
             //builder->get_widget_derived("image-container", viewer, doc);
             //Gtk::manage(viewer);
-            auto viewer = Gtk::manage(new Inkscape::UI::View::SVGViewWidget(doc));
+            auto const viewer = Gtk::make_managed<Inkscape::UI::View::SVGViewWidget>(doc);
             double width = doc->getWidth().value("px");
             double height = doc->getHeight().value("px");
             viewer->setResize(width, height);
@@ -183,7 +183,7 @@ void AboutDialog::show_about() {
         }
     }
     if(window) {
-        window->show();
+        window->set_visible(true);
         tabs->set_current_page(0);
     } else {
         g_error("About screen window couldn't be loaded. Missing window id in glade file.");

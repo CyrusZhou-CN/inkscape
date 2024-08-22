@@ -23,7 +23,7 @@ namespace Widget {
  * \param[in] mnemonic True if text should use a mnemonic
  */
 LabelToolItem::LabelToolItem(const Glib::ustring& label, bool mnemonic)
-    : _label(Gtk::manage(new Gtk::Label(label, mnemonic)))
+    : _label(Gtk::make_managed<Gtk::Label>(label, mnemonic))
 {
     add(*_label);
     show_all();

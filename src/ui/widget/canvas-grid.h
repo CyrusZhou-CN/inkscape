@@ -23,6 +23,8 @@ class SPCanvas;
 class SPDesktopWidget;
 
 namespace Inkscape {
+class CanvasEvent;
+
 namespace UI {
 
 namespace Dialog {
@@ -68,11 +70,11 @@ public:
     Gtk::ToggleButton *GetGuideLock()  { return &_guide_lock; }
     Gtk::ToggleButton *GetCmsAdjust()  { return &_cms_adjust; }
     Gtk::ToggleButton *GetStickyZoom();
+    Dialog::CommandPalette *getCommandPalette() { return _command_palette.get(); }
 
 private:
     // Signal callbacks
     void on_size_allocate(Gtk::Allocation& allocation) override;
-    bool SignalEvent(GdkEvent *event);
     void on_realize() override;
 
     // The widgets

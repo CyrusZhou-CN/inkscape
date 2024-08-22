@@ -300,10 +300,10 @@ along with Inkscape Extensions Manager.  If not, see <http://www.gnu.org/license
                 <property name="can_focus">False</property>
                 <property name="message_type">error</property>
                 <child internal-child="action_area">
-                  <object class="GtkButtonBox">
+                  <object class="GtkBox">
                     <property name="can_focus">False</property>
                     <property name="spacing">6</property>
-                    <property name="layout_style">end</property>
+                    <property name="halign">end</property>
                     <child>
                       <placeholder/>
                     </child>
@@ -695,12 +695,12 @@ along with Inkscape Extensions Manager.  If not, see <http://www.gnu.org/license
               </packing>
             </child>
             <child>
-              <object class="GtkButtonBox">
+              <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="margin_left">8</property>
                 <property name="margin_right">8</property>
-                <property name="layout_style">start</property>
+                <property name="halign">start</property>
                 <child>
                   <object class="GtkButton" id="save">
                     <property name="label">gtk-save</property>
@@ -718,7 +718,6 @@ along with Inkscape Extensions Manager.  If not, see <http://www.gnu.org/license
                     <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">0</property>
-                    <property name="secondary">True</property>
                   </packing>
                 </child>
                 <child>
@@ -814,7 +813,7 @@ If you would like to get involved and make the next version of Inkscape even bet
                                 <property name="margin_right">10</property>
                                 <property name="margin-top">10</property>
                                 <property name="margin-bottom">10</property>
-                                <property name="pixbuf">../pixmaps/user.png</property>
+                                <property name="pixbuf">../screens/start-support-time.png</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -872,7 +871,7 @@ Contribute Time</property>
                                 <property name="can_focus">False</property>
                                 <property name="margin-top">10</property>
                                 <property name="margin-bottom">10</property>
-                                <property name="pixbuf">../pixmaps/support.png</property>
+                                <property name="pixbuf">../screens/start-support-money.png</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -928,12 +927,12 @@ Fund Inkscape</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButtonBox">
+              <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="margin_left">8</property>
                 <property name="margin_right">8</property>
-                <property name="layout_style">start</property>
+                <property name="halign">start</property>
                 <child>
                   <object class="GtkButton" id="thanks">
                     <property name="label" translatable="yes">Thanks!</property>
@@ -950,7 +949,6 @@ Fund Inkscape</property>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">0</property>
-                    <property name="secondary">True</property>
                   </packing>
                 </child>
               </object>
@@ -1053,13 +1051,13 @@ Fund Inkscape</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButtonBox">
+              <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="margin_start">8</property>
                 <property name="margin_end">8</property>
                 <property name="spacing">4</property>
-                <property name="layout_style">start</property>
+                <property name="halign">start</property>
                 <child>
                   <object class="GtkButton" id="load">
                     <property name="label" translatable="yes">Open</property>
@@ -1074,7 +1072,6 @@ Fund Inkscape</property>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">0</property>
-                    <property name="secondary">True</property>
                   </packing>
                 </child>
                 <child>
@@ -1105,7 +1102,6 @@ Fund Inkscape</property>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">2</property>
-                    <property name="secondary">True</property>
                   </packing>
                 </child>
               </object>

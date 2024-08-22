@@ -16,19 +16,16 @@
 #include <map>
 #include <string>
 
-#include "desktop-events.h"
-
-#include <gdkmm/display.h>
-#include <gdkmm/seat.h>
-
-#include <gtk/gtk.h>
-
-#include <glibmm/i18n.h>
-
 #include <2geom/line.h>
 #include <2geom/angle.h>
 
+#include <gdkmm/display.h>
+#include <gdkmm/seat.h>
+#include <gtk/gtk.h>
+#include <glibmm/i18n.h>
+
 #include "desktop.h"
+#include "desktop-events.h"
 #include "document-undo.h"
 #include "document.h"
 #include "message-context.h"
@@ -37,317 +34,242 @@
 
 #include "actions/actions-tools.h"
 
-#include "display/control/snap-indicator.h"
 #include "display/control/canvas-item-guideline.h"
 
 #include "object/sp-guide.h"
 #include "object/sp-namedview.h"
-#include "object/sp-root.h"
 
 #include "ui/cursor-utils.h"
-#include "ui/dialog-events.h"
 #include "ui/dialog/guides.h"
-#include "ui/event-debug.h"
 #include "ui/tools/tool-base.h"
 #include "ui/tools/node-tool.h"
 #include "ui/tools/select-tool.h"
 #include "ui/widget/canvas.h"
-
-#include "widgets/desktop-widget.h"
-
-#include "xml/repr.h"
+#include "ui/widget/events/canvas-event.h"
+#include "ui/widget/events/debug.h"
 
 using Inkscape::DocumentUndo;
+using Inkscape::EventType;
 
-static void snoop_extended(GdkEvent* event, SPDesktop *desktop);
+static void snoop_extended(Inkscape::CanvasEvent const &event, SPDesktop *desktop);
 static void init_extended();
 
-/* Root canvas item handler */
-
-bool sp_desktop_root_handler(GdkEvent *event, SPDesktop *desktop)
+bool sp_desktop_root_handler(Inkscape::CanvasEvent const &event, SPDesktop *desktop)
 {
-#ifdef EVENT_DEBUG
-    ui_dump_event(reinterpret_cast<GdkEvent *>(event), "sp_desktop_root_handler");
-#endif
+    if constexpr (Inkscape::DEBUG_EVENTS) {
+        Inkscape::dump_event(event, "sp_desktop_root_handler");
+    }
+
     static bool watch = false;
     static bool first = true;
 
-    if ( first ) {
-        Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-        if ( prefs->getBool("/options/useextinput/value", true)
-            && prefs->getBool("/options/switchonextinput/value") ) {
+    if (first) {
+        auto prefs = Inkscape::Preferences::get();
+        if (prefs->getBool("/options/useextinput/value", true) &&
+            prefs->getBool("/options/switchonextinput/value"))
+        {
             watch = true;
             init_extended();
         }
         first = false;
     }
-    if ( watch ) {
+
+    if (watch) {
         snoop_extended(event, desktop);
     }
 
     if (auto ec = desktop->event_context) {
-        return (bool)ec->start_root_handler(event);
+        return ec->start_root_handler(event);
     }
+
     return false;
 }
 
-
-
 static Geom::Point drag_origin;
 static SPGuideDragType drag_type = SP_DRAG_NONE;
-//static bool reset_drag_origin = false; // when Ctrl is pressed while dragging, this is used to trigger resetting of the
-//                                       // drag origin to that location so that constrained movement is more intuitive
+static bool guide_moved = false;
 
-// Min distance from anchor to initiate rotation, measured in screenpixels
-#define tol 40.0
-
-bool sp_dt_guide_event(GdkEvent *event, Inkscape::CanvasItemGuideLine *guide_item, SPGuide *guide)
+bool sp_dt_guide_event(Inkscape::CanvasEvent const &event, Inkscape::CanvasItemGuideLine *guide_item, SPGuide *guide)
 {
-#ifdef EVENT_DEBUG
-    ui_dump_event(reinterpret_cast<GdkEvent *>(event), "sp_dt_guide_event");
-#endif
+    if constexpr (Inkscape::DEBUG_EVENTS) {
+        Inkscape::dump_event(event, "sp_dt_guide_event");
+    }
 
-    static bool moved = false;
     bool ret = false;
 
-    SPDesktop *desktop = guide_item->get_canvas()->get_desktop();
+    auto desktop = guide_item->get_canvas()->get_desktop();
     if (!desktop) {
         std::cerr << "sp_dt_guide_event: No desktop!" << std::endl;
         return false;
     }
-    // Limit to select tool only.
+
+    // Limit to select/node tools only.
     if (!dynamic_cast<Inkscape::UI::Tools::SelectTool *>(desktop->event_context) &&
-        !dynamic_cast<Inkscape::UI::Tools::NodeTool *>(desktop->event_context)) {
+        !dynamic_cast<Inkscape::UI::Tools::NodeTool *>(desktop->event_context))
+    {
         return false;
     }
 
-    switch (event->type) {
-        case GDK_2BUTTON_PRESS:
-            if (event->button.button == 1) {
-                drag_type = SP_DRAG_NONE;
-                desktop->event_context->discard_delayed_snap_event();
-                guide_item->ungrab();
-                Inkscape::UI::Dialogs::GuidelinePropertiesDialog::showDialog(guide, desktop);
-                ret = true;
+    auto apply_snap = [desktop, guide] (Geom::Point &event_dt, unsigned modifiers) {
+        // This is for snapping while dragging existing guidelines. New guidelines,
+        // which are dragged off the ruler, are being snapped in sp_dt_ruler_event
+        auto &m = desktop->namedview->snap_manager;
+        m.setup(desktop, true, guide, nullptr);
+        if (drag_type == SP_DRAG_MOVE_ORIGIN) {
+            // If we snap in guideConstrainedSnap() below, then motion_dt will
+            // be forced to be on the guide. If we don't snap however, then
+            // the origin should still be constrained to the guide. So let's do
+            // that explicitly first:
+            auto const line = Geom::Line(guide->getPoint(), guide->angle());
+            auto const t = line.nearestTime(event_dt);
+            event_dt = line.pointAt(t);
+            if (!(modifiers & GDK_SHIFT_MASK)) {
+                m.guideConstrainedSnap(event_dt, *guide);
             }
-            break;
+        } else if (!(drag_type == SP_DRAG_ROTATE && modifiers & GDK_CONTROL_MASK)) {
+            // Cannot use shift here to disable snapping, because we already use it for rotating the guide.
+            Geom::Point tmp;
+            if (drag_type == SP_DRAG_ROTATE) {
+                tmp = guide->getPoint();
+                m.guideFreeSnap(event_dt, tmp, true, false);
+                guide->moveto(tmp, false);
+            } else {
+                tmp = guide->getNormal();
+                m.guideFreeSnap(event_dt, tmp, false, true);
+                guide->set_normal(tmp, false);
+            }
+        }
+        m.unSetup();
+    };
 
-        case GDK_BUTTON_PRESS:
-            if (event->button.button == 1 && !guide->getLocked()) {
-                Geom::Point const event_w(event->button.x, event->button.y);
-                Geom::Point const event_dt(desktop->w2d(event_w));
+    auto move_guide = [guide] (Geom::Point const &event_dt, unsigned modifiers, bool flag) {
+        switch (drag_type) {
+            case SP_DRAG_TRANSLATE:
+            case SP_DRAG_MOVE_ORIGIN:
+                guide->moveto(event_dt, flag);
+                break;
+            case SP_DRAG_ROTATE: {
+                auto angle = Geom::Angle(event_dt - guide->getPoint());
+                if (modifiers & GDK_CONTROL_MASK) {
+                    auto prefs = Inkscape::Preferences::get();
+                    if (auto snaps = std::abs(prefs->getInt("/options/rotationsnapsperpi/value", 12))) {
+                        if (prefs->getBool("/options/relativeguiderotationsnap/value", false)) {
+                            auto orig_angle = Geom::Angle(guide->getNormal());
+                            auto snap_angle = angle - orig_angle;
+                            double sections = std::floor(snap_angle.radians0() * snaps / M_PI + 0.5);
+                            angle = M_PI / snaps * sections + orig_angle.radians0();
+                        } else {
+                            double sections = std::floor(angle.radians0() * snaps / M_PI + 0.5);
+                            angle = M_PI / snaps * sections;
+                        }
+                    }
+                }
+                guide->set_normal(Geom::Point::polar(angle).cw(), flag);
+                break;
+            }
+            default:
+                assert(false);
+                break;
+        }
+    };
 
-                // Due to the tolerance allowed when grabbing a guide, event_dt will generally
-                // be close to the guide but not just exactly on it. The drag origin calculated
-                // here must be exactly on the guide line though, otherwise
-                // small errors will occur once we snap, see
-                // https://bugs.launchpad.net/inkscape/+bug/333762
-                drag_origin = Geom::projection(event_dt, Geom::Line(guide->getPoint(), guide->angle()));
+    inspect_event(event,
+        [&] (Inkscape::ButtonPressEvent const &event) {
+            if (event.numPress() == 2) {
+                if (event.button() == 1) {
+                    drag_type = SP_DRAG_NONE;
+                    desktop->event_context->discard_delayed_snap_event();
+                    guide_item->ungrab();
+                    Inkscape::UI::Dialogs::GuidelinePropertiesDialog::showDialog(guide, desktop);
+                    ret = true;
+                }
+            } else if (event.numPress() == 1) {
+                if (event.button() == 1 && !guide->getLocked()) {
+                    auto const event_dt = desktop->w2d(event.eventPos());
 
-                if (event->button.state & GDK_SHIFT_MASK) {
-                    // with shift we rotate the guide
-                    drag_type = SP_DRAG_ROTATE;
-                } else {
-                    if (event->button.state & GDK_CONTROL_MASK) {
+                    // Due to the tolerance allowed when grabbing a guide, event_dt will generally
+                    // be close to the guide but not just exactly on it. The drag origin calculated
+                    // here must be exactly on the guide line though, otherwise
+                    // small errors will occur once we snap, see
+                    // https://bugs.launchpad.net/inkscape/+bug/333762
+                    drag_origin = Geom::projection(event_dt, Geom::Line(guide->getPoint(), guide->angle()));
+
+                    if (event.modifiers() & GDK_SHIFT_MASK) {
+                        // with shift we rotate the guide
+                        drag_type = SP_DRAG_ROTATE;
+                    } else if (event.modifiers() & GDK_CONTROL_MASK) {
                         drag_type = SP_DRAG_MOVE_ORIGIN;
                     } else {
                         drag_type = SP_DRAG_TRANSLATE;
                     }
-                }
 
-                if (drag_type == SP_DRAG_ROTATE || drag_type == SP_DRAG_TRANSLATE) {
-                    guide_item->grab(Gdk::BUTTON_RELEASE_MASK |
-                                     Gdk::BUTTON_PRESS_MASK   |
-                                     Gdk::POINTER_MOTION_MASK);
+                    if (drag_type == SP_DRAG_ROTATE || drag_type == SP_DRAG_TRANSLATE) {
+                        guide_item->grab(EventType::BUTTON_RELEASE |
+                                         EventType::BUTTON_PRESS   |
+                                         EventType::MOTION);
+                    }
+                    ret = true;
                 }
-                ret = true;
             }
-            break;
+        },
 
-        case GDK_MOTION_NOTIFY:
-            if (drag_type != SP_DRAG_NONE) {
-                Geom::Point const motion_w(event->motion.x,
-                                           event->motion.y);
-                Geom::Point motion_dt(desktop->w2d(motion_w));
-
-                desktop->event_context->snap_delay_handler(guide_item, guide, reinterpret_cast<GdkEventMotion*>(event),
-                                                           Inkscape::UI::Tools::DelayedSnapEvent::GUIDE_HANDLER);
-
-                // This is for snapping while dragging existing guidelines. New guidelines,
-                // which are dragged off the ruler, are being snapped in sp_dt_ruler_event
-                SnapManager &m = desktop->namedview->snap_manager;
-                m.setup(desktop, true, guide, nullptr);
-                if (drag_type == SP_DRAG_MOVE_ORIGIN) {
-                    // If we snap in guideConstrainedSnap() below, then motion_dt will
-                    // be forced to be on the guide. If we don't snap however, then
-                    // the origin should still be constrained to the guide. So let's do
-                    // that explicitly first:
-                    Geom::Line line(guide->getPoint(), guide->angle());
-                    Geom::Coord t = line.nearestTime(motion_dt);
-                    motion_dt = line.pointAt(t);
-                    if (!(event->motion.state & GDK_SHIFT_MASK)) {
-                        m.guideConstrainedSnap(motion_dt, *guide);
-                    }
-                } else if (!((drag_type == SP_DRAG_ROTATE) && (event->motion.state & GDK_CONTROL_MASK))) {
-                    // cannot use shift here to disable snapping, because we already use it for rotating the guide
-                    Geom::Point temp;
-                    if (drag_type == SP_DRAG_ROTATE) {
-                        temp = guide->getPoint();
-                        m.guideFreeSnap(motion_dt, temp, true, false);
-                        guide->moveto(temp, false);
-                    } else {
-                        temp = guide->getNormal();
-                        m.guideFreeSnap(motion_dt, temp, false, true);
-                        guide->set_normal(temp, false);
-                    }
-                }
-                m.unSetup();
-
-                switch (drag_type) {
-                    case SP_DRAG_TRANSLATE:
-                    {
-                        guide->moveto(motion_dt, false);
-                        break;
-                    }
-                    case SP_DRAG_ROTATE:
-                    {
-                        Geom::Point pt = motion_dt - guide->getPoint();
-                        Geom::Angle angle(pt);
-                        if (event->motion.state & GDK_CONTROL_MASK) {
-                            Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-                            unsigned const snaps = abs(prefs->getInt("/options/rotationsnapsperpi/value", 12));
-                            bool const relative_snaps = prefs->getBool("/options/relativeguiderotationsnap/value", false);
-                            if (snaps) {
-                                if (relative_snaps) {
-                                    Geom::Angle orig_angle(guide->getNormal());
-                                    Geom::Angle snap_angle = angle - orig_angle;
-                                    double sections = floor(snap_angle.radians0() * snaps / M_PI + .5);
-                                    angle = (M_PI / snaps) * sections + orig_angle.radians0();
-                                } else {
-                                    double sections = floor(angle.radians0() * snaps / M_PI + .5);
-                                    angle = (M_PI / snaps) * sections;
-                                }
-                            }
-                        }
-                        guide->set_normal(Geom::Point::polar(angle).cw(), false);
-                        break;
-                    }
-                    case SP_DRAG_MOVE_ORIGIN:
-                    {
-                        guide->moveto(motion_dt, false);
-                        break;
-                    }
-                    case SP_DRAG_NONE:
-                        assert(false);
-                        break;
-                }
-                moved = true;
-                desktop->set_coordinate_status(motion_dt);
-                desktop->getCanvas()->grab_focus();
-
-                ret = true;
+        [&] (Inkscape::MotionEvent const &event) {
+            if (drag_type == SP_DRAG_NONE) {
+                return;
             }
-            break;
 
-        case GDK_BUTTON_RELEASE:
-            if (drag_type != SP_DRAG_NONE && event->button.button == 1) {
-                desktop->event_context->discard_delayed_snap_event();
+            desktop->event_context->snap_delay_handler(guide_item, guide, event,
+                                                       Inkscape::UI::Tools::DelayedSnapEvent::GUIDE_HANDLER);
 
-                if (moved) {
-                    Geom::Point const event_w(event->button.x,
-                                              event->button.y);
-                    Geom::Point event_dt(desktop->w2d(event_w));
-                    SnapManager &m = desktop->namedview->snap_manager;
-                    m.setup(desktop, true, guide, nullptr);
-                    if (drag_type == SP_DRAG_MOVE_ORIGIN) {
-                        // If we snap in guideConstrainedSnap() below, then motion_dt will
-                        // be forced to be on the guide. If we don't snap however, then
-                        // the origin should still be constrained to the guide. So let's
-                        // do that explicitly first:
-                        Geom::Line line(guide->getPoint(), guide->angle());
-                        Geom::Coord t = line.nearestTime(event_dt);
-                        event_dt = line.pointAt(t);
-                        if (!(event->button.state & GDK_SHIFT_MASK)) {
-                            m.guideConstrainedSnap(event_dt, *guide);
-                        }
-                    } else if (!((drag_type == SP_DRAG_ROTATE) && (event->motion.state & GDK_CONTROL_MASK))) {
-                        // cannot use shift here to disable snapping, because we already use it for rotating the guide
-                        Geom::Point temp;
-                        if (drag_type == SP_DRAG_ROTATE) {
-                            temp = guide->getPoint();
-                            m.guideFreeSnap(event_dt, temp, true, false);
-                            guide->moveto(temp, false);
-                        } else {
-                            temp = guide->getNormal();
-                            m.guideFreeSnap(event_dt, temp, false, true);
-                            guide->set_normal(temp, false);
-                        }
-                    }
-                    m.unSetup();
+            auto event_dt = desktop->w2d(event.eventPos());
+            apply_snap(event_dt, event.modifiers());
+            move_guide(event_dt, event.modifiers(), false);
 
-                    if (guide_item->get_canvas()->world_point_inside_canvas(event_w)) {
-                        switch (drag_type) {
-                            case SP_DRAG_TRANSLATE:
-                            {
-                                guide->moveto(event_dt, true);
-                                break;
-                            }
-                            case SP_DRAG_ROTATE:
-                            {
-                                Geom::Point pt = event_dt - guide->getPoint();
-                                Geom::Angle angle(pt);
-                                if (event->motion.state & GDK_CONTROL_MASK) {
-                                    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-                                    unsigned const snaps = abs(prefs->getInt("/options/rotationsnapsperpi/value", 12));
-                                    bool const relative_snaps = prefs->getBool("/options/relativeguiderotationsnap/value", false);
-                                    if (snaps) {
-                                        if (relative_snaps) {
-                                            Geom::Angle orig_angle(guide->getNormal());
-                                            Geom::Angle snap_angle = angle - orig_angle;
-                                            double sections = floor(snap_angle.radians0() * snaps / M_PI + .5);
-                                            angle = (M_PI / snaps) * sections + orig_angle.radians0();
-                                        } else {
-                                            double sections = floor(angle.radians0() * snaps / M_PI + .5);
-                                            angle = (M_PI / snaps) * sections;
-                                        }
-                                    }
-                                }
-                                guide->set_normal(Geom::Point::polar(angle).cw(), true);
-                                break;
-                            }
-                            case SP_DRAG_MOVE_ORIGIN:
-                            {
-                                guide->moveto(event_dt, true);
-                                break;
-                            }
-                            case SP_DRAG_NONE:
-                                assert(false);
-                                break;
-                        }
-                        DocumentUndo::done(desktop->getDocument(), _("Move guide"), "");
-                    } else {
-                        /* Undo movement of any attached shapes. */
-                        guide->moveto(guide->getPoint(), false);
-                        guide->set_normal(guide->getNormal(), false);
-                        guide->remove();
-                        guide_item = nullptr;
-                        desktop->event_context->use_tool_cursor();
+            guide_moved = true;
+            desktop->set_coordinate_status(event_dt);
+            desktop->getCanvas()->grab_focus();
 
-                        DocumentUndo::done(desktop->getDocument(), _("Delete guide"), "");
-                    }
-                    moved = false;
-                    desktop->set_coordinate_status(event_dt);
-                }
-                drag_type = SP_DRAG_NONE;
-                if (guide_item) {
-                    guide_item->ungrab();
-                }
-                ret = true;
+            ret = true;
+        },
+
+        [&] (Inkscape::ButtonReleaseEvent const &event) {
+            if (drag_type == SP_DRAG_NONE || event.button() != 1) {
+                return;
             }
-            break;
 
-        case GDK_ENTER_NOTIFY:
-        {
+            desktop->event_context->discard_delayed_snap_event();
+
+            if (guide_moved) {
+                auto event_dt = desktop->w2d(event.eventPos());
+                apply_snap(event_dt, event.modifiers());
+
+                if (guide_item->get_canvas()->world_point_inside_canvas(event.eventPos())) {
+                    move_guide(event_dt, event.modifiers(), true);
+                    DocumentUndo::done(desktop->getDocument(), _("Move guide"), "");
+                } else {
+                    // Undo movement of any attached shapes.
+                    guide->moveto(guide->getPoint(), false);
+                    guide->set_normal(guide->getNormal(), false);
+                    guide->remove();
+                    guide_item = nullptr;
+                    desktop->event_context->use_tool_cursor();
+
+                    DocumentUndo::done(desktop->getDocument(), _("Delete guide"), "");
+                }
+
+                guide_moved = false;
+                desktop->set_coordinate_status(event_dt);
+            }
+
+            drag_type = SP_DRAG_NONE;
+            if (guide_item) {
+                guide_item->ungrab();
+            }
+
+            ret = true;
+        },
+
+        [&] (Inkscape::EnterEvent const &event) {
             // This is a UX thing. Check if the canvas has focus, so the user knows they can
             // use hotkeys. See issue: https://gitlab.com/inkscape/inkscape/-/issues/2439
             if (!guide->getLocked() && desktop->getCanvas()->has_focus()) {
@@ -355,45 +277,40 @@ bool sp_dt_guide_event(GdkEvent *event, Inkscape::CanvasItemGuideLine *guide_ite
             }
 
             // set move or rotate cursor
-            Geom::Point const event_w(event->crossing.x, event->crossing.y);
-
             auto display = desktop->getCanvas()->get_display();
             auto window  = desktop->getCanvas()->get_window();
 
             Glib::RefPtr<Gdk::Cursor> cursor;
             if (guide->getLocked()) {
                 cursor = Inkscape::load_svg_cursor(display, window, "select.svg");
-            } else if ((event->crossing.state & GDK_SHIFT_MASK) && (drag_type != SP_DRAG_MOVE_ORIGIN)) {
+            } else if (event.modifiers() & GDK_SHIFT_MASK && drag_type != SP_DRAG_MOVE_ORIGIN) {
                 cursor = Inkscape::load_svg_cursor(display, window, "rotate.svg");
             } else {
                 cursor = Gdk::Cursor::create(display, "grab");
             }
             window->set_cursor(cursor);
 
-            char *guide_description = guide->description();
+            auto guide_description = guide->description();
             desktop->guidesMessageContext()->setF(Inkscape::NORMAL_MESSAGE, _("<b>Guideline</b>: %s"), guide_description);
             g_free(guide_description);
-            break;
-        }
+        },
 
-        case GDK_LEAVE_NOTIFY:
-
+        [&] (Inkscape::LeaveEvent const &event) {
             guide_item->set_stroke(guide->getColor());
 
             // restore event context's cursor
             desktop->event_context->use_tool_cursor();
 
             desktop->guidesMessageContext()->clear();
-            break;
+        },
 
-        case GDK_KEY_PRESS:
-            switch (Inkscape::UI::Tools::get_latin_keyval (&event->key)) {
+        [&] (Inkscape::KeyPressEvent const &event) {
+            switch (Inkscape::UI::Tools::get_latin_keyval(event.original())) {
                 case GDK_KEY_Delete:
                 case GDK_KEY_KP_Delete:
                 case GDK_KEY_BackSpace:
-                {
-                    SPDocument *doc = guide->document;
                     if (!guide->getLocked()) {
+                        auto doc = guide->document;
                         guide->remove();
                         guide_item = nullptr;
                         DocumentUndo::done(doc, _("Delete guide"), "");
@@ -402,11 +319,9 @@ bool sp_dt_guide_event(GdkEvent *event, Inkscape::CanvasItemGuideLine *guide_ite
                         desktop->event_context->use_tool_cursor();
                     }
                     break;
-                }
                 case GDK_KEY_Shift_L:
                 case GDK_KEY_Shift_R:
                     if (drag_type != SP_DRAG_MOVE_ORIGIN) {
-
                         auto display = desktop->getCanvas()->get_display();
                         auto window  = desktop->getCanvas()->get_window();
 
@@ -415,127 +330,120 @@ bool sp_dt_guide_event(GdkEvent *event, Inkscape::CanvasItemGuideLine *guide_ite
                         ret = true;
                         break;
                     }
-
                 default:
-                    // do nothing;
                     break;
             }
-            break;
+        },
 
-        case GDK_KEY_RELEASE:
-            switch (Inkscape::UI::Tools::get_latin_keyval (&event->key)) {
+        [&] (Inkscape::KeyReleaseEvent const &event) {
+            switch (Inkscape::UI::Tools::get_latin_keyval(event.original())) {
                 case GDK_KEY_Shift_L:
-                case GDK_KEY_Shift_R:
-                {
+                case GDK_KEY_Shift_R: {
                     auto display = Gdk::Display::get_default();
                     auto guide_cursor = Gdk::Cursor::create(display, "grab");
                     desktop->getCanvas()->get_window()->set_cursor(guide_cursor);
                     break;
                 }
                 default:
-                    // do nothing;
                     break;
             }
-            break;
+        },
 
-        default:
-            break;
-    }
+        [&] (Inkscape::CanvasEvent const &event) {}
+    );
 
     return ret;
 }
 
-static std::map<std::string, Glib::ustring> toolToUse;
-static std::string lastName;
-static GdkInputSource lastType = GDK_SOURCE_MOUSE;
+static constexpr bool DEBUG_TOOL_SWITCHER = false;
+
+static std::map<std::string, Glib::ustring> name_to_tool;
+static std::string last_name;
+static GdkInputSource last_source = GDK_SOURCE_MOUSE;
 
 static void init_extended()
 {
-    Glib::ustring avoidName("pad");
     auto display = Gdk::Display::get_default();
     auto seat = display->get_default_seat();
-    auto const devices = seat->get_slaves(Gdk::SEAT_CAPABILITY_ALL);
+    auto devices = seat->get_slaves(Gdk::SEAT_CAPABILITY_ALL);
     
-    if ( !devices.empty() ) {
-        for (auto const &dev : devices) {
-            auto const devName = dev->get_name();
-            auto devSrc = dev->get_source();
-            
-            if ( !devName.empty()
-                 && (avoidName != devName)
-                 && (devSrc != Gdk::SOURCE_MOUSE) ) {
-//                 g_message("Adding '%s' as [%d]", devName, devSrc);
+    for (auto const &dev : devices) {
+        auto name = dev->get_name();
+        auto src = dev->get_source();
 
-                // Set the initial tool for the device
-                switch ( devSrc ) {
-                    case Gdk::SOURCE_PEN:
-                        toolToUse[devName] = "Calligraphic";
-                        break;
-                    case Gdk::SOURCE_ERASER:
-                        toolToUse[devName] = "Eraser";
-                        break;
-                    case Gdk::SOURCE_CURSOR:
-                        toolToUse[devName] = "Select";
-                        break;
-                    default:
-                        ; // do not add
-                }
-//            } else if (devName) {
-//                 g_message("Skippn '%s' as [%d]", devName, devSrc);
+        if (!name.empty() && name != "pad" && src != Gdk::SOURCE_MOUSE) {
+            // Set the initial tool for the device.
+            switch (src) {
+                case Gdk::SOURCE_PEN:
+                    name_to_tool[name] = "Calligraphic";
+                    break;
+                case Gdk::SOURCE_ERASER:
+                    name_to_tool[name] = "Eraser";
+                    break;
+                case Gdk::SOURCE_CURSOR:
+                    name_to_tool[name] = "Select";
+                    break;
+                default:
+                    break;
             }
         }
     }
 }
 
-
-void snoop_extended(GdkEvent* event, SPDesktop *desktop)
+// Switch tool based on device that generated event.
+// For example, switch to Calligraphy or Eraser tool when using a Wacom tablet pen.
+// Enabled in "Input" section of preferences dialog.
+void snoop_extended(Inkscape::CanvasEvent const &event, SPDesktop *desktop)
 {
-    GdkDevice *source_device = gdk_event_get_source_device (event);
-    GdkInputSource source = GDK_SOURCE_MOUSE;
-    std::string name;
-
-    if (! source_device) return;
-    switch ( event->type ) {
-        case GDK_MOTION_NOTIFY:
-        case GDK_BUTTON_PRESS:
-        case GDK_2BUTTON_PRESS:
-        case GDK_3BUTTON_PRESS:
-        case GDK_BUTTON_RELEASE:
-        case GDK_SCROLL:
-        case GDK_PROXIMITY_IN:
-        case GDK_PROXIMITY_OUT:
-    // fix to previous code using event->device that did not point to original device that generated the event.
-        source = gdk_device_get_source(source_device);
-        name = gdk_device_get_name(source_device);
-    
-        break;
-
+    // Restrict to events we're interested in.
+    switch (event.type()) {
+        case EventType::MOTION:
+        case EventType::BUTTON_PRESS:
+        case EventType::BUTTON_RELEASE:
+        case EventType::SCROLL:
+            break; // Good
         default:
-            ;
+            return;
     }
 
-
-    if (!name.empty()) {
-        if ( lastType != source || lastName != name ) {
-            // The device switched. See if it is one we 'count'
-            //g_message("Changed device %s -> %s", lastName.c_str(), name.c_str());
-            auto it = toolToUse.find(lastName);
-            if (it != toolToUse.end()) {
-                // Save the tool currently selected for next time the input
-                // device shows up.
-                it->second = get_active_tool(desktop);
-            }
-
-            it = toolToUse.find(name);
-            if (it != toolToUse.end() ) {
-                set_active_tool(desktop, it->second);
-            }
-
-            lastName = name;
-            lastType = source;
-        }
+    // Extract information about the source device of the event.
+    auto source_device = gdk_event_get_source_device(event.original());
+    if (!source_device) {
+        // Not all event structures include a GdkDevice field but the above should!
+        std::cerr << "snoop_extended: missing source device! " << (int)event.type() << std::endl;
+        return;
     }
+
+    // Note: The event's device may not point to the original device that generated the event.
+    auto source = gdk_device_get_source(source_device);
+    auto name = gdk_device_get_name(source_device);
+
+    if (name[0] == '\0') {
+        std::cerr << "snoop_extended: name empty!" << std::endl;
+        return;
+    } else if (source == last_source && name == last_name) {
+        // Device has not changed.
+        return;
+    }
+
+    if constexpr (DEBUG_TOOL_SWITCHER) {
+        std::cout << "Changed device: " << last_name << " -> " << name << std::endl;
+    }
+
+    // Save the tool currently selected for next time the device shows up.
+    if (auto it = name_to_tool.find(last_name); it != name_to_tool.end()) {
+        it->second = get_active_tool(desktop);
+    }
+
+    // Select the tool that was selected last time the device was seen.
+    if (auto it = name_to_tool.find(name); it != name_to_tool.end()) {
+        set_active_tool(desktop, it->second);
+    }
+
+    last_name = name;
+    last_source = source;
 }
+
 /*
   Local Variables:
   mode:c++
@@ -546,4 +454,3 @@ void snoop_extended(GdkEvent* event, SPDesktop *desktop)
   End:
 */
 // vim: filetype=cpp:expandtab:shiftwidth=4:tabstop=8:softtabstop=4:fileencoding=utf-8:textwidth=99 :
-

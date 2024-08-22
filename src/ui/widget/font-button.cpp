@@ -35,7 +35,7 @@ void FontButton::setValue (Glib::ustring fontspec)
     static_cast<Gtk::FontButton*>(_widget)->set_font_name(fontspec);
 }
 
-Glib::SignalProxy0<void> FontButton::signal_font_value_changed()
+Glib::SignalProxy<void> FontButton::signal_font_value_changed()
 {
     g_assert(_widget != nullptr);
     return static_cast<Gtk::FontButton*>(_widget)->signal_font_set();

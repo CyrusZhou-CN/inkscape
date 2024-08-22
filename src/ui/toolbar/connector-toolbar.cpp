@@ -59,7 +59,7 @@ ConnectorToolbar::ConnectorToolbar(SPDesktop *desktop)
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
 
     {
-        auto avoid_item = Gtk::manage(new Gtk::ToolButton(_("Avoid")));
+        auto const avoid_item = Gtk::make_managed<Gtk::ToolButton>(_("Avoid"));
         avoid_item->set_tooltip_text(_("Make connectors avoid selected objects"));
         avoid_item->set_icon_name(INKSCAPE_ICON("connector-avoid"));
         avoid_item->signal_clicked().connect(sigc::mem_fun(*this, &ConnectorToolbar::path_set_avoid));
@@ -67,7 +67,7 @@ ConnectorToolbar::ConnectorToolbar(SPDesktop *desktop)
     }
 
     {
-        auto ignore_item = Gtk::manage(new Gtk::ToolButton(_("Ignore")));
+        auto const ignore_item = Gtk::make_managed<Gtk::ToolButton>(_("Ignore"));
         ignore_item->set_tooltip_text(_("Make connectors ignore selected objects"));
         ignore_item->set_icon_name(INKSCAPE_ICON("connector-ignore"));
         ignore_item->signal_clicked().connect(sigc::mem_fun(*this, &ConnectorToolbar::path_set_ignore));
@@ -85,12 +85,12 @@ ConnectorToolbar::ConnectorToolbar(SPDesktop *desktop)
         _orthogonal->signal_toggled().connect(sigc::mem_fun(*this, &ConnectorToolbar::orthogonal_toggled));
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     // Curvature spinbox
     auto curvature_val = prefs->getDouble("/tools/connector/curvature", defaultConnCurvature);
     _curvature_adj = Gtk::Adjustment::create(curvature_val, 0, 100, 1.0, 10.0);
-    auto curvature_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("inkscape:connector-curvature", _("Curvature:"), _curvature_adj, 1, 0));
+    auto const curvature_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("inkscape:connector-curvature", _("Curvature:"), _curvature_adj, 1, 0);
     curvature_item->set_tooltip_text(_("The amount of connectors curvature"));
     curvature_item->set_focus_widget(desktop->canvas);
     _curvature_adj->signal_value_changed().connect(sigc::mem_fun(*this, &ConnectorToolbar::curvature_changed));
@@ -99,7 +99,7 @@ ConnectorToolbar::ConnectorToolbar(SPDesktop *desktop)
     // Spacing spinbox
     auto spacing_val = prefs->getDouble("/tools/connector/spacing", defaultConnSpacing);
     _spacing_adj = Gtk::Adjustment::create(spacing_val, 0, 100, 1.0, 10.0);
-    auto spacing_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("inkscape:connector-spacing", _("Spacing:"), _spacing_adj, 1, 0));
+    auto const spacing_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("inkscape:connector-spacing", _("Spacing:"), _spacing_adj, 1, 0);
     spacing_item->set_tooltip_text(_("The amount of space left around objects by auto-routing connectors"));
     spacing_item->set_focus_widget(desktop->canvas);
     _spacing_adj->signal_value_changed().connect(sigc::mem_fun(*this, &ConnectorToolbar::spacing_changed));
@@ -107,7 +107,7 @@ ConnectorToolbar::ConnectorToolbar(SPDesktop *desktop)
 
     // Graph (connector network) layout
     {
-        auto graph_item = Gtk::manage(new Gtk::ToolButton(_("Graph")));
+        auto const graph_item = Gtk::make_managed<Gtk::ToolButton>(_("Graph"));
         graph_item->set_tooltip_text(_("Nicely arrange selected connector network"));
         graph_item->set_icon_name(INKSCAPE_ICON("distribute-graph"));
         graph_item->signal_clicked().connect(sigc::mem_fun(*this, &ConnectorToolbar::graph_layout));
@@ -117,7 +117,7 @@ ConnectorToolbar::ConnectorToolbar(SPDesktop *desktop)
     // Default connector length spinbox
     auto length_val = prefs->getDouble("/tools/connector/length", 100);
     _length_adj = Gtk::Adjustment::create(length_val, 10, 1000, 10.0, 100.0);
-    auto length_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("inkscape:connector-length", _("Length:"), _length_adj, 1, 0));
+    auto const length_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("inkscape:connector-length", _("Length:"), _length_adj, 1, 0);
     length_item->set_tooltip_text(_("Ideal length for connectors when layout is applied"));
     length_item->set_focus_widget(desktop->canvas);
     _length_adj->signal_value_changed().connect(sigc::mem_fun(*this, &ConnectorToolbar::length_changed));

@@ -255,7 +255,7 @@ static void init_text_view(Gtk::TextView* textview)
 {
     textview->set_wrap_mode(Gtk::WrapMode::WRAP_WORD);
     textview->set_editable(true);
-    textview->show();
+    textview->set_visible(true);
 }
 
 /// Plain text view widget without syntax coloring

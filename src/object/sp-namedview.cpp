@@ -140,6 +140,7 @@ void SPNamedView::build(SPDocument *document, Inkscape::XML::Node *repr) {
     this->readAttr(SPAttr::INKSCAPE_CONNECTOR_SPACING);
     this->readAttr(SPAttr::INKSCAPE_LOCKGUIDES);
     readAttr(SPAttr::INKSCAPE_CLIP_TO_PAGE_RENDERING);
+    readAttr(SPAttr::INKSCAPE_ANTIALIAS_RENDERING);
 
     /* Construct guideline and pages list */
     for (auto &child : children) {
@@ -203,12 +204,14 @@ void SPNamedView::modified(unsigned int flags)
         }
 
         updateGuides();
-        updateGrids();
     }
     // Add desk color and checkerboard pattern to desk view
     for (auto desktop : views) {
         set_desk_color(desktop);
         set_clip_to_page(desktop, clip_to_page);
+        if (desktop) {
+            desktop->getCanvas()->set_antialiasing_enabled(antialias_rendering);
+        }
     }
 
     for (auto child : this->childList(false)) {
@@ -286,9 +289,10 @@ void SPNamedView::set(SPAttr key, const gchar* value) {
         break;
     case SPAttr::SHOWGRIDS:
         this->grids_visible.readOrUnset(value);
+        updateGrids();
         break;
     case SPAttr::GRIDTOLERANCE:
-        this->snap_manager.snapprefs.setGridTolerance(value ? g_ascii_strtod(value, nullptr) : 10000);
+        this->snap_manager.snapprefs.setGridTolerance(value ? g_ascii_strtod(value, nullptr) : 10);
         break;
     case SPAttr::GUIDETOLERANCE:
         this->snap_manager.snapprefs.setGuideTolerance(value ? g_ascii_strtod(value, nullptr) : 20);
@@ -380,6 +384,9 @@ void SPNamedView::set(SPAttr key, const gchar* value) {
         break;
     case SPAttr::INKSCAPE_CLIP_TO_PAGE_RENDERING:
         clip_to_page.readOrUnset(value);
+        break;
+    case SPAttr::INKSCAPE_ANTIALIAS_RENDERING:
+        antialias_rendering.readOrUnset(value);
         break;
     /*
     case SPAttr::UNITS: {
@@ -588,7 +595,8 @@ void sp_namedview_window_from_document(SPDesktop *desktop)
             win->fullscreen();
         }
     } else if ((window_geometry == PREFS_WINDOW_GEOMETRY_FILE && nv->window_maximized) ||
-               (new_document && (default_size == PREFS_WINDOW_SIZE_MAXIMIZED))) {
+               ((new_document || window_geometry == PREFS_WINDOW_GEOMETRY_NONE) &&
+                default_size == PREFS_WINDOW_SIZE_MAXIMIZED)) {
         win->maximize();
     } else {
         const int MIN_WINDOW_SIZE = 600;
@@ -862,6 +870,14 @@ bool SPNamedView::getLockGuides()
     return false;
 }
 
+void SPNamedView::newGridCreated() {
+    if (grids_visible) return;
+
+    _sync_grids = false;
+    setShowGrids(true);
+    _sync_grids = true;
+}
+
 void SPNamedView::updateGrids()
 {
     if (auto saction = Glib::RefPtr<Gio::SimpleAction>::cast_dynamic(
@@ -869,7 +885,7 @@ void SPNamedView::updateGrids()
 
         saction->change_state(getShowGrids());
     }
-    {
+    if (_sync_grids) {
         DocumentUndo::ScopedInsensitive ice(document);
         for (auto grid : grids) {
             grid->setVisible(getShowGrids());

@@ -50,13 +50,13 @@ void Inkscape::SnapPreferences::set_simple_snap(Inkscape::SimpleSnap option, boo
 
 bool Inkscape::SnapPreferences::isAnyDatumSnappable() const
 {
-    return isTargetSnappable(SNAPTARGET_GUIDE, SNAPTARGET_GRID, SNAPTARGET_PAGE_EDGE_BORDER, SNAPTARGET_PAGE_MARGIN_BORDER);
+    return isTargetSnappable(SNAPTARGET_GUIDE, SNAPTARGET_GRID, SNAPTARGET_PAGE_EDGE_BORDER, SNAPTARGET_PAGE_MARGIN_BORDER, SNAPTARGET_PAGE_BLEED_BORDER);
 }
 
 bool Inkscape::SnapPreferences::isAnyCategorySnappable() const
 {
     return isTargetSnappable(SNAPTARGET_NODE_CATEGORY, SNAPTARGET_BBOX_CATEGORY, SNAPTARGET_OTHERS_CATEGORY)
-        || isTargetSnappable(SNAPTARGET_GUIDE, SNAPTARGET_GRID, SNAPTARGET_PAGE_EDGE_BORDER, SNAPTARGET_PAGE_MARGIN_BORDER);
+        || isTargetSnappable(SNAPTARGET_GUIDE, SNAPTARGET_GRID, SNAPTARGET_PAGE_EDGE_BORDER, SNAPTARGET_PAGE_MARGIN_BORDER, SNAPTARGET_PAGE_BLEED_BORDER);
 }
 
 void Inkscape::SnapPreferences::_mapTargetToArrayIndex(Inkscape::SnapTargetType &target, bool &always_on, bool &group_on) const
@@ -126,6 +126,11 @@ void Inkscape::SnapPreferences::_mapTargetToArrayIndex(Inkscape::SnapTargetType 
                 target = SNAPTARGET_PAGE_MARGIN_BORDER;
                 break;
 
+            case SNAPTARGET_PAGE_BLEED_CORNER:
+                target = SNAPTARGET_PAGE_BLEED_BORDER;
+                break;
+
+
             // Some snap targets cannot be toggled at all, and are therefore always enabled
             case SNAPTARGET_GRID_GUIDE_INTERSECTION:
                 always_on = true; // Doesn't have it's own button
@@ -136,6 +141,7 @@ void Inkscape::SnapPreferences::_mapTargetToArrayIndex(Inkscape::SnapTargetType 
             case SNAPTARGET_GUIDE:
             case SNAPTARGET_PAGE_EDGE_BORDER:
             case SNAPTARGET_PAGE_MARGIN_BORDER:
+            case SNAPTARGET_PAGE_BLEED_BORDER:
             case SNAPTARGET_DATUMS_CATEGORY:
                 break;
             default:

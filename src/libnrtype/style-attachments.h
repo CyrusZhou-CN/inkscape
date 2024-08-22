@@ -7,7 +7,7 @@
  * patterns and filters of tspans.
  *
  * The basic lifecycle of the DrawingText objects associated to tspans is that they are created
- * in Layout::show(), and destroyed in SP(Flow)Text::_clearFlow(), or at the end of the SP(Flow)Text's
+ * in Layout::set_visible(true), and destroyed in SP(Flow)Text::_clearFlow(), or at the end of the SP(Flow)Text's
  * lifetime by SPItem::release(). They don't need to be maintained during their lifetime; when they
  * need to be modified they are simply torn down and recreated.
  *

@@ -38,7 +38,6 @@ void CanvasNotice::show(Glib::ustring const &msg, unsigned timeout)
 
 void CanvasNotice::hide()
 {
-    _label.set_text("");
     set_reveal_child(false);
 }
 

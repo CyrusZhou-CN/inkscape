@@ -11,7 +11,9 @@
  */
 
 #include <cairomm/region.h>
+#include <cairo.h>
 #include "cairo-utils.h"
+#include "display/drawing-item.h"
 #include "drawing-context.h"
 #include "drawing-pattern.h"
 #include "drawing-surface.h"
@@ -201,6 +203,9 @@ cairo_pattern_t *DrawingPattern::renderPattern(RenderContext &rc, Geom::IntRect 
 
     // Draw the pattern contents to the dirty areas of the surface, taking care of possible wrapping.
     Inkscape::DrawingContext dc(surface->surface->cobj(), surface->rect.min());
+    if (rc.antialiasing_override) {
+        apply_antialias(dc, rc.antialiasing_override.value());
+    }
 
     auto paint = [&, this] (Geom::IntRect const &rect) {
         if (_overflow_steps == 1) {
@@ -257,6 +262,9 @@ cairo_pattern_t *DrawingPattern::renderPattern(RenderContext &rc, Geom::IntRect 
     auto const shift = surface->rect.min() + rounddown(area_orig.min() - surface->rect.min(), _pattern_resolution);
     ink_cairo_pattern_set_matrix(cp, pattern_to_tile * Geom::Translate(-shift));
     cairo_pattern_set_extend(cp, CAIRO_EXTEND_REPEAT);
+    if (rc.antialiasing_override && rc.antialiasing_override.value() == Antialiasing::None) {
+        cairo_pattern_set_filter(cp, CAIRO_FILTER_NEAREST);
+    }
     return cp;
 }
 

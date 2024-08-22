@@ -12,40 +12,37 @@
 #ifndef INKSCAPE_UI_CURRENT_STYLE_H
 #define INKSCAPE_UI_CURRENT_STYLE_H
 
+#include <memory>
+#include <vector>
+#include <glibmm/refptr.h>
 #include <gtkmm/box.h>
-#include <gtkmm/grid.h>
-
-#include <gtkmm/label.h>
-#include <gtkmm/eventbox.h>
 #include <gtkmm/enums.h>
+#include <gtkmm/eventbox.h>
+#include <gtkmm/gesture.h> // Gtk::EventSequenceState
+#include <gtkmm/grid.h>
+#include <gtkmm/label.h>
 #include <gtkmm/menu.h>
 #include <gtkmm/menuitem.h>
-#include <gtkmm/adjustment.h>
 #include <gtkmm/radiobuttongroup.h>
-#include <gtkmm/radiomenuitem.h>
+#include "helper/auto-connection.h"
+#include "rotateable.h"
 #include "ui/widget/spinbutton.h"
 
-#include <cstddef>
-#include <sigc++/sigc++.h>
-
-#include "rotateable.h"
-
-constexpr int SELECTED_STYLE_SB_WIDTH = 48;
-constexpr int SELECTED_STYLE_PLACE_WIDTH = 50;
-constexpr int SELECTED_STYLE_STROKE_WIDTH = 40;
-constexpr int SELECTED_STYLE_FLAG_WIDTH = 12;
-constexpr int SELECTED_STYLE_WIDTH = 250;
+namespace Gtk {
+class Adjustment;
+class GestureMultiPress;
+class RadioMenuItem;
+} // namespace Gtk
 
 class SPDesktop;
 
 namespace Inkscape {
 
 namespace Util {
-    class Unit;
-}
+class Unit;
+} // namespace Util
 
-namespace UI {
-namespace Widget {
+namespace UI::Widget {
 
 enum {
     SS_NA,
@@ -67,8 +64,10 @@ enum {
     SS_STROKE
 };
 
+class ColorPreview;
 class GradientImage;
 class SelectedStyle;
+class SelectedStyleDropTracker;
 
 class RotateableSwatch : public Rotateable {
   public:
@@ -192,7 +191,7 @@ protected:
     Gtk::Label _unset[2];
     Glib::ustring __unset[2];
 
-    Gtk::Widget *_color_preview[2];
+    std::unique_ptr<ColorPreview> _color_preview[2];
     Glib::ustring __color[2];
 
     Gtk::Label _averaged[2];
@@ -208,9 +207,9 @@ protected:
 
     Glib::ustring _paintserver_id[2];
 
-    sigc::connection *selection_changed_connection;
-    sigc::connection *selection_modified_connection;
-    sigc::connection *subselection_changed_connection;
+    auto_connection selection_changed_connection;
+    auto_connection selection_modified_connection;
+    auto_connection subselection_changed_connection;
 
     static void dragDataReceived( GtkWidget *widget,
                                   GdkDragContext *drag_context,
@@ -220,10 +219,14 @@ protected:
                                   guint event_time,
                                   gpointer user_data );
 
-    bool on_fill_click(GdkEventButton *event);
-    bool on_stroke_click(GdkEventButton *event);
-    bool on_opacity_click(GdkEventButton *event);
-    bool on_sw_click(GdkEventButton *event);
+    Gtk::EventSequenceState on_fill_click   (Gtk::GestureMultiPress const &click,
+                                             int n_press, double x, double y);
+    Gtk::EventSequenceState on_stroke_click (Gtk::GestureMultiPress const &click,
+                                             int n_press, double x, double y);
+    Gtk::EventSequenceState on_opacity_click(Gtk::GestureMultiPress const &click,
+                                             int n_press, double x, double y);
+    Gtk::EventSequenceState on_sw_click     (Gtk::GestureMultiPress const &click,
+                                             int n_press, double x, double y);
 
     bool _opacity_blocked;
     void on_opacity_changed();
@@ -279,13 +282,12 @@ protected:
     void on_popup_preset(int i);
     Gtk::MenuItem _popup_sw_remove;
 
-    void *_drop[2];
+    std::unique_ptr<SelectedStyleDropTracker> _drop[2];
     bool _dropEnabled[2];
 };
 
+} // namespace UI::Widget
 
-} // namespace Widget
-} // namespace UI
 } // namespace Inkscape
 
 #endif // INKSCAPE_UI_WIDGET_BUTTON_H

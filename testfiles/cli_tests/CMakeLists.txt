@@ -344,6 +344,11 @@ add_cli_test(export-id_svg PARAMETERS --export-id=red --export-type=svg INPUT_FI
 # add_cli_test(export-id_emf PARAMETERS --export-id=red --export-type=emf INPUT_FILENAME theta.svg OUTPUT_FILENAME export-id.emf REFERENCE_FILENAME export-id_expected.emf )
 # add_cli_test(export-id_wmf PARAMETERS --export-id=red --export-type=wmf INPUT_FILENAME theta.svg OUTPUT_FILENAME export-id.wmf REFERENCE_FILENAME export-id_expected.wmf )
 
+# --export-id with non-existing ID should skip and output no file
+add_cli_test(non-existing-export-id_png PARAMETERS --export-id=not-exist --export-type=png 
+             INPUT_FILENAME theta.svg OUTPUT_FILENAME export-id-not-exist.png 
+             TESTSCRIPT test_no_output_file.sh export-id-not-exist.png)
+
 ## --export-id + --export-area-page = --export-area-page
 ## --export-id + --export-area-drawing = --export-area-drawing
 ## --export-id + --export-area-snap → export-area-snap_export-id
@@ -438,6 +443,19 @@ add_cli_test(export-text-to-path_ps  PARAMETERS --export-text-to-path --export-t
 add_cli_test(export-text-to-path_eps PARAMETERS --export-text-to-path --export-type=eps
                                      INPUT_FILENAME text.svg OUTPUT_FILENAME export-text-to-path.eps
                                      TEST_SCRIPT match_regex_fail.sh "export-text-to-path.eps" "^%%BeginResource: font")
+
+# --export-text-to-path should convert texts in nested groups to paths
+add_cli_test(export-text-to-path-in-group_svg PARAMETERS --export-text-to-path --export-type=svg
+                                              INPUT_FILENAME text_in_group.svg OUTPUT_FILENAME export-text-to-path-in-group.svg
+                                              TEST_SCRIPT match_regex_fail.sh "export-text-to-path-in-group.svg" "<text")
+
+# --export-text-to-path should preserve shapes inside group https://gitlab.com/inkscape/inkscape/-/issues/2649
+add_cli_test(export-text-to-path-in-group-rect_svg PARAMETERS --export-text-to-path --export-type=svg
+                                                   INPUT_FILENAME shapes.svg OUTPUT_FILENAME export-text-to-path-in-group-rect.svg
+                                                   TEST_SCRIPT match_regex.sh "export-text-to-path-in-group-rect.svg" "<rect")
+add_cli_test(export-text-to-path-in-group-ellipse_svg PARAMETERS --export-text-to-path --export-type=svg
+                                                      INPUT_FILENAME shapes.svg OUTPUT_FILENAME export-text-to-path-in-group-ellipse.svg
+                                                      TEST_SCRIPT match_regex.sh "export-text-to-path-in-group-ellipse.svg" "<ellipse")
 
 # Regression test for https://gitlab.com/inkscape/inkscape/-/issues/1364
 add_cli_test(regression-1364         PARAMETERS --select=large,small --actions=path-intersection
@@ -637,9 +655,9 @@ add_cli_test(actions-action-list           PARAMETERS --actions=action-list PASS
 
 # convert-dpi-method
 # NOTE: currently convert-dpi-method must be set before file-open, otherwise it will not take effect
-add_cli_test(action-convert-dpi-method-scale-none
-             PARAMETERS --export-area-page --actions=convert-dpi-method:scale-none$<SEMICOLON>file-open:${CMAKE_CURRENT_SOURCE_DIR}/testcases/shapes_pre_0.92.svg$<SEMICOLON>export-filename:action-convert-dpi-method-scale-none.png$<SEMICOLON>export-do
-             OUTPUT_FILENAME action-convert-dpi-method-scale-none.png
+add_cli_test(action-convert-dpi-method-none
+             PARAMETERS --export-area-page --actions=convert-dpi-method:none$<SEMICOLON>file-open:${CMAKE_CURRENT_SOURCE_DIR}/testcases/shapes_pre_0.92.svg$<SEMICOLON>export-filename:action-convert-dpi-method-none.png$<SEMICOLON>export-do
+             OUTPUT_FILENAME action-convert-dpi-method-none.png
              REFERENCE_FILENAME shapes_expected.png)
 add_cli_test(action-convert-dpi-method-scale-viewbox
              PARAMETERS --export-area-page --actions=convert-dpi-method:scale-viewbox$<SEMICOLON>file-open:${CMAKE_CURRENT_SOURCE_DIR}/testcases/shapes_pre_0.92.svg$<SEMICOLON>export-filename:action-convert-dpi-method-scale-viewbox.png$<SEMICOLON>export-do
@@ -876,6 +894,14 @@ add_cli_test(actions-export-area-page-then-drawing
              OUTPUT_FILENAME actions-export-area-page-then-drawing.png
              REFERENCE_FILENAME export-area-drawing_expected.png)
 
+# Sequential export-id-only action should succeed
+# https://gitlab.com/inkscape/inkscape/-/issues/1957
+add_cli_test(actions-sequential-export-id-only_svg 
+             INPUT_FILENAME theta.svg
+             PARAMETERS --actions=export-id-only$<SEMICOLON>export-filename:actions-sequential-export-id-only.svg$<SEMICOLON>export-id:red$<SEMICOLON>export-do$<SEMICOLON>export-filename:actions-sequential-export-id-only.svg$<SEMICOLON>export-id:blue$<SEMICOLON>export-do
+             OUTPUT_FILENAME actions-sequential-export-id-only.svg
+             REFERENCE_FILENAME export-id_export-id-only_expected.svg)
+
 
 ###########################
 ### pdf input support   ###
@@ -898,6 +924,7 @@ add_pdfinput_test(gradients 1)
 add_pdfinput_test(latex 1)
 add_pdfinput_test(transparency-groups 1)
 add_pdfinput_test(rotated-gradients 1)
+add_pdfinput_test(labels-utf16 1)
 add_pdfinput_test(multi-page-sample all)
 
 ###########################

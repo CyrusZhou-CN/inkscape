@@ -95,6 +95,8 @@ static std::map<SnapTargetType, Glib::ustring> target2string = {
     {SNAPTARGET_PAGE_MARGIN_BORDER, _("page margin border")},
     {SNAPTARGET_PAGE_MARGIN_CORNER, _("page margin corner")},
     {SNAPTARGET_PAGE_MARGIN_CENTER, _("page margin center")},
+    {SNAPTARGET_PAGE_BLEED_BORDER, _("page bleed border")},
+    {SNAPTARGET_PAGE_BLEED_CORNER, _("page bleed corner")},
     {SNAPTARGET_OBJECT_MIDPOINT, _("object midpoint")},
     {SNAPTARGET_IMG_CORNER, _("corner")},
     {SNAPTARGET_ROTATION_CENTER, _("object rotation center")},
@@ -347,6 +349,7 @@ guint32 SnapIndicator::get_guide_color(SnapTargetType t)
         case SNAPTARGET_ALIGNMENT_PAGE_EDGE_CORNER:
         case SNAPTARGET_ALIGNMENT_PAGE_MARGIN_CENTER:
         case SNAPTARGET_ALIGNMENT_PAGE_MARGIN_CORNER:
+        case SNAPTARGET_ALIGNMENT_PAGE_BLEED_CORNER:
             return 0x00ff00ff;
         case SNAPTARGET_ALIGNMENT_HANDLE:
             return 0x0000ffff;

@@ -9,35 +9,38 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#include <cstddef>
+#include <algorithm>
+#include <tuple>
+#include <glibmm/i18n.h>
+
 #include "livepatheffect-editor.h"
-#include "live_effects/effect-enum.h"
 #include "livepatheffect-add.h"
 #include "live_effects/effect.h"
-#include "live_effects/lpeobject-reference.h"
+#include "live_effects/effect-enum.h"
 #include "live_effects/lpeobject.h"
-
-#include "object/sp-lpe-item.h"
-#include "svg/svg.h"
-#include "ui/icon-names.h"
-#include "ui/icon-loader.h"
-#include "ui/builder-utils.h"
+#include "live_effects/lpeobject-reference.h"
 #include "io/resource.h"
-#include "object/sp-use.h"
-#include "object/sp-shape.h"
-#include "object/sp-path.h"
 #include "object/sp-flowtext.h"
-#include "object/sp-tspan.h"
 #include "object/sp-item-group.h"
+#include "object/sp-lpe-item.h"
+#include "object/sp-path.h"
+#include "object/sp-shape.h"
 #include "object/sp-text.h"
+#include "object/sp-tspan.h"
+#include "object/sp-use.h"
+#include "svg/svg.h"
+#include "ui/builder-utils.h"
+#include "ui/controller.h"
+#include "ui/icon-loader.h"
+#include "ui/icon-names.h"
+#include "ui/manage.h"
 #include "ui/tools/node-tool.h"
 #include "ui/widget/custom-tooltip.h"
 #include "util/optstr.h"
-#include <cstddef>
-#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace UI {
-
 
 bool sp_can_apply_lpeffect(SPLPEItem* item, LivePathEffect::EffectType etype) {
     if (!item) return false;
@@ -56,7 +59,6 @@ bool sp_can_apply_lpeffect(SPLPEItem* item, LivePathEffect::EffectType etype) {
     bool has_clip = item->getClipObject() != nullptr;
     bool has_mask = item->getMaskObject() != nullptr;
     bool applicable = true;
-// g_message("apply? %p, type: %s, clp: %d, msk: %d", item, item_type.c_str(), has_clip, has_mask);
     if (!has_clip && etype == LivePathEffect::POWERCLIP) {
         applicable = false;
     }
@@ -174,31 +176,38 @@ LivePathEffectEditor::LivePathEffectEditor()
     _LPEParentBox(get_widget<Gtk::ListBox>(_builder, "LPEParentBox")),
     _LPECurrentItem(get_widget<Gtk::Box>(_builder, "LPECurrentItem")),
     _LPESelectionInfo(get_widget<Gtk::Label>(_builder, "LPESelectionInfo")),
+    _LPEGallery(get_widget<Gtk::Button>(_builder, "LPEGallery")),
+    _showgallery_observer(Preferences::PreferencesObserver::create(
+        "/dialogs/livepatheffect/showgallery", sigc::mem_fun(*this, &LivePathEffectEditor::on_showgallery_notify))),
     converter(Inkscape::LivePathEffect::LPETypeConverter)
 {
-    Gtk::EventBox &LPEGallery = get_widget<Gtk::EventBox>(_builder, "LPEGallery");
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-    Glib::RefPtr<Gtk::EntryCompletion> LPECompletionList = Glib::RefPtr<Gtk::EntryCompletion>::cast_dynamic(_builder->get_object("LPECompletionList"));
+    _LPEGallery.signal_clicked().connect(sigc::mem_fun(*this, &LivePathEffectEditor::onAddGallery));
+    _showgallery_observer->call(); // Set initial visibility per Preference (widget is :no-show-all)
 
-    if(prefs->getBool("/dialogs/livepatheffect/showgallery", false)) {
-        LPEGallery.signal_button_release_event().connect(sigc::mem_fun(*this, &LivePathEffectEditor::openGallery));
-        LPEGallery.show();
-    }
     _LPEContainer.signal_map().connect(sigc::mem_fun(*this, &LivePathEffectEditor::map_handler) );
-    _LPEContainer.signal_button_press_event().connect([=](GdkEventButton* const evt){dnd = false; /*hack to fix dnd freze expander*/ return false; }, false);
+
+    Controller::add_click(_LPEContainer, [this](Gtk::GestureMultiPress const &, int, double, double)
+    {
+        dnd = false; // hack to fix DnD freezing expander
+        return Gtk::EVENT_SEQUENCE_NONE;
+    });
+
     setMenu();
     add(_LPEContainer);
     selection_info();
+
     _lpes_popup.get_entry().set_placeholder_text(_("Add Live Path Effect"));
     _lpes_popup.on_match_selected().connect([=](int id){ onAdd((LivePathEffect::EffectType)id); });
     _lpes_popup.on_button_press().connect([=](){ setMenu(); });
     _lpes_popup.on_focus().connect([=](){ setMenu(); return true; });
     _LPEAddContainer.pack_start(_lpes_popup);
+
     show_all();
 }
 
 LivePathEffectEditor::~LivePathEffectEditor()
 {
+    sp_clear_custom_tooltip();
 }
 
 bool separator_func(const Glib::RefPtr<Gtk::TreeModel>& model,
@@ -288,12 +297,13 @@ void align(Gtk::Widget* top, gint spinbutton_width_chars) {
 void
 LivePathEffectEditor::clearMenu()
 {
+    sp_clear_custom_tooltip();
     _reload_menu = true;
 }
 
 void
-LivePathEffectEditor::toggleVisible(Inkscape::LivePathEffect::Effect *lpe , Gtk::EventBox *visbutton) {
-    auto *visimage = dynamic_cast<Gtk::Image *>(dynamic_cast<Gtk::Button *>(visbutton->get_children()[0])->get_image());
+LivePathEffectEditor::toggleVisible(Inkscape::LivePathEffect::Effect *lpe , Gtk::Button *visbutton) {
+    auto *visimage = dynamic_cast<Gtk::Image *>(visbutton->get_image());
     bool hide = false;
     if (!g_strcmp0(lpe->getRepr()->attribute("is_visible"),"true")) {
         visimage->set_from_icon_name("object-hidden-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_SMALL_TOOLBAR));
@@ -307,14 +317,17 @@ LivePathEffectEditor::toggleVisible(Inkscape::LivePathEffect::Effect *lpe , Gtk:
     DocumentUndo::done(getDocument(), hide ? _("Deactivate path effect") :  _("Activate path effect"), INKSCAPE_ICON("dialog-path-effects"));
 }
 
-static std::map<Inkscape::LivePathEffect::LPECategory, Glib::ustring> g_category_names = {
-    { Inkscape::LivePathEffect::LPECategory::Favorites,     _("Favorites")    },
-    { Inkscape::LivePathEffect::LPECategory::EditTools,     _("Edit/Tools")   },
-    { Inkscape::LivePathEffect::LPECategory::Distort,       _("Distort")      },
-    { Inkscape::LivePathEffect::LPECategory::Generate,      _("Generate")     },
-    { Inkscape::LivePathEffect::LPECategory::Convert,       _("Convert")      },
-    { Inkscape::LivePathEffect::LPECategory::Experimental,  _("Experimental") },
-};
+const Glib::ustring& get_category_name(Inkscape::LivePathEffect::LPECategory category) {
+    static const std::map<Inkscape::LivePathEffect::LPECategory, Glib::ustring> category_names = {
+        { Inkscape::LivePathEffect::LPECategory::Favorites,     _("Favorites")    },
+        { Inkscape::LivePathEffect::LPECategory::EditTools,     _("Edit/Tools")   },
+        { Inkscape::LivePathEffect::LPECategory::Distort,       _("Distort")      },
+        { Inkscape::LivePathEffect::LPECategory::Generate,      _("Generate")     },
+        { Inkscape::LivePathEffect::LPECategory::Convert,       _("Convert")      },
+        { Inkscape::LivePathEffect::LPECategory::Experimental,  _("Experimental") },
+    };
+    return category_names.at(category);
+}
 
 struct LPEMetadata {
     Inkscape::LivePathEffect::LPECategory category;
@@ -340,19 +353,15 @@ void LivePathEffectEditor::add_lpes(Inkscape::UI::Widget::CompletionPopup& popup
     for (auto&& lpe : g_lpes) {
         lpes.push_back({
             lpe.first,
-            _(converter.get_label(lpe.first).c_str()),
+            g_dpgettext2(0, "path effect", converter.get_label(lpe.first).c_str()),
             lpe.second.category,
             lpe.second.icon_name,
             lpe.second.tooltip,
             lpe.second.sensitive
         });
     }
-    std::sort(begin(lpes), end(lpes), [=](auto&& a, auto&& b) {
-        if (a.category != b.category) {
-            return a.category < b.category;
-        }
-        return a.label < b.label;
-    });
+    auto const tie = [](LPE const &lpe){ return std::tie(lpe.category, lpe.label); };
+    std::sort(lpes.begin(), lpes.end(), [=](auto &l, auto &r){ return tie(l) < tie(r); });
 
     popup.clear_completion_list();
 
@@ -372,7 +381,7 @@ void LivePathEffectEditor::add_lpes(Inkscape::UI::Widget::CompletionPopup& popup
             return sp_query_custom_tooltip(x, y, kbd, tooltipw, id, lpe.tooltip, lpe.icon_name);
         });
         if (builder.new_section()) {
-            builder.set_section(g_category_names[lpe.category]);
+            builder.set_section(get_category_name(lpe.category));
         }
     
         // build completion list
@@ -393,6 +402,9 @@ LivePathEffectEditor::setMenu()
     if (!_reload_menu) {
         return;
     }
+
+    _reload_menu = false;
+
     auto shape = cast<SPShape>(current_lpeitem);
     auto path = cast<SPPath>(current_lpeitem);
     auto group = cast<SPGroup>(current_lpeitem);
@@ -488,18 +500,18 @@ LivePathEffectEditor::selection_info()
 {
     auto selection = getSelection();
     SPItem * selected = nullptr;
-    _LPESelectionInfo.hide();
+    _LPESelectionInfo.set_visible(false);
     if (selection && (selected = selection->singleItem()) ) {
         if (is<SPText>(selected) || is<SPFlowtext>(selected)) {
-            _LPESelectionInfo.set_text(_("Texts does not support live path effects"));
-            _LPESelectionInfo.show();
+            _LPESelectionInfo.set_text(_("Text objects do not support Live Path Effects"));
+            _LPESelectionInfo.set_visible(true);
             Glib::ustring labeltext = _("Convert text to paths");
-            Gtk::Button *selectbutton = Gtk::manage(new Gtk::Button());
-            Gtk::Box *boxc = Gtk::manage(new Gtk::Box());
-            Gtk::Label *lbl = Gtk::manage(new Gtk::Label(labeltext));
+            auto const selectbutton = Gtk::make_managed<Gtk::Button>();
+            auto const boxc = Gtk::make_managed<Gtk::Box>();
+            auto const lbl = Gtk::make_managed<Gtk::Label>(labeltext);
             std::string shape_type = "group";
             std::string highlight = SPColor(selected->highlight_color()).toString();
-            Gtk::Image *type = Gtk::manage(new Gtk::Image(sp_get_shape_icon(shape_type, Gdk::RGBA(highlight),20, 1)));
+            auto const type = Gtk::make_managed<Gtk::Image>(sp_get_shape_icon(shape_type, Gdk::RGBA(highlight), 20, 1));
             boxc->pack_start(*type, false, false);
             boxc->pack_start(*lbl, false, false);
             type->set_margin_start(4);
@@ -510,12 +522,12 @@ LivePathEffectEditor::selection_info()
             });
             _LPEParentBox.add(*selectbutton);
             Glib::ustring labeltext2 = _("Clone");
-            Gtk::Button *selectbutton2 = Gtk::manage(new Gtk::Button());
-            Gtk::Box *boxc2 = Gtk::manage(new Gtk::Box());
-            Gtk::Label *lbl2 = Gtk::manage(new Gtk::Label(labeltext2));
+            auto const selectbutton2 = Gtk::make_managed<Gtk::Button>();
+            auto const boxc2 = Gtk::make_managed<Gtk::Box>();
+            auto const lbl2 = Gtk::make_managed<Gtk::Label>(labeltext2);
             std::string shape_type2 = "clone";
             std::string highlight2 = SPColor(selected->highlight_color()).toString();
-            Gtk::Image *type2 = Gtk::manage(new Gtk::Image(sp_get_shape_icon(shape_type2, Gdk::RGBA(highlight2),20, 1)));
+            auto const type2 = Gtk::make_managed<Gtk::Image>(sp_get_shape_icon(shape_type2, Gdk::RGBA(highlight2), 20, 1));
             boxc2->pack_start(*type2, false, false);
             boxc2->pack_start(*lbl2, false, false);
             type2->set_margin_start(4);
@@ -528,21 +540,21 @@ LivePathEffectEditor::selection_info()
             _LPEParentBox.show_all();
         } else if (!is<SPLPEItem>(selected) && !is<SPUse>(selected)) {
             _LPESelectionInfo.set_text(_("Select a path, shape, clone or group"));
-            _LPESelectionInfo.show();
+            _LPESelectionInfo.set_visible(true);
         } else {
             if (selected->getId()) {
                 Glib::ustring labeltext = selected->label() ? selected->label() : selected->getId();
-                Gtk::Box *boxc = Gtk::manage(new Gtk::Box());
-                Gtk::Label *lbl = Gtk::manage(new Gtk::Label(labeltext));
+                auto const boxc = Gtk::make_managed<Gtk::Box>();
+                auto const lbl = Gtk::make_managed<Gtk::Label>(labeltext);
                 lbl->set_ellipsize(Pango::ELLIPSIZE_END);
                 std::string shape_type = selected->typeName();
                 std::string highlight = SPColor(selected->highlight_color()).toString();
-                Gtk::Image *type = Gtk::manage(new Gtk::Image(sp_get_shape_icon(shape_type, Gdk::RGBA(highlight),20, 1)));
+                auto const type = Gtk::make_managed<Gtk::Image>(sp_get_shape_icon(shape_type, Gdk::RGBA(highlight), 20, 1));
                 boxc->pack_start(*type, false, false);
                 boxc->pack_start(*lbl, false, false);
                 _LPECurrentItem.add(*boxc);
                 _LPECurrentItem.get_children()[0]->set_halign(Gtk::ALIGN_CENTER);
-                _LPESelectionInfo.hide();
+                _LPESelectionInfo.set_visible(false);
             }
             std::vector<std::pair <Glib::ustring, Glib::ustring> > newrootsatellites;
             for (auto root : selected->rootsatellites) {
@@ -557,12 +569,12 @@ LivePathEffectEditor::selection_info()
                     auto lpeitem = cast<SPLPEItem>(selected->document->getObjectById(root.first));
                     if (lpeitem && lpeitem->getLPEIndex(lpe) != Glib::ustring::npos) {
                         newrootsatellites.emplace_back(root.first, root.second);
-                        Gtk::Button *selectbutton = Gtk::manage(new Gtk::Button());
-                        Gtk::Box *boxc = Gtk::manage(new Gtk::Box());
-                        Gtk::Label *lbl = Gtk::manage(new Gtk::Label(labeltext));
+                        auto const selectbutton = Gtk::make_managed<Gtk::Button>();
+                        auto const boxc = Gtk::make_managed<Gtk::Box>();
+                        auto const lbl = Gtk::make_managed<Gtk::Label>(labeltext);
                         std::string shape_type = selected->typeName();
                         std::string highlight = SPColor(selected->highlight_color()).toString();
-                        Gtk::Image *type = Gtk::manage(new Gtk::Image(sp_get_shape_icon(shape_type, Gdk::RGBA(highlight),20, 1)));
+                        auto const type = Gtk::make_managed<Gtk::Image>(sp_get_shape_icon(shape_type, Gdk::RGBA(highlight), 20, 1));
                         boxc->pack_start(*type, false, false);
                         boxc->pack_start(*lbl, false, false);
                         type->set_margin_start(4);
@@ -582,10 +594,10 @@ LivePathEffectEditor::selection_info()
         }
     } else if (!selection || selection->isEmpty()) {
         _LPESelectionInfo.set_text(_("Select a path, shape, clone or group"));
-        _LPESelectionInfo.show();
+        _LPESelectionInfo.set_visible(true);
     } else if (selection->size() > 1) {
         _LPESelectionInfo.set_text(_("Select only one path, shape, clone or group"));
-        _LPESelectionInfo.show();
+        _LPESelectionInfo.set_visible(true);
     }
 }
 
@@ -669,24 +681,15 @@ LivePathEffectEditor::showParams(std::pair<Gtk::Expander *, std::shared_ptr<Inks
     } else {
         current_lperef = std::make_pair(nullptr, nullptr);
     }
-    
-    // effectwidget = effect.newWidget();
-    // effectcontrol_frame.set_label(effect.getName());
-    // effectcontrol_vbox.pack_start(*effectwidget, true, true);
-
-    // button_remove.show();
-    // status_label.hide();
-    // effectcontrol_vbox.show_all_children();
-    // align(effectwidget);
-    // effectcontrol_frame.show();
-    // // fixme: add resizing of dialog
-    // effect.refresh_widgets = false;
 }
 
-bool
-LivePathEffectEditor::closeExpander(GdkEventButton * evt) {
-    current_lperef.first->set_expanded(false);
-    return false;
+static void
+set_cursor(Gtk::Widget &widget, Glib::ustring const &name)
+{
+    auto const window = widget.get_window();
+    auto const display = window->get_display();
+    auto const cursor = Gdk::Cursor::create(display, name);
+    window->set_cursor(cursor);
 }
 
 /*
@@ -759,7 +762,7 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
     PathEffectList::iterator it;
     Gtk::MenuItem *LPEMoveUpExtrem = nullptr;
     Gtk::MenuItem *LPEMoveDownExtrem = nullptr;
-    Gtk::EventBox *LPEDrag = nullptr;
+    Gtk::Button *LPEDrag = nullptr;
     for( it = effectlist.begin() ; it!=effectlist.end(); ++it)
     {
         if ( !(*it)->lpeobject ) {
@@ -782,8 +785,8 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
             Gtk::EventBox *LPEOpenExpander;
             Gtk::Expander *LPEExpander;
             Gtk::Image *LPEIconImage;
-            Gtk::EventBox *LPEErase;
-            Gtk::EventBox *LPEHide;
+            Gtk::Button *LPEErase;
+            Gtk::Button *LPEHide;
             Gtk::MenuItem *LPEtoggleFavorite;
             Gtk::Label *LPENameLabel;
             Gtk::Menu *LPEEffectMenu;
@@ -809,10 +812,7 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
             builder->get_widget("LPEtoggleFavorite", LPEtoggleFavorite);
             LPEExpander->drag_dest_unset();
             LPEActionButtons->drag_dest_unset();
-            LPEMoveUp->show();
-            LPEMoveDown->show();
-            LPEDrag->get_children()[0]->show();
-            LPEDrag->set_tooltip_text(_("Reorder this Live Path Effect"));
+            LPEDrag->set_tooltip_text(_("Drag to change position in path effects stack"));
             if (current) {
                 LPEExpanderCurrent = LPEExpander;
             }
@@ -831,7 +831,7 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
             } else {
                 lpename = (label + "\n<span size='x-small'>" + untranslated_label + "</span>");
             }
-            auto *visimage = dynamic_cast<Gtk::Image *>(dynamic_cast<Gtk::Button *>(LPEHide->get_children()[0])->get_image());
+            auto *visimage = dynamic_cast<Gtk::Image *>(LPEHide->get_image());
             if (!g_strcmp0(lpe->getRepr()->attribute("is_visible"),"true")) {
                 visimage->set_from_icon_name("object-visible-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_SMALL_TOOLBAR));
             } else {
@@ -866,17 +866,17 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
                             current_lpeitem->setCurrentPathEffect(lperef);
                             current_lpeitem->duplicateCurrentPathEffect();
                             effect_list_reload(current_lpeitem);
-                            DocumentUndo::done(getDocument(), _("Duplicated current path effect"), INKSCAPE_ICON("dialog-path-effects"));
+                            DocumentUndo::done(getDocument(), _("Duplicate path effect"), INKSCAPE_ICON("dialog-path-effects"));
                         } else if (pos == 1) {
                             current_lpeitem->setCurrentPathEffect(lperef);
                             current_lpeitem->upCurrentPathEffect();
                             effect_list_reload(current_lpeitem);
-                            DocumentUndo::done(getDocument(), _("Up current path effect"), INKSCAPE_ICON("dialog-path-effects"));
+                            DocumentUndo::done(getDocument(), _("Move path effect up"), INKSCAPE_ICON("dialog-path-effects"));
                         } else if (pos == 2) {
                             current_lpeitem->setCurrentPathEffect(lperef);
                             current_lpeitem->downCurrentPathEffect();
                             effect_list_reload(current_lpeitem);
-                            DocumentUndo::done(getDocument(), _("Down current path effect"), INKSCAPE_ICON("dialog-path-effects"));
+                            DocumentUndo::done(getDocument(), _("Move path effect down"), INKSCAPE_ICON("dialog-path-effects"));
                         } else if (pos == 3) {
                             lpeFlatten(lperef);
                         } else if (pos == 4) {
@@ -890,7 +890,6 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
                             _reload_menu = true;
                             _item_type = ""; // here we force reload even with the same tipe item selected
                         }
-
                     });
                     if (pos == 6) {
                         if (sp_has_fav(untranslated_label)) {
@@ -983,66 +982,73 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
                     return true;
                 }, true);
             }
+
             // other
+
             LPEEffect->set_name("LPEEffectItem");
-            LPENameLabel->set_label((*it)->lpeobject->get_lpe()->getName().c_str());
+            LPENameLabel->set_label(g_dpgettext2(nullptr, "path effect", (*it)->lpeobject->get_lpe()->getName().c_str()));
+
             LPEExpander->property_expanded().signal_changed().connect(sigc::bind(sigc::mem_fun(*this, &LivePathEffectEditor::expanded_notify),LPEExpander)); 
-            LPEOpenExpander->signal_button_press_event().connect([=](GdkEventButton* const evt){
-               LPEExpander->set_expanded(!LPEExpander->property_expanded());
-               return false;
-            }, false);
-            dynamic_cast<Gtk::Button *>(LPEHide->get_children()[0])->signal_clicked().connect(sigc::bind<Inkscape::LivePathEffect::Effect *, Gtk::EventBox *>(sigc::mem_fun(*this, &LivePathEffectEditor::toggleVisible), lpe, LPEHide));
-            LPEDrag->signal_button_press_event().connect([=](GdkEventButton* const evt){dndx = evt->x; dndy = evt->y; return false; }, false);
-            dynamic_cast<Gtk::Button *>(LPEErase->get_children()[0])->signal_clicked().connect([=](){ removeEffect(LPEExpander);});
+
+            Controller::add_click(*LPEOpenExpander, [=](Gtk::GestureMultiPress &, int, double, double)
+            {
+               LPEExpander->set_expanded(!LPEExpander->get_expanded());
+               return Gtk::EVENT_SEQUENCE_CLAIMED;
+            }, {}, Controller::Button::left);
+
+            LPEHide->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &LivePathEffectEditor::toggleVisible), lpe, LPEHide));
+            LPEErase->signal_clicked().connect([=](){ removeEffect(LPEExpander);});
+
+            Controller::add_click(*LPEDrag, [this](Gtk::GestureMultiPress const &, int, double const x, double const y)
+            {
+                dndx = x;
+                dndy = y;
+                return Gtk::EVENT_SEQUENCE_NONE;
+            });
+
             if (total > 1) {
-                LPEDrag->signal_enter_notify_event().connect([=](GdkEventCrossing*){
-                    auto window = get_window();
-                    auto display = get_display();
-                    auto cursor = Gdk::Cursor::create(display, "grab");
-                    window->set_cursor(cursor);
-                    return false;
-                }, false);
-                LPEDrag->signal_leave_notify_event().connect([=](GdkEventCrossing*){
-                    auto window = get_window();
-                    auto display = get_display();
-                    auto cursor = Gdk::Cursor::create(display, "default");
-                    window->set_cursor(cursor);
-                    return false;
-                }, false);
+                // TODO: gtkmm4: Gtk::Widget.set_cursor() should suffice.
+                auto const motion = gtk_event_controller_motion_new(LPEDrag->Gtk::Widget::gobj());
+                gtk_event_controller_set_propagation_phase(motion, GTK_PHASE_TARGET);
+                g_signal_connect_swapped(motion, "enter", G_CALLBACK(+[](Gtk::Widget * const widget){ set_cursor(*widget, "grab"   ); }), LPEDrag);
+                g_signal_connect_swapped(motion, "leave", G_CALLBACK(+[](Gtk::Widget * const widget){ set_cursor(*widget, "default"); }), LPEDrag);
+                manage(Glib::wrap(motion), *LPEDrag);
             }
+
             if (lpe->hasDefaultParameters()) {
-                LPEResetDefault->show();
-                LPESetDefault->hide();
-            
+                LPEResetDefault->set_visible(true);
+                LPESetDefault->set_visible(false);
             } else {
-                LPEResetDefault->hide();
-                LPESetDefault->show();
+                LPEResetDefault->set_visible(false);
+                LPESetDefault->set_visible(true);
             }
         }
     }
+
     if (counter == 0 && LPEDrag) {
-        LPEDrag->get_children()[0]->hide();
+        LPEDrag->set_visible(false);
         LPEDrag->set_tooltip_text("");
     }
+
     if (LPEMoveUpExtrem) {
-        LPEMoveUpExtrem->hide();
-        LPEMoveDownExtrem->hide();
+        LPEMoveUpExtrem->set_visible(false);
+        LPEMoveDownExtrem->set_visible(false);
     }
+
     if (LPEExpanderCurrent) {
-        _LPESelectionInfo.hide();
+        _LPESelectionInfo.set_visible(false);
         LPEExpanderCurrent->set_expanded(true);
-        Gtk::Window *current_window = dynamic_cast<Gtk::Window *>(LPEExpanderCurrent->get_toplevel());
-        if (current_window) {
+        if (auto const current_window = dynamic_cast<Gtk::Window *>(LPEExpanderCurrent->get_toplevel())) {
             current_window->set_focus(*LPEExpanderCurrent);
         }
     }
+
     selection_info();
     LPEListBox.show_all_children();
     ensure_size();
 }
 
 void LivePathEffectEditor::expanded_notify(Gtk::Expander *expander) {
-
     if (updating) {
         return;
     }
@@ -1093,7 +1099,7 @@ LivePathEffectEditor::lpeFlatten(std::shared_ptr<Inkscape::LivePathEffect::LPEOb
     if (selection && selection->isEmpty() ) {
         selection->add(current_lpeitem);
     }
-    DocumentUndo::done(getDocument(), _("Flatten some live path effects"), INKSCAPE_ICON("dialog-path-effects"));
+    DocumentUndo::done(getDocument(), _("Flatten path effect(s)"), INKSCAPE_ICON("dialog-path-effects"));
     return false;
 }
 
@@ -1111,26 +1117,8 @@ LivePathEffectEditor::removeEffect(Gtk::Expander * expander) {
         current_lpeitem->setCurrentPathEffect(current_lperef_tmp.second);
     }
     effect_list_reload(current_lpeitem);
-    DocumentUndo::done(getDocument(), _("Removed live path effect"), INKSCAPE_ICON("dialog-path-effects"));
+    DocumentUndo::done(getDocument(), _("Remove path effect"), INKSCAPE_ICON("dialog-path-effects"));
 }
-
-bool 
-LivePathEffectEditor::toggleFavInLpe(GdkEventButton * evt, Glib::ustring name, Gtk::Button *favbutton) {
-    auto *favimage = dynamic_cast<Gtk::Image *>(favbutton->get_image());
-    if (favimage->get_icon_name() == "draw-star") {
-        favbutton->set_image_from_icon_name("draw-star-outline", Gtk::IconSize(Gtk::ICON_SIZE_SMALL_TOOLBAR));
-        sp_remove_fav(name);
-    } else {
-        favbutton->set_image_from_icon_name("draw-star", Gtk::IconSize(Gtk::ICON_SIZE_SMALL_TOOLBAR));
-        sp_add_fav(name);
-    }
-    clearMenu();
-    return false;
-}
-
-
-
-
 
 /*
  * Clears the effectlist
@@ -1147,11 +1135,6 @@ LivePathEffectEditor::clear_lpe_list()
     for (auto &w : _LPECurrentItem.get_children()) {
         _LPECurrentItem.remove(*w);
     }
-}
-
-bool LivePathEffectEditor::openGallery(GdkEventButton *evt) {
-    onAddGallery();
-    return false;
 }
 
 SPLPEItem * LivePathEffectEditor::clonetolpeitem()
@@ -1236,6 +1219,11 @@ void LivePathEffectEditor::onAddGallery()
         current_lpeitem->getCurrentLPE()->refresh_widgets = true;
         DocumentUndo::done(getDocument(), _("Create and apply path effect"), INKSCAPE_ICON("dialog-path-effects"));
     }
+}
+
+void LivePathEffectEditor::on_showgallery_notify(Preferences::Entry const &new_val)
+{
+    _LPEGallery.set_visible(new_val.getBool());
 }
 
 } // namespace Dialog

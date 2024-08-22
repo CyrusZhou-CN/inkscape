@@ -10,7 +10,7 @@ Classes here:
   ** CurveDragPoint
   ** Handle
   ** RotationHandle
-  ** SelectableContrlPoint
+  ** SelectableControlPoint
   *** Node
   ** SelectorPoint,
   ** TransformHandle
@@ -22,7 +22,6 @@ Classes here:
 
   * Manipulator
   ** PointManipulator
-  *** MultiManipulator
   *** PathManipulator
   *** MultiPathManipulator
   ** Selector

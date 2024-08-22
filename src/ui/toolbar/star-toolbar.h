@@ -81,6 +81,8 @@ private:
 
     bool _freeze{false};
     sigc::connection _changed;
+
+    bool _batchundo = false;
     
     void side_mode_changed(int mode);
     void magnitude_value_changed();
@@ -88,8 +90,8 @@ private:
     void rounded_value_changed();
     void randomized_value_changed();
     void defaults();
-    void watch_ec(SPDesktop* desktop, Inkscape::UI::Tools::ToolBase* ec);
-    void selection_changed(Inkscape::Selection *selection);
+    void watch_tool(SPDesktop *desktop, UI::Tools::ToolBase *tool);
+    void selection_changed(Selection *selection);
 
 	void notifyAttributeChanged(Inkscape::XML::Node &node, GQuark name,
 								Inkscape::Util::ptr_shared old_value,

@@ -140,16 +140,16 @@ void
 add_actions_select_window(InkscapeWindow* win)
 {
     // clang-format off
-    win->add_action( "select-all",                      sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&select_all), win));
-    win->add_action( "select-all-layers",               sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&select_all_layers), win));
-    win->add_action( "select-same-fill-and-stroke",     sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&select_same_fill_and_stroke), win));
-    win->add_action( "select-same-fill",                sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&select_same_fill), win));
-    win->add_action( "select-same-stroke-color",        sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&select_same_stroke_color), win));
-    win->add_action( "select-same-stroke-style",        sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&select_same_stroke_style), win));
-    win->add_action( "select-same-object-type",         sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&select_same_object_type), win));
-    win->add_action( "select-invert",                   sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&select_invert), win));
-    win->add_action( "select-invert-all",               sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&select_invert_all), win));
-    win->add_action( "select-none",                     sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&select_none), win));
+    win->add_action( "select-all",                      sigc::bind(sigc::ptr_fun(&select_all), win));
+    win->add_action( "select-all-layers",               sigc::bind(sigc::ptr_fun(&select_all_layers), win));
+    win->add_action( "select-same-fill-and-stroke",     sigc::bind(sigc::ptr_fun(&select_same_fill_and_stroke), win));
+    win->add_action( "select-same-fill",                sigc::bind(sigc::ptr_fun(&select_same_fill), win));
+    win->add_action( "select-same-stroke-color",        sigc::bind(sigc::ptr_fun(&select_same_stroke_color), win));
+    win->add_action( "select-same-stroke-style",        sigc::bind(sigc::ptr_fun(&select_same_stroke_style), win));
+    win->add_action( "select-same-object-type",         sigc::bind(sigc::ptr_fun(&select_same_object_type), win));
+    win->add_action( "select-invert",                   sigc::bind(sigc::ptr_fun(&select_invert), win));
+    win->add_action( "select-invert-all",               sigc::bind(sigc::ptr_fun(&select_invert_all), win));
+    win->add_action( "select-none",                     sigc::bind(sigc::ptr_fun(&select_none), win));
     // clang-format on
 
     auto app = InkscapeApplication::instance();

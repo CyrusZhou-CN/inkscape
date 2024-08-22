@@ -10,6 +10,7 @@
 
 #include "prefdialog.h"
 
+#include <cassert>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/separator.h>
 #include <glibmm/i18n.h>
@@ -28,10 +29,7 @@
 
 #include "parameter.h"
 
-
-namespace Inkscape {
-namespace Extension {
-
+namespace Inkscape::Extension {
 
 /** \brief  Creates a new preference dialog for extension preferences
     \param  name      Name of the Extension whose dialog this is (should already be translated)
@@ -47,13 +45,11 @@ PrefDialog::PrefDialog (Glib::ustring name, Gtk::Widget * controls, Effect * eff
     _button_ok(nullptr),
     _button_cancel(nullptr),
     _button_preview(nullptr),
-    _param_preview(nullptr),
-    _effect(effect),
-    _exEnv(nullptr)
+    _effect(effect)
 {
     this->set_default_size(0,0);  // we want the window to be as small as possible instead of clobbering up space
 
-    Gtk::Box *hbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL));
+    auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
     if (controls == nullptr) {
         if (_effect == nullptr) {
             std::cerr << "AH!!!  No controls and no effect!!!" << std::endl;
@@ -64,7 +60,7 @@ PrefDialog::PrefDialog (Glib::ustring name, Gtk::Widget * controls, Effect * eff
     }
 
     hbox->pack_start(*controls, true, true, 0);
-    hbox->show();
+    hbox->set_visible(true);
 
     this->get_content_area()->pack_start(*hbox, true, true, 0);
 
@@ -80,26 +76,25 @@ PrefDialog::PrefDialog (Glib::ustring name, Gtk::Widget * controls, Effect * eff
                 std::cerr << "Error encountered loading live parameter XML !!!" << std::endl;
                 return;
             }
-            _param_preview = InxParameter::make(doc->root(), _effect);
+
+            _param_preview.reset(InxParameter::make(doc->root(), _effect));
         }
 
-        auto sep = Gtk::manage(new Gtk::Separator());
-        sep->show();
-
+        auto const sep = Gtk::make_managed<Gtk::Separator>();
+        sep->set_visible(true);
         this->get_content_area()->pack_start(*sep, false, false, InxWidget::GUI_BOX_SPACING);
 
-        hbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL));
+        hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
         hbox->set_border_width(InxWidget::GUI_BOX_MARGIN);
         _button_preview = _param_preview->get_widget(&_signal_preview);
-        _button_preview->show();
+        _button_preview->set_visible(true);
         hbox->pack_start(*_button_preview, true, true, 0);
-        hbox->show();
+        hbox->set_visible(true);
 
         this->get_content_area()->pack_start(*hbox, false, false, 0);
 
-        Gtk::Box *hbox = dynamic_cast<Gtk::Box *>(_button_preview);
-        if (hbox != nullptr) {
-            _checkbox_preview = dynamic_cast<Gtk::CheckButton *>(hbox->get_children().front());
+        if (auto const preview_box =  dynamic_cast<Gtk::Box *>(_button_preview)) {
+            _checkbox_preview = dynamic_cast<Gtk::CheckButton *>(preview_box->get_children().at(0));
         }
 
         preview_toggle();
@@ -110,22 +105,13 @@ PrefDialog::PrefDialog (Glib::ustring name, Gtk::Widget * controls, Effect * eff
     if (_effect != nullptr && _effect->no_live_preview) {
         set_modal(false);
     }
-
-    return;
 }
 
 PrefDialog::~PrefDialog ( )
 {
-    if (_param_preview != nullptr) {
-        delete _param_preview;
-        _param_preview = nullptr;
-    }
-
     if (_exEnv != nullptr) {
         _exEnv->cancel();
-        delete _exEnv;
-        _exEnv = nullptr;
-        _effect->set_execution_env(_exEnv);
+        _effect->set_execution_env(nullptr);
     }
 
     if (_effect != nullptr) {
@@ -138,24 +124,29 @@ void
 PrefDialog::preview_toggle () {
     SPDocument *document = SP_ACTIVE_DOCUMENT;
     bool modified = document->isModifiedSinceSave();
+
+    assert(_param_preview);
     if(_param_preview->get_bool()) {
         if (_exEnv == nullptr) {
             set_modal(true);
-            _exEnv = new ExecutionEnv(_effect, SP_ACTIVE_DESKTOP, nullptr, false, false);
-            _effect->set_execution_env(_exEnv);
+
+            _exEnv = std::make_unique<ExecutionEnv>(_effect, SP_ACTIVE_DESKTOP, nullptr, false, false);
+            _effect->set_execution_env(_exEnv.get());
             _exEnv->run();
         }
     } else {
         set_modal(false);
+
         if (_exEnv != nullptr) {
             _exEnv->cancel();
             _exEnv->undo();
             _exEnv->reselect();
-            delete _exEnv;
-            _exEnv = nullptr;
-            _effect->set_execution_env(_exEnv);
+
+            _exEnv.reset();
+            _effect->set_execution_env(nullptr);
         }
     }
+
     document->setModifiedSinceSave(modified);
 }
 
@@ -203,9 +194,9 @@ PrefDialog::on_response (int signal) {
                 _exEnv->undo();
                 _exEnv->reselect();
             }
-            delete _exEnv;
-            _exEnv = nullptr;
-            _effect->set_execution_env(_exEnv);
+
+            _exEnv.reset();
+            _effect->set_execution_env(nullptr);
         }
     }
 
@@ -216,14 +207,13 @@ PrefDialog::on_response (int signal) {
     if ((signal == Gtk::RESPONSE_CANCEL || signal == Gtk::RESPONSE_DELETE_EVENT) && _effect != nullptr) {
         delete this;
     }
-    return;
 }
 
 #include "extension/internal/clear-n_.h"
 
 const char * PrefDialog::live_param_xml = "<param name=\"__live_effect__\" type=\"bool\" gui-text=\"" N_("Live preview") "\" gui-description=\"" N_("Is the effect previewed live on canvas?") "\">false</param>";
 
-}; }; /* namespace Inkscape, Extension */
+} // namespace Inkscape::Extension
 
 /*
   Local Variables:

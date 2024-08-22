@@ -8,35 +8,25 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 /** @file
- * @brief Some functions relevant sorting reprs by position within document.
- * @todo Functions in this file have non-English names. Determine what they do and rename
- *       accordingly.
+ * @brief Some functions relevant to sorting reprs by position within a document.
  */
 
 #ifndef SEEN_XML_REPR_SORTING_H
 #define SEEN_XML_REPR_SORTING_H
 
-namespace Inkscape {
-namespace XML {
+namespace Inkscape::XML { class Node; }
 
-class Node;
+Inkscape::XML::Node *lowest_common_ancestor(Inkscape::XML::Node *a, Inkscape::XML::Node *b);
+Inkscape::XML::Node const *lowest_common_ancestor(Inkscape::XML::Node const *a, Inkscape::XML::Node const *b);
 
-} // namespace XML
-} // namespace Inkscape
-
-
-Inkscape::XML::Node *LCA(Inkscape::XML::Node *a, Inkscape::XML::Node *b);
-Inkscape::XML::Node const *LCA(Inkscape::XML::Node const *a, Inkscape::XML::Node const *b);
+bool is_descendant_of(Inkscape::XML::Node const *descendant, Inkscape::XML::Node const *ancestor);
 
 /**
- * Returns a child of \a ancestor such that ret is itself an ancestor of \a descendent.
- *
- * The current version returns NULL if ancestor or descendent is NULL, though future versions may
- * call g_log.  Please update this comment if you rely on the current behaviour.
+ * Returns the child of \a ancestor that contains \a descendant, or nullptr if none exists.
+ * If either \a ancestor or \a descendant is null, then nullptr is returned.
  */
-Inkscape::XML::Node const *AncetreFils(Inkscape::XML::Node const *descendent, Inkscape::XML::Node const *ancestor);
-
-Inkscape::XML::Node *AncetreFils(Inkscape::XML::Node *descendent, Inkscape::XML::Node *ancestor);
+Inkscape::XML::Node *find_containing_child(Inkscape::XML::Node *descendant, Inkscape::XML::Node *ancestor);
+Inkscape::XML::Node const *find_containing_child(Inkscape::XML::Node const *descendant, Inkscape::XML::Node const *ancestor);
 
 #endif // SEEN_XML_REPR_SOTRING_H
 /*

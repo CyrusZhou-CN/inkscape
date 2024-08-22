@@ -470,6 +470,19 @@ sp_item_list_to_curves(const std::vector<SPItem*> &items, std::vector<SPItem*>& 
     return did;
 }
 
+void list_text_items_recursive(SPItem *root, std::vector<SPItem *> &items)
+{
+    for (auto &child : root->children) {
+        auto item = cast<SPItem>(&child);
+        if (is<SPText>(item) || is<SPFlowtext>(item)) {
+            items.push_back(item);
+        }
+        if (is<SPGroup>(item)) {
+            list_text_items_recursive(item, items);
+        }
+    }
+}
+
 /**
  * Convert all text in the document to path, in-place.
  */
@@ -478,16 +491,9 @@ void Inkscape::convert_text_to_curves(SPDocument *doc)
     std::vector<SPItem *> items;
     doc->ensureUpToDate();
 
-    for (auto &child : doc->getRoot()->children) {
-        auto item = cast<SPItem>(&child);
-        if (!(is<SPText>(item) ||     //
-              is<SPFlowtext>(item) || //
-              is<SPGroup>(item))) {
-            continue;
-        }
-
+    list_text_items_recursive(doc->getRoot(), items);
+    for (auto item : items) {
         te_update_layout_now_recursive(item);
-        items.push_back(item);
     }
 
     std::vector<SPItem *> selected;               // Not used

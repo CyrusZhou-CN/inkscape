@@ -12,6 +12,7 @@
 
 #include "svg-renderer.h"
 #include "io/file.h"
+#include "util/safe-printf.h"
 #include "xml/repr.h"
 #include "object/sp-root.h"
 #include "display/cairo-utils.h"
@@ -22,7 +23,7 @@ namespace Inkscape {
 
 Glib::ustring rgba_to_css_color(double r, double g, double b) {
     char buffer[16];
-    sprintf(buffer, "#%02x%02x%02x",
+    safeprintf(buffer, "#%02x%02x%02x",
         static_cast<int>(r * 0xff + 0.5),
         static_cast<int>(g * 0xff + 0.5),
         static_cast<int>(b * 0xff + 0.5)
@@ -43,7 +44,7 @@ Glib::ustring rgba_to_css_color(const SPColor& color) {
 Glib::ustring double_to_css_value(double value) {
     char buffer[32];
     // arbitrarily chosen precision
-    sprintf(buffer, "%.4f", value);
+    safeprintf(buffer, "%.4f", value);
     return Glib::ustring(buffer);
 }
 
@@ -84,13 +85,14 @@ double svg_renderer::get_height_px() const {
     return _document->getHeight().value("px");
 }
 
-Inkscape::Pixbuf *svg_renderer::do_render(double scale)
-{
-    auto dpi = 96 * scale;
+Inkscape::Pixbuf* svg_renderer::do_render(double device_scale) {
+    if (!_document) return nullptr;
+
+    auto dpi = 96 * device_scale * _scale;
     auto area = *(_document->preferredBounds());
 
     auto checkerboard_ptr = _checkerboard ? &*_checkerboard : nullptr;
-    return sp_generate_internal_bitmap(_document.get(), area, dpi, {}, false, checkerboard_ptr, scale);
+    return sp_generate_internal_bitmap(_document.get(), area, dpi, {}, false, checkerboard_ptr, device_scale);
 }
 
 Glib::RefPtr<Gdk::Pixbuf> svg_renderer::render(double scale) {
@@ -115,6 +117,12 @@ Cairo::RefPtr<Cairo::Surface> svg_renderer::render_surface(double scale) {
 
 void svg_renderer::set_checkerboard_color(unsigned int rgba) {
     _checkerboard.emplace(rgba);
+}
+
+void svg_renderer::set_scale(double scale) {
+    if (scale > 0) {
+        _scale = scale;
+    }
 }
 
 } // namespace

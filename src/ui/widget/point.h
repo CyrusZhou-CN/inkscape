@@ -160,9 +160,9 @@ public:
     /**
      * Signal raised when the spin button's value changes.
      */
-    Glib::SignalProxy0<void> signal_x_value_changed();
+    Glib::SignalProxy<void> signal_x_value_changed();
 
-    Glib::SignalProxy0<void> signal_y_value_changed();
+    Glib::SignalProxy<void> signal_y_value_changed();
 
     /**
      * Check 'setProgrammatically' of both scalar widgets.   False if value is changed by user by clicking the widget.

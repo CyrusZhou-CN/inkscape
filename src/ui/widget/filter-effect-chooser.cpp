@@ -22,27 +22,27 @@ namespace Inkscape {
 // Add 5 to ENDMODE for the five additional separators in the list
 const int SP_CSS_BLEND_COUNT = SP_CSS_BLEND_ENDMODE + 5;
 const EnumData<SPBlendMode> SPBlendModeData[SP_CSS_BLEND_COUNT] = {
-    { SP_CSS_BLEND_NORMAL, _("Normal"), "normal" },
+    { SP_CSS_BLEND_NORMAL,     NC_("BlendMode", "Normal"), "normal" },
     { SP_CSS_BLEND_ENDMODE, "-", "-" },
-    { SP_CSS_BLEND_DARKEN, _("Darken"), "darken" },
-    { SP_CSS_BLEND_MULTIPLY, _("Multiply"), "multiply" },
-    { SP_CSS_BLEND_COLORBURN, _("Color Burn"), "color-burn" },
+    { SP_CSS_BLEND_DARKEN,     NC_("BlendMode", "Darken"), "darken" },
+    { SP_CSS_BLEND_MULTIPLY,   NC_("BlendMode", "Multiply"), "multiply" },
+    { SP_CSS_BLEND_COLORBURN,  NC_("BlendMode", "Color Burn"), "color-burn" },
     { SP_CSS_BLEND_ENDMODE, "-", "-" },
-    { SP_CSS_BLEND_LIGHTEN, _("Lighten"), "lighten" },
-    { SP_CSS_BLEND_SCREEN, _("Screen"), "screen" },
-    { SP_CSS_BLEND_COLORDODGE, _("Color Dodge"), "color-dodge" },
+    { SP_CSS_BLEND_LIGHTEN,    NC_("BlendMode", "Lighten"), "lighten" },
+    { SP_CSS_BLEND_SCREEN,     NC_("BlendMode", "Screen"), "screen" },
+    { SP_CSS_BLEND_COLORDODGE, NC_("BlendMode", "Color Dodge"), "color-dodge" },
     { SP_CSS_BLEND_ENDMODE, "-", "-" },
-    { SP_CSS_BLEND_OVERLAY, _("Overlay"), "overlay" },
-    { SP_CSS_BLEND_SOFTLIGHT, _("Soft Light"), "soft-light" },
-    { SP_CSS_BLEND_HARDLIGHT, _("Hard Light"), "hard-light" },
+    { SP_CSS_BLEND_OVERLAY,    NC_("BlendMode", "Overlay"), "overlay" },
+    { SP_CSS_BLEND_SOFTLIGHT,  NC_("BlendMode", "Soft Light"), "soft-light" },
+    { SP_CSS_BLEND_HARDLIGHT,  NC_("BlendMode", "Hard Light"), "hard-light" },
     { SP_CSS_BLEND_ENDMODE, "-", "-" },
-    { SP_CSS_BLEND_DIFFERENCE, _("Difference"), "difference" },
-    { SP_CSS_BLEND_EXCLUSION, _("Exclusion"), "exclusion" },
+    { SP_CSS_BLEND_DIFFERENCE, NC_("BlendMode", "Difference"), "difference" },
+    { SP_CSS_BLEND_EXCLUSION,  NC_("BlendMode", "Exclusion"), "exclusion" },
     { SP_CSS_BLEND_ENDMODE, "-", "-" },
-    { SP_CSS_BLEND_HUE, _("Hue"), "hue" },
-    { SP_CSS_BLEND_SATURATION, _("Saturation"), "saturation" },
-    { SP_CSS_BLEND_COLOR, _("Color"), "color" },
-    { SP_CSS_BLEND_LUMINOSITY, _("Luminosity"), "luminosity" }
+    { SP_CSS_BLEND_HUE,        NC_("BlendMode", "Hue"), "hue" },
+    { SP_CSS_BLEND_SATURATION, NC_("BlendMode", "Saturation"), "saturation" },
+    { SP_CSS_BLEND_COLOR,      NC_("BlendMode", "Color"), "color" },
+    { SP_CSS_BLEND_LUMINOSITY, NC_("BlendMode", "Luminosity"), "luminosity" }
 };
 const EnumDataConverter<SPBlendMode> SPBlendModeConverter(SPBlendModeData, SP_CSS_BLEND_COUNT);
 
@@ -55,7 +55,7 @@ SimpleFilterModifier::SimpleFilterModifier(int flags)
     , _flags(flags)
     , _lb_blend(_("Blend mode:"))
     , _lb_isolation("Isolate") // Translate for 1.1
-    , _blend(SPBlendModeConverter, SPAttr::INVALID, false)
+    , _blend(SPBlendModeConverter, SPAttr::INVALID, false, "BlendMode")
     , _blur(_("Blur (%)"), 0, 0, 100, 1, 0.1, 1)
     , _opacity(_("Opacity (%)"), 0, 0, 100, 1, 0.1, 1)
     , _notify(true)
@@ -66,7 +66,7 @@ SimpleFilterModifier::SimpleFilterModifier(int flags)
     /* "More options" expander --------
     _extras.set_visible();
     _extras.set_label(_("More options"));
-    auto box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    auto const box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     _extras.add(*box);
     if (flags & (BLEND | BLUR)) {
         add(_extras);

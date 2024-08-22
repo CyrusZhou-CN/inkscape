@@ -29,11 +29,10 @@
 
 #include "ui/tool/commit-events.h"
 #include "ui/tool/control-point-selection.h"
-#include "ui/tool/event-utils.h"
 #include "ui/tool/node.h"
-#include "ui/tool/selectable-control-point.h"
 #include "ui/tool/transform-handle-set.h"
 #include "ui/tools/node-tool.h"
+#include "ui/widget/events/canvas-event.h"
 
 
 GType sp_select_context_get_type();
@@ -125,7 +124,7 @@ void TransformHandle::getNextClosestPoint(bool reverse)
     }
 }
 
-bool TransformHandle::grabbed(GdkEventMotion *)
+bool TransformHandle::grabbed(MotionEvent const &)
 {
     _origin = position();
     _last_transform.setIdentity();
@@ -136,9 +135,8 @@ bool TransformHandle::grabbed(GdkEventMotion *)
     _setState(_state);
 
     // Collect the snap-candidates, one for each selected node. These will be stored in the _snap_points vector.
-    Inkscape::UI::Tools::NodeTool *nt = INK_NODE_TOOL(_th._desktop->event_context);
-    //ControlPointSelection *selection = nt->_selected_nodes.get();
-    ControlPointSelection* selection = nt->_selected_nodes;
+    auto nt = dynamic_cast<Tools::NodeTool*>(_th._desktop->event_context);
+    auto selection = nt->_selected_nodes;
 
     selection->setOriginalPoints();
     selection->getOriginalPoints(_snap_points);
@@ -168,9 +166,9 @@ bool TransformHandle::grabbed(GdkEventMotion *)
     return false;
 }
 
-void TransformHandle::dragged(Geom::Point &new_pos, GdkEventMotion *event)
+void TransformHandle::dragged(Geom::Point &new_pos, MotionEvent const &event)
 {
-    Geom::Affine t = computeTransform(new_pos, event);
+    auto const t = computeTransform(new_pos, event);
     // protect against degeneracies
     if (t.isSingular()) return;
     Geom::Affine incr = _last_transform.inverse() * t;
@@ -179,7 +177,7 @@ void TransformHandle::dragged(Geom::Point &new_pos, GdkEventMotion *event)
     _last_transform = t;
 }
 
-void TransformHandle::ungrabbed(GdkEventButton *)
+void TransformHandle::ungrabbed(ButtonReleaseEvent const *)
 {
     _snap_points.clear();
     _th._clearActiveHandle();
@@ -189,19 +187,21 @@ void TransformHandle::ungrabbed(GdkEventButton *)
     _th.signal_commit.emit(getCommitEvent());
 
     //updates the positions of the nodes
-    Inkscape::UI::Tools::NodeTool *nt = INK_NODE_TOOL(_th._desktop->event_context);
-    ControlPointSelection* selection = nt->_selected_nodes;
+    auto nt = dynamic_cast<Tools::NodeTool*>(_th._desktop->event_context);
+    auto selection = nt->_selected_nodes;
     selection->setOriginalPoints();
 }
 
-
-class ScaleHandle : public TransformHandle {
+class ScaleHandle : public TransformHandle
+{
 public:
     ScaleHandle(TransformHandleSet &th, SPAnchorType anchor, Inkscape::CanvasItemCtrlType type)
         : TransformHandle(th, anchor, type)
     {}
+
 protected:
-    Glib::ustring _getTip(unsigned state) const override {
+    Glib::ustring _getTip(unsigned state) const override
+    {
         if (state_held_control(state)) {
             if (state_held_shift(state)) {
                 return C_("Transform handle tip",
@@ -222,7 +222,8 @@ protected:
         return C_("Transform handle tip", "<b>Scale handle</b>: drag to scale the selection");
     }
 
-    Glib::ustring _getDragTip(GdkEventMotion */*event*/) const override {
+    Glib::ustring _getDragTip(MotionEvent const &/*event*/) const override
+    {
         return format_tip(C_("Transform handle tip",
             "Scale by %.2f%% x %.2f%%"), _last_scale_x * 100, _last_scale_y * 100);
     }
@@ -237,23 +238,25 @@ double ScaleHandle::_last_scale_y = 1.0;
 /**
  * Corner scaling handle for node transforms.
  */
-class ScaleCornerHandle : public ScaleHandle {
+class ScaleCornerHandle : public ScaleHandle
+{
 public:
-
-    ScaleCornerHandle(TransformHandleSet &th, unsigned corner, unsigned d_corner) :
-        ScaleHandle(th, corner_to_anchor(d_corner), Inkscape::CANVAS_ITEM_CTRL_TYPE_ADJ_HANDLE),
-        _corner(corner)
+    ScaleCornerHandle(TransformHandleSet &th, unsigned corner, unsigned d_corner)
+        : ScaleHandle(th, corner_to_anchor(d_corner), Inkscape::CANVAS_ITEM_CTRL_TYPE_ADJ_HANDLE)
+        , _corner(corner)
     {}
 
 protected:
-    void startTransform() override {
-        _sc_center = _th.rotationCenter();
+    void startTransform() override
+    {
+        _sc_center = _th.rotationCenter().position();
         _sc_opposite = _th.bounds().corner(_corner + 2);
         _last_scale_x = _last_scale_y = 1.0;
     }
 
-    Geom::Affine computeTransform(Geom::Point const &new_pos, GdkEventMotion *event) override {
-        Geom::Point scc = held_shift(*event) ? _sc_center : _sc_opposite;
+    Geom::Affine computeTransform(Geom::Point const &new_pos, MotionEvent const &event) override
+    {
+        Geom::Point scc = held_shift(event) ? _sc_center : _sc_opposite;
         Geom::Point vold = _origin - scc, vnew = new_pos - scc;
         // avoid exploding the selection
         if (Geom::are_near(vold[Geom::X], 0) || Geom::are_near(vold[Geom::Y], 0))
@@ -261,7 +264,7 @@ protected:
 
         Geom::Scale scale = Geom::Scale(vnew[Geom::X] / vold[Geom::X], vnew[Geom::Y] / vold[Geom::Y]);
 
-        if (held_alt(*event)) {
+        if (held_alt(event)) {
             for (unsigned i = 0; i < 2; ++i) {
                 if (fabs(scale[i]) >= 1.0) {
                     scale[i] = round(scale[i]);
@@ -274,7 +277,7 @@ protected:
             m.setupIgnoreSelection(_th._desktop, true, &_unselected_points);
 
             Inkscape::PureScale *ptr;
-            if (held_control(*event)) {
+            if (held_control(event)) {
                 scale[0] = scale[1] = std::min(scale[0], scale[1]);
                 ptr = new Inkscape::PureScaleConstrained(Geom::Scale(scale[0], scale[1]), scc);
             } else {
@@ -297,14 +300,14 @@ protected:
         return t;
     }
 
-    CommitEvent getCommitEvent() override {
+    CommitEvent getCommitEvent() const override
+    {
         return _last_transform.isUniformScale()
             ? COMMIT_MOUSE_SCALE_UNIFORM
             : COMMIT_MOUSE_SCALE;
     }
 
 private:
-
     Geom::Point _sc_center;
     Geom::Point _sc_opposite;
     unsigned _corner;
@@ -313,21 +316,26 @@ private:
 /**
  * Side scaling handle for node transforms.
  */
-class ScaleSideHandle : public ScaleHandle {
+class ScaleSideHandle : public ScaleHandle
+{
 public:
     ScaleSideHandle(TransformHandleSet &th, unsigned side, unsigned d_side)
         : ScaleHandle(th, side_to_anchor(d_side), Inkscape::CANVAS_ITEM_CTRL_TYPE_ADJ_HANDLE)
         , _side(side)
     {}
+
 protected:
-    void startTransform() override {
-        _sc_center = _th.rotationCenter();
+    void startTransform() override
+    {
+        _sc_center = _th.rotationCenter().position();
         Geom::Rect b = _th.bounds();
         _sc_opposite = Geom::middle_point(b.corner(_side + 2), b.corner(_side + 3));
         _last_scale_x = _last_scale_y = 1.0;
     }
-    Geom::Affine computeTransform(Geom::Point const &new_pos, GdkEventMotion *event) override {
-        Geom::Point scc = held_shift(*event) ? _sc_center : _sc_opposite;
+
+    Geom::Affine computeTransform(Geom::Point const &new_pos, MotionEvent const &event) override
+    {
+        Geom::Point scc = held_shift(event) ? _sc_center : _sc_opposite;
         Geom::Point vs;
         Geom::Dim2 d1 = static_cast<Geom::Dim2>((_side + 1) % 2);
         Geom::Dim2 d2 = static_cast<Geom::Dim2>(_side % 2);
@@ -337,19 +345,19 @@ protected:
             return Geom::identity();
 
         vs[d1] = (new_pos - scc)[d1] / (_origin - scc)[d1];
-        if (held_alt(*event)) {
-            if (fabs(vs[d1]) >= 1.0) {
-                vs[d1] = round(vs[d1]);
+        if (held_alt(event)) {
+            if (std::abs(vs[d1]) >= 1.0) {
+                vs[d1] = std::round(vs[d1]);
             } else {
-                vs[d1] = 1.0 / round(1.0 / MIN(vs[d1],10));
+                vs[d1] = 1.0 / std::round(1.0 / std::min(vs[d1], 10.0));
             }
             vs[d2] = 1.0;
         } else {
-            SnapManager &m = _th._desktop->namedview->snap_manager;
+            auto &m = _th._desktop->namedview->snap_manager;
             m.setupIgnoreSelection(_th._desktop, true, &_unselected_points);
 
-            bool uniform = held_control(*event);
-            Inkscape::PureStretchConstrained psc = Inkscape::PureStretchConstrained(vs[d1], scc, d1, uniform);
+            bool uniform = held_control(event);
+            auto psc = Inkscape::PureStretchConstrained(vs[d1], scc, d1, uniform);
             m.snapTransformed(_snap_points, _origin, psc);
             m.unSetup();
 
@@ -371,14 +379,15 @@ protected:
             * Geom::Translate(scc);
         return t;
     }
-    CommitEvent getCommitEvent() override {
+
+    CommitEvent getCommitEvent() const override
+    {
         return _last_transform.isUniformScale()
             ? COMMIT_MOUSE_SCALE_UNIFORM
             : COMMIT_MOUSE_SCALE;
     }
 
 private:
-
     Geom::Point _sc_center;
     Geom::Point _sc_opposite;
     unsigned _side;
@@ -387,28 +396,30 @@ private:
 /**
  * Rotation handle for node transforms.
  */
-class RotateHandle : public TransformHandle {
+class RotateHandle : public TransformHandle
+{
 public:
     RotateHandle(TransformHandleSet &th, unsigned corner, unsigned d_corner)
         : TransformHandle(th, corner_to_anchor(d_corner), Inkscape::CANVAS_ITEM_CTRL_TYPE_ADJ_ROTATE)
         , _corner(corner)
     {}
-protected:
 
-    void startTransform() override {
-        _rot_center = _th.rotationCenter();
+protected:
+    void startTransform() override
+    {
+        _rot_center = _th.rotationCenter().position();
         _rot_opposite = _th.bounds().corner(_corner + 2);
         _last_angle = 0;
     }
 
-    Geom::Affine computeTransform(Geom::Point const &new_pos, GdkEventMotion *event) override
+    Geom::Affine computeTransform(Geom::Point const &new_pos, MotionEvent const &event) override
     {
-        Geom::Point rotc = held_shift(*event) ? _rot_opposite : _rot_center;
+        Geom::Point rotc = held_shift(event) ? _rot_opposite : _rot_center;
         double angle = Geom::angle_between(_origin - rotc, new_pos - rotc);
-        if (held_control(*event)) {
+        if (held_control(event)) {
             angle = snap_angle(angle);
         } else {
-            SnapManager &m = _th._desktop->namedview->snap_manager;
+            auto &m = _th._desktop->namedview->snap_manager;
             m.setupIgnoreSelection(_th._desktop, true, &_unselected_points);
             Inkscape::PureRotateConstrained prc = Inkscape::PureRotateConstrained(angle, rotc);
             m.snapTransformed(_snap_points, _origin, prc);
@@ -426,9 +437,10 @@ protected:
         return t;
     }
 
-    CommitEvent getCommitEvent() override { return COMMIT_MOUSE_ROTATE; }
+    CommitEvent getCommitEvent() const override { return COMMIT_MOUSE_ROTATE; }
 
-    Glib::ustring _getTip(unsigned state) const override {
+    Glib::ustring _getTip(unsigned state) const override
+    {
         if (state_held_shift(state)) {
             if (state_held_control(state)) {
                 return format_tip(C_("Transform handle tip",
@@ -445,7 +457,8 @@ protected:
             "the selection around the rotation center");
     }
 
-    Glib::ustring _getDragTip(GdkEventMotion */*event*/) const override {
+    Glib::ustring _getDragTip(MotionEvent const &/*event*/) const override
+    {
         return format_tip(C_("Transform handle tip", "Rotate by %.2f°"),
             _last_angle * 180.0 / M_PI);
     }
@@ -460,7 +473,8 @@ private:
 };
 double RotateHandle::_last_angle = 0;
 
-class SkewHandle : public TransformHandle {
+class SkewHandle : public TransformHandle
+{
 public:
     SkewHandle(TransformHandleSet &th, unsigned side, unsigned d_side)
         : TransformHandle(th, side_to_anchor(d_side), Inkscape::CANVAS_ITEM_CTRL_TYPE_ADJ_SKEW)
@@ -468,18 +482,18 @@ public:
     {}
 
 protected:
-
-    void startTransform() override {
-        _skew_center = _th.rotationCenter();
+    void startTransform() override
+    {
+        _skew_center = _th.rotationCenter().position();
         Geom::Rect b = _th.bounds();
         _skew_opposite = Geom::middle_point(b.corner(_side + 2), b.corner(_side + 3));
         _last_angle = 0;
         _last_horizontal = _side % 2;
     }
 
-    Geom::Affine computeTransform(Geom::Point const &new_pos, GdkEventMotion *event) override
+    Geom::Affine computeTransform(Geom::Point const &new_pos, MotionEvent const &event) override
     {
-        Geom::Point scc = held_shift(*event) ? _skew_center : _skew_opposite;
+        Geom::Point scc = held_shift(event) ? _skew_center : _skew_opposite;
         Geom::Dim2 d1 = static_cast<Geom::Dim2>((_side + 1) % 2);
         Geom::Dim2 d2 = static_cast<Geom::Dim2>(_side % 2);
 
@@ -509,7 +523,7 @@ protected:
 
         double angle = atan(skew[d1] / scale[d1]);
 
-        if (held_control(*event)) {
+        if (held_control(event)) {
             angle = snap_angle(angle);
             skew[d1] = tan(angle) * scale[d1];
         } else {
@@ -552,13 +566,15 @@ protected:
         return t;
     }
 
-    CommitEvent getCommitEvent() override {
+    CommitEvent getCommitEvent() const override
+    {
         return (_side % 2)
             ? COMMIT_MOUSE_SKEW_Y
             : COMMIT_MOUSE_SKEW_X;
     }
 
-    Glib::ustring _getTip(unsigned state) const override {
+    Glib::ustring _getTip(unsigned state) const override
+    {
         if (state_held_shift(state)) {
             if (state_held_control(state)) {
                 return format_tip(C_("Transform handle tip",
@@ -576,7 +592,8 @@ protected:
             "the opposite handle");
     }
 
-    Glib::ustring _getDragTip(GdkEventMotion */*event*/) const override {
+    Glib::ustring _getDragTip(MotionEvent const &/*event*/) const override
+    {
         if (_last_horizontal) {
             return format_tip(C_("Transform handle tip", "Skew horizontally by %.2f°"),
                 _last_angle * 360.0);
@@ -589,7 +606,6 @@ protected:
     bool _hasDragTips() const override { return true; }
 
 private:
-
     Geom::Point _skew_center;
     Geom::Point _skew_opposite;
     unsigned _side;
@@ -599,43 +615,44 @@ private:
 bool SkewHandle::_last_horizontal = false;
 double SkewHandle::_last_angle = 0;
 
-class RotationCenter : public ControlPoint {
-
+class RotationCenter : public ControlPoint
+{
 public:
-    RotationCenter(TransformHandleSet &th) :
-        ControlPoint(th._desktop, Geom::Point(), SP_ANCHOR_CENTER,
+    RotationCenter(TransformHandleSet &th)
+        : ControlPoint(th._desktop, Geom::Point(), SP_ANCHOR_CENTER,
                      Inkscape::CANVAS_ITEM_CTRL_TYPE_ADJ_CENTER,
-                     _center_cset, th._transform_handle_group),
-        _th(th)
+                     _center_cset, th._transform_handle_group)
+        , _th(th)
     {
         setVisible(false);
     }
 
 protected:
-    void dragged(Geom::Point &new_pos, GdkEventMotion *event) override {
-        SnapManager &sm = _th._desktop->namedview->snap_manager;
+    void dragged(Geom::Point &new_pos, MotionEvent const &event) override
+    {
+        auto &sm = _th._desktop->namedview->snap_manager;
         sm.setup(_th._desktop);
-        bool snap = !held_shift(*event) && sm.someSnapperMightSnap();
-        if (held_control(*event)) {
+        bool snap = !held_shift(event) && sm.someSnapperMightSnap();
+        if (held_control(event)) {
             // constrain to axes
             Geom::Point origin = _last_drag_origin();
             std::vector<Inkscape::Snapper::SnapConstraint> constraints;
             constraints.emplace_back(origin, Geom::Point(1, 0));
             constraints.emplace_back(origin, Geom::Point(0, 1));
             new_pos = sm.multipleConstrainedSnaps(Inkscape::SnapCandidatePoint(new_pos,
-                SNAPSOURCE_ROTATION_CENTER), constraints, held_shift(*event)).getPoint();
+                SNAPSOURCE_ROTATION_CENTER), constraints, held_shift(event)).getPoint();
         } else if (snap) {
             sm.freeSnapReturnByRef(new_pos, SNAPSOURCE_ROTATION_CENTER);
         }
         sm.unSetup();
     }
-    Glib::ustring _getTip(unsigned /*state*/) const override {
-        return C_("Transform handle tip",
-            "<b>Rotation center</b>: drag to change the origin of transforms");
+
+    Glib::ustring _getTip(unsigned /*state*/) const override
+    {
+        return C_("Transform handle tip", "<b>Rotation center</b>: drag to change the origin of transforms");
     }
 
 private:
-
     static ColorSet _center_cset;
     TransformHandleSet &_th;
 };
@@ -649,7 +666,6 @@ ControlPoint::ColorSet RotationCenter::_center_cset = {
     {0x00ff66ff, 0x000000ff},  // mouseover fill, stroke when selected
     {0x00ff66ff, 0x000000ff}   // clicked fill, stroke when selected
 };
-
 
 TransformHandleSet::TransformHandleSet(SPDesktop *d, Inkscape::CanvasItemGroup *th_group)
     : Manipulator(d)
@@ -680,7 +696,7 @@ TransformHandleSet::TransformHandleSet(SPDesktop *d, Inkscape::CanvasItemGroup *
 
 TransformHandleSet::~TransformHandleSet()
 {
-    for (auto & _handle : _handles) {
+    for (auto &_handle : _handles) {
         delete _handle;
     }
 }
@@ -693,7 +709,7 @@ void TransformHandleSet::setMode(Mode m)
 
 Geom::Rect TransformHandleSet::bounds() const
 {
-    return Geom::Rect(*_scale_corners[0], *_scale_corners[2]);
+    return Geom::Rect(_scale_corners[0]->position(), _scale_corners[2]->position());
 }
 
 ControlPoint const &TransformHandleSet::rotationCenter() const
@@ -730,7 +746,7 @@ void TransformHandleSet::setBounds(Geom::Rect const &r, bool preserve_center)
     }
 }
 
-bool TransformHandleSet::event(Inkscape::UI::Tools::ToolBase *, GdkEvent*)
+bool TransformHandleSet::event(Inkscape::UI::Tools::ToolBase *, CanvasEvent const &)
 {
     return false;
 }

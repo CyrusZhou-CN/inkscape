@@ -15,6 +15,11 @@ IGNORE_THEMES = [
     'application',
     'Tango',
 ]
+IGNORE_ICONS = [
+    # These are hard coded as symbolic in the gtk source code
+    'list-add-symbolic.svg',
+    'list-remove-symbolic.svg',
+]
 
 NO_PROBLEM,\
 BAD_SYMBOLIC_NAME,\
@@ -48,6 +53,8 @@ def find_errors_in(themes):
             theme_name = f"{name}-{kind}"
             names.add(theme_name)
             for fname in files:
+                if fname in IGNORE_ICONS:
+                    continue
                 if not fname.endswith('.svg'):
                     continue
 

@@ -44,7 +44,6 @@
 #include <gtkmm/comboboxtext.h>
 #include <gtkmm/drawingarea.h>
 #include <gtkmm/frame.h>
-#include <gtkmm/radiobutton.h>
 #include <gtkmm/scale.h>
 #include <utility>
 
@@ -56,6 +55,7 @@
 #include "pdf-parser.h"
 #include "ui/builder-utils.h"
 #include "ui/dialog-events.h"
+#include "ui/dialog-run.h"
 #include "ui/widget/frame.h"
 #include "ui/widget/spinbutton.h"
 #include "util/parse-int-range.h"
@@ -131,7 +131,7 @@ PdfImportDialog::PdfImportDialog(std::shared_ptr<PDFDoc> doc, const gchar * /*ur
 
     _setFonts(getPdfFonts(_pdf_doc));
 
-    auto okbutton = Gtk::manage(new Gtk::Button(_("_OK"), true));
+    auto const okbutton = Gtk::make_managed<Gtk::Button>(_("_OK"), true);
 
     get_content_area()->set_homogeneous(false);
     get_content_area()->set_spacing(0);
@@ -145,7 +145,7 @@ PdfImportDialog::PdfImportDialog(std::shared_ptr<PDFDoc> doc, const gchar * /*ur
     this->set_resizable(true);
     this->property_destroy_with_parent().set_value(false);
 
-    this->add_action_widget(*Gtk::manage(new Gtk::Button(_("_Cancel"), true)), -6);
+    this->add_action_widget(*Gtk::make_managed<Gtk::Button>(_("_Cancel"), true), -6);
     this->add_action_widget(*okbutton, -5);
 
     this->show_all();
@@ -221,9 +221,7 @@ PdfImportDialog::~PdfImportDialog() {
 }
 
 bool PdfImportDialog::showDialog() {
-    show();
-    gint b = run();
-    hide();
+    gint b = UI::dialog_run(*this);
     if ( b == Gtk::RESPONSE_OK ) {
         return TRUE;
     } else {
@@ -353,16 +351,16 @@ void PdfImportDialog::setFontStrategies(const FontStrategies &fs)
         child[_font_col->proc_id] = (int)value;
         switch (value) {
             case FontFallback::AS_SHAPES:
-                child[_font_col->proc_label] = _("Draw to Shapes");
+                child[_font_col->proc_label] = _("Convert to paths");
                 break;
             case FontFallback::AS_TEXT:
-                child[_font_col->proc_label] = _("Keep Original Font Name");
+                child[_font_col->proc_label] = _("Keep original font name");
                 break;
             case FontFallback::AS_SUB:
-                child[_font_col->proc_label] = _("Use Substitute Font");
+                child[_font_col->proc_label] = _("Replace by closest-named installed font");
                 break;
             case FontFallback::DELETE_TEXT:
-                child[_font_col->proc_label] = _("Delete Text");
+                child[_font_col->proc_label] = _("Delete text");
                 break;
         }
     }

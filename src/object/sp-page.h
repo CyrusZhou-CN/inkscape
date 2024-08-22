@@ -90,8 +90,8 @@ public:
     void setDocumentRect(Geom::Rect rect, bool add_margins = false);
     void setDesktopRect(Geom::Rect rect);
     void setSize(double width, double height);
-    std::vector<SPItem *> getExclusiveItems(bool hidden = true) const;
-    std::vector<SPItem *> getOverlappingItems(bool hidden = true) const;
+    std::vector<SPItem *> getExclusiveItems(bool hidden = true, bool in_bleed = false, bool in_layers = true) const;
+    std::vector<SPItem *> getOverlappingItems(bool hidden = true, bool in_bleed = false, bool in_layers = true) const;
     bool itemOnPage(SPItem *item, bool contains = false) const;
     bool isViewportPage() const;
     std::string getDefaultLabel() const;

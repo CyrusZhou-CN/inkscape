@@ -27,6 +27,8 @@ set(_potFiles_src ${CMAKE_CURRENT_BINARY_DIR}/POTFILES.src)
 set(xgettext_options -cTRANSLATORS -j --keyword=_ --keyword=N_ --keyword=Q_:1g --keyword=C_:1c,2 --keyword=NC_:1c,2 --msgid-bugs-address=inkscape-translator@lists.inkscape.org --from-code=UTF-8 -ktranslatable -o ${_potFile})
 
 # configure the POTFILES.src file from POTFILES.src.in
+# (prepare relative path for generated files to use; they reside in a "build" folder)
+file(RELATIVE_PATH _build_dir ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR})
 configure_file(POTFILES.src.in ${_potFiles_src})
 
 # Due to a bug in old xgettext versions, we cannot use '--its='.

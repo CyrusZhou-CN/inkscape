@@ -131,7 +131,7 @@ void BatchItem::init(std::shared_ptr<PreviewDrawing> drawing) {
     set_valign(Gtk::Align::ALIGN_START);
     set_halign(Gtk::Align::ALIGN_START);
     add(_grid);
-    show();
+    set_visible(true);
     this->set_can_focus(false);
 
     _selector.signal_toggled().connect([=]() {
@@ -277,7 +277,7 @@ BatchExport::BatchExport(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builde
     builder->get_widget("b_backgnd", button); 
     assert(button);
     _bgnd_color_picker = std::make_unique<Inkscape::UI::Widget::ColorPicker>(
-        _("Background color"), _("Color used to fill background"), 0xffffff00, true, button);
+        _("Background color"), _("Color used to fill the image background"), 0xffffff00, true, button);
     setup();
 }
 
@@ -734,14 +734,14 @@ void BatchExport::setExporting(bool exporting, Glib::ustring const &text, Glib::
     if (exporting) {
         set_sensitive(false);
         set_opacity(0.2);
-        progress_box->show();
+        progress_box->set_visible(true);
         _prog->set_text(text);
         _prog->set_fraction(0.0);
         _prog_batch->set_text(text_batch);
     } else {
         set_sensitive(true);
         set_opacity(1.0);
-        progress_box->hide();
+        progress_box->set_visible(false);
         _prog->set_text("");
         _prog->set_fraction(0.0);
         _prog_batch->set_text("");
@@ -752,7 +752,8 @@ unsigned int BatchExport::onProgressCallback(float value, void *data)
 {
     if (auto bi = static_cast<BatchExport *>(data)) {
         bi->_prog->set_fraction(value);
-        Gtk::Main::iteration(false);
+        auto main_context = Glib::MainContext::get_default();
+        main_context->iteration(false);
         return !bi->interrupted;
     }
     return false;

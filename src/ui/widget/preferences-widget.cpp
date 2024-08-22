@@ -79,7 +79,7 @@ void DialogPage::add_line(bool                 indent,
     if (tip != "")
         widget.set_tooltip_text (tip);
     
-    auto hb = Gtk::manage(new Gtk::Box());
+    auto const hb = Gtk::make_managed<Gtk::Box>();
     hb->set_spacing(12);
     hb->set_hexpand(true);
     hb->pack_start(widget, expand_widget, expand_widget);
@@ -88,8 +88,8 @@ void DialogPage::add_line(bool                 indent,
     // Add a label in the first column if provided
     if (label != "")
     {
-        Gtk::Label* label_widget = Gtk::manage(new Gtk::Label(label, Gtk::ALIGN_START,
-                                                              Gtk::ALIGN_CENTER, true));
+        auto const label_widget = Gtk::make_managed<Gtk::Label>(label, Gtk::ALIGN_START,
+                                                                Gtk::ALIGN_CENTER, true);
         label_widget->set_mnemonic_widget(widget);
         label_widget->set_markup(label_widget->get_text());
         
@@ -120,7 +120,7 @@ void DialogPage::add_line(bool                 indent,
     // Add a label on the right of the widget if desired
     if (suffix != "")
     {
-        Gtk::Label* suffix_widget = Gtk::manage(new Gtk::Label(suffix , Gtk::ALIGN_START , Gtk::ALIGN_CENTER, true));
+        auto const suffix_widget = Gtk::make_managed<Gtk::Label>(suffix, Gtk::ALIGN_START, Gtk::ALIGN_CENTER, true);
         suffix_widget->set_markup(suffix_widget->get_text());
         hb->pack_start(*suffix_widget,false,false);
     }
@@ -134,8 +134,8 @@ void DialogPage::add_group_header(Glib::ustring name, int columns)
 {
     if (name != "")
     {
-        Gtk::Label* label_widget = Gtk::manage(new Gtk::Label(Glib::ustring(/*"<span size='large'>*/"<b>") + name +
-                                               Glib::ustring("</b>"/*</span>"*/) , Gtk::ALIGN_START , Gtk::ALIGN_CENTER, true));
+        auto const label_widget = Gtk::make_managed<Gtk::Label>(Glib::ustring("<b>").append(name).append("</b>"),
+                                                                Gtk::ALIGN_START, Gtk::ALIGN_CENTER, true);
         
         label_widget->set_use_markup(true);
         label_widget->set_valign(Gtk::ALIGN_CENTER);
@@ -153,8 +153,8 @@ void DialogPage::add_group_note(Glib::ustring name)
 {
     if (name != "")
     {
-        Gtk::Label* label_widget = Gtk::manage(new Gtk::Label(Glib::ustring("<i>") + name +
-                                               Glib::ustring("</i>") , Gtk::ALIGN_START , Gtk::ALIGN_CENTER, true));
+         auto const label_widget = Gtk::make_managed<Gtk::Label>(Glib::ustring("<i>").append(name).append("</i>"),
+                                                                 Gtk::ALIGN_START , Gtk::ALIGN_CENTER, true);
         label_widget->set_use_markup(true);
         label_widget->set_valign(Gtk::ALIGN_CENTER);
         label_widget->set_line_wrap(true);
@@ -446,7 +446,7 @@ ZoomCorrRuler::on_draw(const Cairo::RefPtr<Cairo::Context>& cr) {
     _drawing_width = w - _border * 2;
 
     auto context = get_style_context();
-    Gdk::RGBA fg = context->get_color(get_state_flags());
+    auto const fg = get_foreground_color(context);
 
     context->render_background(cr, 0, 0, w, _height + _border * 2);
 
@@ -541,7 +541,7 @@ ZoomCorrRulerSlider::init(int ruler_width, int ruler_height, double lower, doubl
 
     _ruler.set_size(ruler_width, ruler_height);
 
-    _slider = Gtk::manage(new Gtk::Scale(Gtk::ORIENTATION_HORIZONTAL));
+    _slider = Gtk::make_managed<Gtk::Scale>(Gtk::ORIENTATION_HORIZONTAL);
 
     _slider->set_size_request(_ruler.width(), -1);
     _slider->set_range (lower, upper);
@@ -550,7 +550,7 @@ ZoomCorrRulerSlider::init(int ruler_width, int ruler_height, double lower, doubl
     _slider->set_digits(2);
 
     _slider->signal_value_changed().connect(sigc::mem_fun(*this, &ZoomCorrRulerSlider::on_slider_value_changed));
-    _sb = Gtk::manage(new Inkscape::UI::Widget::SpinButton());
+    _sb = Gtk::make_managed<Inkscape::UI::Widget::SpinButton>();
     _sb->signal_value_changed().connect(sigc::mem_fun(*this, &ZoomCorrRulerSlider::on_spinbutton_value_changed));
     _unit.signal_changed().connect(sigc::mem_fun(*this, &ZoomCorrRulerSlider::on_unit_changed));
 
@@ -570,7 +570,7 @@ ZoomCorrRulerSlider::init(int ruler_width, int ruler_height, double lower, doubl
 
     _slider->set_hexpand(true);
     _ruler.set_hexpand(true);
-    auto table = Gtk::manage(new Gtk::Grid());
+    auto const table = Gtk::make_managed<Gtk::Grid>();
     table->attach(*_slider, 0, 0, 1, 1);
     table->attach(*_sb,      1, 0, 1, 1);
     table->attach(_ruler,   0, 1, 1, 1);
@@ -623,7 +623,7 @@ PrefSlider::init(Glib::ustring const &prefs_path,
 
     freeze = false;
 
-    _slider = Gtk::manage(new Gtk::Scale(Gtk::ORIENTATION_HORIZONTAL));
+    _slider = Gtk::make_managed<Gtk::Scale>(Gtk::ORIENTATION_HORIZONTAL);
 
     _slider->set_range (lower, upper);
     _slider->set_increments (step_increment, page_increment);
@@ -631,7 +631,7 @@ PrefSlider::init(Glib::ustring const &prefs_path,
     _slider->set_digits(digits);
     _slider->signal_value_changed().connect(sigc::mem_fun(*this, &PrefSlider::on_slider_value_changed));
     if (_spin) {
-        _sb = Gtk::manage(new Inkscape::UI::Widget::SpinButton());
+        _sb = Gtk::make_managed<Inkscape::UI::Widget::SpinButton>();
         _sb->signal_value_changed().connect(sigc::mem_fun(*this, &PrefSlider::on_spinbutton_value_changed));
         _sb->set_range (lower, upper);
         _sb->set_increments (step_increment, 0);
@@ -641,7 +641,7 @@ PrefSlider::init(Glib::ustring const &prefs_path,
         _sb->set_valign(Gtk::ALIGN_END);
     }
 
-    auto table = Gtk::manage(new Gtk::Grid());
+    auto const table = Gtk::make_managed<Gtk::Grid>();
     _slider->set_hexpand();
     table->attach(*_slider, 0, 0, 1, 1);
     if (_sb) table->attach(*_sb, 1, 0, 1, 1);

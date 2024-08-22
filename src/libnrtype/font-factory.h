@@ -56,6 +56,9 @@ public:
     /// Returns the static instance.
     static FontFactory &get();
 
+    // Refresh pango font configuration
+    void refreshConfig();
+
     ///< The fontsize used as workaround for hinting.
     static constexpr double fontSize = 512;
 

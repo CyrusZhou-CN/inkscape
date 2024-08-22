@@ -287,12 +287,12 @@ void PatternEditor::bind_store(Gtk::FlowBox& list, PatternStore& pat) {
     });
 
     list.bind_list_store(pat.store.get_store(), [=, &pat](const Glib::RefPtr<PatternItem>& item){
-        auto box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
-        auto image = Gtk::make_managed<Gtk::Image>(item->pix);
+        auto const box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+        auto const image = Gtk::make_managed<Gtk::Image>(item->pix);
         box->pack_start(*image);
         auto name = Glib::ustring(item->label.c_str());
         if (_show_names.get_active()) {
-            auto label = Gtk::make_managed<Gtk::Label>(name);
+            auto const label = Gtk::make_managed<Gtk::Label>(name);
             label->get_style_context()->add_class("small-font");
             // limit label size to tile size
             label->set_ellipsize(Pango::EllipsizeMode::ELLIPSIZE_END);
@@ -302,7 +302,7 @@ void PatternEditor::bind_store(Gtk::FlowBox& list, PatternStore& pat) {
         }
         image->set_tooltip_text(name);
         box->show_all();
-        auto cbox = Gtk::make_managed<Gtk::FlowBoxChild>();
+        auto const cbox = Gtk::make_managed<Gtk::FlowBoxChild>();
         cbox->add(*box);
         cbox->get_style_context()->add_class("pattern-item-box");
         pat.widgets_to_pattern[cbox] = item;
@@ -406,10 +406,12 @@ void PatternEditor::set_selected(SPPattern* pattern) {
     if (pattern && pattern != link_pattern) {
         _current_pattern.id = pattern->getId();
         _current_pattern.link_id = link_pattern->getId();
+        _current_pattern.offset = link_pattern->getTransform().translation();
     }
     else {
         _current_pattern.id.clear();
         _current_pattern.link_id.clear();
+        _current_pattern.offset = {};
     }
 
     auto item = create_pattern_item(_manager, link_pattern, 0, 0);
@@ -630,12 +632,7 @@ Geom::Affine PatternEditor::get_selected_transform() {
 
     matrix *= Geom::Scale(_scale_x.get_value(), _scale_y.get_value());
     matrix *= Geom::Rotate(_angle_btn.get_value() / 180.0 * M_PI);
-    auto pat = get_active();
-    if (pat.first) {
-        //TODO: this is imperfect; calculate better offset, if possible
-        // this translation is kept so there's no sudden jump when editing pattern attributes
-        matrix.setTranslation(pat.first->transform.translation());
-    }
+    matrix.setTranslation(_current_pattern.offset);
     return matrix;
 }
 

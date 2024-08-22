@@ -31,13 +31,43 @@
 #include <2geom/transforms.h>
 #include <2geom/parallelogram.h>
 
+#include "message-stack.h"
+
 #include "preferences.h"
 
 #include "display/rendermode.h"
 
 #include "object/sp-gradient.h" // TODO refactor enums out to their own .h file
 
-#include "ui/view/view.h"
+/**
+ * Iterates until true or returns false.
+ * When used as signal accumulator, stops emission if one slot returns true.
+ */
+struct StopOnTrue {
+  typedef bool result_type;
+
+  template<typename T_iterator>
+  result_type operator()(T_iterator first, T_iterator last) const{
+      for (; first != last; ++first)
+          if (*first) return true;
+      return false;
+  }
+};
+
+/**
+ * Iterates until nonzero or returns 0.
+ * When used as signal accumulator, stops emission if one slot returns nonzero.
+ */
+struct StopOnNonZero {
+  typedef int result_type;
+
+  template<typename T_iterator>
+  result_type operator()(T_iterator first, T_iterator last) const{
+      for (; first != last; ++first)
+          if (*first) return *first;
+      return 0;
+  }
+};
 
 namespace Gtk
 {
@@ -67,6 +97,7 @@ namespace Inkscape {
     class LayerManager;
     class PageManager;
     class MessageContext;
+    class MessageStack;
     class Selection;
 
     class CanvasItem;
@@ -104,36 +135,38 @@ namespace Inkscape {
 #define SP_DESKTOP_ZOOM_MIN 0.01
 
 /**
- * SPDesktop is a subclass of View, implementing an editable document
- * canvas.  It is extensively used by many UI controls that need certain
- * visual representations of their own.
- *
- * SPDesktop provides a certain set of CanvasItems, serving as GUI
- * layers of different control objects. The one containing the whole
- * document is the drawing layer. In addition to it, there are grid,
- * guide, sketch and control layers. The sketch layer is used for
- * temporary drawing objects, before the real objects in document are
- * created. The control layer contains editing knots, rubberband and
- * similar non-document UI objects.
- *
- * Each SPDesktop is associated with a SPNamedView node of the document
- * tree.  Currently, all desktops are created from a single main named
- * view, but in the future there may be support for different ones.
- * SPNamedView serves as an in-document container for desktop-related
- * data, like grid and guideline placement, snapping options and so on.
- *
- * Associated with each SPDesktop are the two most important editing
- * related objects - SPSelection and ToolBase.
- *
- * Sodipodi keeps track of the active desktop and invokes notification
- * signals whenever it changes. UI elements can use these to update their
- * display to the selection of the currently active editing window.
- * (Lauris Kaplinski)
- *
- * @see \ref desktop-handles.h for desktop macros.
+ * To do: update description of desktop. Define separation of desktop-widget, desktop, window, canvas, etc.
  */
-class SPDesktop : public Inkscape::UI::View::View
+class SPDesktop
 {
+public:
+
+    SPDesktop();
+    ~SPDesktop();
+
+    // Prevent copying
+    SPDesktop(const SPDesktop&) = delete;
+    SPDesktop& operator=(SPDesktop&) = delete;
+
+    void init (SPNamedView* nv, Inkscape::UI::Widget::Canvas* new_canvas, SPDesktopWidget *widget);
+    void destroy();
+
+    // Formerly in View::View VVVVVVVVVVVVVVVVVVVVV
+    SPDocument *doc() const { return document; }
+    std::shared_ptr<Inkscape::MessageStack> messageStack() const { return _message_stack; }      // CHECK IF USED
+    Inkscape::MessageContext *tipsMessageContext() const { return _tips_message_context.get(); } // CHECK IF USED
+
+    sigc::signal<void (gchar const*)>    _document_filename_set_signal; // CHECK IF USED
+
+private:
+    SPDocument *document = nullptr;
+    std::shared_ptr<Inkscape::MessageStack> _message_stack;
+    std::unique_ptr<Inkscape::MessageContext> _tips_message_context;
+
+    sigc::connection _message_changed_connection;
+    sigc::connection _document_uri_set_connection;
+    // End Formerly in View::View ^^^^^^^^^^^^^^^^^^
+
 public:
     SPNamedView               *namedview;
     Inkscape::UI::Tools::ToolBase *event_context = nullptr;
@@ -142,7 +175,7 @@ public:
 
     Inkscape::UI::Tools::ToolBase* getEventContext() const { return event_context; }
     Inkscape::Selection* getSelection() const { return _selection.get(); }
-    SPDocument* getDocument() const { return doc(); }
+    SPDocument* getDocument() const { return document; }
     Inkscape::UI::Widget::Canvas* getCanvas() const { return canvas; }
     Inkscape::MessageStack* getMessageStack() const { return messageStack().get(); }
     SPNamedView* getNamedView() const { return namedview; }
@@ -257,17 +290,6 @@ public:
     void emit_control_point_selected(void* sender, Inkscape::UI::ControlPointSelection* selection);
     void emit_text_cursor_moved(void* sender, Inkscape::UI::Tools::TextTool* tool);
 
-    /**
-     * Return new desktop object.
-     * \pre namedview != NULL.
-     * \pre canvas != NULL.
-     */
-    SPDesktop();
-
-    void init (SPNamedView* nv, Inkscape::UI::Widget::Canvas* new_canvas, SPDesktopWidget *widget);
-    ~SPDesktop() override;
-    void destroy();
-
     Inkscape::LayerManager& layerManager() { return *_layer_manager; }
     const Inkscape::LayerManager& layerManager() const { return *_layer_manager; }
 
@@ -311,6 +333,7 @@ public:
 
     void zoom_drawing();
     void zoom_selection();
+    void schedule_zoom_from_document();
 
     double current_zoom() const { return _current_affine.getZoom(); }
     Geom::Point current_center() const;
@@ -381,9 +404,6 @@ public:
 
     void toggleLockGuides();
 
-    void toggleColorProfAdjust();
-    bool colorProfAdjustEnabled();
-
     void toggleToolbar(gchar const *toolbar_name);
 
     bool is_iconified();
@@ -411,7 +431,7 @@ public:
     bool is_yaxisdown() const { return doc2dt()[3] > 0; }
     double yaxisdir() const { return doc2dt()[3]; }
 
-    void setDocument (SPDocument* doc) override;
+    void setDocument (SPDocument* doc);
 
     virtual bool onWindowStateEvent (GdkEventWindowState* event);
 
@@ -538,10 +558,10 @@ private:
 
     sigc::connection _reconstruction_start_connection;
     sigc::connection _reconstruction_finish_connection;
+    sigc::connection _schedule_zoom_from_document_connection;
 
-    void onResized (double, double) override;
-    void onStatusMessage (Inkscape::MessageType type, gchar const *message) override;
-    void onDocumentFilenameSet(gchar const* filename) override;
+    void onStatusMessage (Inkscape::MessageType type, gchar const *message);
+    void onDocumentFilenameSet(gchar const* filename);
 };
 
 #endif // SEEN_SP_DESKTOP_H

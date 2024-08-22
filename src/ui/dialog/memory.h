@@ -26,7 +26,7 @@ public:
     ~Memory() override;
 
 protected:
-    bool _apply(GdkEventButton *);
+    void apply();
 
 private:
     struct Private;

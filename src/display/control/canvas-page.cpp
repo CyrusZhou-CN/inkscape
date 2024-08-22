@@ -82,14 +82,14 @@ void CanvasPage::remove(UI::Widget::Canvas *canvas)
 void CanvasPage::show()
 {
     for (auto &item : canvas_items) {
-        item->show();
+        item->set_visible(true);
     }
 }
 
 void CanvasPage::hide()
 {
     for (auto &item : canvas_items) {
-        item->hide();
+        item->set_visible(false);
     }
 }
 
@@ -152,15 +152,15 @@ void CanvasPage::update(Geom::Rect size, Geom::OptRect margin, Geom::OptRect ble
             bool is_foreground = (rect->get_name() == "foreground");
             // This will put the border on the background OR foreground layer as needed.
             if (is_foreground == border_on_top) {
-                rect->show();
+                rect->set_visible(true);
                 rect->set_stroke(is_selected ? select_color : border_color);
             } else {
-                rect->hide();
+                rect->set_visible(false);
                 rect->set_stroke(0x0);
             }
             // This undoes the hide for the background rect, and additionally gives it a fill and shadow.
             if (!is_foreground) {
-                rect->show();
+                rect->set_visible(true);
 /*
                 if (_checkerboard) {
                     // draw checkerboard pattern, ignore alpha (background color doesn't support it)

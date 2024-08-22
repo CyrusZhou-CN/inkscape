@@ -10,13 +10,14 @@
 #ifndef PATH_UTIL_H
 #define PATH_UTIL_H
 
+#include <memory>
+#include <optional>
+
 #include <2geom/forward.h>
 #include <2geom/path.h>
 
 #include "livarot/Path.h"
 #include "display/curve.h"
-
-#include <optional>
 
 class SPItem;
 
@@ -25,10 +26,9 @@ class SPItem;
  *
  * @param pathv A reference to the pathvector to convert.
  *
- * @return A pointer to the livarot Path object. The caller would need
- * to free the object after using it.
+ * @return A pointer to the livarot Path object.
  */
-Path *Path_for_pathvector(Geom::PathVector const &pathv);
+std::unique_ptr<Path> Path_for_pathvector(Geom::PathVector const &pathv);
 
 /**
  * Creates a Livarot Path object from an SPItem. The Geom::PathVector extracted from
@@ -38,10 +38,9 @@ Path *Path_for_pathvector(Geom::PathVector const &pathv);
  * @param doTransformation See the same parameter in pathvector_for_curve().
  * @param transformFull See the same parameter in pathvector_for_curve().
  *
- * @return A pointer to the livarot Path object. The caller would need
- * to free the object after using it.
+ * @return A pointer to the livarot Path object.
  */
-Path *Path_for_item(SPItem *item, bool doTransformation, bool transformFull = true);
+std::unique_ptr<Path> Path_for_item(SPItem *item, bool doTransformation, bool transformFull = true);
 
 /**
  * Creates a Livarot Path object from the SPItem. This function ensures that the Geom::PathVector
@@ -51,10 +50,9 @@ Path *Path_for_item(SPItem *item, bool doTransformation, bool transformFull = tr
  * @param doTransformation See the same parameter in pathvector_for_curve().
  * @param transformFull See the same parameter in pathvector_for_curve().
  *
- * @return A pointer to the livarot Path object. The caller would need
- * to free the object after using it.
+ * @return A pointer to the livarot Path object.
  */
-Path *Path_for_item_before_LPE(SPItem *item, bool doTransformation, bool transformFull = true);
+std::unique_ptr<Path> Path_for_item_before_LPE(SPItem *item, bool doTransformation, bool transformFull = true);
 
 /**
  * Gets a Geom::PathVector from the SPCurve object.
@@ -63,20 +61,16 @@ Path *Path_for_item_before_LPE(SPItem *item, bool doTransformation, bool transfo
  *
  * @param item A pointer to the original SPItem. This is required to get the transformation
  * information.
- * @param curve A pointer to the SPCurve. If this pointer is null, the function returns nullptr too.
+ * @param curve A non-null pointer to the SPCurve.
  * @param doTransformation If set to true, the transformation in the SPItem is applied.
  * @param transformFull If doTransformation and transformFull are both set to true, the
  * i2doc_affine transformation is applied, which includes the all the transformations of the
  * ancestors and even the document viewport. If doTransformation is true but transformFull is false
  * only the item's own transformation gets applied.
- * @param extraPreAffine This is a Geom::Affine transformation that gets applied before any
- * transformations from SPItem.
- * @param extraPostAffine This is a Geom::Affine transformation that gets applied after any
- * transformations from SPItem.
  *
- * @return A pointer to the Geom::PathVector. Must be freed by the caller.
+ * @return The Geom::PathVector.
  */
-Geom::PathVector* pathvector_for_curve(SPItem *item, SPCurve *curve, bool doTransformation, bool transformFull, Geom::Affine extraPreAffine, Geom::Affine extraPostAffine);
+Geom::PathVector pathvector_for_curve(SPItem *item, SPCurve *curve, bool doTransformation, bool transformFull);
 
 /**
  * Gets an SPCurve from the SPItem.

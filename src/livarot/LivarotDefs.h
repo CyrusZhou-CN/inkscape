@@ -47,40 +47,29 @@ enum
 };
 
 // types of cap for stroking polylines
-enum butt_typ
+enum ButtType
 {
   butt_straight,		// straight line
   butt_square,			// half square
   butt_round,			// half circle
   butt_pointy			// a little pointy hat
 };
+
 // types of joins for stroking paths
-enum join_typ
+enum JoinType
 {
   join_straight,		// a straight line
   join_round,			// arc of circle (in fact, one or two quadratic bezier curve chunks)
   join_pointy			// a miter join (uses the miter parameter)
 };
-typedef enum butt_typ ButtType;
-typedef enum join_typ JoinType;
 
-enum fill_typ
+enum FillRule
 {
   fill_oddEven   = 0,
   fill_nonZero   = 1,
   fill_positive  = 2,
   fill_justDont = 3
 };
-typedef enum fill_typ FillRule;
-
-// info for a run of pixel to fill
-struct raster_info {
-		int       startPix,endPix;  // start and end pixel from the polygon POV
-		int       sth,stv;          // coordinates for the first pixel in the run, in (possibly another) POV
-		uint32_t* buffer;           // pointer to the first pixel in the run
-};
-typedef void (*RasterInRunFunc) (raster_info &dest,void *data,int nst,float vst,int nen,float ven);	// init for position ph,pv; the last parameter is a pointer
-
 
 enum Side {
     LEFT = 0,

@@ -68,6 +68,7 @@
 #include "ui/icon-names.h"
 #include "ui/tools/freehand-base.h"
 #include "ui/widget/canvas.h"
+#include "ui/widget/events/canvas-event.h"
 
 #include "util/units.h"
 
@@ -96,7 +97,6 @@ CalligraphicTool::CalligraphicTool(SPDesktop *desktop)
     , hatch_spacing(0)
     , hatch_spacing_step(0)
     , hatch_item(nullptr)
-    , hatch_livarot_path(nullptr)
     , hatch_last_nearest(Geom::Point(0, 0))
     , hatch_last_pointer(Geom::Point(0, 0))
     , hatch_escaped(false)
@@ -119,7 +119,7 @@ CalligraphicTool::CalligraphicTool(SPDesktop *desktop)
     hatch_area->set_fill(0x0, SP_WIND_RULE_EVENODD);
     hatch_area->set_stroke(0x0000007f);
     hatch_area->set_pickable(false);
-    hatch_area->hide();
+    hatch_area->set_visible(false);
 
     sp_event_context_read(this, "mass");
     sp_event_context_read(this, "wiggle");
@@ -404,7 +404,9 @@ void CalligraphicTool::cancel() {
     repr = nullptr;
 }
 
-bool CalligraphicTool::root_handler(GdkEvent* event) {
+bool CalligraphicTool::root_handler(CanvasEvent const &canvas_event)
+{
+    auto event = canvas_event.original();
     gint ret = FALSE;
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
     Unit const *unit = unit_table.getUnit(prefs->getString("/tools/calligraphic/unit"));
@@ -455,11 +457,9 @@ bool CalligraphicTool::root_handler(GdkEvent* event) {
                     // One item selected, and it's a path;
                     // let's try to track it as a guide
 
-                    if (selected != this->hatch_item) {
-                        this->hatch_item = selected;
-                        if (this->hatch_livarot_path)
-                            delete this->hatch_livarot_path;
-                        this->hatch_livarot_path = Path_for_item (this->hatch_item, true, true);
+                    if (selected != hatch_item) {
+                        hatch_item = selected;
+                        hatch_livarot_path = Path_for_item(hatch_item, true, true);
                         if (hatch_livarot_path) {
                             hatch_livarot_path->ConvertWithBackData(0.01);
                         }
@@ -470,9 +470,9 @@ bool CalligraphicTool::root_handler(GdkEvent* event) {
                     pointer = motion_dt * motion_to_curve;
 
                     // calculate the nearest point on the guide path
-                    std::optional<Path::cut_position> position = get_nearest_position_on_Path(this->hatch_livarot_path, pointer);
+                    std::optional<Path::cut_position> position = get_nearest_position_on_Path(hatch_livarot_path.get(), pointer);
                     if (position) {
-                        nearest = get_point_on_Path(hatch_livarot_path, position->piece, position->t);
+                        nearest = get_point_on_Path(hatch_livarot_path.get(), position->piece, position->t);
 
                         // distance from pointer to nearest
                         hatch_dist = Geom::L2(pointer - nearest);
@@ -654,7 +654,7 @@ bool CalligraphicTool::root_handler(GdkEvent* event) {
 
                     hatch_area->set_bpath(std::move(path), true);
                     hatch_area->set_stroke(0x7f7f7fff);
-                    hatch_area->show();
+                    hatch_area->set_visible(true);
 
                 } else if (this->dragging && !this->hatch_escaped && hatch_dist != 0) {
                     // Tracking: green, center snapped, fixed radius
@@ -665,7 +665,7 @@ bool CalligraphicTool::root_handler(GdkEvent* event) {
 
                     hatch_area->set_bpath(std::move(path), true);
                     hatch_area->set_stroke(0x00FF00ff);
-                    hatch_area->show();
+                    hatch_area->set_visible(true);
 
                 } else if (this->dragging && this->hatch_escaped && hatch_dist != 0) {
                     // Tracking escaped: red, center free, fixed radius
@@ -676,7 +676,7 @@ bool CalligraphicTool::root_handler(GdkEvent* event) {
 
                     hatch_area->set_bpath(std::move(path), true);
                     hatch_area->set_stroke(0xff0000ff);
-                    hatch_area->show();
+                    hatch_area->set_visible(true);
 
                 } else {
                     // Not drawing but spacing set: gray, center snapped, fixed radius
@@ -688,11 +688,11 @@ bool CalligraphicTool::root_handler(GdkEvent* event) {
 
                         hatch_area->set_bpath(std::move(path), true);
                         hatch_area->set_stroke(0x7f7f7fff);
-                        hatch_area->show();
+                        hatch_area->set_visible(true);
                     }
                 }
             } else {
-                hatch_area->hide();
+                hatch_area->set_visible(false);
             }
         }
         break;
@@ -737,7 +737,7 @@ bool CalligraphicTool::root_handler(GdkEvent* event) {
             this->hatch_last_pointer = Geom::Point(0,0);
             this->hatch_escaped = false;
             this->hatch_item = nullptr;
-            this->hatch_livarot_path = nullptr;
+            this->hatch_livarot_path.reset();
             this->just_started_drawing = false;
 
             if (this->hatch_spacing != 0 && !this->keep_selected) {
@@ -859,15 +859,11 @@ bool CalligraphicTool::root_handler(GdkEvent* event) {
     }
 
     if (!ret) {
-//        if ((SP_EVENT_CONTEXT_CLASS(sp_dyna_draw_context_parent_class))->root_handler) {
-//            ret = (SP_EVENT_CONTEXT_CLASS(sp_dyna_draw_context_parent_class))->root_handler(event_context, event);
-//        }
-    	ret = DynamicBase::root_handler(event);
+        ret = DynamicBase::root_handler(canvas_event);
     }
 
     return ret;
 }
-
 
 void CalligraphicTool::clear_current() {
     /* reset bpath */

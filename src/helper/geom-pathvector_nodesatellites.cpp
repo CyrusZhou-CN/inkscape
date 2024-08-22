@@ -214,10 +214,12 @@ void PathVectorNodeSatellites::recalculateForNewPathVector(Geom::PathVector cons
         for (size_t j = 0; j < count; j++) {
             found = false;
             for (size_t k = 0; k < _pathvector.size(); k++) {
-                size_t count2 = count_path_nodes(_pathvector[k]);
+                if (k == _nodesatellites.size()) break;
+
+                size_t count2 = std::min(count_path_nodes(_pathvector[k]), _nodesatellites[k].size());
                 for (size_t l = 0; l < count2; l++) {
                     if (Geom::are_near(_pathvector[k][l].initialPoint(),  i[j].initialPoint())) {
-                        path_nodesatellites.push_back(_nodesatellites[k][l]);
+                        path_nodesatellites.push_back(_nodesatellites.at(k).at(l));
                         found = true;
                         break;
                     }

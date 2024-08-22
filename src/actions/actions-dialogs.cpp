@@ -35,9 +35,11 @@ static const std::vector<std::vector<Glib::ustring>> raw_data_dialogs =
     {"win.dialog-open('CloneTiler')",         N_("Open Clone Tiler"),          "Dialog",  N_("Create multiple clones of selected object, arranging them into a pattern or scattering") },
     {"win.dialog-open('DocumentProperties')", N_("Open Document Properties"),  "Dialog",  N_("Edit properties of this document (to be saved with the document)")                       },
     {"win.dialog-open('DocumentResources')",  N_("Open Document Resources"),   "Dialog",  N_("Show document overview and resources") },
+    {"win.dialog-open('ExtensionsGallery')",  N_("Open Extensions Gallery"),   "Dialog",  N_("Show and run available extensions") },
     {"win.dialog-open('Export')",             N_("Open Export"),               "Dialog",  N_("Export this document or a selection as a PNG image")                                     },
     {"win.dialog-open('FillStroke')",         N_("Open Fill and Stroke"),      "Dialog",  N_("Edit objects' colors, gradients, arrowheads, and other fill and stroke properties...")   },
     {"win.dialog-open('FilterEffects')",      N_("Open Filter Effects"),       "Dialog",  N_("Manage, edit, and apply SVG filters")                                                    },
+    {"win.dialog-open('FilterGallery')",      N_("Open Filter Gallery"),       "Dialog",  N_("Show and apply available filters") },
     {"win.dialog-open('Find')",               N_("Open Find"),                 "Dialog",  N_("Find objects in document")                                                               },
     {"win.dialog-open('FontCollections')",    N_("Open Font Collections"),     "Dialog",  N_("Manage Font Collections")                                                                },
     {"win.dialog-open('Glyphs')",             N_("Open Glyphs"),               "Dialog",  N_("Select Unicode characters from a palette")                                               },
@@ -144,8 +146,8 @@ void add_actions_dialogs(InkscapeWindow *win)
     auto String = Glib::VARIANT_TYPE_STRING;
 
     // clang-format off
-    win->add_action_with_parameter( "dialog-open",  String, sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&dialog_open),   win));
-    win->add_action(                "dialog-toggle",        sigc::bind<InkscapeWindow*>(sigc::ptr_fun(&dialog_toggle), win));
+    win->add_action_with_parameter( "dialog-open",  String, sigc::bind(sigc::ptr_fun(&dialog_open),   win));
+    win->add_action(                "dialog-toggle",        sigc::bind(sigc::ptr_fun(&dialog_toggle), win));
     // clang-format on
 
     auto app = InkscapeApplication::instance();

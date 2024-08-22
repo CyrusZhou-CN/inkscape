@@ -7,15 +7,14 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_UI_TOOL_CURVE_DRAG_POINT_H
-#define SEEN_UI_TOOL_CURVE_DRAG_POINT_H
+#ifndef INKSCAPE_UI_TOOL_CURVE_DRAG_POINT_H
+#define INKSCAPE_UI_TOOL_CURVE_DRAG_POINT_H
 
 #include "ui/tool/control-point.h"
 #include "ui/tool/node.h"
 
 class SPDesktop;
-namespace Inkscape {
-namespace UI {
+namespace Inkscape::UI {
 
 class PathManipulator;
 struct PathSharedData;
@@ -29,25 +28,24 @@ struct PathSharedData;
  * can check if the mouseovered control point is a curve drag point and update the cursor
  * accordingly, without the need to drag in the full PathManipulator header.
  */
-class CurveDragPoint : public ControlPoint {
+class CurveDragPoint : public ControlPoint
+{
 public:
-
     CurveDragPoint(PathManipulator &pm);
     void setSize(double sz) { _setSize(sz); }
     void setTimeValue(double t) { _t = t; }
     double getTimeValue() { return _t; }
     void setIterator(NodeList::iterator i) { first = i; }
     NodeList::iterator getIterator() { return first; }
-    bool _eventHandler(Inkscape::UI::Tools::ToolBase *event_context, GdkEvent *event) override;
+    bool _eventHandler(Inkscape::UI::Tools::ToolBase *event_context, CanvasEvent const &event) override;
 
 protected:
-
     Glib::ustring _getTip(unsigned state) const override;
-    void dragged(Geom::Point &, GdkEventMotion *) override;
-    bool grabbed(GdkEventMotion *) override;
-    void ungrabbed(GdkEventButton *) override;
-    bool clicked(GdkEventButton *) override;
-    bool doubleclicked(GdkEventButton *) override;
+    void dragged(Geom::Point &, MotionEvent const &) override;
+    bool grabbed(MotionEvent const &) override;
+    void ungrabbed(ButtonReleaseEvent const *) override;
+    bool clicked(ButtonReleaseEvent const &) override;
+    bool doubleclicked(ButtonReleaseEvent const &) override;
 
 private:
     double _t;
@@ -60,10 +58,9 @@ private:
     void _insertNode(bool take_selection);
 };
 
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI
 
-#endif
+#endif // INKSCAPE_UI_TOOL_CURVE_DRAG_POINT_H
 
 /*
   Local Variables:

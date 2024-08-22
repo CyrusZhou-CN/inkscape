@@ -23,6 +23,9 @@
 
 #include <2geom/transforms.h>
 #include <2geom/path-sink.h>
+#include <iostream>
+#include <string>
+#include <boost/bimap.hpp>
 
 // TODO: reduce header bloat if possible
 
@@ -253,9 +256,8 @@ void ClipboardManagerImpl::copy(ObjectSet *set)
         }
 
         // Special case for when the color picker ("dropper") is active - copies color under cursor
-        auto dt = dynamic_cast<Inkscape::UI::Tools::DropperTool *>(desktop->event_context);
-        if (dt) {
-            _setClipboardColor(SP_DROPPER_CONTEXT(desktop->event_context)->get_color(false, true));
+        if (auto dt = dynamic_cast<Tools::DropperTool const *>(desktop->event_context)) {
+            _setClipboardColor(dt->get_color(false, true));
             _discardInternalClipboard();
             return;
         }
@@ -622,7 +624,7 @@ bool ClipboardManagerImpl::_pasteNodes(SPDesktop *desktop, SPDocument *clipdoc, 
             if (!in_place) {
                 // Move the source curve to the mouse pointer, units are px so do before target_trans
                 auto bbox = *(source_path->geometricBounds()) * group_affine;
-                auto to_mouse = Geom::Translate(desktop->point() - bbox.midpoint());
+                auto to_mouse = Geom::Translate((desktop->point() - bbox.midpoint()).round());
                 source_curve.transform(to_mouse);
             } else if (auto clipnode = sp_repr_lookup_name(clipdoc->getReprRoot(), "inkscape:clipboard", 1)) {
                 // Force translation so a foreign path will end up in the right place.
@@ -1610,6 +1612,33 @@ std::unique_ptr<SPDocument> ClipboardManagerImpl::_retrieveClipboard(Glib::ustri
     return std::unique_ptr<SPDocument>(tempdoc);
 }
 
+#ifdef __APPLE__
+
+// MIME types: image/x-inkscape-svg, image/png, image/svg+xml, image/x-inkscape-svg-compressed, image/svg+xml-compressed, application/pdf, image/svg+xml, application/x-zip, application/tar, image/dxf, image/dxf, image/x-e-postscript, image/x-emf, text/xml+fxg, text/plain, image/hpgl, text/html, image/jpeg, application/x-zip, text/x-tex, text/xml+xaml, text/x-povray-script, image/x-postscript, text/x-povray-script, image/sif, image/tiff, image/webp, image/x-wmf,
+
+template <typename L, typename R>
+boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
+    return boost::bimap<L, R>(list.begin(), list.end());
+}
+
+// MIME type to Universal Type Identifiers
+static auto mime_uti = make_bimap<std::string, std::string>({
+    {"image/x-inkscape-svg", "org.inkscape.svg"},
+    {"image/svg+xml",        "public.svg-image"},
+    {"image/png",            "public.png"},
+    {"image/webp",           "public.webp"},
+    {"image/tiff",           "public.tiff"},
+    {"image/jpeg",           "public.jpeg"},
+    {"image/x-e-postscript", "com.adobe.encapsulated-postscript"},
+    {"image/x-postscript",   "com.adobe.postscript"},
+    // {"text/plain",           "public.plain-text"}, - GIMP color palette
+    {"text/html",            "public.html"},
+    {"application/pdf",      "com.adobe.pdf"},
+    {"application/tar",      "public.tar-archive"},
+    {"application/x-zip",    "public.zip-archive"},
+});
+
+#endif
 
 /**
  * Callback called when some other application requests data from Inkscape.
@@ -1633,6 +1662,14 @@ void ClipboardManagerImpl::_onGet(Gtk::SelectionData &sel, guint /*info*/)
         target = "image/x-inkscape-svg";
     }
 
+#ifdef __APPLE__
+    // translate UTI back to MIME
+    auto mime = mime_uti.right.find(target);
+    if (mime != mime_uti.right.end()) {
+        target = mime->get_left();
+    }
+#endif
+
     // FIXME: Temporary hack until we add support for memory output.
     // Save to a temporary file, read it back and then set the clipboard contents
     gchar *filename = g_build_filename( g_get_user_cache_dir(), "inkscape-clipboard-export", nullptr );
@@ -1645,9 +1682,17 @@ void ClipboardManagerImpl::_onGet(Gtk::SelectionData &sel, guint /*info*/)
     INKSCAPE.use_gui(false);
 
     try {
-        // TODO: In the future we may want to detect raster image types such as jpeg
-        // and use export_raster to get the right output for some programs.
-        if (target == "image/png")
+        Inkscape::Extension::DB::OutputList outlist;
+        Inkscape::Extension::db.get_output_list(outlist);
+        Inkscape::Extension::DB::OutputList::const_iterator out = outlist.begin();
+        for ( ; out != outlist.end() && target != (*out)->get_mimetype() ; ++out) {
+        }
+        if (!(*out)->loaded()) {
+            // Need to load the extension.
+            (*out)->set_state(Inkscape::Extension::Extension::STATE_LOADED);
+        }
+
+        if ((*out)->is_raster())
         {
             gdouble dpi = Inkscape::Util::Quantity::convert(1, "in", "px");
             guint32 bgcolor = 0x00000000;
@@ -1668,22 +1713,15 @@ void ClipboardManagerImpl::_onGet(Gtk::SelectionData &sel, guint /*info*/)
                 bgcolor |= SP_COLOR_F_TO_U(opacity);
             }
             std::vector<SPItem*> x;
-            sp_export_png_file(_clipboardSPDoc.get(), filename, area, width, height, dpi, dpi, bgcolor, nullptr,
+            gchar *raster_file = g_build_filename( g_get_user_cache_dir(), "inkscape-clipboard-export-raster", nullptr );
+            sp_export_png_file(_clipboardSPDoc.get(), raster_file, area, width, height, dpi, dpi, bgcolor, nullptr,
                                nullptr, true, x);
+            (*out)->export_raster(_clipboardSPDoc.get(), raster_file, filename, true);
+            unlink(raster_file);
+            g_free(raster_file);
         }
         else
         {
-            Inkscape::Extension::DB::OutputList outlist;
-            Inkscape::Extension::db.get_output_list(outlist);
-            Inkscape::Extension::DB::OutputList::const_iterator out = outlist.begin();
-            for ( ; out != outlist.end() && target != (*out)->get_mimetype() ; ++out) {
-
-            };
-            if (!(*out)->loaded()) {
-                // Need to load the extension.
-                (*out)->set_state(Inkscape::Extension::Extension::STATE_LOADED);
-            }
-
             (*out)->save(_clipboardSPDoc.get(), filename, true);
         }
         g_file_get_contents(filename, &data, &len, nullptr);
@@ -1864,6 +1902,12 @@ void ClipboardManagerImpl::_setClipboardTargets()
     for (Inkscape::Extension::DB::OutputList::const_iterator out = outlist.begin() ; out != outlist.end() ; ++out) {
         if ( !(*out)->deactivated() ) {
             Glib::ustring mime = (*out)->get_mimetype();
+#ifdef __APPLE__
+            auto uti = mime_uti.left.find(mime);
+            if (uti != mime_uti.left.end()) {
+                target_list.emplace_back(uti->get_right());
+            }
+#endif
             if (mime != CLIPBOARD_TEXT_TARGET) {
                 if ( !plaintextSet && (mime.find("svg") == Glib::ustring::npos) ) {
                     target_list.emplace_back(CLIPBOARD_TEXT_TARGET);

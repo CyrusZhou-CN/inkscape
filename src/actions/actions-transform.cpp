@@ -111,7 +111,7 @@ void transform_reapply(InkscapeApplication *app)
 {
     auto selection = app->get_active_selection();
     selection->reapplyAffine();
-    Inkscape::DocumentUndo::maybeDone(app->get_active_document(), "reapply-transform", _("Reapply Transform"),
+    Inkscape::DocumentUndo::maybeDone(app->get_active_document(), "reapply-transform", _("Reapply Transforms"),
                                       INKSCAPE_ICON("tool-pointer"));
 }
 
@@ -152,14 +152,14 @@ add_actions_transform(InkscapeApplication* app)
     auto *gapp = app->gio_app();
 
     // clang-format off
-    gapp->add_action_with_parameter( "transform-translate",      String, sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&transform_translate),       app));
-    gapp->add_action_with_parameter( "transform-rotate",         Double, sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&transform_rotate),          app));
-    gapp->add_action_with_parameter( "transform-scale",          Double, sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&transform_scale),           app));
-    gapp->add_action_with_parameter( "transform-grow",           Double, sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&transform_grow),            app));
-    gapp->add_action_with_parameter( "transform-grow-step",      Double, sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&transform_grow_step),       app));
-    gapp->add_action_with_parameter( "transform-grow-screen",    Double, sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&transform_grow_screen),     app));
-    gapp->add_action(                "transform-remove",                 sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&transform_remove),          app));
-    gapp->add_action(                "transform-reapply",                sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&transform_reapply),         app));
+    gapp->add_action_with_parameter( "transform-translate",      String, sigc::bind(sigc::ptr_fun(&transform_translate),       app));
+    gapp->add_action_with_parameter( "transform-rotate",         Double, sigc::bind(sigc::ptr_fun(&transform_rotate),          app));
+    gapp->add_action_with_parameter( "transform-scale",          Double, sigc::bind(sigc::ptr_fun(&transform_scale),           app));
+    gapp->add_action_with_parameter( "transform-grow",           Double, sigc::bind(sigc::ptr_fun(&transform_grow),            app));
+    gapp->add_action_with_parameter( "transform-grow-step",      Double, sigc::bind(sigc::ptr_fun(&transform_grow_step),       app));
+    gapp->add_action_with_parameter( "transform-grow-screen",    Double, sigc::bind(sigc::ptr_fun(&transform_grow_screen),     app));
+    gapp->add_action(                "transform-remove",                 sigc::bind(sigc::ptr_fun(&transform_remove),          app));
+    gapp->add_action(                "transform-reapply",                sigc::bind(sigc::ptr_fun(&transform_reapply),         app));
     // clang-format on
 
     app->get_action_extra_data().add_data(raw_data_transform);

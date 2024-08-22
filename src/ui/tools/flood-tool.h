@@ -28,7 +28,8 @@ class Selection;
 namespace UI {
 namespace Tools {
 
-class FloodTool : public ToolBase {
+class FloodTool : public ToolBase
+{
 public:
     FloodTool(SPDesktop *desktop);
     ~FloodTool() override;
@@ -37,19 +38,20 @@ public:
 
 	sigc::connection sel_changed_connection;
 
-	bool root_handler(GdkEvent* event) override;
-	bool item_handler(SPItem* item, GdkEvent* event) override;
+    bool root_handler(CanvasEvent const &event) override;
+    bool item_handler(SPItem *item, CanvasEvent const &event) override;
 
-	static void set_channels(gint channels);
+    static void set_channels(int channels);
 	static const std::vector<Glib::ustring> channel_list;
 	static const std::vector<Glib::ustring> gap_list;
 
 private:
-	void selection_changed(Inkscape::Selection* selection);
+    void selection_changed(Selection *selection);
 	void finishItem();
 };
 
-enum PaintBucketChannels {
+enum PaintBucketChannels
+{
     FLOOD_CHANNELS_RGB,
     FLOOD_CHANNELS_R,
     FLOOD_CHANNELS_G,

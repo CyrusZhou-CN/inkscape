@@ -319,6 +319,9 @@ public:
     sigc::connection connectUpdate(sigc::slot<void ()> slot) {
         return update_signal.connect(slot);
     }
+    sigc::connection connectNewFonts(sigc::slot<void ()> slot) {
+        return new_fonts_signal.connect(slot);
+    }
 
     bool blocked() { return block; }
 
@@ -356,6 +359,7 @@ private:
     bool block;
     void emit_update();
     sigc::signal<void ()> update_signal;
+    sigc::signal<void ()> new_fonts_signal;
 };
 
 } // namespace Inkscape

@@ -167,12 +167,12 @@ public:
     /**
      * Signal raised when the spin button's value changes.
      */
-    Glib::SignalProxy0<void> signal_value_changed();
+    Glib::SignalProxy<void> signal_value_changed();
 
     /**
      * Signal raised when the spin button's pressed.
      */
-    Glib::SignalProxy1<bool, GdkEventButton*> signal_button_release_event();
+    Glib::SignalProxy<bool, GdkEventButton*> signal_button_release_event();
 
     /**
      * true if the value was set by setValue, not changed by the user;

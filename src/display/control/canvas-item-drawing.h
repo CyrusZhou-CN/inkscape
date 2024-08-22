@@ -44,12 +44,12 @@ public:
     Inkscape::DrawingItem *get_active() { return _active_item; }
 
     // Events
-    bool handle_event(GdkEvent *event) override;
+    bool handle_event(CanvasEvent const &event) override;
     void set_sticky(bool sticky) { _sticky = sticky; }
     void set_pick_outline(bool pick_outline) { _pick_outline = pick_outline; }
 
     // Signals
-    sigc::connection connect_drawing_event(sigc::slot<bool (GdkEvent*, Inkscape::DrawingItem *)> slot) {
+    sigc::connection connect_drawing_event(sigc::slot<bool(CanvasEvent const &, Inkscape::DrawingItem *)> slot) {
         return _drawing_event_signal.connect(slot);
     }
 
@@ -75,7 +75,7 @@ protected:
     bool _pick_outline = false;
 
     // Signals
-    sigc::signal<bool (GdkEvent*, Inkscape::DrawingItem *)> _drawing_event_signal;
+    sigc::signal<bool(CanvasEvent const &, Inkscape::DrawingItem *)> _drawing_event_signal;
 };
 
 } // namespace Inkscape

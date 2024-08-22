@@ -144,7 +144,7 @@ char *inkscape_rel2abs(const char *path, const char *base, char *result, const s
     goto erange;
   strncpy (result, base, length);
   rp = result + length;
-  if (*pp || *(pp - 1) == G_DIR_SEPARATOR || length == 0)
+  if (*pp || (pp > path && *(pp - 1) == G_DIR_SEPARATOR) || length == 0)
     *rp++ = G_DIR_SEPARATOR;
   if (rp + strlen (pp) > endp)
     goto erange;

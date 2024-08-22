@@ -83,12 +83,7 @@ void TemplateBase::resize_to_template(Inkscape::Extension::Template *tmod, SPDoc
 {
     static auto px = unit_table.getUnit("px");
     auto size = this->get_template_size(tmod, px);
-
-    if (page) {
-        page->setSize(size.x(), size.y());
-    } else {
-        doc->getPageManager().resizePage(size.x(), size.y());
-    }
+    doc->getPageManager().resizePage(page, size.x(), size.y());
 }
 
 bool TemplateBase::match_template_size(Inkscape::Extension::Template *tmod, double width, double height)

@@ -12,9 +12,7 @@
 
 #include "inkgc/gc-managed.h"
 
-namespace Inkscape {
-
-namespace GC {
+namespace Inkscape::GC {
 
 /**
  * A base class for anchored objects.  
@@ -118,7 +116,7 @@ static R *anchor(R *r) {
  * @brief Decrements the reference count of a anchored object.
  *
  * This function template generates functions which take
- * a reference to a anchored object of a given type, increment
+ * a reference to a anchored object of a given type, decrement
  * that object's reference count, and return a reference to the
  * object of the same type as the function's parameter.
  *
@@ -141,7 +139,7 @@ static R &release(R &r) {
  * @brief Decrements the reference count of a anchored object.
  *
  * This function template generates functions which take
- * a pointer to a anchored object of a given type, increment
+ * a pointer to a anchored object of a given type, decrement
  * that object's reference count, and return a pointer to the
  * object of the same type as the function's parameter.
  *
@@ -160,11 +158,10 @@ static R *release(R *r) {
     return r;
 }
 
-}
+} // namespace Inkscape::GC
 
-}
+#endif // SEEN_INKSCAPE_GC_ANCHORED_H
 
-#endif
 /*
   Local Variables:
   mode:c++

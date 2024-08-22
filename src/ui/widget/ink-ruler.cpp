@@ -2,7 +2,7 @@
 /*
  * Ruler widget. Indicates horizontal or vertical position of a cursor in a specified widget.
  *
- * Copyright (C) 2019 Tavmjong Bah
+ * Copyright (C) 2019, 2023 Tavmjong Bah
  *               2022 Martin Owens
  *
  * Rewrite of the 'C' ruler code which came originally from Gimp.
@@ -11,14 +11,17 @@
  *
  */
 
-#include "ink-ruler.h"
-
-#include <gdkmm/rgba.h>
-#include <glibmm/ustring.h>
-#include <iostream>
 #include <cmath>
+#include <utility>
+#include <sigc++/functors/mem_fun.h>
+#include <cairomm/context.h>
+#include <glibmm/ustring.h>
+#include <gtkmm/popover.h>
+#include <gtkmm/stylecontext.h>
 
+#include "ink-ruler.h"
 #include "inkscape.h"
+#include "ui/controller.h"
 #include "ui/themes.h"
 #include "ui/util.h"
 #include "util/units.h"
@@ -46,9 +49,7 @@ static SPRulerMetric const ruler_metric_inches = {
 // Half width of pointer triangle.
 static double half_width = 5.0;
 
-namespace Inkscape {
-namespace UI {
-namespace Widget {
+namespace Inkscape::UI::Widget {
 
 Ruler::Ruler(Gtk::Orientation orientation)
     : _orientation(orientation)
@@ -62,16 +63,18 @@ Ruler::Ruler(Gtk::Orientation orientation)
     , _position(0)
 {
     set_name("InkRuler");
+    get_style_context()->add_class(_orientation == Gtk::ORIENTATION_HORIZONTAL ? "horz" : "vert");
 
-    set_events(Gdk::POINTER_MOTION_MASK |
-               Gdk::BUTTON_PRESS_MASK   |  // For guide creation
-               Gdk::BUTTON_RELEASE_MASK );
+    Controller::add_motion<nullptr, &Ruler::on_motion, nullptr>(*this, *this);
+    Controller::add_click(*this, sigc::mem_fun(*this, &Ruler::on_click_pressed), {}, Controller::Button::right);
 
     set_no_show_all();
 
     auto prefs = Inkscape::Preferences::get();
     _watch_prefs = prefs->createObserver("/options/ruler/show_bbox", sigc::mem_fun(*this, &Ruler::on_prefs_changed));
     on_prefs_changed();
+
+    set_context_menu();
 
     INKSCAPE.themecontext->getChangeThemeSignal().connect(sigc::mem_fun(*this, &Ruler::on_style_updated));
 }
@@ -148,25 +151,24 @@ void Ruler::set_selection(double lower, double upper)
 void
 Ruler::add_track_widget(Gtk::Widget& widget)
 {
-    widget.signal_motion_notify_event().connect(sigc::mem_fun(*this, &Ruler::on_motion_notify_event), false); // false => connect first
+    Controller::add_motion<nullptr, &Ruler::on_motion, nullptr>(widget, *this,
+        Gtk::PHASE_TARGET, Controller::When::before); // We connected 1st to event, so continue
 }
-
 
 // Draws marker in response to motion events from canvas.  Position is defined in ruler pixel
 // coordinates. The routine assumes that the ruler is the same width (height) as the canvas. If
 // not, one could use Gtk::Widget::translate_coordinates() to convert the coordinates.
 bool
-Ruler::on_motion_notify_event(GdkEventMotion *motion_event)
+Ruler::on_motion(GtkEventControllerMotion const * const motion, double const x, double const y)
 {
     double position = 0;
     if (_orientation == Gtk::ORIENTATION_HORIZONTAL) {
-        position = motion_event->x;
+        position = x;
     } else {
-        position = motion_event->y;
+        position = y;
     }
 
     if (position != _position) {
-
         _position = position;
 
         // Find region to repaint (old and new marker positions).
@@ -183,15 +185,13 @@ Ruler::on_motion_notify_event(GdkEventMotion *motion_event)
     return false;
 }
 
-bool Ruler::on_button_press_event(GdkEventButton *event)
+Gtk::EventSequenceState
+Ruler::on_click_pressed(Gtk::GestureMultiPress const &click,
+                        int const n_press, double const x, double const y)
 {
-    if (event->button == 3) {
-        auto menu = getContextMenu();
-        menu->popup_at_pointer(reinterpret_cast<GdkEvent *>(event));
-        // Question to Reviewer: Does this leak?
-        return true;
-    }
-    return false;
+    _popover->set_pointing_to(Gdk::Rectangle(x, y, 1, 1));
+    _popover->popup();
+    return Gtk::EVENT_SEQUENCE_CLAIMED;
 }
 
 // Find smallest dimension of ruler based on font size.
@@ -558,7 +558,6 @@ Ruler::marker_rect()
 // Draw the ruler using the tick backing store.
 bool
 Ruler::on_draw(const::Cairo::RefPtr<::Cairo::Context>& cr) {
-
     if (!_backing_store_valid) {
         draw_scale (cr);
     }
@@ -574,34 +573,29 @@ Ruler::on_draw(const::Cairo::RefPtr<::Cairo::Context>& cr) {
 // Update ruler on style change (font-size, etc.)
 void
 Ruler::on_style_updated() {
-
     Gtk::DrawingArea::on_style_updated();
 
     Glib::RefPtr<Gtk::StyleContext> style_context = get_style_context();
-    style_context->add_class(_orientation == Gtk::ORIENTATION_HORIZONTAL ? "horz" : "vert");
 
     // Cache all our colors to speed up rendering.
     _border = style_context->get_border();
-    _foreground = get_context_color(style_context, "color");
+    _foreground = get_foreground_color(style_context);
     _font = style_context->get_font();
     _font_size = _font.get_size();
     if (!_font.get_size_is_absolute())
         _font_size /= Pango::SCALE;
 
-    style_context->add_class("shadow");
-    _shadow = get_context_color(style_context, "border-color");
-    style_context->remove_class("shadow");
-
-    style_context->add_class("page");
-    _page_fill = get_background_color(style_context);
-    style_context->remove_class("page");
+    _shadow = get_color_with_class(style_context, "shadow");
+    _page_fill = get_color_with_class(style_context, "page");
 
     style_context->add_class("selection");
-    _select_fill = get_background_color(style_context);
-    _select_stroke = get_context_color(style_context, "border-color");
+    _select_fill = get_color_with_class(style_context, "background");
+    _select_stroke = get_color_with_class(style_context, "border");
     style_context->remove_class("selection");
+
     _label_cache.clear();
     _backing_store_valid = false;
+
     queue_resize();
     queue_draw();
 }
@@ -609,10 +603,8 @@ Ruler::on_style_updated() {
 /**
  * Return a contextmenu for the ruler
  */
-Gtk::Menu *Ruler::getContextMenu()
+void Ruler::set_context_menu()
 {
-    auto gtk_menu = new Gtk::Menu();
-    auto gio_menu = Gio::Menu::create();
     auto unit_menu = Gio::Menu::create();
 
     for (auto &pair : unit_table.units(Inkscape::Util::UNIT_TYPE_LINEAR)) {
@@ -622,16 +614,11 @@ Gtk::Menu *Ruler::getContextMenu()
         unit_menu->append_item(item);
     }
 
-    gio_menu->append_section(unit_menu);
-    gtk_menu->bind_model(gio_menu, true);
-    gtk_menu->attach_to_widget(*this); // Might need canvas here
-    gtk_menu->show();
-    return gtk_menu;
+    _popover = Gtk::make_managed<Gtk::Popover>(*this, unit_menu);
+    _popover->set_modal(true); // set_autohide in Gtk4
 }
 
-} // Namespace Inkscape
-}
-}
+} // namespace Inkscape::UI::Widget
 
 /*
   Local Variables:

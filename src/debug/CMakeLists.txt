@@ -3,7 +3,6 @@
 set(debug_SRC
 	demangle.cpp
 	heap.cpp
-	log-display-config.cpp
 	logger.cpp
 	sysv-heap.cpp
 	timestamp.cpp
@@ -15,7 +14,6 @@ set(debug_SRC
 	event.h
 	gc-heap.h
 	heap.h
-	log-display-config.h
 	logger.h
 	simple-event.h
 	sysv-heap.h

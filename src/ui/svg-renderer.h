@@ -39,14 +39,19 @@ public:
     // if set, draw checkerboard pattern before image
     void set_checkerboard_color(uint32_t rgba);
 
+    // set requested scale, by default it is 1.0
+    void set_scale(double scale);
+
+    // get document size
     double get_width_px() const;
     double get_height_px() const;
 
 private:
-    Pixbuf* do_render(double scale);
+    Pixbuf* do_render(double device_scale);
     std::shared_ptr<SPDocument> _document;
     SPRoot* _root = nullptr;
     std::optional<uint32_t> _checkerboard;
+    double _scale = 1.0;
 };
 
 }

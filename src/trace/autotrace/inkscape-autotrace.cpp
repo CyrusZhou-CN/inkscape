@@ -17,6 +17,7 @@
 
 #include "inkscape-autotrace.h"
 #include "async/progress.h"
+#include "util/safe-printf.h"
 
 extern "C" {
 #include "3rdparty/autotrace/autotrace.h"
@@ -124,7 +125,7 @@ TraceResult AutotraceTracingEngine::trace(Glib::RefPtr<Gdk::Pixbuf> const &pixbu
 
     auto get_style = [&] {
         char color[10];
-        std::sprintf(color, "#%02x%02x%02x;", list.color.r, list.color.g, list.color.b);
+        safeprintf(color, "#%02x%02x%02x;", list.color.r, list.color.g, list.color.b);
 
         std::stringstream ss;
         ss << (splines->centerline || list.open ? "stroke:" : "fill:") << color

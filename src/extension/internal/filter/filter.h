@@ -34,7 +34,7 @@ protected:
 
 private:
 	Inkscape::XML::Document * get_filter (Inkscape::Extension::Extension * ext);
-	void merge_filters (Inkscape::XML::Node * to, Inkscape::XML::Node * from, Inkscape::XML::Document * doc, gchar const * srcGraphic = nullptr, gchar const * srcGraphicAlpha = nullptr);
+    bool apply_filter(Inkscape::Extension::Effect* module, SPItem* item) override;
 
 public:
 	Filter();
@@ -42,8 +42,8 @@ public:
 	~Filter() override;
 
 	bool load(Inkscape::Extension::Extension *module) override;
-	Inkscape::Extension::Implementation::ImplementationDocumentCache * newDocCache (Inkscape::Extension::Extension * ext, Inkscape::UI::View::View * doc) override;
-	void effect(Inkscape::Extension::Effect *module, Inkscape::UI::View::View *document, Inkscape::Extension::Implementation::ImplementationDocumentCache * docCache) override;
+	Inkscape::Extension::Implementation::ImplementationDocumentCache * newDocCache (Inkscape::Extension::Extension * ext, SPDesktop * desktop) override;
+	void effect(Inkscape::Extension::Effect *module, SPDesktop *desktop, Inkscape::Extension::Implementation::ImplementationDocumentCache * docCache) override;
 
 	static void filter_init(gchar const * id, gchar const * name, gchar const * submenu, gchar const * tip, gchar const * filter);
 	static void filters_all();

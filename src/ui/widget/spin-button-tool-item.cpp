@@ -258,7 +258,7 @@ SpinButtonToolItem::create_numeric_menu_item(Gtk::RadioButtonGroup *group,
         item_label += ": " + label;
     }
 
-    auto numeric_option = Gtk::manage(new Gtk::RadioMenuItem(*group, item_label));
+    auto const numeric_option = Gtk::make_managed<Gtk::RadioMenuItem>(*group, item_label);
     if (enable) {
         numeric_option->set_active(); // Do before connecting toggled_handler.
     }
@@ -278,7 +278,7 @@ SpinButtonToolItem::create_numeric_menu_item(Gtk::RadioButtonGroup *group,
 Gtk::Menu *
 SpinButtonToolItem::create_numeric_menu()
 {
-    auto numeric_menu = Gtk::manage(new Gtk::Menu());
+    auto const numeric_menu = Gtk::make_managed<Gtk::Menu>();
 
     Gtk::RadioMenuItem::Group group;
 
@@ -343,7 +343,7 @@ SpinButtonToolItem::on_create_menu_proxy()
 {
     // The main menu-item.  It just contains the label that normally appears
     // next to the spin-button, and an indicator for a sub-menu.
-    auto menu_item = Gtk::manage(new Gtk::MenuItem(_label_text));
+    auto const menu_item = Gtk::make_managed<Gtk::MenuItem>(_label_text);
     auto numeric_menu = create_numeric_menu();
     menu_item->set_submenu(*numeric_menu);
 
@@ -366,7 +366,7 @@ SpinButtonToolItem::SpinButtonToolItem(const Glib::ustring            name,
                                        Glib::RefPtr<Gtk::Adjustment>& adjustment,
                                        double                         climb_rate,
                                        int                            digits)
-    : _btn(Gtk::manage(new SpinButton(adjustment, climb_rate, digits))),
+    : _btn(Gtk::make_managed<SpinButton>(adjustment, climb_rate, digits)),
       _name(std::move(name)),
       _label_text(label_text),
       _digits(digits)
@@ -394,10 +394,10 @@ SpinButtonToolItem::SpinButtonToolItem(const Glib::ustring            name,
     _btn->add_events(Gdk::KEY_PRESS_MASK);
 
     // Create a label
-    _label = Gtk::manage(new Gtk::Label(label_text));
+    _label = Gtk::make_managed<Gtk::Label>(label_text);
 
     // Arrange the widgets in a horizontal box
-    _hbox = Gtk::manage(new Gtk::Box());
+    _hbox = Gtk::make_managed<Gtk::Box>();
     _hbox->set_spacing(3);
     _hbox->pack_start(*_label);
     _hbox->pack_start(*_btn);

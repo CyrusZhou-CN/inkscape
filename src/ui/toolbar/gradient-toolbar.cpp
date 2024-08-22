@@ -341,12 +341,12 @@ GradientToolbar::GradientToolbar(SPDesktop *desktop)
 
         Gtk::RadioToolButton::Group new_type_group;
 
-        auto linear_button = Gtk::manage(new Gtk::RadioToolButton(new_type_group, _("linear")));
+        auto const linear_button = Gtk::make_managed<Gtk::RadioToolButton>(new_type_group, _("linear"));
         linear_button->set_tooltip_text(_("Create linear gradient"));
         linear_button->set_icon_name(INKSCAPE_ICON("paint-gradient-linear"));
         _new_type_buttons.push_back(linear_button);
 
-        auto radial_button = Gtk::manage(new Gtk::RadioToolButton(new_type_group, _("radial")));
+        auto const radial_button = Gtk::make_managed<Gtk::RadioToolButton>(new_type_group, _("radial"));
         radial_button->set_tooltip_text(_("Create radial (elliptic or circular) gradient"));
         radial_button->set_icon_name(INKSCAPE_ICON("paint-gradient-radial"));
         _new_type_buttons.push_back(radial_button);
@@ -367,12 +367,12 @@ GradientToolbar::GradientToolbar(SPDesktop *desktop)
     {
         Gtk::RadioToolButton::Group new_fillstroke_group;
 
-        auto fill_btn = Gtk::manage(new Gtk::RadioToolButton(new_fillstroke_group, _("fill")));
+        auto const fill_btn = Gtk::make_managed<Gtk::RadioToolButton>(new_fillstroke_group, _("fill"));
         fill_btn->set_tooltip_text(_("Create gradient in the fill"));
         fill_btn->set_icon_name(INKSCAPE_ICON("object-fill"));
         _new_fillstroke_buttons.push_back(fill_btn);
 
-        auto stroke_btn = Gtk::manage(new Gtk::RadioToolButton(new_fillstroke_group, _("stroke")));
+        auto const stroke_btn = Gtk::make_managed<Gtk::RadioToolButton>(new_fillstroke_group, _("stroke"));
         stroke_btn->set_tooltip_text(_("Create gradient in the stroke"));
         stroke_btn->set_icon_name(INKSCAPE_ICON("object-stroke"));
         _new_fillstroke_buttons.push_back(stroke_btn);
@@ -389,7 +389,7 @@ GradientToolbar::GradientToolbar(SPDesktop *desktop)
         }
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Gradient Select list*/
     {
@@ -433,7 +433,7 @@ GradientToolbar::GradientToolbar(SPDesktop *desktop)
 
     /* Reverse */
     {
-        _stops_reverse_item = Gtk::manage(new Gtk::ToolButton(_("Reverse")));
+        _stops_reverse_item = Gtk::make_managed<Gtk::ToolButton>(_("Reverse"));
         _stops_reverse_item->set_tooltip_text(_("Reverse the direction of the gradient"));
         _stops_reverse_item->set_icon_name(INKSCAPE_ICON("object-flip-horizontal"));
         _stops_reverse_item->signal_clicked().connect(sigc::mem_fun(*this, &GradientToolbar::reverse));
@@ -474,7 +474,7 @@ GradientToolbar::GradientToolbar(SPDesktop *desktop)
         add(*_spread_cb);
     }
 
-    add(* Gtk::manage(new Gtk::SeparatorToolItem()));
+    add(* Gtk::make_managed<Gtk::SeparatorToolItem>());
 
     /* Gradient Stop list */
     {
@@ -511,7 +511,7 @@ GradientToolbar::GradientToolbar(SPDesktop *desktop)
     {
         auto offset_val = prefs->getDouble("/tools/gradient/stopoffset", 0);
         _offset_adj = Gtk::Adjustment::create(offset_val, 0.0, 1.0, 0.01, 0.1);
-        _offset_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("gradient-stopoffset", C_("Gradient", "Offset:"), _offset_adj, 0.01, 2));
+        _offset_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("gradient-stopoffset", C_("Gradient", "Offset:"), _offset_adj, 0.01, 2);
         _offset_item->set_tooltip_text(_("Offset of selected stop"));
         _offset_item->set_focus_widget(desktop->canvas);
         _offset_adj->signal_value_changed().connect(sigc::mem_fun(*this, &GradientToolbar::stop_offset_adjustment_changed));
@@ -521,7 +521,7 @@ GradientToolbar::GradientToolbar(SPDesktop *desktop)
 
     /* Add stop */
     {
-        _stops_add_item = Gtk::manage(new Gtk::ToolButton(_("Insert new stop")));
+        _stops_add_item = Gtk::make_managed<Gtk::ToolButton>(_("Insert new stop"));
         _stops_add_item->set_tooltip_text(_("Insert new stop"));
         _stops_add_item->set_icon_name(INKSCAPE_ICON("node-add"));
         _stops_add_item->signal_clicked().connect(sigc::mem_fun(*this, &GradientToolbar::add_stop));
@@ -531,7 +531,7 @@ GradientToolbar::GradientToolbar(SPDesktop *desktop)
 
     /* Delete stop */
     {
-        _stops_delete_item = Gtk::manage(new Gtk::ToolButton(_("Delete stop")));
+        _stops_delete_item = Gtk::make_managed<Gtk::ToolButton>(_("Delete stop"));
         _stops_delete_item->set_tooltip_text(_("Delete stop"));
         _stops_delete_item->set_icon_name(INKSCAPE_ICON("node-delete"));
         _stops_delete_item->signal_clicked().connect(sigc::mem_fun(*this, &GradientToolbar::remove_stop));

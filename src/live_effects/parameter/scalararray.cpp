@@ -44,8 +44,8 @@ ScalarArrayParam::~ScalarArrayParam()
 Gtk::Widget *ScalarArrayParam::param_newWidget()
 {
     if (widget_is_visible) {
-        Inkscape::UI::Widget::RegisteredScalar *rsu = Gtk::manage(new Inkscape::UI::Widget::RegisteredScalar(
-            param_label, param_tooltip, param_key, *param_wr, param_effect->getRepr(), param_effect->getSPDoc()));
+        auto const rsu = Gtk::make_managed<UI::Widget::RegisteredScalar>(
+            param_label, param_tooltip, param_key, *param_wr, param_effect->getRepr(), param_effect->getSPDoc());
         rsu->setProgrammatically = true;
         rsu->setValue(_vector[_active_index]);
         rsu->setProgrammatically = true;
@@ -60,7 +60,7 @@ Gtk::Widget *ScalarArrayParam::param_newWidget()
         }
         rsu->setProgrammatically = true;
         rsu->signal_value_changed().connect (sigc::bind(sigc::mem_fun (*this, &ScalarArrayParam::on_value_changed),rsu));
-        return dynamic_cast<Gtk::Widget *>(rsu);
+        return rsu;
     } else {
         return nullptr;
     }

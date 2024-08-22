@@ -18,8 +18,10 @@
 #include "canvas-item.h"
 #include "preferences.h"
 
-uint32_t constexpr GRID_DEFAULT_MAJOR_COLOR = 0x0099e54d;
-uint32_t constexpr GRID_DEFAULT_MINOR_COLOR = 0x0099e526;
+// default colors in RGBA
+uint32_t constexpr GRID_DEFAULT_MAJOR_COLOR = 0x0099e5'4d;
+uint32_t constexpr GRID_DEFAULT_MINOR_COLOR = 0x0099e5'26;
+uint32_t constexpr GRID_DEFAULT_BLOCK_COLOR = 0x0047cb'4d;
 
 namespace Inkscape {
 
@@ -75,6 +77,29 @@ protected:
                             variables */
     Geom::Point ow;      /**< Transformed origin by the affine for the zoom */
     Geom::Point sw[2];   /**< Transformed spacing by the affine for the zoom */
+};
+
+class CanvasItemGridTiles final : public CanvasItemGrid {
+public:
+    CanvasItemGridTiles(CanvasItemGroup* group);
+
+    void set_gap_size(Geom::Point gap_size);
+    void set_margin_size(Geom::Point margin_size);
+
+protected:
+    friend class GridSnapperXY;
+
+    void _update(bool propagate) override;
+    void _render(CanvasItemBuffer &buf) const override;
+
+    Geom::Point _world_origin;
+    Geom::Point _world_pitch;
+    Geom::Point _world_gap;
+    Geom::Point _world_tile;
+    Geom::Point _world_margin;
+
+    Geom::Point _gap;
+    Geom::Point _margin;
 };
 
 /** Canvas Item for axonometric grids */

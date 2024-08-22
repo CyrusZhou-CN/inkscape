@@ -378,7 +378,7 @@ void SPRect::setRy(bool set, gdouble value) {
 }
 
 void SPRect::update_patheffect(bool write) {
-    if (type != SP_GENERIC_PATH && hasPathEffectOnClipOrMaskRecursive(this)) {
+    if (type != SP_GENERIC_PATH && !cloned && hasPathEffectOnClipOrMaskRecursive(this)) {
         SPRect::write(document->getReprDoc(), getRepr(), SP_OBJECT_MODIFIED_FLAG);
     }
     SPShape::update_patheffect(write);

@@ -15,6 +15,7 @@
 #include "desktop-style.h"
 #include "display/curve.h"
 #include "svg/svg.h"
+#include "ui/dialog-run.h"
 
 #include "object/sp-shape.h"
 #include "style.h"
@@ -58,7 +59,7 @@ void LPEShowHandles::doOnApply(SPLPEItem const* lpeitem)
     if(!alerts_off) {
         char *msg = _("The \"show handles\" path effect will remove any custom style on the object you are applying it to. If this is not what you want, click Cancel.");
         Gtk::MessageDialog dialog(msg, false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_OK_CANCEL, true);
-        gint response = dialog.run();
+        auto response = Inkscape::UI::dialog_run(dialog);
         alerts_off = true;
         if(response == GTK_RESPONSE_CANCEL) {
             SPLPEItem* item = const_cast<SPLPEItem*>(lpeitem);

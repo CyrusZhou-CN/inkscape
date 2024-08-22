@@ -61,7 +61,7 @@ Box3DToolbar::Box3DToolbar(SPDesktop *desktop)
         std::vector<double> values = {-90, -60, -30, 0, 30, 60, 90};
         auto angle_x_val = prefs->getDouble("/tools/shapes/3dbox/box3d_angle_x", 30);
         _angle_x_adj = Gtk::Adjustment::create(angle_x_val, -360.0, 360.0, 1.0, 10.0);
-        _angle_x_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("box3d-angle-x", _("Angle X:"), _angle_x_adj));
+        _angle_x_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("box3d-angle-x", _("Angle X:"), _angle_x_adj);
         // TRANSLATORS: PL is short for 'perspective line'
         _angle_x_item->set_tooltip_text(_("Angle of PLs in X direction"));
         _angle_x_item->set_custom_numeric_menu_data(values);
@@ -92,7 +92,7 @@ Box3DToolbar::Box3DToolbar(SPDesktop *desktop)
     {
         auto angle_y_val = prefs->getDouble("/tools/shapes/3dbox/box3d_angle_y", 30);
         _angle_y_adj = Gtk::Adjustment::create(angle_y_val, -360.0, 360.0, 1.0, 10.0);
-        _angle_y_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("box3d-angle-y", _("Angle Y:"), _angle_y_adj));
+        _angle_y_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("box3d-angle-y", _("Angle Y:"), _angle_y_adj);
         // TRANSLATORS: PL is short for 'perspective line'
         _angle_y_item->set_tooltip_text(_("Angle of PLs in Y direction"));
         std::vector<double> values = {-90, -60, -30, 0, 30, 60, 90};
@@ -124,7 +124,7 @@ Box3DToolbar::Box3DToolbar(SPDesktop *desktop)
     {
         auto angle_z_val = prefs->getDouble("/tools/shapes/3dbox/box3d_angle_z", 30);
         _angle_z_adj = Gtk::Adjustment::create(angle_z_val, -360.0, 360.0, 1.0, 10.0);
-        _angle_z_item = Gtk::manage(new UI::Widget::SpinButtonToolItem("box3d-angle-z", _("Angle Z:"), _angle_z_adj));
+        _angle_z_item = Gtk::make_managed<UI::Widget::SpinButtonToolItem>("box3d-angle-z", _("Angle Z:"), _angle_z_adj);
         // TRANSLATORS: PL is short for 'perspective line'
         _angle_z_item->set_tooltip_text(_("Angle of PLs in Z direction"));
         std::vector<double> values = {-90, -60, -30, 0, 30, 60, 90};

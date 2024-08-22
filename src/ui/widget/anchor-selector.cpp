@@ -18,11 +18,11 @@ namespace UI {
 namespace Widget {
 
 void AnchorSelector::setupButton(const Glib::ustring& icon, Gtk::ToggleButton& button) {
-    Gtk::Image *buttonIcon = Gtk::manage(sp_get_icon_image(icon, Gtk::ICON_SIZE_SMALL_TOOLBAR));
-    buttonIcon->show();
+    auto const buttonIcon = Gtk::manage(sp_get_icon_image(icon, Gtk::ICON_SIZE_SMALL_TOOLBAR));
+    buttonIcon->set_visible(true);
 
     button.set_relief(Gtk::RELIEF_NONE);
-    button.show();
+    button.set_visible(true);
     button.add(*buttonIcon);
     button.set_can_focus(false);
 }

@@ -67,8 +67,8 @@ private:
 
     OriginalSatelliteParam operand_item;
     EnumParam<bool_op_ex> bool_operation;
-    EnumParam<fill_typ> fill_type_this;
-    EnumParam<fill_typ> fill_type_operand;
+    EnumParam<FillRule> fill_type_this;
+    EnumParam<FillRule> fill_type_operand;
     BoolParam swap_operands;
     BoolParam rmv_inner;
     bool legacytest_livarotonly = false;

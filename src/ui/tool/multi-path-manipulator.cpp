@@ -19,7 +19,6 @@
 #include "desktop.h"
 #include "document.h"
 #include "document-undo.h"
-#include "message-stack.h"
 #include "node.h"
 
 #include "live_effects/lpeobject.h"
@@ -28,9 +27,9 @@
 
 #include "ui/icon-names.h"
 #include "ui/tool/control-point-selection.h"
-#include "ui/tool/event-utils.h"
 #include "ui/tool/multi-path-manipulator.h"
 #include "ui/tool/path-manipulator.h"
+#include "ui/widget/events/canvas-event.h"
 
 namespace Inkscape {
 namespace UI {
@@ -73,7 +72,7 @@ void find_join_iterators(ControlPointSelection &sel, IterPairList &pairs)
         IterPair closest_pair;
         for (IterSet::iterator i = join_iters.begin(); i != join_iters.end(); ++i) {
             for (IterSet::iterator j = join_iters.begin(); j != i; ++j) {
-                double dist = Geom::distance(**i, **j);
+                double dist = Geom::distance((*i)->position(), (*j)->position());
                 if (dist < closest) {
                     closest = dist;
                     closest_pair = std::make_pair(*i, *j);
@@ -385,18 +384,18 @@ void MultiPathManipulator::joinNodes()
         join.first->setType(NODE_CUSP, false);
 
         Geom::Point joined_pos, pos_handle_front, pos_handle_back;
-        pos_handle_front = *join.second->front();
-        pos_handle_back = *join.first->back();
+        pos_handle_front = join.second->front()->position();
+        pos_handle_back = join.first->back()->position();
 
         // When we encounter the mouseover node, we unset the iterator - it will be invalidated
         if (join.first == preserve_pos) {
-            joined_pos = *join.first;
+            joined_pos = join.first->position();
             preserve_pos = NodeList::iterator();
         } else if (join.second == preserve_pos) {
-            joined_pos = *join.second;
+            joined_pos = join.second->position();
             preserve_pos = NodeList::iterator();
         } else {
-            joined_pos = Geom::middle_point(*join.first, *join.second);
+            joined_pos = Geom::middle_point(join.first->position(), join.second->position());
         }
 
         // if the handles aren't degenerate, don't move them
@@ -581,21 +580,21 @@ void MultiPathManipulator::updatePaths()
     invokeForAll(&PathManipulator::updatePath);
 }
 
-bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *event_context, GdkEvent *event)
+bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEvent const &event)
 {
     _tracker.event(event);
-    guint key = 0;
-    if (event->type == GDK_KEY_PRESS) {
-        key = shortcut_key(event->key);
+    unsigned key = 0;
+    if (event.type() == EventType::KEY_PRESS) {
+        key = shortcut_key(static_cast<KeyPressEvent const &>(event));
     }
 
     // Single handle adjustments go here.
-    if (_selection.size() == 1 && event->type == GDK_KEY_PRESS) {
+    if (_selection.size() == 1 && event.type() == EventType::KEY_PRESS) {
         do {
-            Node *n = dynamic_cast<Node *>(*_selection.begin());
+            auto n = dynamic_cast<Node*>(*_selection.begin());
             if (!n) break;
 
-            PathManipulator &pm = n->nodeList().subpathList().pm();
+            auto &pm = n->nodeList().subpathList().pm();
 
             int which = 0;
             if (_tracker.rightAlt() || _tracker.rightControl()) {
@@ -607,7 +606,6 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *event_context, G
             }
             if (which == 0) break; // no handle chosen
             bool one_pixel = _tracker.leftAlt() || _tracker.rightAlt();
-            bool handled = true;
 
             switch (key) {
             // single handle functions
@@ -615,79 +613,84 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *event_context, G
             case GDK_KEY_bracketleft:
             case GDK_KEY_braceleft:
                 pm.rotateHandle(n, which, -_desktop->yaxisdir(), one_pixel);
-                break;
+                return true;
             case GDK_KEY_bracketright:
             case GDK_KEY_braceright:
                 pm.rotateHandle(n, which, _desktop->yaxisdir(), one_pixel);
-                break;
+                return true;
             // adjust length
             case GDK_KEY_period:
             case GDK_KEY_greater:
                 pm.scaleHandle(n, which, 1, one_pixel);
-                break;
+                return true;
             case GDK_KEY_comma:
             case GDK_KEY_less:
                 pm.scaleHandle(n, which, -1, one_pixel);
-                break;
+                return true;
             default:
-                handled = false;
                 break;
             }
-
-            if (handled) return true;
-        } while(false);
+        } while (false);
     }
 
+    bool ret = false;
 
-    switch (event->type) {
-    case GDK_KEY_PRESS:
+    inspect_event(event,
+    [&] (KeyPressEvent const &event) {
         switch (key) {
         case GDK_KEY_Insert:
         case GDK_KEY_KP_Insert:
             // Insert - insert nodes in the middle of selected segments
             insertNodes();
-            return true;
+            ret = true;
+            return;
         case GDK_KEY_i:
         case GDK_KEY_I:
-            if (held_only_shift(event->key)) {
+            if (held_only_shift(event)) {
                 // Shift+I - insert nodes (alternate keybinding for Mac keyboards
                 //           that don't have the Insert key)
                 insertNodes();
-                return true;
+                ret = true;
+                return;
             }
             break;
         case GDK_KEY_d:
         case GDK_KEY_D:
-            if (held_only_shift(event->key)) {
+            if (held_only_shift(event)) {
                 duplicateNodes();
-                return true;
+                ret = true;
+                return;
             }
+            break;
         case GDK_KEY_j:
         case GDK_KEY_J:
-            if (held_only_shift(event->key)) {
+            if (held_only_shift(event)) {
                 // Shift+J - join nodes
                 joinNodes();
-                return true;
+                ret = true;
+                return;
             }
-            if (held_only_alt(event->key)) {
+            if (held_only_alt(event)) {
                 // Alt+J - join segments
                 joinSegments();
-                return true;
+                ret = true;
+                return;
             }
             break;
         case GDK_KEY_b:
         case GDK_KEY_B:
-            if (held_only_shift(event->key)) {
+            if (held_only_shift(event)) {
                 // Shift+B - break nodes
                 breakNodes();
-                return true;
+                ret = true;
+                return;
             }
             break;
         case GDK_KEY_Delete:
         case GDK_KEY_KP_Delete:
         case GDK_KEY_BackSpace:
-            if (held_shift(event->key)) break;
-            if (held_alt(event->key)) {
+            if (held_shift(event)) break;
+            if (held_alt(event)) {
                 // Alt+Delete - delete segments
                 deleteSegments();
             } else {
@@ -703,7 +706,7 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *event_context, G
                 //if the trace is bspline ( mode 2)
                 if(mode==2){
                     //  is this correct ?
-                    if(del_preserves_shape ^ held_control(event->key)){
+                    if(del_preserves_shape ^ held_control(event)){
                         deleteNodes(false);
                     } else {
                         deleteNodes(true);
@@ -711,82 +714,93 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *event_context, G
                 } else {
                 */
                 auto mode =
-                    held_control(event->key) ?
+                    held_control(event) ?
                         (del_preserves_shape ? NodeDeleteMode::inverse_auto : NodeDeleteMode::curve_fit) :
                         (del_preserves_shape ? NodeDeleteMode::automatic : NodeDeleteMode::line_segment);
                 deleteNodes(mode);
 
                 // Delete any selected gradient nodes as well
-                event_context->deleteSelectedDrag(held_control(event->key));
+                tool->deleteSelectedDrag(held_control(event));
             }
-            return true;
+            ret = true;
+            return;
         case GDK_KEY_c:
         case GDK_KEY_C:
-            if (held_only_shift(event->key)) {
+            if (held_only_shift(event)) {
                 // Shift+C - make nodes cusp
                 setNodeType(NODE_CUSP);
-                return true;
+                ret = true;
+                return;
             }
             break;
         case GDK_KEY_s:
         case GDK_KEY_S:
-            if (held_only_shift(event->key)) {
+            if (held_only_shift(event)) {
                 // Shift+S - make nodes smooth
                 setNodeType(NODE_SMOOTH);
-                return true;
+                ret = true;
+                return;
             }
             break;
         case GDK_KEY_a:
         case GDK_KEY_A:
-            if (held_only_shift(event->key)) {
+            if (held_only_shift(event)) {
                 // Shift+A - make nodes auto-smooth
                 setNodeType(NODE_AUTO);
-                return true;
+                ret = true;
+                return;
             }
             break;
         case GDK_KEY_y:
         case GDK_KEY_Y:
-            if (held_only_shift(event->key)) {
+            if (held_only_shift(event)) {
                 // Shift+Y - make nodes symmetric
                 setNodeType(NODE_SYMMETRIC);
-                return true;
+                ret = true;
+                return;
             }
             break;
         case GDK_KEY_r:
         case GDK_KEY_R:
-            if (held_only_shift(event->key)) {
+            if (held_only_shift(event)) {
                 // Shift+R - reverse subpaths
                 reverseSubpaths();
-                return true;
+                ret = true;
+                return;
             }
             break;
         case GDK_KEY_l:
         case GDK_KEY_L:
-            if (held_only_shift(event->key)) {
+            if (held_only_shift(event)) {
                 // Shift+L - make segments linear
                 setSegmentType(SEGMENT_STRAIGHT);
-                return true;
+                ret = true;
+                return;
             }
         case GDK_KEY_u:
         case GDK_KEY_U:
-            if (held_only_shift(event->key)) {
+            if (held_only_shift(event)) {
                 // Shift+U - make segments curves
                 setSegmentType(SEGMENT_CUBIC_BEZIER);
-                return true;
+                ret = true;
+                return;
             }
         default:
             break;
         }
-        break;
-    case GDK_MOTION_NOTIFY:
-        for (auto & i : _mmap) {
-            if (i.second->event(event_context, event)) return true;
+    },
+    [&] (MotionEvent const &event) {
+        for (auto &it : _mmap) {
+            if (it.second->event(tool, event)) {
+                ret = true;
+                return;
+            }
         }
-        break;
-    default: break;
-    }
+    },
+    [&] (CanvasEvent const &event) {}
+    );
 
-    return false;
+    return ret;
 }
 
 /** Commit changes to XML and add undo stack entry based on the action that was done. Invoked

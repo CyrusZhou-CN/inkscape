@@ -32,12 +32,13 @@ class Selection;
 namespace UI {
 namespace Tools {
 
-class GradientTool : public ToolBase {
+class GradientTool : public ToolBase
+{
 public:
     GradientTool(SPDesktop *desktop);
     ~GradientTool() override;
 
-    bool root_handler(GdkEvent *event) override;
+    bool root_handler(CanvasEvent const &event) override;
     void add_stops_between_selected_stops();
 
     void select_next();

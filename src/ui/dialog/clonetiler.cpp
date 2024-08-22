@@ -105,13 +105,13 @@ CloneTiler::CloneTiler()
     {
         auto prefs = Inkscape::Preferences::get();
 
-        auto mainbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL, 4));
+        auto const mainbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, 4);
         mainbox->set_homogeneous(false);
         mainbox->set_border_width(6);
 
         pack_start(*mainbox, true, true, 0);
 
-        nb = Gtk::manage(new Gtk::Notebook());
+        nb = Gtk::make_managed<Gtk::Notebook>();
         mainbox->pack_start(*nb, false, false, 0);
 
 
@@ -153,7 +153,7 @@ CloneTiler::CloneTiler()
             gint current = prefs->getInt(prefs_path + "symmetrygroup", 0);
 
             // Add a new combo box widget with the list of symmetry groups to the vbox
-            auto combo = Gtk::manage(new Gtk::ComboBoxText());
+            auto const combo = Gtk::make_managed<Gtk::ComboBoxText>();
             combo->set_tooltip_text(_("Select one of the 17 symmetry groups for the tiling"));
 
             // Hack to add markup support
@@ -184,7 +184,7 @@ CloneTiler::CloneTiler()
 
             // X
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                     // TRANSLATORS: "shift" means: the tiles will be shifted (offset) horizontally by this amount
                     // xgettext:no-c-format
                 l->set_markup(_("<b>Shift X:</b>"));
@@ -217,7 +217,7 @@ CloneTiler::CloneTiler()
 
             // Y
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                     // TRANSLATORS: "shift" means: the tiles will be shifted (offset) vertically by this amount
                     // xgettext:no-c-format
                 l->set_markup(_("<b>Shift Y:</b>"));
@@ -251,7 +251,7 @@ CloneTiler::CloneTiler()
 
             // Exponent
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup(_("<b>Exponent:</b>"));
                 l->set_xalign(0.0);
                 table_row_labels->add_widget(*l);
@@ -273,7 +273,7 @@ CloneTiler::CloneTiler()
             }
 
             { // alternates
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 // TRANSLATORS: "Alternate" is a verb here
                 l->set_markup(_("<small>Alternate:</small>"));
                 l->set_xalign(0.0);
@@ -292,7 +292,7 @@ CloneTiler::CloneTiler()
             }
 
             { // Cumulate
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 // TRANSLATORS: "Cumulate" is a verb here
                 l->set_markup(_("<small>Cumulate:</small>"));
                 l->set_xalign(0.0);
@@ -311,7 +311,7 @@ CloneTiler::CloneTiler()
             }
 
             { // Exclude tile width and height in shift
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 // TRANSLATORS: "Cumulate" is a verb here
                 l->set_markup(_("<small>Exclude tile:</small>"));
                 l->set_xalign(0.0);
@@ -341,7 +341,7 @@ CloneTiler::CloneTiler()
 
             // X
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup(_("<b>Scale X:</b>"));
                 l->set_xalign(0.0);
                 table_row_labels->add_widget(*l);
@@ -372,7 +372,7 @@ CloneTiler::CloneTiler()
 
             // Y
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup(_("<b>Scale Y:</b>"));
                 l->set_xalign(0.0);
                 table_row_labels->add_widget(*l);
@@ -403,7 +403,7 @@ CloneTiler::CloneTiler()
 
             // Exponent
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup(_("<b>Exponent:</b>"));
                 l->set_xalign(0.0);
                 table_row_labels->add_widget(*l);
@@ -424,7 +424,7 @@ CloneTiler::CloneTiler()
 
             // Logarithmic (as in logarithmic spiral)
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup(_("<b>Base:</b>"));
                 l->set_xalign(0.0);
                 table_row_labels->add_widget(*l);
@@ -444,7 +444,7 @@ CloneTiler::CloneTiler()
             }
 
             { // alternates
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 // TRANSLATORS: "Alternate" is a verb here
                 l->set_markup(_("<small>Alternate:</small>"));
                 l->set_xalign(0.0);
@@ -463,7 +463,7 @@ CloneTiler::CloneTiler()
             }
 
             { // Cumulate
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 // TRANSLATORS: "Cumulate" is a verb here
                 l->set_markup(_("<small>Cumulate:</small>"));
                 l->set_xalign(0.0);
@@ -493,7 +493,7 @@ CloneTiler::CloneTiler()
 
             // Angle
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup(_("<b>Angle:</b>"));
                 l->set_xalign(0.0);
                 table_row_labels->add_widget(*l);
@@ -523,7 +523,7 @@ CloneTiler::CloneTiler()
             }
 
             { // alternates
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 // TRANSLATORS: "Alternate" is a verb here
                 l->set_markup(_("<small>Alternate:</small>"));
                 l->set_xalign(0.0);
@@ -542,7 +542,7 @@ CloneTiler::CloneTiler()
             }
 
             { // Cumulate
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 // TRANSLATORS: "Cumulate" is a verb here
                 l->set_markup(_("<small>Cumulate:</small>"));
                 l->set_xalign(0.0);
@@ -573,7 +573,7 @@ CloneTiler::CloneTiler()
 
             // Blur
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup(_("<b>Blur:</b>"));
                 l->set_xalign(0.0);
                 table_row_labels->add_widget(*l);
@@ -599,7 +599,7 @@ CloneTiler::CloneTiler()
             }
 
             { // alternates
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 // TRANSLATORS: "Alternate" is a verb here
                 l->set_markup(_("<small>Alternate:</small>"));
                 l->set_xalign(0.0);
@@ -621,7 +621,7 @@ CloneTiler::CloneTiler()
 
             // Dissolve
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup(_("<b>Opacity:</b>"));
                 l->set_xalign(0.0);
                 table_row_labels->add_widget(*l);
@@ -647,7 +647,7 @@ CloneTiler::CloneTiler()
             }
 
             { // alternates
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 // TRANSLATORS: "Alternate" is a verb here
                 l->set_markup(_("<small>Alternate:</small>"));
                 l->set_xalign(0.0);
@@ -672,10 +672,10 @@ CloneTiler::CloneTiler()
             auto vb = new_tab(nb, _("Co_lor"));
 
             {
-                auto hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, 0));
+                auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 0);
                 hb->set_homogeneous(false);
 
-                auto l = Gtk::manage(new Gtk::Label(_("Initial color: ")));
+                auto const l = Gtk::make_managed<Gtk::Label>(_("Initial color: "));
                 hb->pack_start(*l, false, false, 0);
 
                 guint32 rgba = 0x000000ff | sp_svg_read_color (prefs->getString(prefs_path + "initial_color").data(), 0x000000ff);
@@ -693,7 +693,7 @@ CloneTiler::CloneTiler()
 
             // Hue
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup(_("<b>H:</b>"));
                 l->set_xalign(0.0);
                 table_row_labels->add_widget(*l);
@@ -721,7 +721,7 @@ CloneTiler::CloneTiler()
 
             // Saturation
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup(_("<b>S:</b>"));
                 l->set_xalign(0.0);
                 table_row_labels->add_widget(*l);
@@ -748,7 +748,7 @@ CloneTiler::CloneTiler()
 
             // Lightness
             {
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup(_("<b>L:</b>"));
                 l->set_xalign(0.0);
                 table_row_labels->add_widget(*l);
@@ -775,7 +775,7 @@ CloneTiler::CloneTiler()
 
 
             { // alternates
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup(_("<small>Alternate:</small>"));
                 l->set_xalign(0.0);
                 table_row_labels->add_widget(*l);
@@ -798,12 +798,12 @@ CloneTiler::CloneTiler()
         {
             auto vb = new_tab(nb, _("_Trace"));
         {
-            auto hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, VB_MARGIN));
+            auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, VB_MARGIN);
             hb->set_border_width(4);
             hb->set_homogeneous(false);
             vb->pack_start(*hb, false, false, 0);
 
-            _b = Gtk::manage(new UI::Widget::CheckButtonInternal(_("Trace the drawing under the clones/sprayed items")));
+            _b = Gtk::make_managed<UI::Widget::CheckButtonInternal>(_("Trace the drawing under the clones/sprayed items"));
             _b->set_uncheckable();
             bool old = prefs->getBool(prefs_path + "dotrace");
             _b->set_active(old);
@@ -813,17 +813,17 @@ CloneTiler::CloneTiler()
         }
 
         {
-            auto vvb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL, 0));
+            auto const vvb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, 0);
             vvb->set_homogeneous(false);
             vb->pack_start(*vvb, false, false, 0);
             _dotrace = vvb;
 
             {
-                auto frame = Gtk::manage(new Gtk::Frame(_("1. Pick from the drawing:")));
+                auto const frame = Gtk::make_managed<Gtk::Frame>(_("1. Pick from the drawing:"));
                 frame->set_shadow_type(Gtk::SHADOW_NONE);
                 vvb->pack_start(*frame, false, false, 0);
 
-                auto table = Gtk::manage(new Gtk::Grid());
+                auto const table = Gtk::make_managed<Gtk::Grid>();
                 table->set_row_spacing(4);
                 table->set_column_spacing(6);
                 table->set_border_width(4);
@@ -831,56 +831,56 @@ CloneTiler::CloneTiler()
 
                 Gtk::RadioButtonGroup rb_group;
                 {
-                    auto radio = Gtk::manage(new Gtk::RadioButton(rb_group, _("Color")));
+                    auto const radio = Gtk::make_managed<Gtk::RadioButton>(rb_group, _("Color"));
                     radio->set_tooltip_text(_("Pick the visible color and opacity"));
                     table_attach(table, radio, 0.0, 1, 1);
                     radio->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &CloneTiler::pick_switched), PICK_COLOR));
                     radio->set_active(prefs->getInt(prefs_path + "pick", 0) == PICK_COLOR);
                 }
                 {
-                    auto radio = Gtk::manage(new Gtk::RadioButton(rb_group, _("Opacity")));
+                    auto const radio = Gtk::make_managed<Gtk::RadioButton>(rb_group, _("Opacity"));
                     radio->set_tooltip_text(_("Pick the total accumulated opacity"));
                     table_attach (table, radio, 0.0, 2, 1);
                     radio->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &CloneTiler::pick_switched), PICK_OPACITY));
                     radio->set_active(prefs->getInt(prefs_path + "pick", 0) == PICK_OPACITY);
                 }
                 {
-                    auto radio = Gtk::manage(new Gtk::RadioButton(rb_group, _("R")));
+                    auto const radio = Gtk::make_managed<Gtk::RadioButton>(rb_group, _("R"));
                     radio->set_tooltip_text(_("Pick the Red component of the color"));
                     table_attach (table, radio, 0.0, 1, 2);
                     radio->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &CloneTiler::pick_switched), PICK_R));
                     radio->set_active(prefs->getInt(prefs_path + "pick", 0) == PICK_R);
                 }
                 {
-                    auto radio = Gtk::manage(new Gtk::RadioButton(rb_group, _("G")));
+                    auto const radio = Gtk::make_managed<Gtk::RadioButton>(rb_group, _("G"));
                     radio->set_tooltip_text(_("Pick the Green component of the color"));
                     table_attach (table, radio, 0.0, 2, 2);
                     radio->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &CloneTiler::pick_switched), PICK_G));
                     radio->set_active(prefs->getInt(prefs_path + "pick", 0) == PICK_G);
                 }
                 {
-                    auto radio = Gtk::manage(new Gtk::RadioButton(rb_group, _("B")));
+                    auto const radio = Gtk::make_managed<Gtk::RadioButton>(rb_group, _("B"));
                     radio->set_tooltip_text(_("Pick the Blue component of the color"));
                     table_attach (table, radio, 0.0, 3, 2);
                     radio->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &CloneTiler::pick_switched), PICK_B));
                     radio->set_active(prefs->getInt(prefs_path + "pick", 0) == PICK_B);
                 }
                 {
-                    auto radio = Gtk::manage(new Gtk::RadioButton(rb_group, C_("Clonetiler color hue", "H")));
+                    auto const radio = Gtk::make_managed<Gtk::RadioButton>(rb_group, C_("Clonetiler color hue", "H"));
                     radio->set_tooltip_text(_("Pick the hue of the color"));
                     table_attach (table, radio, 0.0, 1, 3);
                     radio->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &CloneTiler::pick_switched), PICK_H));
                     radio->set_active(prefs->getInt(prefs_path + "pick", 0) == PICK_H);
                 }
                 {
-                    auto radio = Gtk::manage(new Gtk::RadioButton(rb_group, C_("Clonetiler color saturation", "S")));
+                    auto const radio = Gtk::make_managed<Gtk::RadioButton>(rb_group, C_("Clonetiler color saturation", "S"));
                     radio->set_tooltip_text(_("Pick the saturation of the color"));
                     table_attach (table, radio, 0.0, 2, 3);
                     radio->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &CloneTiler::pick_switched), PICK_S));
                     radio->set_active(prefs->getInt(prefs_path + "pick", 0) == PICK_S);
                 }
                 {
-                    auto radio = Gtk::manage(new Gtk::RadioButton(rb_group, C_("Clonetiler color lightness", "L")));
+                    auto const radio = Gtk::make_managed<Gtk::RadioButton>(rb_group, C_("Clonetiler color lightness", "L"));
                     radio->set_tooltip_text(_("Pick the lightness of the color"));
                     table_attach (table, radio, 0.0, 3, 3);
                     radio->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &CloneTiler::pick_switched), PICK_L));
@@ -890,18 +890,18 @@ CloneTiler::CloneTiler()
             }
 
             {
-                auto frame = Gtk::manage(new Gtk::Frame(_("2. Tweak the picked value:")));
+                auto const frame = Gtk::make_managed<Gtk::Frame>(_("2. Tweak the picked value:"));
                 frame->set_shadow_type(Gtk::SHADOW_NONE);
                 vvb->pack_start(*frame, false, false, VB_MARGIN);
 
-                auto table = Gtk::manage(new Gtk::Grid());
+                auto const table = Gtk::make_managed<Gtk::Grid>();
                 table->set_row_spacing(4);
                 table->set_column_spacing(6);
                 table->set_border_width(4);
                 frame->add(*table);
 
                 {
-                    auto l = Gtk::manage(new Gtk::Label(""));
+                    auto const l = Gtk::make_managed<Gtk::Label>("");
                     l->set_markup(_("Gamma-correct:"));
                     table_attach (table, l, 1.0, 1, 1);
                 }
@@ -912,7 +912,7 @@ CloneTiler::CloneTiler()
                 }
 
                 {
-                    auto l = Gtk::manage(new Gtk::Label(""));
+                    auto const l = Gtk::make_managed<Gtk::Label>("");
                     l->set_markup(_("Randomize:"));
                     table_attach (table, l, 1.0, 1, 3);
                 }
@@ -923,7 +923,7 @@ CloneTiler::CloneTiler()
                 }
 
                 {
-                    auto l = Gtk::manage(new Gtk::Label(""));
+                    auto const l = Gtk::make_managed<Gtk::Label>("");
                     l->set_markup(_("Invert:"));
                     table_attach (table, l, 1.0, 2, 1);
                 }
@@ -934,18 +934,18 @@ CloneTiler::CloneTiler()
             }
 
             {
-                auto frame = Gtk::manage(new Gtk::Frame(_("3. Apply the value to the clones':")));
+                auto const frame = Gtk::make_managed<Gtk::Frame>(_("3. Apply the value to the clones':"));
                 frame->set_shadow_type(Gtk::SHADOW_NONE);
                 vvb->pack_start(*frame, false, false, 0);
 
-                auto table = Gtk::manage(new Gtk::Grid());
+                auto const table = Gtk::make_managed<Gtk::Grid>();
                 table->set_row_spacing(4);
                 table->set_column_spacing(6);
                 table->set_border_width(4);
                 frame->add(*table);
 
                 {
-                    auto b = Gtk::manage(new Gtk::CheckButton(_("Presence")));
+                    auto const b = Gtk::make_managed<Gtk::CheckButton>(_("Presence"));
                     bool old = prefs->getBool(prefs_path + "pick_to_presence", true);
                     b->set_active(old);
                     b->set_tooltip_text(_("Each clone is created with the probability determined by the picked value in that point"));
@@ -954,7 +954,7 @@ CloneTiler::CloneTiler()
                 }
 
                 {
-                    auto b = Gtk::manage(new Gtk::CheckButton(_("Size")));
+                    auto const b = Gtk::make_managed<Gtk::CheckButton>(_("Size"));
                     bool old = prefs->getBool(prefs_path + "pick_to_size");
                     b->set_active(old);
                     b->set_tooltip_text(_("Each clone's size is determined by the picked value in that point"));
@@ -963,7 +963,7 @@ CloneTiler::CloneTiler()
                 }
 
                 {
-                    auto b = Gtk::manage(new Gtk::CheckButton(_("Color")));
+                    auto const b = Gtk::make_managed<Gtk::CheckButton>(_("Color"));
                     bool old = prefs->getBool(prefs_path + "pick_to_color", false);
                     b->set_active(old);
                     b->set_tooltip_text(_("Each clone is painted by the picked color (the original must have unset fill or stroke)"));
@@ -972,7 +972,7 @@ CloneTiler::CloneTiler()
                 }
 
                 {
-                    auto b = Gtk::manage(new Gtk::CheckButton(_("Opacity")));
+                    auto const b = Gtk::make_managed<Gtk::CheckButton>(_("Opacity"));
                     bool old = prefs->getBool(prefs_path + "pick_to_opacity", false);
                     b->set_active(old);
                     b->set_tooltip_text(_("Each clone's opacity is determined by the picked value in that point"));
@@ -985,16 +985,16 @@ CloneTiler::CloneTiler()
         }
 
         {
-            auto hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, VB_MARGIN));
+            auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, VB_MARGIN);
             hb->set_homogeneous(false);
             mainbox->pack_start(*hb, false, false, 0);
-            auto l = Gtk::manage(new Gtk::Label(""));
+            auto const l = Gtk::make_managed<Gtk::Label>("");
             l->set_markup(_("Apply to tiled clones:"));
             hb->pack_start(*l, false, false, 0);
         }
         // Rows/columns, width/height
         {
-            auto table = Gtk::manage(new Gtk::Grid());
+            auto const table = Gtk::make_managed<Gtk::Grid>();
             table->set_row_spacing(4);
             table->set_column_spacing(6);
 
@@ -1018,7 +1018,7 @@ CloneTiler::CloneTiler()
                 }
 
                 {
-                    auto l = Gtk::manage(new Gtk::Label(""));
+                    auto const l = Gtk::make_managed<Gtk::Label>("");
                     l->set_markup("&#215;");
                     table_attach(table, l, 0.0f, 1, 3);
                     _rowscols.push_back(l);
@@ -1064,7 +1064,7 @@ CloneTiler::CloneTiler()
                     fill_width->signal_value_changed().connect(sigc::mem_fun(*this, &CloneTiler::fill_width_changed));
                 }
                 {
-                    auto l = Gtk::manage(new Gtk::Label(""));
+                    auto const l = Gtk::make_managed<Gtk::Label>("");
                     l->set_markup("&#215;");
                     table_attach(table, l, 0.0f, 2, 3);
                     _widthheight.push_back(l);
@@ -1095,7 +1095,7 @@ CloneTiler::CloneTiler()
             // Switch
             Gtk::RadioButtonGroup rb_group;
             {
-                auto radio = Gtk::manage(new Gtk::RadioButton(rb_group, _("Rows, columns: ")));
+                auto const radio = Gtk::make_managed<Gtk::RadioButton>(rb_group, _("Rows, columns: "));
                 radio->set_tooltip_text(_("Create the specified number of rows and columns"));
                 table_attach(table, radio, 0.0, 1, 1);
 
@@ -1106,7 +1106,7 @@ CloneTiler::CloneTiler()
                 radio->signal_toggled().connect(sigc::mem_fun(*this, &CloneTiler::switch_to_create));
             }
             {
-                auto radio = Gtk::manage(new Gtk::RadioButton(rb_group, _("Width, height: ")));
+                auto const radio = Gtk::make_managed<Gtk::RadioButton>(rb_group, _("Width, height: "));
                 radio->set_tooltip_text(_("Fill the specified width and height with the tiling"));
                 table_attach(table, radio, 0.0, 2, 1);
 
@@ -1121,10 +1121,10 @@ CloneTiler::CloneTiler()
 
         // Use saved pos
         {
-            auto hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, VB_MARGIN));
+            auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, VB_MARGIN);
             mainbox->pack_start(*hb, false, false, 0);
 
-            _cb_keep_bbox = Gtk::manage(new UI::Widget::CheckButtonInternal(_("Use saved size and position of the tile")));
+            _cb_keep_bbox = Gtk::make_managed<UI::Widget::CheckButtonInternal>(_("Use saved size and position of the tile"));
             auto keepbbox = prefs->getBool(prefs_path + "keepbbox", true);
             _cb_keep_bbox->set_active(keepbbox);
             _cb_keep_bbox->set_tooltip_text(_("Pretend that the size and position of the tile are the same "
@@ -1136,23 +1136,23 @@ CloneTiler::CloneTiler()
 
         // Statusbar
         {
-            auto hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, VB_MARGIN));
+            auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, VB_MARGIN);
             hb->set_homogeneous(false);
             mainbox->pack_end(*hb, false, false, 0);
-            auto l = Gtk::manage(new Gtk::Label(""));
+            auto const l = Gtk::make_managed<Gtk::Label>("");
             _status = l;
             hb->pack_start(*l, false, false, 0);
         }
 
         // Buttons
         {
-            auto hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, VB_MARGIN));
+            auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, VB_MARGIN);
             hb->set_homogeneous(false);
             mainbox->pack_start(*hb, false, false, 0);
 
             {
-                auto b = Gtk::manage(new Gtk::Button());
-                auto l = Gtk::manage(new Gtk::Label(""));
+                auto const b = Gtk::make_managed<Gtk::Button>();
+                auto const l = Gtk::make_managed<Gtk::Label>("");
                 l->set_markup_with_mnemonic(_(" <b>_Create</b> "));
                 b->add(*l);
                 b->set_tooltip_text(_("Create and tile the clones of the selection"));
@@ -1161,7 +1161,7 @@ CloneTiler::CloneTiler()
             }
 
             { // buttons which are enabled only when there are tiled clones
-                auto sb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, 4));
+                auto const sb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 4);
                 sb->set_homogeneous(false);
                 hb->pack_end(*sb, false, false, 0);
                 _buttons_on_tiles = sb;
@@ -1171,14 +1171,14 @@ CloneTiler::CloneTiler()
                     //  diagrams on the left in the following screenshot:
                     //  http://www.inkscape.org/screenshots/gallery/inkscape-0.42-CVS-tiles-unclump.png
                     //  So unclumping is the process of spreading a number of objects out more evenly.
-                    auto b = Gtk::manage(new Gtk::Button(_(" _Unclump "), true));
+                    auto const b = Gtk::make_managed<Gtk::Button>(_(" _Unclump "), true);
                     b->set_tooltip_text(_("Spread out clones to reduce clumping; can be applied repeatedly"));
                     b->signal_clicked().connect(sigc::mem_fun(*this, &CloneTiler::unclump));
                     sb->pack_end(*b, false, false, 0);
                 }
 
                 {
-                    auto b = Gtk::manage(new Gtk::Button(_(" Re_move "), true));
+                    auto const b = Gtk::make_managed<Gtk::Button>(_(" Re_move "), true);
                     b->set_tooltip_text(_("Remove existing tiled clones of the selected object (siblings only)"));
                     b->signal_clicked().connect(sigc::mem_fun(*this, &CloneTiler::on_remove_button_clicked));
                     sb->pack_end(*b, false, false, 0);
@@ -1194,7 +1194,7 @@ CloneTiler::CloneTiler()
             }
 
             {
-                auto b = Gtk::manage(new Gtk::Button(_(" R_eset "), true));
+                auto const b = Gtk::make_managed<Gtk::Button>(_(" R_eset "), true);
                 // TRANSLATORS: "change" is a noun here
                 b->set_tooltip_text(_("Reset all shifts, scales, rotates, opacity and color changes in the dialog to zero"));
                 b->signal_clicked().connect(sigc::mem_fun(*this, &CloneTiler::reset));
@@ -2508,8 +2508,8 @@ void CloneTiler::apply()
 
 Gtk::Box * CloneTiler::new_tab(Gtk::Notebook *nb, const gchar *label)
 {
-    auto l = Gtk::manage(new Gtk::Label(label, true));
-    auto vb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL, VB_MARGIN));
+    auto const l = Gtk::make_managed<Gtk::Label>(label, true);
+    auto const vb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, VB_MARGIN);
     vb->set_homogeneous(false);
     vb->set_border_width(VB_MARGIN);
     nb->append_page(*vb, *l);
@@ -2526,8 +2526,8 @@ void CloneTiler::checkbox_toggled(Gtk::ToggleButton   *tb,
 Gtk::Widget * CloneTiler::checkbox(const char          *tip,
                                    const Glib::ustring &attr)
 {
-    auto hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, VB_MARGIN));
-    auto b  = Gtk::manage(new UI::Widget::CheckButtonInternal());
+    auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, VB_MARGIN);
+    auto const b  = Gtk::make_managed<UI::Widget::CheckButtonInternal>();
     b->set_tooltip_text(tip);
 
     auto const prefs = Inkscape::Preferences::get();
@@ -2556,7 +2556,7 @@ Gtk::Widget * CloneTiler::spinbox(const char          *tip,
                                   const gchar         *suffix,
                                   bool                 exponent/* = false*/)
 {
-    auto hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, 0));
+    auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 0);
 
     {
         // Parameters for adjustment
@@ -2593,7 +2593,7 @@ Gtk::Widget * CloneTiler::spinbox(const char          *tip,
     }
 
     {
-        auto l = Gtk::manage(new Gtk::Label(""));
+        auto const l = Gtk::make_managed<Gtk::Label>("");
         l->set_markup(suffix);
         hb->pack_start(*l);
     }
@@ -2676,20 +2676,20 @@ void CloneTiler::table_attach(Gtk::Grid *table, Gtk::Widget *widget, float align
 
 Gtk::Grid * CloneTiler::table_x_y_rand(int values)
 {
-    auto table = Gtk::manage(new Gtk::Grid());
+    auto const table = Gtk::make_managed<Gtk::Grid>();
     table->set_row_spacing(6);
     table->set_column_spacing(8);
 
     table->set_border_width(VB_MARGIN);
 
     {
-	auto hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, 0));
+	auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 0);
 	hb->set_homogeneous(false);
 
         auto i = Glib::wrap(sp_get_icon_image("object-rows", GTK_ICON_SIZE_MENU));
         hb->pack_start(*i, false, false, 2);
 
-        auto l = Gtk::manage(new Gtk::Label(""));
+        auto const l = Gtk::make_managed<Gtk::Label>("");
         l->set_markup(_("<small>Per row:</small>"));
         hb->pack_start(*l, false, false, 2);
 
@@ -2697,13 +2697,13 @@ Gtk::Grid * CloneTiler::table_x_y_rand(int values)
     }
 
     {
-	auto hb = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL, 0));
+	auto const hb = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, 0);
 	hb->set_homogeneous(false);
 
         auto i = Glib::wrap(sp_get_icon_image("object-columns", GTK_ICON_SIZE_MENU));
         hb->pack_start(*i, false, false, 2);
 
-        auto l = Gtk::manage(new Gtk::Label(""));
+        auto const l = Gtk::make_managed<Gtk::Label>("");
         l->set_markup(_("<small>Per column:</small>"));
         hb->pack_start(*l, false, false, 2);
 
@@ -2711,7 +2711,7 @@ Gtk::Grid * CloneTiler::table_x_y_rand(int values)
     }
 
     {
-        auto l = Gtk::manage(new Gtk::Label(""));
+        auto const l = Gtk::make_managed<Gtk::Label>("");
         l->set_markup(_("<small>Randomize:</small>"));
         table_attach(table, l, 0, 1, 4);
     }

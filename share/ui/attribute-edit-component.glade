@@ -96,7 +96,7 @@
       <object class="GtkMenuItem" id="_0">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">N</property>
+        <property name="label" context="Precision" comments="This symbolizes precision of 0 digits after the decimal separator." translatable="yes">N</property>
         <property name="use-underline">True</property>
       </object>
     </child>
@@ -104,7 +104,7 @@
       <object class="GtkMenuItem" id="_1">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">N.N</property>
+        <property name="label" context="Precision" comments="This symbolizes precision of 1 digit after the decimal separator. Please adjust to your language's number format (e.g. N,N)." translatable="yes">N.N</property>
         <property name="use-underline">True</property>
       </object>
     </child>
@@ -112,7 +112,7 @@
       <object class="GtkMenuItem" id="_2">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">N.NN</property>
+        <property name="label" context="Precision" comments="This symbolizes precision of 2 digits after the decimal separator. Please adjust to your language's number format (e.g. N,NN)." translatable="yes">N.NN</property>
         <property name="use-underline">True</property>
       </object>
     </child>
@@ -120,7 +120,7 @@
       <object class="GtkMenuItem" id="_3">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">N.NNN</property>
+        <property name="label" context="Precision" comments="This symbolizes precision of 3 digits after the decimal separator. Please adjust to your language's number format (e.g. N,NNN)." translatable="yes">N.NNN</property>
         <property name="use-underline">True</property>
       </object>
     </child>
@@ -128,7 +128,7 @@
       <object class="GtkMenuItem" id="_4">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">N.NNNN</property>
+        <property name="label" context="Precision" comments="This symbolizes precision of 4 digits after the decimal separator. Please adjust to your language's number format (e.g. N,NNNN)." translatable="yes">N.NNNN</property>
         <property name="use-underline">True</property>
       </object>
     </child>
@@ -136,7 +136,7 @@
       <object class="GtkMenuItem" id="_5">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">N.NNNNN</property>
+        <property name="label" context="Precision" comments="This symbolizes precision of 5 digits after the decimal separator. Please adjust to your language's number format (e.g. N,NNNNN)." translatable="yes">N.NNNNN</property>
         <property name="use-underline">True</property>
       </object>
     </child>
@@ -191,7 +191,7 @@
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
-                    <property name="tooltip-text" translatable="yes">Round selected numbers to N digits</property>
+                    <property name="tooltip-text" translatable="yes">Round selected numbers to n digits</property>
                     <property name="image">image1</property>
                     <property name="use-underline">True</property>
                   </object>
@@ -218,7 +218,7 @@
                           <object class="GtkLabel" id="precision">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="label" translatable="yes">N.NNNNN</property>
+                            <property name="label" translatable="yes" context="Precision" comments="This symbolizes precision of 5 digits after the decimal separator. Please adjust to your language's number format (e.g. N,NNNNN).">N.NNNNN</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>

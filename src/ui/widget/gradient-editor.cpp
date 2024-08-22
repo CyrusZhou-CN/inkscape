@@ -12,39 +12,41 @@
 
 #include "gradient-editor.h"
 
-#include <gtkmm/builder.h>
-#include <gtkmm/grid.h>
-#include <gtkmm/togglebutton.h>
-#include <gtkmm/button.h>
-#include <gtkmm/menubutton.h>
-#include <gtkmm/treeview.h>
-#include <gtkmm/treemodelcolumn.h>
-#include <glibmm/i18n.h>
+#include <2geom/point.h>
+#include <2geom/line.h>
+#include <2geom/transforms.h>
 #include <cairo.h>
+#include <glibmm/i18n.h>
+#include <gtkmm/adjustment.h>
+#include <gtkmm/builder.h>
+#include <gtkmm/button.h>
+#include <gtkmm/expander.h>
+#include <gtkmm/grid.h>
+#include <gtkmm/grid.h>
+#include <gtkmm/image.h>
+#include <gtkmm/liststore.h>
+#include <gtkmm/menubutton.h>
+#include <gtkmm/popover.h>
+#include <gtkmm/spinbutton.h>
+#include <gtkmm/togglebutton.h>
+#include <gtkmm/treeview.h>
 
 #include "document-undo.h"
 #include "gradient-chemistry.h"
 #include "gradient-selector.h"
 #include "preferences.h"
-
 #include "display/cairo-utils.h"
-
 #include "io/resource.h"
-
 #include "object/sp-gradient-vector.h"
 #include "object/sp-linear-gradient.h"
-
 #include "svg/css-ostringstream.h"
-
+#include "ui/builder-utils.h"
 #include "ui/icon-loader.h"
 #include "ui/icon-names.h"
 #include "ui/widget/color-notebook.h"
 #include "ui/widget/color-preview.h"
 
-
-namespace Inkscape {
-namespace UI {
-namespace Widget {
+namespace Inkscape::UI::Widget {
 
 using namespace Inkscape::IO;
 using Inkscape::UI::Widget::ColorNotebook;
@@ -130,28 +132,6 @@ Glib::RefPtr<Gdk::Pixbuf> get_stop_pixmap(SPStop* stop) {
     return draw_circle(size, stop->getColor().toRGBA32(stop->getOpacity()));
 }
 
-// get widget from builder or throw
-template<class W> W& get_widget(Glib::RefPtr<Gtk::Builder>& builder, const char* id) {
-    W* widget;
-    builder->get_widget(id, widget);
-    if (!widget) {
-        throw std::runtime_error("Missing widget in a glade resource file");
-    }
-    return *widget;
-}
-
-Glib::RefPtr<Gtk::Builder> create_builder() {
-    auto glade = Resource::get_filename(Resource::UIS, "gradient-edit.glade");
-    Glib::RefPtr<Gtk::Builder> builder;
-    try {
-        return Gtk::Builder::create_from_file(glade);
-    }
-    catch (Glib::Error& ex) {
-        g_error("Cannot load glade file for gradient editor: %s", + ex.what().c_str());
-        throw;
-    }
-}
-
 Glib::ustring get_repeat_icon(SPGradientSpread mode) {
     const char* ico = "";
     switch (mode) {
@@ -172,8 +152,8 @@ Glib::ustring get_repeat_icon(SPGradientSpread mode) {
 }
 
 GradientEditor::GradientEditor(const char* prefs) :
-    _builder(create_builder()),
-    _selector(Gtk::manage(new GradientSelector())),
+    _builder(Inkscape::UI::create_builder("gradient-edit.glade")),
+    _selector(Gtk::make_managed<GradientSelector>()),
     _repeat_icon(get_widget<Gtk::Image>(_builder, "repeatIco")),
     _popover(get_widget<Gtk::Popover>(_builder, "libraryPopover")),
     _stop_tree(get_widget<Gtk::TreeView>(_builder, "stopList")),
@@ -185,6 +165,8 @@ GradientEditor::GradientEditor(const char* prefs) :
     _colors_box(get_widget<Gtk::Box>(_builder, "colorsBox")),
     _linear_btn(get_widget<Gtk::ToggleButton>(_builder, "linearBtn")),
     _radial_btn(get_widget<Gtk::ToggleButton>(_builder, "radialBtn")),
+    _turn_gradient(get_widget<Gtk::Button>(_builder, "turnBtn")),
+    _angle_adj(get_object<Gtk::Adjustment>(_builder, "adjustmentAngle")),
     _main_grid(get_widget<Gtk::Grid>(_builder, "mainGrid")),
     _prefs(prefs)
 {
@@ -196,9 +178,15 @@ GradientEditor::GradientEditor(const char* prefs) :
     set_icon(reverse, INKSCAPE_ICON("object-flip-horizontal"));
     reverse.signal_clicked().connect([=](){ reverse_gradient(); });
 
+    set_icon(_turn_gradient, INKSCAPE_ICON("object-rotate-right"));
+    _turn_gradient.signal_clicked().connect([=](){ turn_gradient(90, true); });
+    _angle_adj->signal_value_changed().connect([=](){
+        turn_gradient(_angle_adj->get_value(), false);
+    });
+
     auto& gradBox = get_widget<Gtk::Box>(_builder, "gradientBox");
     const int dot_size = 8;
-    _gradient_image.show();
+    _gradient_image.set_visible(true);
     _gradient_image.set_margin_start(dot_size / 2);
     _gradient_image.set_margin_end(dot_size / 2);
     // gradient stop selected in a gradient widget; sync list selection
@@ -219,9 +207,9 @@ GradientEditor::GradientEditor(const char* prefs) :
     gradBox.pack_start(_gradient_image, true, true, 0);
 
     // add color selector
-    auto color_selector = Gtk::manage(new ColorNotebook(_selected_color));
+    auto const color_selector = Gtk::make_managed<ColorNotebook>(_selected_color);
     color_selector->set_label(_("Stop color"));
-    color_selector->show();
+    color_selector->set_visible(true);
     _colors_box.pack_start(*color_selector, true, true, 0);
 
     // gradient library in a popup
@@ -232,7 +220,7 @@ GradientEditor::GradientEditor(const char* prefs) :
     _selector->set_margin_end(h);
     _selector->set_margin_top(v);
     _selector->set_margin_bottom(v);
-    _selector->show();
+    _selector->set_visible(true);
     _selector->show_edit_button(false);
     _selector->set_gradient_size(160, 20);
     _selector->set_name_col_size(120);
@@ -293,10 +281,10 @@ GradientEditor::GradientEditor(const char* prefs) :
         item.signal_activate().connect([=](){ set_repeat_mode(mode); });
         // pack icon and text into MenuItem, since MenuImageItem is deprecated
         auto text = item.get_label();
-        auto hbox = Gtk::manage(new Gtk::Box);
+        auto const hbox = Gtk::make_managed<Gtk::Box>();
         Gtk::Image* img = sp_get_icon_image(get_repeat_icon(mode), Gtk::ICON_SIZE_BUTTON);
         hbox->pack_start(*img, false, true, 8);
-        auto label = Gtk::manage(new Gtk::Label);
+        auto const label = Gtk::make_managed<Gtk::Label>();
         label->set_label(text);
         hbox->pack_start(*label, false, true, 8);
         hbox->show_all();
@@ -451,10 +439,45 @@ void GradientEditor::show_stops(bool visible) {
 
 void GradientEditor::update_stops_layout() {
     if (_stops_list_visible) {
-        _stops_gallery.show();
+        _stops_gallery.set_visible(true);
     }
     else {
-        _stops_gallery.hide();
+        _stops_gallery.set_visible(false);
+    }
+}
+
+double line_angle(const Geom::Line& line) {
+    auto d = line.finalPoint() - line.initialPoint();
+    return std::atan2(d.y(), d.x());
+}
+
+// turn linear gradient 90 degrees
+void GradientEditor::turn_gradient(double angle, bool relative) {
+    if (_update.pending() || !_document || !_gradient) return;
+
+    if (auto linear = cast<SPLinearGradient>(_gradient)) {
+        auto scoped(_update.block());
+
+        auto line = Geom::Line(
+            Geom::Point(linear->x1.computed, linear->y1.computed),
+            Geom::Point(linear->x2.computed, linear->y2.computed)
+        );
+        auto center = line.pointAt(0.5);
+        auto radians = angle / 180 * M_PI;
+        if (!relative) {
+            radians -= line_angle(line);
+        }
+        auto rotate = Geom::Translate(-center) * Geom::Rotate(radians) * Geom::Translate(center);
+        auto rotated = line.transformed(rotate);
+
+        linear->x1 = rotated.initialPoint().x();
+        linear->y1 = rotated.initialPoint().y();
+        linear->x2 = rotated.finalPoint().x();
+        linear->y2 = rotated.finalPoint().y();
+
+        _gradient->updateRepr();
+
+        DocumentUndo::done(_document, _("Rotate gradient"), INKSCAPE_ICON("color-gradient"));
     }
 }
 
@@ -588,6 +611,21 @@ void GradientEditor::set_gradient(SPGradient* gradient) {
     auto mode = gradient->isSpreadSet() ? gradient->getSpread() : SP_GRADIENT_SPREAD_PAD;
     set_repeat_icon(mode);
 
+    auto can_rotate = false;
+    // only linear gradient can be rotated currently
+    if (auto linear = cast<SPLinearGradient>(gradient)) {
+        can_rotate = true;
+        auto line = Geom::Line(
+            Geom::Point(linear->x1.computed, linear->y1.computed),
+            Geom::Point(linear->x2.computed, linear->y2.computed)
+        );
+        auto angle = line_angle(line) * 180 / M_PI;
+        _angle_adj->set_value(angle);
+    }
+    _turn_gradient.set_sensitive(can_rotate);
+    get_widget<Gtk::SpinButton>(_builder, "angle").set_sensitive(can_rotate);
+    get_widget<Gtk::Scale>(_builder, "angleSlider").set_sensitive(can_rotate);
+
     // list not empty?
     if (index > 0) {
         select_stop(std::min(selected_stop_index, index - 1));
@@ -648,6 +686,4 @@ void GradientEditor::fire_stop_selected(SPStop* stop) {
     }
 }
 
-} // namespace Widget
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Widget

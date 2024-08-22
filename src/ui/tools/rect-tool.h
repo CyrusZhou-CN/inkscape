@@ -20,6 +20,7 @@
 #include <sigc++/sigc++.h>
 #include <2geom/point.h>
 #include "ui/tools/tool-base.h"
+#include "object/weakptr.h"
 
 class SPRect;
 
@@ -30,27 +31,29 @@ class Selection;
 namespace UI {
 namespace Tools {
 
-class RectTool : public ToolBase {
+class RectTool : public ToolBase
+{
 public:
     RectTool(SPDesktop *desktop);
     ~RectTool() override;
 
-	void set(const Inkscape::Preferences::Entry& val) override;
-	bool root_handler(GdkEvent* event) override;
-	bool item_handler(SPItem* item, GdkEvent* event) override;
+    void set(Preferences::Entry const &val) override;
+    bool root_handler(CanvasEvent const &event) override;
+    bool item_handler(SPItem *item, CanvasEvent const &event) override;
+
 private:
-	SPRect *rect;
+    SPWeakPtr<SPRect> rect;
 	Geom::Point center;
 
-  	gdouble rx;	/* roundness radius (x direction) */
-  	gdouble ry;	/* roundness radius (y direction) */
+    double rx;	/* roundness radius (x direction) */
+    double ry;	/* roundness radius (y direction) */
 
 	sigc::connection sel_changed_connection;
 
-	void drag(Geom::Point const pt, guint state);
+    void drag(Geom::Point const pt, unsigned state);
 	void finishItem();
 	void cancel();
-	void selection_changed(Inkscape::Selection* selection);
+    void selection_changed(Selection *selection);
 };
 
 }

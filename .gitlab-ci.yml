@@ -155,42 +155,62 @@ inkscape:macos:arm:
       - $CI_PROJECT_DIR/ccache
 
 
-inkscape:windows:x64: &windows_job
+.windows:
   stage: build
   tags:
-    - windows
-    - inkscape # differentiates our runner from shared runners
+    - shared-windows
   rules:
     - *do_not_run_for_schedules
-    # Windows runner is restricted to "inkscape" and "ede123" namespaces; only generate pipelines for those
-    - if: '$CI_PROJECT_NAMESPACE == "inkscape"'
-    - if: '$CI_PROJECT_NAMESPACE == "ede123"'
+    - *run_otherwise
   cache:
     key: "cache-windows"
     paths:
-      - build/ccache
-  variables:
-    PACMAN_OPTIONS: "--needed --noconfirm --noprogressbar --overwrite \\*"
-    MSYSTEM: MINGW64
-    # Workaround for failing CI (hopefully temporary)
-    # https://docs.gitlab.com/ee/ci/large_repositories/#git-clean-flags
-    GIT_CLEAN_FLAGS: -ffdx -e "build/dejavu-fonts-ttf-*.tar.bz2"
-  script:
-    - $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
-    - C:/msys64/usr/bin/bash -lc "buildtools/msys2build_GitLab.sh"
-  artifacts:
+      - ccache
     when: always
-    paths:
-      - build/inkscape*.7z
-      - build/inkscape*.exe
-      - build/inkscape*.msi
-      - build/testfiles.7z
+  variables:
+    MSYSTEM: MINGW64
+    CCACHE_DIR: $CI_PROJECT_DIR/ccache
+    CCACHE_MAXSIZE: "2.0G"
+    IDW_ARCHIVE: msys64.7z
+    IDW_RELEASE_TAG: r230618.1
+    IDW_RELEASE_URL: https://gitlab.com/api/v4/projects/46863172/packages/generic/windows/$IDW_RELEASE_TAG/$IDW_ARCHIVE
+  before_script:
+    - wget.exe --quiet --no-check-certificate $IDW_RELEASE_URL
+    - 7z x -oC:/ $IDW_ARCHIVE
 
-inkscape:windows:x86:
-  <<: *windows_job
+
+inkscape:windows:build:
+  extends: .windows
+  retry: 2
+  script:
+    - C:/msys64/msys2_shell.cmd -defterm -no-start -mingw64 -here -c "cmake -Bbuild -G Ninja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DWITH_INTERNAL_CAIRO=OFF"
+    - C:/msys64/msys2_shell.cmd -defterm -no-start -mingw64 -here -c "timeout -k 10s 70m ninja -C build"
+    - 7z a build.7z build
+  artifacts:
+    paths:
+      - build.7z
+
+
+inkscape:windows:dist:
+  extends: .windows
+  parallel:
+    matrix:
+      - DIST: [ "7z", "exe", "msi" ]
   rules:
-    # trigger 32-bit build via schedule only to save runner time (MSYSTEM overridden via schedule variable)
-    - if: $SCHEDULED_JOB_NAME == "windows_32bit"
+    - if: $DIST != "7z"
+      when: manual
+      allow_failure: true
+    - *run_otherwise
+  dependencies:
+    - inkscape:windows:build
+  needs:
+    - inkscape:windows:build
+  script:
+    - 7z x build.7z
+    - C:/msys64/msys2_shell.cmd -defterm -no-start -mingw64 -here -c "ninja -C build dist-win-${DIST}"
+  artifacts:
+    paths:
+      - build/inkscape*.${DIST}
 
 
 #tests, always run after building

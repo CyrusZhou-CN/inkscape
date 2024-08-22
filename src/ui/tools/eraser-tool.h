@@ -52,8 +52,8 @@ struct EraseTarget
     inline bool operator==(EraseTarget const &other) const noexcept { return item == other.item; }
 };
 
-class EraserTool : public DynamicBase {
-
+class EraserTool : public DynamicBase
+{
 private:
     // non-static data:
     EraserToolMode mode = DEFAULT_ERASER_MODE;
@@ -90,7 +90,7 @@ public:
     // public member functions
     EraserTool(SPDesktop *desktop);
     ~EraserTool() override;
-    bool root_handler(GdkEvent *event) final;
+    bool root_handler(CanvasEvent const &event) final;
 
     using Error = std::uint64_t;
     static constexpr Error ALL_GOOD     = 0x0;

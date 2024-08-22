@@ -22,7 +22,7 @@ namespace UI {
 namespace Widget {
 
 PageSizePreview::PageSizePreview() {
-    show();
+    set_visible(true);
 }
 
 void rounded_rectangle(const Cairo::RefPtr<Cairo::Context>& cr, double x, double y, double w, double h, double r) {

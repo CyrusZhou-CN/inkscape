@@ -266,11 +266,6 @@ void SPMask::setBBox(unsigned key, Geom::OptRect const &bbox)
     update_view(v);
 }
 
-SPMask::View::View(DrawingItemPtr<Inkscape::DrawingGroup> drawingitem, Geom::OptRect const &bbox, unsigned key)
-    : drawingitem(std::move(drawingitem))
-    , bbox(bbox)
-    , key(key) {}
-
 bool SPMaskReference::_acceptObject(SPObject *obj) const
 {
     if (!is<SPMask>(obj)) {

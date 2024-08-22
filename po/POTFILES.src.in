@@ -1,9 +1,9 @@
-${CMAKE_BINARY_DIR}/share/filters/filters.svg.h
-${CMAKE_BINARY_DIR}/share/markers/markers.svg.h
-${CMAKE_BINARY_DIR}/share/palettes/palettes.h
-${CMAKE_BINARY_DIR}/share/paint/patterns.svg.h
-${CMAKE_BINARY_DIR}/share/symbols/symbols.h
-${CMAKE_BINARY_DIR}/share/templates/templates.h
+${_build_dir}/share/filters/filters.svg.h
+${_build_dir}/share/markers/markers.svg.h
+${_build_dir}/share/palettes/palettes.h
+${_build_dir}/share/paint/patterns.svg.h
+${_build_dir}/share/symbols/symbols.h
+${_build_dir}/share/templates/templates.h
 ../src/actions/actions-base.cpp
 ../src/actions/actions-canvas-mode.cpp
 ../src/actions/actions-canvas-snapping.cpp
@@ -40,6 +40,7 @@ ${CMAKE_BINARY_DIR}/share/templates/templates.h
 ../src/actions/actions-view-window.cpp
 ../src/actions/actions-window.cpp
 ../src/auto-save.cpp
+../src/color/cms-util.cpp
 ../src/context-fns.cpp
 ../src/desktop-events.cpp
 ../src/desktop-style.cpp
@@ -224,7 +225,6 @@ ${CMAKE_BINARY_DIR}/share/templates/templates.h
 ../src/live_effects/parameter/unit.cpp
 ../src/live_effects/parameter/vector.cpp
 ../src/object/box3d.cpp
-../src/object/color-profile.cpp
 ../src/object/persp3d.cpp
 ../src/object/sp-anchor.cpp
 ../src/object/sp-ellipse.cpp
@@ -251,6 +251,7 @@ ${CMAKE_BINARY_DIR}/share/templates/templates.h
 ../src/object/sp-tref.cpp
 ../src/object/sp-tspan.cpp
 ../src/object/sp-use.cpp
+../src/page-manager.cpp
 ../src/path-chemistry.cpp
 ../src/path/path-boolop.cpp
 ../src/path/path-object-set.cpp
@@ -288,6 +289,7 @@ ${CMAKE_BINARY_DIR}/share/templates/templates.h
 ../src/ui/dialog/export-batch.cpp
 ../src/ui/dialog/export-single.cpp
 ../src/ui/dialog/export.cpp
+../src/ui/dialog/extensions-gallery.cpp
 ../src/ui/dialog/filedialogimpl-gtkmm.cpp
 ../src/ui/dialog/filedialogimpl-win32.cpp
 ../src/ui/dialog/fill-and-stroke.cpp
@@ -300,7 +302,6 @@ ${CMAKE_BINARY_DIR}/share/templates/templates.h
 ../src/ui/dialog/guides.cpp
 ../src/ui/dialog/icon-preview.cpp
 ../src/ui/dialog/inkscape-preferences.cpp
-../src/ui/dialog/input.cpp
 ../src/ui/dialog/knot-properties.cpp
 ../src/ui/dialog/layer-properties.cpp
 ../src/ui/dialog/livepatheffect-add.cpp
@@ -361,6 +362,8 @@ ${CMAKE_BINARY_DIR}/share/templates/templates.h
 ../src/ui/toolbar/spray-toolbar.cpp
 ../src/ui/toolbar/star-toolbar.cpp
 ../src/ui/toolbar/text-toolbar.cpp
+../src/ui/toolbar/tool-toolbar.cpp
+../src/ui/toolbar/toolbars.cpp
 ../src/ui/toolbar/tweak-toolbar.cpp
 ../src/ui/tools/arc-tool.cpp
 ../src/ui/tools/booleans-tool.cpp
@@ -423,6 +426,7 @@ ${CMAKE_BINARY_DIR}/share/templates/templates.h
 ../src/ui/widget/stroke-style.cpp
 ../src/ui/widget/style-swatch.cpp
 ../src/ui/widget/swatch-selector.cpp
+../src/ui/widget/template-list.cpp
 ../src/util/enums.h
 ../src/util/font-collections.h
 ../src/util/paper.cpp
@@ -430,4 +434,3 @@ ${CMAKE_BINARY_DIR}/share/templates/templates.h
 ../src/widgets/desktop-widget.cpp
 ../src/widgets/paintdef.cpp
 ../src/widgets/sp-attribute-widget.cpp
-../src/widgets/toolbox.cpp

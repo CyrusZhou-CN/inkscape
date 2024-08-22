@@ -317,13 +317,13 @@ Find::Find()
     expander_options.set_use_underline();
     expander_options.add(vbox_expander);
 
-    box_buttons.set_layout(Gtk::BUTTONBOX_END);
     box_buttons.set_spacing(6);
-    box_buttons.pack_start(button_find, true, true);
-    box_buttons.pack_start(button_replace, true, true);
+    box_buttons.set_homogeneous(true);
+    box_buttons.pack_end(button_replace, false, true);
+    box_buttons.pack_end(button_find, false, true);
     hboxbutton_row.set_spacing(6);
     hboxbutton_row.pack_start(status, true, true);
-    hboxbutton_row.pack_end(box_buttons, true, true);
+    hboxbutton_row.pack_end(box_buttons, false, true);
 
     set_spacing(6);
     pack_start(entry_find, false, false);

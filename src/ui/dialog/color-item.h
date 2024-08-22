@@ -10,13 +10,20 @@
 #ifndef INKSCAPE_UI_DIALOG_COLOR_ITEM_H
 #define INKSCAPE_UI_DIALOG_COLOR_ITEM_H
 
-#include <boost/variant.hpp> // TODO: Upgrade to boost::variant2 or std::variant when possible.
+#include <variant>
 #include <boost/noncopyable.hpp>
 #include <cairomm/cairomm.h>
+#include <glibmm/refptr.h>
+#include <gtk/gtk.h> // GtkEventControllerMotion
 #include <gtkmm/drawingarea.h>
+#include <gtkmm/gesture.h> // Gtk::EventSequenceState
 
 #include "inkscape-preferences.h"
 #include "widgets/paintdef.h"
+
+namespace Gtk {
+class GestureMultiPress;
+}
 
 class SPGradient;
 
@@ -61,10 +68,6 @@ public:
 protected:
     bool on_draw(Cairo::RefPtr<Cairo::Context> const&) override;
     void on_size_allocate(Gtk::Allocation&) override;
-    bool on_enter_notify_event(GdkEventCrossing*) override;
-    bool on_leave_notify_event(GdkEventCrossing*) override;
-    bool on_button_press_event(GdkEventButton*) override;
-    bool on_button_release_event(GdkEventButton*) override;
     void on_drag_data_get(Glib::RefPtr<Gdk::DragContext> const &context, Gtk::SelectionData &selection_data, guint info, guint time) override;
     void on_drag_begin(Glib::RefPtr<Gdk::DragContext> const&) override;
 
@@ -72,11 +75,20 @@ private:
     // Common post-construction setup.
     void common_setup();
 
+    void on_motion_enter(GtkEventControllerMotion const *motion,
+                         double x, double y);
+    void on_motion_leave(GtkEventControllerMotion const *motion);
+
+    Gtk::EventSequenceState on_click_pressed (Gtk::GestureMultiPress const &click,
+                                              int n_press, double x, double y);
+    Gtk::EventSequenceState on_click_released(Gtk::GestureMultiPress const &click,
+                                              int n_press, double x, double y);
+
     // Perform the on-click action of setting the fill or stroke.
     void on_click(bool stroke);
 
     // Perform the right-click action of showing the context menu.
-    void on_rightclick(GdkEventButton *event);
+    void on_rightclick(GdkEvent const *event);
 
     // Draw the color only (i.e. no indicators) to a Cairo context. Used for drawing both the widget and the drag/drop icon.
     void draw_color(Cairo::RefPtr<Cairo::Context> const &cr, int w, int h) const;
@@ -96,10 +108,9 @@ private:
     bool pinned_default = false;
 
     // The color.
-    struct NoneData {};
     struct RGBData { std::array<unsigned, 3> rgb; };
     struct GradientData { SPGradient *gradient; };
-    boost::variant<NoneData, RGBData, GradientData> data;
+    std::variant<std::monostate, RGBData, GradientData> data;
 
     // The dialog this widget belongs to. Used for determining what desktop to take action on.
     DialogBase *dialog;
@@ -125,3 +136,14 @@ private:
 } // namespace Inkscape
 
 #endif // INKSCAPE_UI_DIALOG_COLOR_ITEM_H
+
+/*
+  Local Variables:
+  mode:c++
+  c-file-style:"stroustrup"
+  c-file-offsets:((innamespace . 0)(inline-open . 0)(case-label . +))
+  indent-tabs-mode:nil
+  fill-column:99
+  End:
+*/
+// vim: filetype=cpp:expandtab:shiftwidth=4:tabstop=8:softtabstop=4:fileencoding=utf-8:textwidth=99 :

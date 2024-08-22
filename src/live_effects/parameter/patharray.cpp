@@ -120,7 +120,7 @@ void PathArrayParam::initui()
 
         _tree->set_expander_column(*_tree->get_column(nameColNum) );
         _tree->set_search_column(_model->_colLabel);
-        _scroller = Gtk::manage(new Gtk::ScrolledWindow());
+        _scroller = Gtk::make_managed<Gtk::ScrolledWindow>();
         //quick little hack -- newer versions of gtk gave the item zero space allotment
         _scroller->set_size_request(-1, 120);
 
@@ -158,8 +158,8 @@ void PathArrayParam::param_set_default() {}
 Gtk::Widget *PathArrayParam::param_newWidget()
 {
     
-    Gtk::Box* vbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL));
-    Gtk::Box* hbox = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_HORIZONTAL));
+    auto const vbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    auto const hbox = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
     _tree = nullptr;
     _model = nullptr;
     _scroller = nullptr;
@@ -169,11 +169,11 @@ Gtk::Widget *PathArrayParam::param_newWidget()
     
     { // Paste path to link button
         Gtk::Image *pIcon = Gtk::manage(sp_get_icon_image("edit-clone", Gtk::ICON_SIZE_BUTTON));
-        Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
+        auto const pButton = Gtk::make_managed<Gtk::Button>();
         pButton->set_relief(Gtk::RELIEF_NONE);
-        pIcon->show();
+        pIcon->set_visible(true);
         pButton->add(*pIcon);
-        pButton->show();
+        pButton->set_visible(true);
         pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathArrayParam::on_link_button_click));
         hbox->pack_start(*pButton, Gtk::PACK_SHRINK);
         pButton->set_tooltip_text(_("Link to path in clipboard"));
@@ -181,11 +181,11 @@ Gtk::Widget *PathArrayParam::param_newWidget()
     
     { // Remove linked path
         Gtk::Image *pIcon = Gtk::manage(sp_get_icon_image("list-remove", Gtk::ICON_SIZE_BUTTON));
-        Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
+        auto const pButton = Gtk::make_managed<Gtk::Button>();
         pButton->set_relief(Gtk::RELIEF_NONE);
-        pIcon->show();
+        pIcon->set_visible(true);
         pButton->add(*pIcon);
-        pButton->show();
+        pButton->set_visible(true);
         pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathArrayParam::on_remove_button_click));
         hbox->pack_start(*pButton, Gtk::PACK_SHRINK);
         pButton->set_tooltip_text(_("Remove Path"));
@@ -193,11 +193,11 @@ Gtk::Widget *PathArrayParam::param_newWidget()
     
     { // Move Down
         Gtk::Image *pIcon = Gtk::manage(sp_get_icon_image("go-down", Gtk::ICON_SIZE_BUTTON));
-        Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
+        auto const pButton = Gtk::make_managed<Gtk::Button>();
         pButton->set_relief(Gtk::RELIEF_NONE);
-        pIcon->show();
+        pIcon->set_visible(true);
         pButton->add(*pIcon);
-        pButton->show();
+        pButton->set_visible(true);
         pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathArrayParam::on_down_button_click));
         hbox->pack_end(*pButton, Gtk::PACK_SHRINK);
         pButton->set_tooltip_text(_("Move Down"));
@@ -205,11 +205,11 @@ Gtk::Widget *PathArrayParam::param_newWidget()
     
     { // Move Down
         Gtk::Image *pIcon = Gtk::manage(sp_get_icon_image("go-up", Gtk::ICON_SIZE_BUTTON));
-        Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
+        auto const pButton = Gtk::make_managed<Gtk::Button>();
         pButton->set_relief(Gtk::RELIEF_NONE);
-        pIcon->show();
+        pIcon->set_visible(true);
         pButton->add(*pIcon);
-        pButton->show();
+        pButton->set_visible(true);
         pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathArrayParam::on_up_button_click));
         hbox->pack_end(*pButton, Gtk::PACK_SHRINK);
         pButton->set_tooltip_text(_("Move Up"));
@@ -262,7 +262,7 @@ void PathArrayParam::on_up_button_click()
         }
         param_write_to_repr(param_getSVGValue().c_str());
         param_effect->makeUndoDone(_("Move path up"));
-        _store->foreach_iter(sigc::bind<int *>(sigc::mem_fun(*this, &PathArrayParam::_selectIndex), &i));
+        _store->foreach_iter(sigc::bind(sigc::mem_fun(*this, &PathArrayParam::_selectIndex), &i));
     }
 }
 
@@ -286,7 +286,7 @@ void PathArrayParam::on_down_button_click()
         }
         param_write_to_repr(param_getSVGValue().c_str());
         param_effect->makeUndoDone(_("Move path down"));
-        _store->foreach_iter(sigc::bind<int *>(sigc::mem_fun(*this, &PathArrayParam::_selectIndex), &i));
+        _store->foreach_iter(sigc::bind(sigc::mem_fun(*this, &PathArrayParam::_selectIndex), &i));
     }
 }
 
@@ -389,16 +389,16 @@ void PathArrayParam::linked_changed(SPObject * /*old_obj*/, SPObject *new_obj, P
         if (new_obj && is<SPItem>(new_obj)) {
             to->linked_release_connection.disconnect();
             to->linked_release_connection = new_obj->connectRelease(
-                sigc::bind<PathAndDirectionAndVisible *>(sigc::mem_fun(*this, &PathArrayParam::linked_release), to));
+                sigc::bind(sigc::mem_fun(*this, &PathArrayParam::linked_release), to));
             to->linked_modified_connection = new_obj->connectModified(
-                sigc::bind<PathAndDirectionAndVisible *>(sigc::mem_fun(*this, &PathArrayParam::linked_modified), to));
+                sigc::bind(sigc::mem_fun(*this, &PathArrayParam::linked_modified), to));
 
             linked_modified(new_obj, SP_OBJECT_MODIFIED_FLAG, to);
         } else if (to->linked_release_connection.connected()){
             param_effect->getLPEObj()->requestModified(SP_OBJECT_MODIFIED_FLAG);
             if (_store.get()) {
                 _store->foreach_iter(
-                    sigc::bind<PathAndDirectionAndVisible *>(sigc::mem_fun(*this, &PathArrayParam::_updateLink), to));
+                    sigc::bind(sigc::mem_fun(*this, &PathArrayParam::_updateLink), to));
             }
         }
     }  
@@ -474,7 +474,7 @@ void PathArrayParam::linked_modified(SPObject *linked_obj, guint flags, PathAndD
         }
         if (_store.get()) {
             _store->foreach_iter(
-                sigc::bind<PathAndDirectionAndVisible *>(sigc::mem_fun(*this, &PathArrayParam::_updateLink), to));
+                sigc::bind(sigc::mem_fun(*this, &PathArrayParam::_updateLink), to));
         }
     }
 }
@@ -513,7 +513,7 @@ bool PathArrayParam::param_readSVGValue(const gchar *strvalue)
                 //Like this to make backwards compatible, new value added in 0.93
                 w->visibled = *(substrarray+2) == nullptr || (*(substrarray+2))[0] == '1';
                 w->linked_changed_connection = w->ref.changedSignal().connect(
-                    sigc::bind<PathAndDirectionAndVisible *>(sigc::mem_fun(*this, &PathArrayParam::linked_changed), w));
+                    sigc::bind(sigc::mem_fun(*this, &PathArrayParam::linked_changed), w));
                 w->ref.attach(URI(w->href));
 
                 _vector.push_back(w);

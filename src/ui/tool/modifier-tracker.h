@@ -9,18 +9,18 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_UI_TOOL_MODIFIER_TRACKER_H
-#define SEEN_UI_TOOL_MODIFIER_TRACKER_H
+#ifndef INKSCAPE_UI_TOOL_MODIFIER_TRACKER_H
+#define INKSCAPE_UI_TOOL_MODIFIER_TRACKER_H
 
-#include <gdk/gdk.h>
+namespace Inkscape { class CanvasEvent; }
+namespace Inkscape::UI {
 
-namespace Inkscape {
-namespace UI {
-
-class ModifierTracker {
+class ModifierTracker
+{
 public:
-    ModifierTracker();
-    bool event(GdkEvent *);
+    ModifierTracker() = default;
+
+    void event(CanvasEvent const &event);
 
     bool leftShift() const { return _left_shift; }
     bool rightShift() const { return _right_shift; }
@@ -30,18 +30,17 @@ public:
     bool rightAlt() const { return _right_alt; }
 
 private:
-    bool _left_shift;
-    bool _right_shift;
-    bool _left_ctrl;
-    bool _right_ctrl;
-    bool _left_alt;
-    bool _right_alt;
+    bool _left_shift = false;
+    bool _right_shift = false;
+    bool _left_ctrl = false;
+    bool _right_ctrl = false;
+    bool _left_alt = false;
+    bool _right_alt = false;
 };
 
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI
 
-#endif // SEEN_UI_TOOL_MODIFIER_TRACKER_H
+#endif // INKSCAPE_UI_TOOL_MODIFIER_TRACKER_H
 
 /*
   Local Variables:

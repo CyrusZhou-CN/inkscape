@@ -9,8 +9,8 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_UI_TOOL_PATH_MANIPULATOR_H
-#define SEEN_UI_TOOL_PATH_MANIPULATOR_H
+#ifndef INKSCAPE_UI_TOOL_PATH_MANIPULATOR_H
+#define INKSCAPE_UI_TOOL_PATH_MANIPULATOR_H
 
 #include <string>
 #include <memory>
@@ -19,10 +19,8 @@
 #include <2geom/affine.h>
 #include "ui/tool/node.h"
 #include "ui/tool/manipulator.h"
-#include "live_effects/lpe-bspline.h"
 #include "display/curve.h"
 
-struct SPCanvasItem;
 class SPCurve;
 class SPPath;
 
@@ -43,13 +41,15 @@ class MultiPathManipulator;
 class Node;
 class Handle;
 
-struct PathSharedData {
+struct PathSharedData
+{
     NodeSharedData node_data;
     Inkscape::CanvasItemGroup *outline_group;
     Inkscape::CanvasItemGroup *dragpoint_group;
 };
 
-enum class NodeDeleteMode {
+enum class NodeDeleteMode
+{
     automatic,    // try to preserve shape if deleted nodes do not form sharp corners
     inverse_auto, // opposite of what automatic mode would do
     curve_fit,    // preserve shape
@@ -61,14 +61,15 @@ enum class NodeDeleteMode {
  * Currently only cubic bezier and linear segments are supported, but this might change
  * some time in the future.
  */
-class PathManipulator : public PointManipulator {
+class PathManipulator : public PointManipulator
+{
 public:
-    typedef SPPath *ItemType;
+    using ItemType = SPPath*;
 
     PathManipulator(MultiPathManipulator &mpm, SPObject *path, Geom::Affine const &edit_trans,
-        guint32 outline_color, Glib::ustring lpe_key);
+        uint32_t outline_color, Glib::ustring lpe_key);
     ~PathManipulator() override;
-    bool event(Inkscape::UI::Tools::ToolBase *, GdkEvent *) override;
+    bool event(Inkscape::UI::Tools::ToolBase *tool, CanvasEvent const &event) override;
 
     bool empty();
     void writeXML();
@@ -109,16 +110,17 @@ public:
 
     NodeList::iterator subdivideSegment(NodeList::iterator after, double t);
     NodeList::iterator extremeNode(NodeList::iterator origin, bool search_selected,
-        bool search_unselected, bool closest);
+    bool search_unselected, bool closest);
 
     int _bsplineGetSteps() const;
     // this is necessary for Tab-selection in MultiPathManipulator
     SubpathList &subpathList() { return _subpaths; }
 
     static bool is_item_type(void *item);
+
 private:
-    typedef NodeList Subpath;
-    typedef std::shared_ptr<NodeList> SubpathPtr;
+    using Subpath = NodeList;
+    using SubpathPtr = std::shared_ptr<NodeList>;
 
     void _createControlPointsFromGeometry();
 
@@ -136,12 +138,13 @@ private:
     void _setGeometry();
     Glib::ustring _nodetypesKey();
     Inkscape::XML::Node *_getXMLNode();
+    Geom::Affine _getTransform() const;
 
     void _selectionChangedM(std::vector<SelectableControlPoint *> pvec, bool selected);
     void _selectionChanged(SelectableControlPoint * p, bool selected);
-    bool _nodeClicked(Node *, GdkEventButton *);
+    bool _nodeClicked(Node *, ButtonReleaseEvent const &);
     void _handleGrabbed();
-    bool _handleClicked(Handle *, GdkEventButton *);
+    bool _handleClicked(Handle *, ButtonReleaseEvent const &);
     void _handleUngrabbed();
 
     void _externalChange(unsigned type);
@@ -180,7 +183,7 @@ private:
 } // namespace UI
 } // namespace Inkscape
 
-#endif
+#endif // INKSCAPE_UI_TOOL_PATH_MANIPULATOR_H
 
 /*
   Local Variables:

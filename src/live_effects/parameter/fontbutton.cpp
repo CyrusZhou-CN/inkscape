@@ -69,17 +69,16 @@ FontButtonParam::param_getDefaultSVGValue() const
 Gtk::Widget *
 FontButtonParam::param_newWidget()
 {
-    Inkscape::UI::Widget::RegisteredFontButton * fontbuttonwdg = Gtk::manage(
-        new Inkscape::UI::Widget::RegisteredFontButton( param_label,
-                                                        param_tooltip,
-                                                        param_key,
-                                                        *param_wr,
-                                                        param_effect->getRepr(),
-                                                        param_effect->getSPDoc() ) );
+    auto const fontbuttonwdg = Gtk::make_managed<UI::Widget::RegisteredFontButton>( param_label,
+                                                                                    param_tooltip,
+                                                                                    param_key,
+                                                                                   *param_wr,
+                                                                                    param_effect->getRepr(),
+                                                                                    param_effect->getSPDoc() );
     Glib::ustring fontspec = param_getSVGValue();
     fontbuttonwdg->setValue( fontspec);
     fontbuttonwdg->set_undo_parameters(_("Change font button parameter"), INKSCAPE_ICON("dialog-path-effects"));
-    return dynamic_cast<Gtk::Widget *> (fontbuttonwdg);
+    return fontbuttonwdg;
 }
 
 void

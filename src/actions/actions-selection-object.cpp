@@ -173,21 +173,21 @@ add_actions_selection_object(InkscapeApplication* app)
 
     // clang-format off
     // See actions-layer.cpp for "enter-group" and "exit-group".
-    gapp->add_action( "selection-group",              sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&select_object_group),           app));
-    gapp->add_action( "selection-ungroup",            sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&select_object_ungroup),         app));
-    gapp->add_action( "selection-ungroup-pop",        sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&select_object_ungroup_pop),     app));
-    gapp->add_action( "selection-link",               sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&select_object_link),            app));
+    gapp->add_action( "selection-group",              sigc::bind(sigc::ptr_fun(&select_object_group),           app));
+    gapp->add_action( "selection-ungroup",            sigc::bind(sigc::ptr_fun(&select_object_ungroup),         app));
+    gapp->add_action( "selection-ungroup-pop",        sigc::bind(sigc::ptr_fun(&select_object_ungroup_pop),     app));
+    gapp->add_action( "selection-link",               sigc::bind(sigc::ptr_fun(&select_object_link),            app));
 
-    gapp->add_action( "selection-top",                sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&selection_top),                 app));
-    gapp->add_action( "selection-raise",              sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&selection_raise),               app));
-    gapp->add_action( "selection-lower",              sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&selection_lower),               app));
-    gapp->add_action( "selection-bottom",             sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&selection_bottom),              app));
+    gapp->add_action( "selection-top",                sigc::bind(sigc::ptr_fun(&selection_top),                 app));
+    gapp->add_action( "selection-raise",              sigc::bind(sigc::ptr_fun(&selection_raise),               app));
+    gapp->add_action( "selection-lower",              sigc::bind(sigc::ptr_fun(&selection_lower),               app));
+    gapp->add_action( "selection-bottom",             sigc::bind(sigc::ptr_fun(&selection_bottom),              app));
 
-    gapp->add_action( "selection-stack-up",           sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&selection_stack_up),            app));
-    gapp->add_action( "selection-stack-down",         sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&selection_stack_down),          app));
+    gapp->add_action( "selection-stack-up",           sigc::bind(sigc::ptr_fun(&selection_stack_up),            app));
+    gapp->add_action( "selection-stack-down",         sigc::bind(sigc::ptr_fun(&selection_stack_down),          app));
 
-    gapp->add_action( "selection-make-bitmap-copy",   sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&selection_make_bitmap_copy),    app));
-    gapp->add_action( "page-fit-to-selection",        sigc::bind<InkscapeApplication*>(sigc::ptr_fun(&page_fit_to_selection),         app));
+    gapp->add_action( "selection-make-bitmap-copy",   sigc::bind(sigc::ptr_fun(&selection_make_bitmap_copy),    app));
+    gapp->add_action( "page-fit-to-selection",        sigc::bind(sigc::ptr_fun(&page_fit_to_selection),         app));
     // clang-format on
 
     app->get_action_extra_data().add_data(raw_data_selection_object);

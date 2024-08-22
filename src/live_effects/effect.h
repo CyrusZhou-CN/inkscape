@@ -1,6 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef INKSCAPE_LIVEPATHEFFECT_H
-#define INKSCAPE_LIVEPATHEFFECT_H
 
 /*
  * Copyright (C) Johan Engelen 2007-2012 <j.b.c.engelen@alumnus.utwente.nl>
@@ -8,15 +6,15 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#ifndef INKSCAPE_LIVEPATHEFFECT_H
+#define INKSCAPE_LIVEPATHEFFECT_H
+
 #include "effect-enum.h"
 #include "parameter/bool.h"
 #include "parameter/hidden.h"
 #include "ui/widget/registry.h"
 #include <2geom/forward.h>
 #include <glibmm/ustring.h>
-#include <gtkmm/eventbox.h>
-#include <gtkmm/expander.h>
-
 
 #define  LPE_CONVERSION_TOLERANCE 0.01    // FIXME: find good solution for this.
 
@@ -218,7 +216,7 @@ private:
 } //namespace LivePathEffect
 } //namespace Inkscape
 
-#endif
+#endif // INKSCAPE_LIVEPATHEFFECT_H
 
 /*
   Local Variables:

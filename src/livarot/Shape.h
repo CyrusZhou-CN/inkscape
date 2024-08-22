@@ -47,12 +47,9 @@ enum {
 enum
 {
   shape_graph = 0,                // it's just a graph; a bunch of edges, maybe intersections
-  shape_polygon = 1,                // a polygon: intersection-free, edges oriented so that the inside is on their left
-  shape_polypatch = 2                // a graph without intersection; each face is a polygon (not yet used)
+  shape_polygon = 1               // a polygon: intersection-free, edges oriented so that the inside is on their left
 };
 
-class BitLigne;
-class AlphaLigne;
 
 /**
  * A class to store/manipulate directed graphs.
@@ -68,7 +65,6 @@ class AlphaLigne;
 class Shape
 {
 public:
-
     /**
      * A structure to store back data for an edge.
      */
@@ -78,28 +74,6 @@ public:
         int pieceID; /*!< The path command to which this edge belongs to in the original Path object. */
         double tSt;  /*!< Time value in that path command for this edge's start point. */
         double tEn;  /*!< Time value in that path command for this edge's end point. */
-    };
-    
-    struct voronoi_point
-    {                                // info for points treated as points of a voronoi diagram (obtained by MakeShape())
-        double value;                // distance to source
-        int winding;                // winding relatively to source
-    };
-    
-    struct voronoi_edge
-    {                                // info for edges, treated as approximation of edges of the voronoi diagram
-        int leF, riF;                // left and right site
-        double leStX, leStY, riStX, riStY;        // on the left side: (leStX,leStY) is the smallest vector from the source to st
-        // etc...
-        double leEnX, leEnY, riEnX, riEnY;
-    };
-
-    struct quick_raster_data
-    {
-        double x;                            // x-position on the sweepline
-        int    bord;                        // index of the edge
-        int    ind;       // index of qrsData elem for edge (ie inverse of the bord)
-        int    next,prev; // dbl linkage
     };
 
     /**
@@ -138,10 +112,9 @@ public:
     };
     
     Shape();
-    virtual ~Shape();
+    ~Shape();
 
     void MakeBackData(bool nVal);
-    void MakeVoronoiData(bool nVal);
 
     void Affiche();
 
@@ -318,12 +291,10 @@ public:
      * @param[out] dest Pointer to the path where the extracted contours will be stored.
      * @param nbP Number of paths that were originally fed to the directed graph with Path::Fill.
      * @param orig An array of pointers to Path, one Path object for each path id in the graph.
-     * @param splitWhenForced TODO: Figure this out.
      */
-    void ConvertToForme(Path *dest, int nbP, Path **orig, bool splitWhenForced = false);
+    void ConvertToForme(Path *dest, int nbP, Path *const *orig, bool never_split = false);
     // version trying to recover the nesting of subpaths (ie: holes)
-    void ConvertToFormeNested(Path *dest, int nbP, Path **orig, int wildPath, int &nbNest,
-                              int *&nesting, int *&contStart, bool splitWhenForced = false);
+    void ConvertToFormeNested(Path *dest, int nbP, Path *const *orig, int &nbNest, int *&nesting, int *&contStart, bool never_split = false);
   
     // sweeping a digraph to produce a intersection-free polygon
     // return 0 if everything is ok and a return code otherwise (see LivarotDefs.h)
@@ -441,33 +412,15 @@ public:
     // rasterization
     void BeginRaster(float &pos, int &curPt);
     void EndRaster();
-    void BeginQuickRaster(float &pos, int &curPt);
-    void EndQuickRaster();
   
     void Scan(float &pos, int &curP, float to, float step);
-    void QuickScan(float &pos, int &curP, float to, bool doSort, float step);
-    void DirectScan(float &pos, int &curP, float to, float step);
-    void DirectQuickScan(float &pos, int &curP, float to, bool doSort, float step);
 
     void Scan(float &pos, int &curP, float to, FloatLigne *line, bool exact, float step);
-    void Scan(float &pos, int &curP, float to, FillRule directed, BitLigne *line, bool exact, float step);
-    void Scan(float &pos, int &curP, float to, AlphaLigne *line, bool exact, float step);
-
-    void QuickScan(float &pos, int &curP, float to, FloatLigne* line, float step);
-    void QuickScan(float &pos, int &curP, float to, FillRule directed, BitLigne* line, float step);
-    void QuickScan(float &pos, int &curP, float to, AlphaLigne* line, float step);
 
     void Transform(Geom::Affine const &tr)
         {for(auto & _pt : _pts) _pt.x*=tr;}
 
     std::vector<back_data> ebData;        /*!< Stores the back data for each edge. */
-    std::vector<voronoi_point> vorpData;
-    std::vector<voronoi_edge> voreData;
-
-    int nbQRas;
-    int firstQRas;
-    int lastQRas;
-    quick_raster_data *qrsData;
 
     std::vector<sTreeChange> chgts;    /*!< An array to store all the changes that happen to a sweepline within a y value */
     int nbInc;
@@ -619,7 +572,7 @@ private:
     
     struct sweep_src_data
     {
-        void *misc;                        // pointer to the SweepTree* in the sweepline
+        SweepTree *misc;             // pointer to the SweepTree* in the sweepline
         int firstLinkedPoint;        // not used
         int stPt, enPt;                // start- end end- points for this edge in the resulting polygon
         int ind;                        // for the GetAdjacencies function: index in the sliceSegs array (for quick deletions)
@@ -635,7 +588,7 @@ private:
     
     struct sweep_dest_data
     {
-        void *misc;                        // used to check if an edge has already been seen during the depth-first search
+        int misc;                        // used to check if an edge has already been seen during the depth-first search
         int suivParc, precParc;        // previous and current next edge in the depth-first search
         int leW, riW;                // left and right winding numbers for this edge
         int ind;                        // order of the edges during the depth-first search
@@ -654,14 +607,13 @@ private:
     };
     
     /**
-     * Extra data for points used at various ocassions.
+     * Extra data for points used at various occasions.
      */
     struct point_data
     {
         int oldInd, newInd;                // back and forth indices used when sorting the points, to know where they have
         // been relocated in the array
         int pending;                // number of intersection attached to this edge, and also used when sorting arrays
-        int edgeOnLeft;                // not used (should help speeding up winding calculations)
         int nextLinkedPoint;        // not used
         Shape *askForWindingS;
         int askForWindingB;
@@ -718,7 +670,6 @@ private:
     void MakeSweepDestData(bool nVal);
 
     void MakeRasterData(bool nVal);
-    void MakeQuickRasterData(bool nVal);
 
     /**
      * Sort the points
@@ -1098,37 +1049,25 @@ private:
     void AvanceEdge(int no, float to, bool exact, float step);
     void DestroyEdge(int no, float to, FloatLigne *line);
     void AvanceEdge(int no, float to, FloatLigne *line, bool exact, float step);
-    void DestroyEdge(int no, BitLigne *line);
-    void AvanceEdge(int no, float to, BitLigne *line, bool exact, float step);
-    void DestroyEdge(int no, AlphaLigne *line);
-    void AvanceEdge(int no, float to, AlphaLigne *line, bool exact, float step);
   
     /**
      * Add a contour.
      *
      * @param dest The pointer to the Path object where we want to add contours.
-     * @param nbP  The total number of path object points in the array orig.
+     * @param num_orig The total number of path object points in the array orig.
      * @param orig A pointer of Path object pointers. These are the original Path objects which were used to fill the directed graph.
-     * @param startBord The first edge in the contour.
-     * @param curBord The last edge in the contour.
-     * @param splitWhenForced  TODO: No idea what it does. We never use ForcedPoints in Inkscape so doesn't matter I think.
+     * @param start_edge The first edge in the contour.
+     * @param never_split Always coalesce pieces that come from the same original path, and don't insert forced points.
      */
-    void AddContour(Path * dest, int nbP, Path **orig, int startBord,
-                   int curBord, bool splitWhenForced);
+    void AddContour(Path *dest, int num_orig, Path *const *orig, int start_edge, bool never_split = false);
 
-    int ReFormeLineTo(int bord, int curBord, Path *dest, Path *orig);
-    int ReFormeArcTo(int bord, int curBord, Path *dest, Path *orig);
-    int ReFormeCubicTo(int bord, int curBord, Path *dest, Path *orig);
-    int ReFormeBezierTo(int bord, int curBord, Path *dest, Path *orig);
+    int ReFormeLineTo(int bord, Path *dest, bool never_split);
+    int ReFormeArcTo(int bord, Path *dest, Path *orig, bool never_split);
+    int ReFormeCubicTo(int bord, Path *dest, Path *orig, bool never_split);
+    int ReFormeBezierTo(int bord, Path *dest, Path *orig);
     void ReFormeBezierChunk(const Geom::Point px, const Geom::Point nx,
                             Path *dest, int inBezier, int nbInterm,
                             Path *from, int p, double ts, double te);
-
-    int QuickRasterChgEdge(int oBord, int nbord, double x);
-    int QuickRasterAddEdge(int bord, double x, int guess);
-    void QuickRasterSubEdge(int bord);
-    void QuickRasterSwapEdge(int a, int b);
-    void QuickRasterSort();
 
     bool _need_points_sorting;  ///< points have been added or removed: we need to sort the points again
     bool _need_edges_sorting;   ///< edges have been added: maybe they are not ordered clockwise
@@ -1139,9 +1078,7 @@ private:
     bool _has_sweep_src_data;   ///< the swsData array is allocated
     bool _has_sweep_dest_data;  ///< the swdData array is allocated
     bool _has_raster_data;      ///< the swrData array is allocated
-    bool _has_quick_raster_data;///< the swrData array is allocated
     bool _has_back_data;        //< the ebData array is allocated
-    bool _has_voronoi_data;
     bool _bbox_up_to_date;      ///< the leftX/rightX/topY/bottomY are up to date
 
     std::vector<dg_point> _pts;    /*!< The array of points */
@@ -1154,14 +1091,6 @@ private:
     std::vector<sweep_dest_data> swdData;
     std::vector<raster_data> swrData;
     std::vector<point_data> pData;          /*!< Extra point data */
-    
-    static int CmpQRs(const quick_raster_data &p1, const quick_raster_data &p2) {
-        if ( fabs(p1.x - p2.x) < 0.00001 ) {
-            return 0;
-        }
-
-        return ( ( p1.x < p2.x ) ? -1 : 1 );
-    };
 
     // edge direction comparison function    
 

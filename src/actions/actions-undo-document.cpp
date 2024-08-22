@@ -103,8 +103,8 @@ add_actions_undo_document(SPDocument* document)
     auto group = document->getActionGroup();
     
     // clang-format off
-    group->add_action( "undo",                            sigc::bind<SPDocument*>(sigc::ptr_fun(&undo), document));
-    group->add_action( "redo",                            sigc::bind<SPDocument*>(sigc::ptr_fun(&redo), document));
+    group->add_action( "undo",                            sigc::bind(sigc::ptr_fun(&undo), document));
+    group->add_action( "redo",                            sigc::bind(sigc::ptr_fun(&redo), document));
     // clang-format on
 
     auto app = InkscapeApplication::instance();

@@ -33,7 +33,7 @@ namespace Widget {
       Feature(Glib::ustring const &name, OTSubstitution const &glyphs, int options, Glib::ustring family, Gtk::Grid& grid, int &row, FontVariants* parent)
           : _name (name)
       {
-          Gtk::Label* table_name = Gtk::manage (new Gtk::Label());
+          auto const table_name = Gtk::make_managed<Gtk::Label>();
           table_name->set_markup ("\"" + name + "\" ");
 
           grid.attach (*table_name, 0, row, 1, 1);
@@ -43,7 +43,7 @@ namespace Widget {
           if (options > 2) {
               // If there are more than 2 option, pack them into a flowbox instead of directly putting them in the grid.
               // Some fonts might have a table with many options (Bungee Hairline table 'ornm' has 113 entries).
-              flow_box = Gtk::manage (new Gtk::FlowBox());
+              flow_box = Gtk::make_managed<Gtk::FlowBox>();
               flow_box->set_selection_mode(); // Turn off selection
               flow_box->set_homogeneous();
               flow_box->set_max_children_per_line (100); // Override default value
@@ -51,7 +51,7 @@ namespace Widget {
 
               // We pack this into a scrollbar... otherwise the minimum height is set to what is required to fit all
               // flow box children into the flow box when the flow box has minimum width. (Crazy if you ask me!)
-              scrolled_window = Gtk::manage (new Gtk::ScrolledWindow());
+              scrolled_window = Gtk::make_managed<Gtk::ScrolledWindow>();
               scrolled_window->set_policy (Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC);
               scrolled_window->add(*flow_box);
           }
@@ -60,7 +60,7 @@ namespace Widget {
           for (int i = 0; i < options; ++i) {
 
               // Create radio button and create or add to button group.
-              Gtk::RadioButton* button = Gtk::manage (new Gtk::RadioButton());
+              auto const button = Gtk::make_managed<Gtk::RadioButton>();
               if (i == 0) {
                   group = button->get_group();
               } else {
@@ -70,7 +70,7 @@ namespace Widget {
               buttons.push_back (button);
 
               // Create label.
-              Gtk::Label* label = Gtk::manage (new Gtk::Label());
+              auto const label = Gtk::make_managed<Gtk::Label>();
 
               // Restrict label width (some fonts have lots of alternatives).
               label->set_line_wrap( true );
@@ -100,7 +100,7 @@ namespace Widget {
                   // Pack into FlowBox
 
                   // Pack button and label into a box so they stay together.
-                  Gtk::Box* box = Gtk::manage (new Gtk::Box());
+                  auto const box = Gtk::make_managed<Gtk::Box>();
                   box->add(*button);
                   box->add(*label);
 
@@ -755,9 +755,9 @@ namespace Widget {
       _feature_entry.set_text( setting );
 
       if( different_features ) {
-          _feature_label.show();
+          _feature_label.set_visible(true);
       } else {
-          _feature_label.hide();
+          _feature_label.set_visible(false);
       }
   }
 
