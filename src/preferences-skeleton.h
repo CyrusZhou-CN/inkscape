@@ -289,6 +289,7 @@ static char const preferences_skeleton[] =
        bpc="0"
        uri="" />
     <group id="savewindowgeometry" value="1"/>
+    <group id="defaultwindowsize" value="2"/>
     <group id="defaultoffsetwidth" value="2px"/>
     <group id="defaultscale" value="2px"/>
     <group id="maxrecentdocuments" value="36"/>
