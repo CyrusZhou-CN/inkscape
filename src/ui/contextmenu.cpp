@@ -37,6 +37,7 @@
 #include "desktop.h"
 #include "document.h"
 #include "document-undo.h"
+#include "inkscape-window.h"
 #include "layer-manager.h"
 #include "page-manager.h"
 #include "selection.h"
@@ -370,7 +371,7 @@ ContextMenu::ContextMenu(SPDesktop *desktop, SPObject *object, std::vector<SPIte
     bool const shift_icons = prefs->getInt("/theme/shiftIcons", true);
     set_tooltips_and_shift_icons(*this, shift_icons);
     // Set the style and icon theme of the new menu based on the desktop
-    if (Gtk::Window *window = desktop->getToplevel()) {
+    if (auto const window = desktop->getInkscapeWindow()) {
         if (window->has_css_class("dark")) {
             add_css_class("dark");
         } else {

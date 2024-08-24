@@ -778,7 +778,7 @@ void GradientToolbar::check_ec(SPDesktop *desktop, Tools::ToolBase *tool)
         // connect to selection modified and changed signals
         _connection_changed  = selection->connectChanged(sigc::mem_fun(*this, &GradientToolbar::selection_changed));
         _connection_modified = selection->connectModified(sigc::mem_fun(*this, &GradientToolbar::selection_modified));
-        _connection_subselection_changed = desktop->connect_gradient_stop_selected([this] (void *sender, SPStop *stop) {
+        _connection_subselection_changed = desktop->connect_gradient_stop_selected([this] (SPStop *) {
             drag_selection_changed(nullptr);
         });
 

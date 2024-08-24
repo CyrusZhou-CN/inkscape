@@ -76,7 +76,7 @@ SelectTool::SelectTool(SPDesktop *desktop)
 
     _describer = new Inkscape::SelectionDescriber(
                 desktop->getSelection(),
-                desktop->messageStack(),
+                *desktop->messageStack(),
                 _("Click selection again to toggle scale/rotation handles"),
                 no_selection_msg);
 

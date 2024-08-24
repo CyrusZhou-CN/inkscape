@@ -15,6 +15,7 @@
 #include "actions-helper.h"
 #include "document-undo.h"
 #include "inkscape-application.h"
+#include "preferences.h"
 #include "selection.h"
 
 #include "live_effects/effect.h"

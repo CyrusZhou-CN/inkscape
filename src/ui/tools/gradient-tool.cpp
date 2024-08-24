@@ -58,7 +58,7 @@ GradientTool::GradientTool(SPDesktop *desktop)
     auto selection = desktop->getSelection();
     selcon = selection->connectChanged([this] (auto) { selection_changed(); });
 
-    subselcon = desktop->connect_gradient_stop_selected([this] (void *, SPStop *stop) {
+    subselcon = desktop->connect_gradient_stop_selected([this] (SPStop *stop) {
         selection_changed();
         if (stop) {
             // Sync stop selection.
@@ -769,7 +769,7 @@ void GradientTool::drag(Geom::Point const &pt, uint32_t etime)
                                            "<b>Gradient</b> for %d objects; with <b>Ctrl</b> to snap angle", n_objects),
                                   n_objects);
     } else {
-        _desktop->getMessageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>objects</b> on which to create gradient."));
+        _desktop->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>objects</b> on which to create gradient."));
     }
 }
 

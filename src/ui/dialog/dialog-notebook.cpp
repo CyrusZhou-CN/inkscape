@@ -31,6 +31,7 @@
 #include "enums.h"
 #include "inkscape.h"
 #include "inkscape-window.h"
+#include "preferences.h"
 #include "ui/column-menu-builder.h"
 #include "ui/controller.h"
 #include "ui/dialog/dialog-base.h"
@@ -39,7 +40,6 @@
 #include "ui/dialog/dialog-multipaned.h"
 #include "ui/dialog/dialog-window.h"
 #include "ui/icon-loader.h"
-#include "ui/pack.h"
 #include "ui/util.h"
 #include "ui/widget/popover-menu-item.h"
 

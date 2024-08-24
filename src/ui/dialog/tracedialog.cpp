@@ -37,7 +37,7 @@
 #include <gtkmm/stack.h>
 
 #include "desktop.h"
-#include "helper/auto-connection.h"
+#include "preferences.h"
 #include "selection.h"
 #include "trace/autotrace/inkscape-autotrace.h"
 #include "trace/depixelize/inkscape-depixelize.h"

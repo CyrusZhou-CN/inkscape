@@ -22,8 +22,9 @@
 #endif
 
 #include "desktop.h"
-#include "inkscape.h"
 #include "enums.h"
+#include "inkscape.h"
+#include "preferences.h"
 #include "ui/dialog-events.h"
 
 /**
@@ -90,7 +91,7 @@ void sp_transientize(Gtk::Window &window)
     if (transient_policy) {
         // if there's an active document window, attach dialog to it as a transient:
         if (SP_ACTIVE_DESKTOP) {
-            SP_ACTIVE_DESKTOP->setWindowTransient(window.Gtk::Widget::gobj(), transient_policy);
+            SP_ACTIVE_DESKTOP->setWindowTransient(window, transient_policy);
         }
     }
 }

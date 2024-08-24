@@ -130,7 +130,6 @@ private:
     /** A grid to display the canvas, rulers, and scrollbars. */
     Inkscape::UI::Widget::CanvasGrid *_canvas_grid = nullptr;
 
-    unsigned int _interaction_disabled_counter = 0;
     double _dt2r;
     Inkscape::UI::Widget::Canvas *_canvas = nullptr;
 
@@ -139,10 +138,9 @@ public:
     void viewSetPosition (Geom::Point p);
     void letRotateGrabFocus();
     void letZoomGrabFocus();
-    void getWindowGeometry (gint &x, gint &y, gint &w, gint &h);
-    void setWindowPosition (Geom::Point p);
-    void setWindowSize (gint w, gint h);
-    void setWindowTransient (void *p, int transient_policy);
+    Geom::IntPoint getWindowSize() const;
+    void setWindowSize(Geom::IntPoint const &size);
+    void setWindowTransient(Gtk::Window &window, int transient_policy);
     void presentWindow();
     void showInfoDialog(Glib::ustring const &message);
     bool warnDialog (Glib::ustring const &text);
@@ -151,12 +149,10 @@ public:
     void setToolboxAdjustmentValue(char const *id, double value);
     bool isToolboxButtonActive(char const *id) const;
     void setCoordinateStatus(Geom::Point p);
-    void enableInteraction();
-    void disableInteraction();
     void updateTitle(char const *uri);
     void onFocus(bool has_focus);
     Inkscape::UI::Dialog::DialogContainer *getDialogContainer();
-    void showNotice(Glib::ustring const &msg, unsigned timeout = 0);
+    void showNotice(Glib::ustring const &msg, int timeout = 0);
 
     void updateNamedview();
     void update_guides_lock();

@@ -94,8 +94,7 @@ TweakTool::TweakTool(SPDesktop *desktop)
     sp_event_context_read(this, "doo");
 
     style_set_connection = desktop->connectSetStyle( // catch style-setting signal in this tool
-        //sigc::bind(sigc::ptr_fun(&sp_tweak_context_style_set), this)
-        sigc::mem_fun(*this, &TweakTool::set_style)
+        sigc::hide(sigc::mem_fun(*this, &TweakTool::set_style))
     );
     
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();

@@ -22,6 +22,7 @@
 #include "inkscape.h"
 #include "inkscape-window.h"
 #include "desktop.h"
+#include "preferences.h"
 #include "snap-preferences.h"
 
 using namespace Inkscape;

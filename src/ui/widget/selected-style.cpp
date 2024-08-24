@@ -105,12 +105,6 @@ ss_selection_modified( Inkscape::Selection *selection, guint flags, gpointer dat
     }
 }
 
-static void
-ss_subselection_changed( gpointer /*dragger*/, gpointer data )
-{
-    ss_selection_changed (nullptr, data);
-}
-
 namespace Inkscape::UI::Widget {
 
 struct SelectedStyleDropTracker final {
@@ -254,9 +248,6 @@ SelectedStyle::setDesktop(SPDesktop *desktop)
     );
     selection_modified_connection = selection->connectModified(
         sigc::bind(&ss_selection_modified, this)
-    );
-    subselection_changed_connection = desktop->connectToolSubselectionChanged(
-        sigc::bind(&ss_subselection_changed, this)
     );
 
     _sw_unit = desktop->getNamedView()->display_units;

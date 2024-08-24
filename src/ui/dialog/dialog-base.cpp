@@ -24,16 +24,15 @@
 #include <gtkmm/window.h>
 
 #include "inkscape.h"
+#include "inkscape-window.h"
 #include "desktop.h"
 #include "selection.h"
 #include "ui/controller.h"
 #include "ui/dialog-events.h"
 #include "ui/dialog/dialog-data.h"
-#include "ui/dialog/dialog-notebook.h"
 #include "ui/tools/tool-base.h" // get_latin_keyval
 #include "ui/util.h"
 #include "ui/widget/canvas.h"
-#include "widgets/spw-utilities.h"
 
 namespace Inkscape::UI::Dialog {
 
@@ -86,7 +85,7 @@ DialogBase::~DialogBase() {
 
 void DialogBase::ensure_size() {
     if (desktop) {
-        resize_widget_children(desktop->getToplevel());
+        resize_widget_children(desktop->getInkscapeWindow());
         resize_widget_children(this);
     }
 }

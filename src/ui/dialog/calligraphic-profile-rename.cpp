@@ -116,7 +116,7 @@ void CalligraphicProfileRename::show(SPDesktop *desktop, const Glib::ustring pro
         dial._delete_button.set_visible(true);
     }
 
-    desktop->setWindowTransient (dial.gobj());
+    desktop->setWindowTransient(dial);
     dial.property_destroy_with_parent() = true;
     Inkscape::UI::dialog_run(dial);
 }

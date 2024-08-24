@@ -32,6 +32,7 @@
 #include "document.h"
 #include "enums.h"
 #include "event-log.h"
+#include "inkscape-window.h"
 #include "layer-manager.h"
 #include "page-manager.h"
 #include "preferences.h"
@@ -571,7 +572,7 @@ void sp_namedview_window_from_document(SPDesktop *desktop)
     bool new_document = (nv->window_width <= 0) || (nv->window_height <= 0);
 
     // restore window size and position stored with the document
-    Gtk::Window *win = desktop->getToplevel();
+    auto win = desktop->getInkscapeWindow();
     g_assert(win);
 
     if (window_geometry == PREFS_WINDOW_GEOMETRY_LAST) {
@@ -586,8 +587,7 @@ void sp_namedview_window_from_document(SPDesktop *desktop)
             Gdk::Rectangle monitor_geometry = Inkscape::UI::get_monitor_geometry_at_point(px, py);
             pw = std::min(pw, monitor_geometry.get_width());
             ph = std::min(ph, monitor_geometry.get_height());
-            desktop->setWindowSize(pw, ph);
-            desktop->setWindowPosition(Geom::Point(px, py));
+            desktop->setWindowSize({pw, ph});
         }
         if (maxed) {
             win->maximize();
@@ -630,11 +630,8 @@ void sp_namedview_window_from_document(SPDesktop *desktop)
                 h = std::min(monitor_height, window_height);
             }
         }
-        if ((w > 0) && (h > 0)) {
-            desktop->setWindowSize(w, h);
-            if (move_to_screen) {
-                desktop->setWindowPosition(Geom::Point(nv->window_x, nv->window_y));
-            }
+        if (w > 0 && h > 0) {
+            desktop->setWindowSize({w, h});
         }
     }
 
@@ -708,7 +705,7 @@ void sp_namedview_document_from_window(SPDesktop *desktop)
 
     if (save_viewport_in_file) {
         view->setAttributeSvgDouble("inkscape:zoom", desktop->current_zoom());
-        double rotation = ::round(desktop->current_rotation() * 180.0 / M_PI);
+        double rotation = std::round(Geom::deg_from_rad(desktop->current_rotation().angle()));
         view->setAttributeSvgNonDefaultDouble("inkscape:rotation", rotation, 0.0);
         Geom::Point center = desktop->current_center();
         view->setAttributeSvgDouble("inkscape:cx", center.x());
@@ -716,12 +713,9 @@ void sp_namedview_document_from_window(SPDesktop *desktop)
     }
 
     if (save_geometry_in_file) {
-        gint w, h, x, y;
-        desktop->getWindowGeometry(x, y, w, h);
+        auto const [w, h] = desktop->getWindowSize();
         view->setAttributeInt("inkscape:window-width", w);
         view->setAttributeInt("inkscape:window-height", h);
-        view->setAttributeInt("inkscape:window-x", x);
-        view->setAttributeInt("inkscape:window-y", y);
         view->setAttributeInt("inkscape:window-maximized", desktop->is_maximized());
     }
 

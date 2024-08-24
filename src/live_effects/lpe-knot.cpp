@@ -22,6 +22,7 @@
 
 #include <2geom/basic-intersection.h>
 
+#include "preferences.h"
 #include "style.h"
 
 #include "display/curve.h"

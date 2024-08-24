@@ -10,6 +10,7 @@
 #include <2geom/intersection-graph.h>
 #include <2geom/path-intersection.h>
 
+#include "preferences.h"
 #include "selection.h"
 #include "style.h"
 

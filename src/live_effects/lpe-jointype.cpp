@@ -14,6 +14,7 @@
 
 #include <2geom/elliptical-arc.h>
 
+#include "preferences.h"
 #include "style.h"
 
 #include "helper/geom-pathstroke.h"

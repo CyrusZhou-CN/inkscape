@@ -25,15 +25,14 @@
  */
 
 #include <glibmm/i18n.h>
+#include <sigc++/adaptors/bind.h>
 #include <2geom/transforms.h>
 #include <2geom/rect.h>
-#include <sigc++/adaptors/bind.h>
 
 #include "desktop.h"
 #include "desktop-events.h"
 #include "desktop-style.h"
 #include "document-undo.h"
-#include "event-log.h"
 #include "inkscape-window.h"
 #include "layer-manager.h"
 #include "message-context.h"
@@ -64,12 +63,7 @@
 #include "ui/tools/node-tool.h"
 #include "ui/tool/control-point-selection.h"
 
-namespace Inkscape { namespace XML { class Node; }}
-
-// Callback declarations
-static bool _drawing_handler(Inkscape::CanvasEvent const &event, Inkscape::DrawingItem *item, SPDesktop *desktop);
-static void _reconstruction_start(SPDesktop * desktop);
-static void _reconstruction_finish(SPDesktop * desktop);
+namespace Inkscape::XML { class Node; }
 
 template <typename T>
 static void delete_then_null(std::unique_ptr<T> &uptr)
@@ -80,67 +74,32 @@ static void delete_then_null(std::unique_ptr<T> &uptr)
     uptr.release();
 }
 
-SPDesktop::SPDesktop()
-    : namedview(nullptr)
-    , canvas(nullptr)
-    , current(nullptr)  // current style
-    , _focusMode(false)
-    , dkey(0)
-    , interaction_disabled_counter(0)
-    , waiting_cursor(false)
-    , showing_dialogs(false)
-    , guides_active(false)
-    , gr_item(nullptr)
-    , gr_point_type(POINT_LG_BEGIN)
-    , gr_point_i(0)
-    , gr_fill_or_stroke(Inkscape::FOR_FILL)
-    , _reconstruction_old_layer_id()
-    // an id attribute is not allowed to be the empty string
-    , _widget(nullptr) // DesktopWidget
-    , _guides_message_context(nullptr)
-    , _active(false)
+SPDesktop::SPDesktop(SPNamedView *namedview_, Inkscape::UI::Widget::Canvas *canvas_, SPDesktopWidget *widget_)
+    : namedview(namedview_)
+    , canvas(canvas_)
+    , _widget(widget_)
 {
     // Moving this into the list initializer breaks the application because this->_document_replaced_signal
     // is accessed before it is initialized
     _layer_manager = std::make_unique<Inkscape::LayerManager>(this);
     _selection = std::make_unique<Inkscape::Selection>(this);
 
-    // Formerly in View::View VVVVVVVVVVVVVVVVVVV
-    _message_stack = std::make_shared<Inkscape::MessageStack>();
-    _tips_message_context = std::make_unique<Inkscape::MessageContext>(_message_stack);
+    _message_stack = std::make_unique<Inkscape::MessageStack>();
+    _tips_message_context = std::make_unique<Inkscape::MessageContext>(*_message_stack);
+    _guides_message_context = std::make_unique<Inkscape::MessageContext>(*_message_stack);
 
-    _message_changed_connection = _message_stack->connectChanged([this](auto const type, auto const message) {
-        _message_idle_connection = Glib::signal_idle().connect([=, this](){
+    _message_changed_connection = _message_stack->connectChanged([this] (auto type, auto message) {
+        _message_idle_connection = Glib::signal_idle().connect([=, this] {
             onStatusMessage(type, message);
             return false;
         }, Glib::PRIORITY_HIGH);
     });
 
-}
-
-SPDesktop::~SPDesktop()
-{
-    // Formerly in View::View VVVVVVVVVVVVVVVVVVV
-
-    if (document) {
-        INKSCAPE.remove_document(document);
-    }
-}
-
-void
-SPDesktop::init (SPNamedView *nv, Inkscape::UI::Widget::Canvas *acanvas, SPDesktopWidget *widget)
-{
-    namedview = nv;
-    canvas = acanvas;
-    _widget = widget;
-
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-
-    _guides_message_context = std::make_unique<Inkscape::MessageContext>(messageStack());
+    auto const prefs = Inkscape::Preferences::get();
 
     current = prefs->getStyle("/desktop/style");
 
-    SPDocument *document = namedview->document;
+    auto const document = namedview->document;
     /* XXX:
      * ensureUpToDate() sends a 'modified' signal to the root element.
      * This is reportedly required to prevent flickering after the document
@@ -162,7 +121,7 @@ SPDesktop::init (SPNamedView *nv, Inkscape::UI::Widget::Canvas *acanvas, SPDeskt
     dkey = SPItem::display_key_new(1);
 
     /* Connect document */
-    setDocument (document);
+    setDocument(document);
 
     namedview->viewcount++;
 
@@ -215,7 +174,7 @@ SPDesktop::init (SPNamedView *nv, Inkscape::UI::Widget::Canvas *acanvas, SPDeskt
     _canvas_catchall->connect_event(sigc::bind(&sp_desktop_root_handler, this));
 
     _canvas_drawing = new Inkscape::CanvasItemDrawing{_canvas_group_drawing};
-    _canvas_drawing->connect_drawing_event(sigc::bind(&_drawing_handler, this));
+    _canvas_drawing->connect_drawing_event(sigc::mem_fun(*this, &SPDesktop::drawing_handler));
 
     auto const drawing = _canvas_drawing->get_drawing();
     g_assert(drawing);
@@ -235,7 +194,7 @@ SPDesktop::init (SPNamedView *nv, Inkscape::UI::Widget::Canvas *acanvas, SPDeskt
 
     namedview->show(this);
     /* Ugly hack */
-    activate_guides (true);
+    activate_guides(true);
 
     // Set the select tool as the active tool.
     setTool("/tools/select");
@@ -248,14 +207,12 @@ SPDesktop::init (SPNamedView *nv, Inkscape::UI::Widget::Canvas *acanvas, SPDeskt
 
     /* Set up notification of rebuilding the document, this allows
        for saving object related settings in the document. */
-    _reconstruction_start_connection =
-        document->connectReconstructionStart(sigc::bind(&_reconstruction_start, this));
-    _reconstruction_finish_connection =
-        document->connectReconstructionFinish(sigc::bind(&_reconstruction_finish, this));
+    _reconstruction_start_connection = document->connectReconstructionStart(sigc::mem_fun(*this, &SPDesktop::reconstruction_start));
+    _reconstruction_finish_connection = document->connectReconstructionFinish(sigc::mem_fun(*this, &SPDesktop::reconstruction_finish));
     _reconstruction_old_layer_id.clear();
 }
 
-void SPDesktop::destroy()
+SPDesktop::~SPDesktop()
 {
     _destroy_signal.emit(this);
 
@@ -275,6 +232,10 @@ void SPDesktop::destroy()
     }
 
     _guides_message_context = nullptr;
+
+    if (document) {
+        INKSCAPE.remove_document(document);
+    }
 }
 
 //--------------------------------------------------------------------
@@ -285,7 +246,7 @@ void SPDesktop::destroy()
  * is when you want to prematurely remove the item from the canvas, by calling
  * desktop->remove_temporary_canvasitem(tempitem).
  */
-/** Note that lifetime is measured in milliseconds
+/**
  * One should *not* keep a reference to the SPCanvasItem, the temporary item code will
  * delete the object for you and the reference will become invalid without you knowing it.
  * It is perfectly safe to ignore the returned pointer: the object is deleted by itself, so don't delete it elsewhere!
@@ -293,22 +254,20 @@ void SPDesktop::destroy()
  * because the object might be deleted already without you knowing it.
  * move_to_bottom = true by default so the item does not interfere with handling of other items on the canvas like nodes.
  */
-Inkscape::Display::TemporaryItem *
-SPDesktop::add_temporary_canvasitem (Inkscape::CanvasItem *item, guint lifetime, bool move_to_bottom)
+Inkscape::Display::TemporaryItem *SPDesktop::add_temporary_canvasitem(Inkscape::CanvasItem *item, int lifetime_msecs, bool move_to_bottom)
 {
     if (move_to_bottom) {
         item->lower_to_bottom();
     }
 
-    return _temporary_item_list->add_item(item, lifetime);
+    return _temporary_item_list->add_item(item, lifetime_msecs);
 }
 
 /** It is perfectly safe to call this function while the object has already been deleted due to a timeout.
 */
 // Note: This function may free the wrong temporary item if it is called on a freed pointer that
 // has had another TemporaryItem reallocated in its place.
-void
-SPDesktop::remove_temporary_canvasitem (Inkscape::Display::TemporaryItem * tempitem)
+void SPDesktop::remove_temporary_canvasitem(Inkscape::Display::TemporaryItem *tempitem)
 {
     // check for non-null temporary_item_list, because during destruction of desktop, some destructor might try to access this list!
     if (tempitem && _temporary_item_list) {
@@ -319,20 +278,19 @@ SPDesktop::remove_temporary_canvasitem (Inkscape::Display::TemporaryItem * tempi
 /**
  * True if desktop viewport intersects \a item's bbox.
  */
-bool SPDesktop::isWithinViewport (SPItem *item) const
+bool SPDesktop::isWithinViewport(SPItem const *item) const
 {
-    auto const viewport = get_display_area();
-    Geom::OptRect const bbox = item->desktopVisualBounds();
-    if (bbox) {
-        return viewport.intersects(*bbox);
-    } else {
+    auto const bbox = item->desktopVisualBounds();
+    if (!bbox) {
         return false;
     }
+    auto const viewport = get_display_area();
+    return viewport.intersects(*bbox);
 }
 
 ///
 bool SPDesktop::itemIsHidden(SPItem const *item) const {
-    return item->isHidden(this->dkey);
+    return item->isHidden(dkey);
 }
 
 /**
@@ -405,8 +363,7 @@ void SPDesktop::setTool(std::string const &toolName)
 /**
  * Sets the coordinate status to a given point
  */
-void
-SPDesktop::set_coordinate_status (Geom::Point p) {
+void SPDesktop::set_coordinate_status(Geom::Point const &p) {
     _widget->setCoordinateStatus(p);
 }
 
@@ -512,8 +469,7 @@ void SPDesktop::next_transform()
 /**
  * Clear transform lists.
  */
-void
-SPDesktop::clear_transform_history()
+void SPDesktop::clear_transform_history()
 {
     transforms_past.clear();
     transforms_future.clear();
@@ -524,23 +480,20 @@ SPDesktop::clear_transform_history()
  * _current_affine must already be full updated (including offset).
  * log: if true, save transform in transform stack for reuse.
  */
-void
-SPDesktop::set_display_area (bool log)
+void SPDesktop::set_display_area(bool log)
 {
     // Save the transform
     if (log) {
-        transforms_past.push_front( _current_affine );
+        transforms_past.push_front(_current_affine);
         // if we do a logged transform, our transform-forward list is invalidated, so delete it
         transforms_future.clear();
     }
 
     // Scroll
-    Geom::Point offset = _current_affine.getOffset();
-    canvas->set_pos(offset);
+    canvas->set_pos(_current_affine.getOffset());
     canvas->set_affine(_current_affine.d2w()); // For CanvasItems.
 
-    /* Update perspective lines if we are in the 3D box tool (so that infinite ones are shown
-     * correctly) */
+    // Update perspective lines if we are in the 3D box tool (so that infinite ones are shown correctly).
     if (auto const boxtool = dynamic_cast<Inkscape::UI::Tools::Box3dTool*>(_tool.get())) {
         boxtool->_vpdrag->updateLines();
     }
@@ -558,13 +511,12 @@ SPDesktop::set_display_area (bool log)
  * Map the drawing to the window so that 'c' lies at 'w' where where 'c'
  * is a point on the canvas and 'w' is position in window in screen pixels.
  */
-void
-SPDesktop::set_display_area (Geom::Point const &c, Geom::Point const &w, bool log)
+void SPDesktop::set_display_area(Geom::Point const &c, Geom::Point const &w, bool log)
 {
     // The relative offset needed to keep c at w.
     Geom::Point offset = d2w(c) - w;
-    _current_affine.addOffset( offset );
-    set_display_area( log );
+    _current_affine.addOffset(offset);
+    set_display_area(log);
 }
 
 /**
@@ -573,14 +525,13 @@ SPDesktop::set_display_area (Geom::Point const &c, Geom::Point const &w, bool lo
  * the edges of 'r' closest to 'w' are 'border' length inside of the window (if
  * there is no rotation). 'r' is in document pixel units, 'border' is in screen pixels.
  */
-void
-SPDesktop::set_display_area( Geom::Rect const &r, double border, bool log)
+void SPDesktop::set_display_area(Geom::Rect const &r, double border, bool log)
 {
     // Create a rectangle the size of the window aligned with origin.
     Geom::Rect w( Geom::Point(), canvas->get_dimensions() );
 
     // Shrink window to account for border padding.
-    w.expandBy( -border );
+    w.expandBy(-border);
 
     double zoom = 1.0;
     // Determine which direction limits scale:
@@ -591,7 +542,7 @@ SPDesktop::set_display_area( Geom::Rect const &r, double border, bool log)
     } else {
         zoom = w.height() / r.height();
     }
-    zoom = CLAMP(zoom, SP_DESKTOP_ZOOM_MIN, SP_DESKTOP_ZOOM_MAX);
+    zoom = std::clamp(zoom, SP_DESKTOP_ZOOM_MIN, SP_DESKTOP_ZOOM_MAX);
     _current_affine.setScale( Geom::Scale(zoom, yaxisdir() * zoom) );
     // Zero offset, actual offset calculated later.
     _current_affine.setOffset( Geom::Point( 0, 0 ) );
@@ -818,12 +769,11 @@ SPDesktop::rotate_grab_focus()
  * @param c Point in desktop coordinates
  * @param rotate Angle in clockwise direction
  */
-void
-SPDesktop::rotate_absolute_keep_point (Geom::Point const &c, double rotate)
+void SPDesktop::rotate_absolute_keep_point(Geom::Point const &c, double rotate)
 {
-    Geom::Point w = d2w( c ); // Must be before rotate changed.
-    _current_affine.setRotate( rotate );
-    set_display_area( c, w );
+    auto const w = d2w(c); // Must be before rotate changed.
+    _current_affine.setRotate(rotate);
+    set_display_area(c, w);
 }
 
 /**
@@ -832,12 +782,11 @@ SPDesktop::rotate_absolute_keep_point (Geom::Point const &c, double rotate)
  * @param c Point in desktop coordinates
  * @param rotate Angle in clockwise direction
  */
-void
-SPDesktop::rotate_relative_keep_point (Geom::Point const &c, double rotate)
+void SPDesktop::rotate_relative_keep_point(Geom::Point const &c, double rotate)
 {
-    Geom::Point w = d2w( c ); // Must be before rotate changed.
-    _current_affine.addRotate( rotate );
-    set_display_area( c, w );
+    auto const w = d2w(c); // Must be before rotate changed.
+    _current_affine.addRotate(rotate);
+    set_display_area(c, w);
 }
 
 /**
@@ -846,11 +795,10 @@ SPDesktop::rotate_relative_keep_point (Geom::Point const &c, double rotate)
  * @param c Point in desktop coordinates
  * @param rotate Angle in clockwise direction
  */
-void
-SPDesktop::rotate_absolute_center_point (Geom::Point const &c, double rotate)
+void SPDesktop::rotate_absolute_center_point(Geom::Point const &c, double rotate)
 {
-    _current_affine.setRotate( rotate );
-    Geom::Rect viewbox = canvas->get_area_world();
+    _current_affine.setRotate(rotate);
+    auto const viewbox = canvas->get_area_world();
     set_display_area(c, viewbox.midpoint());
 }
 
@@ -860,11 +808,10 @@ SPDesktop::rotate_absolute_center_point (Geom::Point const &c, double rotate)
  * @param c Point in desktop coordinates
  * @param rotate Angle in clockwise direction
  */
-void
-SPDesktop::rotate_relative_center_point (Geom::Point const &c, double rotate)
+void SPDesktop::rotate_relative_center_point(Geom::Point const &c, double rotate)
 {
-    _current_affine.addRotate( rotate );
-    Geom::Rect viewbox = canvas->get_area_world();
+    _current_affine.addRotate(rotate);
+    auto const viewbox = canvas->get_area_world();
     set_display_area(c, viewbox.midpoint());
 }
 
@@ -994,41 +941,32 @@ bool SPDesktop::scroll_to_point(Geom::Point const &p, double)
     return false;
 }
 
-[[nodiscard]] static bool
-has_flag(Gdk::Toplevel::State const state, Gdk::Toplevel::State const flags)
+static bool has_flag(Gdk::Toplevel::State state, Gdk::Toplevel::State flags)
 {
     return (state & flags) != Gdk::Toplevel::State{};
 }
 
-bool
-SPDesktop::is_iconified() const
+bool SPDesktop::is_iconified() const
 {
     return has_flag(toplevel_state, Gdk::Toplevel::State::MINIMIZED);
 }
 
-// Fixme: Unused; remove.
-void SPDesktop::iconify() {}
-void SPDesktop::maximize() {}
-
 bool SPDesktop::is_darktheme() const
 {
-    return getToplevel()->has_css_class("dark");
+    return getInkscapeWindow()->has_css_class("dark");
 }
 
-bool
-SPDesktop::is_maximized() const
+bool SPDesktop::is_maximized() const
 {
     return has_flag(toplevel_state, Gdk::Toplevel::State::MAXIMIZED);
 }
 
-bool
-SPDesktop::is_fullscreen() const
+bool SPDesktop::is_fullscreen() const
 {
     return has_flag(toplevel_state, Gdk::Toplevel::State::FULLSCREEN);
 }
 
-void
-SPDesktop::fullscreen()
+void SPDesktop::fullscreen()
 {
     _widget->fullscreen();
 }
@@ -1050,54 +988,33 @@ bool SPDesktop::is_focusMode() const
  */
 void SPDesktop::focusMode(bool mode)
 {
-    if (mode == _focusMode) { return; }
+    if (mode == _focusMode) {
+        return;
+    }
 
     _focusMode = mode;
 
     layoutWidget();
-    //sp_desktop_widget_layout(SPDesktopWidget);
-
-    return;
 }
 
-void
-SPDesktop::setWindowTitle()
+void SPDesktop::setWindowTitle()
 {
     _widget->updateTitle(doc()->getDocumentName());
 }
 
-void
-SPDesktop::getWindowGeometry (gint &x, gint &y, gint &w, gint &h)
+Geom::IntPoint SPDesktop::getWindowSize() const
 {
-    _widget->getWindowGeometry (x, y, w, h);
+    return _widget->getWindowSize();
 }
 
-void
-SPDesktop::setWindowPosition (Geom::Point p)
+void SPDesktop::setWindowSize(Geom::IntPoint const &size)
 {
-    _widget->setWindowPosition (p);
+    _widget->setWindowSize(size);
 }
 
-void
-SPDesktop::setWindowSize (gint w, gint h)
+void SPDesktop::setWindowTransient(Gtk::Window &window, int transient_policy)
 {
-    _widget->setWindowSize (w, h);
-}
-
-void
-SPDesktop::setWindowTransient (void *p, int transient_policy)
-{
-    _widget->setWindowTransient (p, transient_policy);
-}
-
-Gtk::Window const *SPDesktop::getToplevel() const
-{
-    return _widget->get_window();
-}
-
-Gtk::Window *SPDesktop::getToplevel()
-{
-    return _widget->get_window();
+    _widget->setWindowTransient(window, transient_policy);
 }
 
 InkscapeWindow const *SPDesktop::getInkscapeWindow() const
@@ -1269,38 +1186,9 @@ SPDesktop::isToolboxButtonActive(char const * const id) const
     return _widget->isToolboxButtonActive(id);
 }
 
-void
-SPDesktop::emitToolSubselectionChanged(gpointer data)
-{
-    emitToolSubselectionChangedEx(data, nullptr);
-}
-
-void SPDesktop::emitToolSubselectionChangedEx(gpointer data, SPObject* object) {
-    _tool_subselection_changed.emit(data, object);
-}
-
-sigc::connection SPDesktop::connectToolSubselectionChanged(const sigc::slot<void (gpointer)>& slot) {
-    return _tool_subselection_changed.connect([=](gpointer ptr, SPObject*) { slot(ptr); });
-}
-
-sigc::connection SPDesktop::connectToolSubselectionChangedEx(const sigc::slot<void (gpointer, SPObject*)>& slot) {
-    return _tool_subselection_changed.connect(slot);
-}
-
 void SPDesktop::updateDialogs()
 {
     getContainer()->set_inkscape_window(getInkscapeWindow());
-}
-
-void
-SPDesktop::enableInteraction()
-{
-  _widget->enableInteraction();
-}
-
-void SPDesktop::disableInteraction()
-{
-  _widget->disableInteraction();
 }
 
 void SPDesktop::setWaitingCursor()
@@ -1385,26 +1273,22 @@ SPDesktop::setDocument (SPDocument *doc)
 
     sp_namedview_update_layers_from_document(this);
 
-    _document_replaced_signal.emit (this, doc);
+    _document_replaced_signal.emit(this, doc);
 }
 
-void
-SPDesktop::showNotice(Glib::ustring const &msg, unsigned timeout)
+void SPDesktop::showNotice(Glib::ustring const &msg, int timeout)
 {
     _widget->showNotice(msg, timeout);
 }
 
-void
-SPDesktop::onStatusMessage
-(Inkscape::MessageType const type, char const * const message)
+void SPDesktop::onStatusMessage(Inkscape::MessageType type, char const *message)
 {
     if (_widget) {
         _widget->setMessage(type, message);
     }
 }
 
-void
-SPDesktop::onDocumentFilenameSet(char const * const filename)
+void SPDesktop::onDocumentFilenameSet(char const *filename)
 {
     _widget->updateTitle(filename);
 }
@@ -1412,9 +1296,9 @@ SPDesktop::onDocumentFilenameSet(char const * const filename)
 /**
  * Calls event handler of current event context.
  */
-static bool _drawing_handler(Inkscape::CanvasEvent const &event, Inkscape::DrawingItem *drawing_item, SPDesktop *desktop)
+bool SPDesktop::drawing_handler(Inkscape::CanvasEvent const &event, Inkscape::DrawingItem *drawing_item)
 {
-    auto const tool = desktop->getTool();
+    auto const tool = getTool();
     if (!tool) return false;
 
     if (event.type() == Inkscape::EventType::KEY_PRESS &&
@@ -1432,90 +1316,63 @@ static bool _drawing_handler(Inkscape::CanvasEvent const &event, Inkscape::Drawi
 }
 
 /// Called when document is starting to be rebuilt.
-static void _reconstruction_start(SPDesktop * desktop)
+void SPDesktop::reconstruction_start()
 {
-    auto layer = desktop->layerManager().currentLayer();
-    desktop->_reconstruction_old_layer_id = layer->getId() ? layer->getId() : "";
-    desktop->layerManager().reset();
+    auto layer = layerManager().currentLayer();
+    _reconstruction_old_layer_id = layer->getId() ? layer->getId() : "";
+    layerManager().reset();
 
-    desktop->getSelection()->clear();
+    getSelection()->clear();
 }
 
 /// Called when document rebuild is finished.
-static void _reconstruction_finish(SPDesktop * desktop)
+void SPDesktop::reconstruction_finish()
 {
     g_debug("Desktop, finishing reconstruction\n");
-    if (!desktop->_reconstruction_old_layer_id.empty()) {
-        if (auto const newLayer = desktop->getNamedView()->document
-                                  ->getObjectById(desktop->_reconstruction_old_layer_id))
-        {
-            desktop->layerManager().setCurrentLayer(newLayer);
+    if (!_reconstruction_old_layer_id.empty()) {
+        if (auto const newLayer = getNamedView()->document->getObjectById(_reconstruction_old_layer_id)) {
+            layerManager().setCurrentLayer(newLayer);
         }
 
-        desktop->_reconstruction_old_layer_id.clear();
+        _reconstruction_old_layer_id.clear();
     }
     g_debug("Desktop, finishing reconstruction end\n");
 }
 
-Geom::Affine SPDesktop::w2d() const
+Geom::Affine const &SPDesktop::doc2dt() const
 {
-    return _current_affine.w2d();
+    assert(document);
+    return document->doc2dt();
 }
 
-Geom::Point SPDesktop::w2d(Geom::Point const &p) const
+Geom::Affine const &SPDesktop::dt2doc() const
 {
-    return p * _current_affine.w2d();
+    assert(document);
+    return document->dt2doc();
 }
 
-Geom::Point SPDesktop::d2w(Geom::Point const &p) const
-{
-    return p * _current_affine.d2w();
-}
-
-const Geom::Affine &SPDesktop::doc2dt() const
-{
-    g_assert(doc() != nullptr);
-    return doc()->doc2dt();
-}
-
-Geom::Affine SPDesktop::dt2doc() const
-{
-    g_assert(doc() != nullptr);
-    return doc()->dt2doc();
-}
-
-Geom::Point SPDesktop::doc2dt(Geom::Point const &p) const
-{
-    return p * doc2dt();
-}
-
-Geom::Point SPDesktop::dt2doc(Geom::Point const &p) const
-{
-    return p * dt2doc();
-}
-
-sigc::connection SPDesktop::connect_gradient_stop_selected(const sigc::slot<void (void*, SPStop*)>& slot) {
+sigc::connection SPDesktop::connect_gradient_stop_selected(sigc::slot<void (SPStop *)> const &slot) {
     return _gradient_stop_selected.connect(slot);
 }
 
-sigc::connection SPDesktop::connect_control_point_selected(const sigc::slot<void (void*, Inkscape::UI::ControlPointSelection*)>& slot) {
+sigc::connection SPDesktop::connect_control_point_selected(sigc::slot<void (Inkscape::UI::ControlPointSelection *)> const &slot) {
     return _control_point_selected.connect(slot);
 }
 
-sigc::connection SPDesktop::connect_text_cursor_moved(const sigc::slot<void (void*, Inkscape::UI::Tools::TextTool*)>& slot) {
+sigc::connection SPDesktop::connect_text_cursor_moved(sigc::slot<void (Inkscape::UI::Tools::TextTool*)> const &slot) {
     return _text_cursor_moved.connect(slot);
 }
 
-void SPDesktop::emit_gradient_stop_selected(void* sender, SPStop* stop) {
-    _gradient_stop_selected.emit(sender, stop);
+void SPDesktop::emit_gradient_stop_selected(SPStop *stop) {
+    _gradient_stop_selected.emit(stop);
 }
 
-void SPDesktop::emit_control_point_selected(void* sender, Inkscape::UI::ControlPointSelection* selection) {
-    _control_point_selected.emit(sender, selection);
+void SPDesktop::emit_control_point_selected(Inkscape::UI::ControlPointSelection *selection) {
+    _control_point_selected.emit(selection);
 }
 
-void SPDesktop::emit_text_cursor_moved(void* sender, Inkscape::UI::Tools::TextTool* tool) {
-    _text_cursor_moved.emit(sender, tool);
+void SPDesktop::emit_text_cursor_moved(Inkscape::UI::Tools::TextTool *tool) {
+    _text_cursor_moved.emit(tool);
 }
 
 /*

@@ -193,8 +193,7 @@ SPDesktopWidget::SPDesktopWidget(InkscapeWindow *inkscape_window, SPDocument *do
 
     // ---------- Desktop Dependent Setup -------------- //
     // This section seems backwards!
-    _desktop = std::make_unique<SPDesktop>();
-    _desktop->init(namedview, _canvas, this);
+    _desktop = std::make_unique<SPDesktop>(namedview, _canvas, this);
     _canvas->set_desktop(_desktop.get());
     INKSCAPE.add_desktop(_desktop.get());
 
@@ -242,8 +241,7 @@ SPDesktopWidget::setMessage (Inkscape::MessageType type, const gchar *message)
  * Called before SPDesktopWidget destruction.
  * (Might be called more than once)
  */
-void
-SPDesktopWidget::on_unrealize()
+void SPDesktopWidget::on_unrealize()
 {
     if (_tbbox) {
         Inkscape::Preferences::get()->setInt("/toolbox/tools/width", _tbbox->get_position());
@@ -258,7 +256,6 @@ SPDesktopWidget::on_unrealize()
 
         INKSCAPE.remove_desktop(_desktop.get()); // clears selection and event_context
         modified_connection.disconnect();
-        _desktop->destroy();
         _desktop.reset();
 
         _container.reset(); // will delete _canvas
@@ -275,8 +272,7 @@ SPDesktopWidget::~SPDesktopWidget() = default;
  * The title has form file name: desktop number - Inkscape.
  * The desktop number is only shown if it's 2 or higher,
  */
-void
-SPDesktopWidget::updateTitle(gchar const* uri)
+void SPDesktopWidget::updateTitle(char const *uri)
 {
     if (_window) {
         auto const doc = _desktop->doc();
@@ -341,7 +337,7 @@ DialogContainer *SPDesktopWidget::getDialogContainer()
     return _container.get();
 }
 
-void SPDesktopWidget::showNotice(Glib::ustring const &msg, unsigned timeout)
+void SPDesktopWidget::showNotice(Glib::ustring const &msg, int timeout)
 {
     _canvas_grid->showNotice(msg, timeout);
 }
@@ -400,28 +396,6 @@ SPDesktopWidget::update_guides_lock()
 }
 
 void
-SPDesktopWidget::enableInteraction()
-{
-  g_return_if_fail(_interaction_disabled_counter > 0);
-
-  _interaction_disabled_counter--;
-
-  if (_interaction_disabled_counter == 0) {
-    this->set_sensitive();
-  }
-}
-
-void
-SPDesktopWidget::disableInteraction()
-{
-  if (_interaction_disabled_counter == 0) {
-    this->set_sensitive(false);
-  }
-
-  _interaction_disabled_counter++;
-}
-
-void
 SPDesktopWidget::setCoordinateStatus(Geom::Point p)
 {
     _statusbar->set_coordinate(_dt2r * p);
@@ -439,28 +413,19 @@ SPDesktopWidget::letZoomGrabFocus()
     _statusbar->zoom_grab_focus();
 }
 
-void SPDesktopWidget::getWindowGeometry(int &x, int &y, int &w, int &h)
+Geom::IntPoint SPDesktopWidget::getWindowSize() const
 {
     if (_window) {
-        // Note: On Wayland, which is GTK4's main platform, getting x and y is impossible.
-        // GTK4 therefore removed support for it despite being possible on other platforms.
-        // The code is left in place for the future in case the ability comes back.
-        x = 0;
-        y = 0;
-        w = _window->get_width();
-        h = _window->get_height();
+        return {_window->get_width(), _window->get_height()};
+    } else {
+        return {};
     }
 }
 
-void SPDesktopWidget::setWindowPosition(Geom::Point)
-{
-    // See comment in getWindowGeometry.
-}
-
-void SPDesktopWidget::setWindowSize(int w, int h)
+void SPDesktopWidget::setWindowSize(Geom::IntPoint const &size)
 {
     if (_window) {
-        _window->set_default_size(w, h);
+        _window->set_default_size(size.x(), size.y());
     }
 }
 
@@ -470,12 +435,10 @@ void SPDesktopWidget::setWindowSize(int w, int h)
  * the document window. The document window must be restored by rightclicking
  * the taskbar button and pressing "Restore"
  */
-void
-SPDesktopWidget::setWindowTransient (void *p, int transient_policy)
+void SPDesktopWidget::setWindowTransient(Gtk::Window &window, int transient_policy)
 {
     if (_window) {
-        auto const w = GTK_WINDOW(_window->gobj());
-        gtk_window_set_transient_for (GTK_WINDOW(p), w);
+        window.set_transient_for(*_window);
 
         /*
          * This enables "aggressive" transientization,
@@ -484,14 +447,14 @@ SPDesktopWidget::setWindowTransient (void *p, int transient_policy)
          * manager because the switched-to document will be raised at once
          * (so that its transients also could raise)
          */
-        if (transient_policy == PREFS_DIALOGS_WINDOWS_AGGRESSIVE)
-            // without this, a transient window not always emerges on top
-            gtk_window_present (w);
+        if (transient_policy == PREFS_DIALOGS_WINDOWS_AGGRESSIVE) {
+            // Without this, a transient window doesn't always emerge on top.
+            _window->present();
+        }
     }
 }
 
-void
-SPDesktopWidget::presentWindow()
+void SPDesktopWidget::presentWindow()
 {
     if (_window) {
         _window->present();

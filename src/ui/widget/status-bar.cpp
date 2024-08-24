@@ -307,7 +307,7 @@ StatusBar::rotate_popup(PopupMenuOptionalClick)
 void
 StatusBar::update_rotate()
 {
-    rotate_value->set_value(Geom::deg_from_rad(desktop->current_rotation()));
+    rotate_value->set_value(Geom::deg_from_rad(desktop->current_rotation().angle()));
     rotate_value->queue_draw();
 }
 

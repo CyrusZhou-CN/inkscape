@@ -54,6 +54,8 @@
 #include <sigc++/functors/mem_fun.h>
 
 #include <2geom/angle.h>
+#include "inkscape-window.h"
+#include "preferences.h"
 #include "rdf.h"
 #include "page-manager.h"
 #include "selection.h"
@@ -61,7 +63,6 @@
 #include "colors/cms/profile.h"
 #include "colors/document-cms.h"
 #include "helper/auto-connection.h"
-#include "io/sys.h"
 #include "object/color-profile.h"
 #include "object/sp-grid.h"
 #include "object/sp-root.h"
@@ -1118,7 +1119,7 @@ void  DocumentProperties::browseExternalScript() {
     if (desktop && !selectPrefsFileInstance) {
         selectPrefsFileInstance =
             Inkscape::UI::Dialog::FileOpenDialog::create(
-                *desktop->getToplevel(),
+                *desktop->getInkscapeWindow(),
                 open_path,
                 Inkscape::UI::Dialog::CUSTOM_TYPE,
                 _("Select a script to load")).release();

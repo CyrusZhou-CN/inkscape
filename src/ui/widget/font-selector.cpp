@@ -33,6 +33,7 @@
 // For updating from selection
 #include "inkscape.h"
 #include "desktop.h"
+#include "preferences.h"
 #include "object/sp-text.h"
 #include "ui/controller.h"
 #include "util-string/ustring-format.h"

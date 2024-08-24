@@ -76,7 +76,7 @@ void ObjectSet::combine(bool skip_undo, bool silent)
     
     if (items_copy.empty()) {
         if (desktop() && !silent) {
-            desktop()->getMessageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>object(s)</b> to combine."));
+            desktop()->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>object(s)</b> to combine."));
         }
         return;
     }
@@ -193,7 +193,7 @@ void ObjectSet::combine(bool skip_undo, bool silent)
         Inkscape::GC::release(repr);
 
     } else if (desktop() && !silent) {
-        desktop()->getMessageStack()->flash(Inkscape::ERROR_MESSAGE, _("<b>No path(s)</b> to combine in the selection."));
+        desktop()->messageStack()->flash(Inkscape::ERROR_MESSAGE, _("<b>No path(s)</b> to combine in the selection."));
     }
 
     if (desktop()) {
@@ -206,7 +206,7 @@ ObjectSet::breakApart(bool skip_undo, bool overlapping, bool silent)
 {
     if (isEmpty()) {
         if(desktop() && !silent)
-            desktop()->getMessageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>path(s)</b> to break apart."));
+            desktop()->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>path(s)</b> to break apart."));
         return;
     }
     if(desktop()){
@@ -293,7 +293,7 @@ ObjectSet::breakApart(bool skip_undo, bool overlapping, bool silent)
             DocumentUndo::done(document(), _("Break apart"), INKSCAPE_ICON("path-break-apart"));
         }
     } else if (desktop() && !silent) {
-        desktop()->getMessageStack()->flash(Inkscape::ERROR_MESSAGE, _("<b>No path(s)</b> to break apart in the selection."));
+        desktop()->messageStack()->flash(Inkscape::ERROR_MESSAGE, _("<b>No path(s)</b> to break apart in the selection."));
     }
 }
 
@@ -301,7 +301,7 @@ void ObjectSet::toCurves(bool skip_undo, bool clonesjustunlink)
 {
     if (isEmpty()) {
         if (desktop())
-            desktop()->getMessageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>object(s)</b> to convert to path."));
+            desktop()->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>object(s)</b> to convert to path."));
         return;
     }
     
@@ -334,7 +334,7 @@ void ObjectSet::toCurves(bool skip_undo, bool clonesjustunlink)
         DocumentUndo::done(document(), _("Object to path"), INKSCAPE_ICON("object-to-path"));
     } else {
         if(desktop())
-            desktop()->getMessageStack()->flash(Inkscape::ERROR_MESSAGE, _("<b>No objects</b> to convert to path in the selection."));
+            desktop()->messageStack()->flash(Inkscape::ERROR_MESSAGE, _("<b>No objects</b> to convert to path in the selection."));
         return;
     }
 }
@@ -648,7 +648,7 @@ ObjectSet::pathReverse()
 {
     if (isEmpty()) {
         if(desktop())
-            desktop()->getMessageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>path(s)</b> to reverse."));
+            desktop()->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>path(s)</b> to reverse."));
         return;
     }
 
@@ -693,7 +693,7 @@ ObjectSet::pathReverse()
         DocumentUndo::done(document(), _("Reverse path"), INKSCAPE_ICON("path-reverse"));
     } else {
         if(desktop())
-            desktop()->getMessageStack()->flash(Inkscape::ERROR_MESSAGE, _("<b>No paths</b> to reverse in the selection."));
+            desktop()->messageStack()->flash(Inkscape::ERROR_MESSAGE, _("<b>No paths</b> to reverse in the selection."));
     }
 }
 

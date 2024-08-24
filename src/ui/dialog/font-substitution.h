@@ -15,15 +15,11 @@
 
 class SPDocument;
 
-namespace Inkscape {
-namespace UI {
-namespace Dialog {
+namespace Inkscape::UI::Dialog {
 
 void checkFontSubstitutions(SPDocument *doc);
 
-} // namespace Dialog
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Dialog
 
 #endif // INKSCAPE_UI_DIALOG_FONT_SUBSTITUTION_H
 

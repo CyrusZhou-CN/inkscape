@@ -40,17 +40,11 @@ window_open(InkscapeApplication *app)
     }
 }
 
-void
-window_query_geometry(InkscapeApplication *app)
+void window_query_geometry(InkscapeApplication *app)
 {
-    auto window = app->get_active_window();
-    if (window) {
-        SPDesktop *desktop = window->get_desktop();
-        if (desktop) {
-            gint x, y, w, h = 0;
-            desktop->getWindowGeometry(x, y, w, h);
-            show_output(Glib::ustring("x:") + Inkscape::ustring::format_classic(x), false);
-            show_output(Glib::ustring("y:") + Inkscape::ustring::format_classic(y), false);
+    if (auto window = app->get_active_window()) {
+        if (auto desktop = window->get_desktop()) {
+            auto const [w, h] = desktop->getWindowSize();
             show_output(Glib::ustring("w:") + Inkscape::ustring::format_classic(w), false);
             show_output(Glib::ustring("h:") + Inkscape::ustring::format_classic(h), false);
         }
@@ -69,19 +63,14 @@ window_set_geometry(const Glib::VariantBase& value, InkscapeApplication *app)
         show_output("action:set geometry: requires 'x, y, width, height'");
         return;
     }
-    auto window = app->get_active_window();
-    if (window) {
-        SPDesktop *desktop = window->get_desktop();
-        if (desktop) {
+    if (auto window = app->get_active_window()) {
+        if (auto desktop = window->get_desktop()) {
             if (desktop->is_maximized()) {
-                gtk_window_unmaximize(desktop->getToplevel()->gobj());
+                desktop->getInkscapeWindow()->unmaximize();
             }
-            gint x = std::stoi(tokens[0]);
-            gint y = std::stoi(tokens[1]);
-            gint w = std::stoi(tokens[2]);
-            gint h = std::stoi(tokens[3]);
-            desktop->setWindowSize (w, h);
-            desktop->setWindowPosition(Geom::Point(x,y));
+            int w = std::stoi(tokens[2]);
+            int h = std::stoi(tokens[3]);
+            desktop->setWindowSize({w, h});
         }
     } else {
         show_output("this action needs active window, probably you need to add --active-window / -q");

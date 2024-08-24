@@ -12,6 +12,7 @@
 #include <glibmm/i18n.h>
 
 #include "inkscape.h"
+#include "preferences.h"
 #include "selection.h"
 
 #include "display/control/canvas-item-bpath.h"

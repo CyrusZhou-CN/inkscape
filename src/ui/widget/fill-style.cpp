@@ -72,8 +72,11 @@ FillNStroke::FillNStroke(FillOrStroke k)
     _psel->signal_mode_changed().connect(sigc::mem_fun(*this, &FillNStroke::paintModeChangeCB));
     _psel->signal_dragged().connect(sigc::mem_fun(*this, &FillNStroke::dragFromPaint));
     _psel->signal_changed().connect(sigc::mem_fun(*this, &FillNStroke::paintChangedCB));
-    _psel->signal_stop_selected().connect([=](SPStop* stop) {
-       if (_desktop) { _desktop->emit_gradient_stop_selected(this, stop); }
+    _psel->signal_stop_selected().connect([=](SPStop *stop) {
+       if (_desktop) {
+            auto guard = _blocker.block();
+            _desktop->emit_gradient_stop_selected(stop);
+       }
     });
     _psel->signal_edit_pattern().connect([=](){
         if (_desktop) set_active_tool(_desktop, "Node");
@@ -125,17 +128,18 @@ void FillNStroke::setDesktop(SPDesktop *desktop)
         }
         _desktop = desktop;
         if (desktop && desktop->getSelection()) {
-            subselChangedConn = desktop->connect_text_cursor_moved([=](void* sender, Inkscape::UI::Tools::TextTool* tool) {
+            subselChangedConn = desktop->connect_text_cursor_moved([this] (Inkscape::UI::Tools::TextTool *) {
                 performUpdate();
             });
 
             eventContextConn = desktop->connectEventContextChanged(sigc::hide(sigc::bind(
                 sigc::mem_fun(*this, &FillNStroke::eventContextCB), (Inkscape::UI::Tools::ToolBase *)nullptr)));
 
-            stop_selected_connection = desktop->connect_gradient_stop_selected([=](void* sender, SPStop* stop){
-                if (sender != this) {
-                    performUpdate();
+            stop_selected_connection = desktop->connect_gradient_stop_selected([this] (SPStop *) {
+                if (_blocker.pending()) {
+                    return;
                 }
+                performUpdate();
             });
         }
         performUpdate();

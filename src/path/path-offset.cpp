@@ -26,6 +26,7 @@
 #include "message-stack.h"
 #include "path-chemistry.h"     // copy_object_properties()
 #include "path-util.h"
+#include "preferences.h"
 #include "selection.h"
 
 #include "display/curve.h"

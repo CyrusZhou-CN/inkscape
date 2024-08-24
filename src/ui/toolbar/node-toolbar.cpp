@@ -278,7 +278,7 @@ void NodeToolbar::watch_ec(SPDesktop *desktop, Inkscape::UI::Tools::ToolBase *to
         // watch selection
         c_selection_changed = desktop->getSelection()->connectChanged(sigc::mem_fun(*this, &NodeToolbar::sel_changed));
         c_selection_modified = desktop->getSelection()->connectModified(sigc::mem_fun(*this, &NodeToolbar::sel_modified));
-        c_subselection_changed = desktop->connect_control_point_selected([this](void* sender, Inkscape::UI::ControlPointSelection* selection) {
+        c_subselection_changed = desktop->connect_control_point_selected([this] (Inkscape::UI::ControlPointSelection *selection) {
             coord_changed(selection);
         });
 

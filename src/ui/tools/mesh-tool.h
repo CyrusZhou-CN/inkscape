@@ -43,7 +43,6 @@ public:
     Geom::Point mousepoint_doc; // stores mousepoint when over_line in doc coords
 
     sigc::connection *selcon;
-    sigc::connection *subselcon;
 
     void set(Preferences::Entry const &val) override;
     bool root_handler(CanvasEvent const &event) override;

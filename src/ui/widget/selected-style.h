@@ -159,7 +159,6 @@ protected:
     // Signals
     auto_connection selection_changed_connection;
     auto_connection selection_modified_connection;
-    auto_connection subselection_changed_connection;
 
     Gtk::EventSequenceState on_fill_click   (Gtk::GestureClick const &click,
                                              int n_press, double x, double y);

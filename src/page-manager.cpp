@@ -21,6 +21,7 @@
 #include "object/sp-namedview.h"
 #include "object/sp-page.h"
 #include "object/sp-root.h"
+#include "preferences.h"
 #include "selection-chemistry.h"
 #include "util/parse-int-range.h"
 #include "util/numeric/converters.h"

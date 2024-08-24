@@ -2389,7 +2389,7 @@ void ObjectSet::move(double dx, double dy)
 void ObjectSet::move(double dx, double dy, bool rotated)
 {
     if (rotated) {
-        double const rotation = desktop()->current_rotation();
+        double const rotation = desktop()->current_rotation().angle();
         double const rdx = std::cos(rotation) * dx + std::sin(rotation) * dy;
         double const rdy = -std::sin(rotation) * dx + std::cos(rotation) * dy;
 
@@ -2433,7 +2433,7 @@ void ObjectSet::moveScreen(double dx, double dy)
 void ObjectSet::moveScreen(double dx, double dy, bool rotated)
 {
     if (rotated) {
-        double const rotation = desktop()->current_rotation();
+        double const rotation = desktop()->current_rotation().angle();
         double const rdx = std::cos(rotation) * dx + std::sin(rotation) * dy;
         double const rdy = -std::sin(rotation) * dx + std::cos(rotation) * dy;
 

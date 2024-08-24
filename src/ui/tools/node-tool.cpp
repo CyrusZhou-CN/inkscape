@@ -149,8 +149,8 @@ NodeTool::NodeTool(SPDesktop *desktop)
 
     this->_multipath = new Inkscape::UI::MultiPathManipulator(data, this->_selection_changed_connection);
 
-    this->_multipath->signal_coords_changed.connect([=](){
-        desktop->emit_control_point_selected(this, _selected_nodes);
+    this->_multipath->signal_coords_changed.connect([this] {
+        _desktop->emit_control_point_selected(_selected_nodes);
     });
 
     _selected_nodes->signal_selection_changed.connect([this] (auto, auto) { update_tip(); });
@@ -179,7 +179,7 @@ NodeTool::NodeTool(SPDesktop *desktop)
         this->enableGrDrag();
     }
 
-    desktop->emit_control_point_selected(this, _selected_nodes); // sets the coord entry fields to inactive
+    desktop->emit_control_point_selected(_selected_nodes); // sets the coord entry fields to inactive
     sp_update_helperpath(desktop);
 }
 

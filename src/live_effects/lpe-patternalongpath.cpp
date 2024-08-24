@@ -10,6 +10,8 @@
 #include <vector>
 #include <2geom/bezier-to-sbasis.h>
 
+#include "preferences.h"
+
 #include "live_effects/lpe-patternalongpath.h"
 #include "live_effects/lpeobject.h"
 #include "display/curve.h"

@@ -464,7 +464,7 @@ void ClipboardManagerImpl::copySymbol(Inkscape::XML::Node* symbol, gchar const* 
  */
 void ClipboardManagerImpl::insertSymbol(SPDesktop *desktop, Geom::Point const &shift_dt, bool read_clipboard)
 {
-    if (!desktop || !Inkscape::have_viable_layer(desktop, desktop->getMessageStack())) {
+    if (!desktop || !Inkscape::have_viable_layer(desktop, desktop->messageStack())) {
         return;
     }
     if (read_clipboard) {
@@ -497,7 +497,7 @@ bool ClipboardManagerImpl::paste(SPDesktop *desktop, bool in_place, bool on_page
     if (!desktop) {
         return false;
     }
-    if (!Inkscape::have_viable_layer(desktop, desktop->getMessageStack())) {
+    if (!Inkscape::have_viable_layer(desktop, desktop->messageStack())) {
         return false;
     }
 

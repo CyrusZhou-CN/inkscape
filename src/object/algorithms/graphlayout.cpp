@@ -25,17 +25,14 @@
 
 #include <2geom/transforms.h>
 
-#include "conn-avoid-ref.h"
 #include "desktop.h"
 #include "graphlayout.h"
 #include "inkscape.h"
-
-#include "3rdparty/adaptagrams/libavoid/router.h"
+#include "preferences.h"
 
 #include "3rdparty/adaptagrams/libcola/cola.h"
 #include "3rdparty/adaptagrams/libcola/connected_components.h"
 
-#include "object/sp-item-transform.h"
 #include "object/sp-namedview.h"
 #include "object/sp-path.h"
 #include "style.h"

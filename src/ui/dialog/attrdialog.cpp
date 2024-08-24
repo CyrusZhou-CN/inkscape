@@ -26,7 +26,9 @@
 #include <gtkmm/box.h>
 #include <gtkmm/builder.h>
 #include <gtkmm/button.h>
+#include <gtkmm/entry.h>
 #include <gtkmm/enums.h>
+#include <gtkmm/image.h>
 #include <gtkmm/label.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/menubutton.h>
@@ -46,15 +48,11 @@
 #endif
 
 #include "document-undo.h"
-#include "io/resource.h"
 #include "message-context.h"
 #include "message-stack.h"
 #include "preferences.h"
-#include "selection.h"
-#include "style.h"
 #include "ui/builder-utils.h"
 #include "ui/controller.h"
-#include "ui/dialog/inkscape-preferences.h"
 #include "ui/icon-loader.h"
 #include "ui/icon-names.h"
 #include "ui/pack.h"
@@ -62,8 +60,6 @@
 #include "ui/syntax.h"
 #include "ui/widget/shapeicon.h"
 #include "util/numeric/converters.h"
-#include "util/trim.h"
-#include "xml/attribute-record.h"
 
 /**
  * Return true if `node` is a text or comment node
@@ -188,9 +184,9 @@ AttrDialog::AttrDialog()
         _nameCol->add_attribute(_nameRenderer->property_text(), _attrColumns._attributeName);
     }
 
-    _message_stack = std::make_shared<Inkscape::MessageStack>();
-    _message_context = std::make_unique<Inkscape::MessageContext>(_message_stack);
-    _message_changed_connection = _message_stack->connectChanged([this](MessageType, const char* message) {
+    _message_stack = std::make_unique<Inkscape::MessageStack>();
+    _message_context = std::make_unique<Inkscape::MessageContext>(*_message_stack);
+    _message_changed_connection = _message_stack->connectChanged([this] (MessageType, char const *message) {
         _status.set_markup(message ? message : "");
     });
 

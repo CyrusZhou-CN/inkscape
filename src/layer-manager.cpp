@@ -29,8 +29,8 @@
 #include "desktop.h"
 #include "document.h"
 #include "layer-manager.h"
+#include "preferences.h"
 #include "selection.h"
-
 
 #include "object-hierarchy.h"
 #include "object/sp-defs.h"

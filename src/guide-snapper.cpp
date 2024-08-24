@@ -13,14 +13,13 @@
  */
 
 #include "desktop.h"
+#include "preferences.h"
 
 #include "object/sp-guide.h"
 #include "object/sp-namedview.h"
 
 Inkscape::GuideSnapper::GuideSnapper(SnapManager *sm, Geom::Coord const d) : LineSnapper(sm, d)
-{
-
-}
+{}
 
 /**
  *  \return Snap tolerance (desktop coordinates); depends on current zoom so that it's always the same in screen pixels

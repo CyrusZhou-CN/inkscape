@@ -38,7 +38,7 @@ int dialog_run(Gtk::Dialog &dialog)
     return *result;
 }
 
-void dialog_show_modal_and_selfdestruct(std::unique_ptr<Gtk::Dialog> dialog, Gtk::Root * const root)
+void dialog_show_modal_and_selfdestruct(std::unique_ptr<Gtk::Dialog> dialog, Gtk::Root *root)
 {
     if (auto const window = dynamic_cast<Gtk::Window *>(root)) {
         dialog->set_transient_for(*window);

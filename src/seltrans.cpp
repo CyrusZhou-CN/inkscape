@@ -108,7 +108,7 @@ Inkscape::SelTrans::SelTrans(SPDesktop *desktop) :
     _show(SHOW_CONTENT),
     _bbox(),
     _stroked_bbox(),
-    _message_context(desktop->messageStack()),
+    _message_context(*desktop->messageStack()),
     _bounding_box_prefs_observer(*this)
 {
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();

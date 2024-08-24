@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-
 #ifndef INKSCAPE_UI_WIDGET_CANVAS_NOTICE_H
 #define INKSCAPE_UI_WIDGET_CANVAS_NOTICE_H
 
@@ -17,19 +16,21 @@ class Label;
 
 namespace Inkscape::UI::Widget {
 
-class CanvasNotice : public Gtk::Revealer {
+class CanvasNotice : public Gtk::Revealer
+{
 public:
     static CanvasNotice *create();
 
     CanvasNotice(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> const &builder);
-    void show(Glib::ustring const &msg, unsigned timeout = 0);
+
+    void show(Glib::ustring const &msg, int timeout = 0);
     void hide();
 
 private:
     Glib::RefPtr<Gtk::Builder> _builder;
 
-    Gtk::Image& _icon;
-    Gtk::Label& _label;
+    Gtk::Image &_icon;
+    Gtk::Label &_label;
 
     Inkscape::auto_connection _timeout;
 };

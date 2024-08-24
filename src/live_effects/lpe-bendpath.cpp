@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "inkscape.h"
+#include "preferences.h"
 #include "selection.h"
 #include "display/curve.h"
 #include "object/sp-lpe-item.h"

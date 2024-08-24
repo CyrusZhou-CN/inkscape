@@ -12,6 +12,7 @@
 #include "grid-snapper.h"
 
 #include "desktop.h"
+#include "preferences.h"
 #include "helper/mathfns.h"
 #include "object/sp-grid.h"
 #include "object/sp-namedview.h"

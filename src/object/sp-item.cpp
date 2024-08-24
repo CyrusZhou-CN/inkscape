@@ -26,6 +26,7 @@
 #include "display/drawing-item.h"
 #include "attributes.h"
 #include "document.h"
+#include "preferences.h"
 
 #include "inkscape.h"
 #include "desktop.h"

@@ -812,7 +812,7 @@ static void StyleFromSelectionToTool(Glib::ustring const &prefs_path, StyleSwatc
     Inkscape::Selection *selection = desktop->getSelection();
 
     if (selection->isEmpty()) {
-        desktop->getMessageStack()->flash(Inkscape::ERROR_MESSAGE,
+        desktop->messageStack()->flash(Inkscape::ERROR_MESSAGE,
                                        _("<b>No objects selected</b> to take the style from."));
         return;
     }
@@ -821,7 +821,7 @@ static void StyleFromSelectionToTool(Glib::ustring const &prefs_path, StyleSwatc
         /* TODO: If each item in the selection has the same style then don't consider it an error.
          * Maybe we should try to handle multiple selections anyway, e.g. the intersection of the
          * style attributes for the selected items. */
-        desktop->getMessageStack()->flash(Inkscape::ERROR_MESSAGE,
+        desktop->messageStack()->flash(Inkscape::ERROR_MESSAGE,
                                        _("<b>More than one object selected.</b>  Cannot take style from multiple objects."));
         return;
     }
@@ -1332,7 +1332,7 @@ void InkscapePreferences::changeIconsColors()
 void InkscapePreferences::toggleSymbolic()
 {
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-    Gtk::Window *window = SP_ACTIVE_DESKTOP->getToplevel();
+    Gtk::Window *window = SP_ACTIVE_DESKTOP->getInkscapeWindow();
     if (prefs->getBool("/theme/symbolicIcons", false)) {
         if (window ) {
             window->add_css_class("symbolic");
@@ -1382,7 +1382,7 @@ void InkscapePreferences::contrastThemeChange()
 
 void InkscapePreferences::themeChange(bool contrastslider)
 {
-    Gtk::Window *window = SP_ACTIVE_DESKTOP->getToplevel();
+    Gtk::Window *window = SP_ACTIVE_DESKTOP->getInkscapeWindow();
 
     if (window) {
         auto const display = Gdk::Display::get_default();
@@ -1415,7 +1415,7 @@ void InkscapePreferences::themeChange(bool contrastslider)
 
 void InkscapePreferences::preferDarkThemeChange()
 {
-    Gtk::Window *window = SP_ACTIVE_DESKTOP->getToplevel();
+    Gtk::Window *window = SP_ACTIVE_DESKTOP->getInkscapeWindow();
     if (window) {
         Inkscape::Preferences *prefs = Inkscape::Preferences::get();
         auto const dark = INKSCAPE.themecontext->isCurrentThemeDark(window);

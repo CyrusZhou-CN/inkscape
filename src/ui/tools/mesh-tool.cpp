@@ -59,7 +59,6 @@ MeshTool::MeshTool(SPDesktop *desktop)
     : ToolBase(desktop, "/tools/mesh", "mesh.svg")
 // TODO: Why are these connections stored as pointers?
     , selcon(nullptr)
-    , subselcon(nullptr)
     , cursor_addnode(false)
     , show_handles(true)
     , edit_fill(true)
@@ -80,13 +79,6 @@ MeshTool::MeshTool(SPDesktop *desktop)
         sigc::mem_fun(*this, &MeshTool::selection_changed)
     ));
 
-    this->subselcon = new sigc::connection(desktop->connectToolSubselectionChanged(
-        sigc::hide(sigc::bind(
-            sigc::mem_fun(*this, &MeshTool::selection_changed),
-            (Inkscape::Selection*)nullptr)
-        )
-    ));
-
     sp_event_context_read(this, "show_handles");
     sp_event_context_read(this, "edit_fill");
     sp_event_context_read(this, "edit_stroke");
@@ -99,9 +91,6 @@ MeshTool::~MeshTool() {
 
     this->selcon->disconnect();
     delete this->selcon;
-    
-    this->subselcon->disconnect();
-    delete this->subselcon;
 }
 
 // This must match GrPointType enum sp-gradient.h
@@ -898,7 +887,7 @@ void MeshTool::new_default()
                                            "<b>Gradient</b> for %d objects; with <b>Ctrl</b> to snap angle", n_objects),
                                   n_objects);
     } else {
-        _desktop->getMessageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>objects</b> on which to create gradient."));
+        _desktop->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>objects</b> on which to create gradient."));
     }
 }
 

@@ -92,7 +92,6 @@ private:
     Inkscape::Selection *_getSelection() const;
 
     sigc::connection _sel_changed;
-    sigc::connection _subsel_changed;
     sigc::connection _sel_modified;
 };
 

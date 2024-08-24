@@ -20,6 +20,7 @@
 #include "document-undo.h"
 #include "inkscape-application.h"
 #include "inkscape-window.h"
+#include "preferences.h"
 #include "selection.h"            // Selection
 #include "selection-chemistry.h"  // SelectionHelper
 #include "path/path-offset.h"

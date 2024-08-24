@@ -35,6 +35,7 @@
 #include "config.h"
 #include "desktop.h"
 #include "inkscape.h"
+#include "inkscape-window.h"
 #include "preferences.h"
 #include "colors/utils.h"
 #include "io/resource.h"
@@ -529,9 +530,9 @@ ThemeContext::themechangecallback() {
     if (auto desktops = INKSCAPE.get_desktops()) {
         for (auto & desktop : *desktops) {
             if (desktop == SP_ACTIVE_DESKTOP) {
-                winds.push_back(dynamic_cast<Gtk::Window *>(desktop->getToplevel()));
+                winds.emplace_back(desktop->getInkscapeWindow());
             } else {
-                winds.insert(winds.begin(), dynamic_cast<Gtk::Window *>(desktop->getToplevel()));
+                winds.insert(winds.begin(), desktop->getInkscapeWindow());
             }
         }
     }
@@ -565,7 +566,7 @@ ThemeContext::themechangecallback() {
 
     // select default syntax coloring theme, if needed
     if (auto desktop = INKSCAPE.active_desktop()) {
-        select_default_syntax_style(isCurrentThemeDark(desktop->getToplevel()));
+        select_default_syntax_style(isCurrentThemeDark(desktop->getInkscapeWindow()));
     }
 }
 

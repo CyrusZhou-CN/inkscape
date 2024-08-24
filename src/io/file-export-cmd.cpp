@@ -29,22 +29,18 @@
 #include "document.h"
 #include "extension/db.h"
 #include "extension/extension.h"
-#include "extension/init.h"
 #include "extension/output.h"
 #include "extension/system.h"
 #include "helper/png-write.h" // PNG Export
 #include "object/object-set.h"
-#include "object/sp-flowtext.h"
 #include "object/sp-item.h"
 #include "object/sp-namedview.h"
-#include "object/sp-object-group.h"
 #include "object/sp-page.h"
 #include "object/sp-root.h"
-#include "object/sp-text.h"
 #include "page-manager.h"
 #include "path-chemistry.h"      // sp_item_list_to_curves
+#include "preferences.h"
 #include "selection-chemistry.h" // fit_canvas_to_drawing
-#include "text-editing.h"        // te_update_layout_now_recursive
 #include "util/units.h"
 #include "util/parse-int-range.h"
 #include "io/sys.h"

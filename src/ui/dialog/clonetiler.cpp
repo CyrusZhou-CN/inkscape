@@ -1964,7 +1964,7 @@ void CloneTiler::unclump()
 
     // check if something is selected
     if (selection->isEmpty() || boost::distance(selection->items()) > 1) {
-        getDesktop()->getMessageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>one object</b> whose tiled clones to unclump."));
+        getDesktop()->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>one object</b> whose tiled clones to unclump."));
         return;
     }
 
@@ -2009,7 +2009,7 @@ void CloneTiler::remove(bool do_undo/* = true*/)
 
     // check if something is selected
     if (selection->isEmpty() || boost::distance(selection->items()) > 1) {
-        getDesktop()->getMessageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>one object</b> whose tiled clones to remove."));
+        getDesktop()->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>one object</b> whose tiled clones to remove."));
         return;
     }
 
@@ -2076,13 +2076,13 @@ void CloneTiler::apply()
 
     // check if something is selected
     if (selection->isEmpty()) {
-        desktop->getMessageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select an <b>object</b> to clone."));
+        desktop->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select an <b>object</b> to clone."));
         return;
     }
 
     // Check if more than one object is selected.
     if (boost::distance(selection->items()) > 1) {
-        desktop->getMessageStack()->flash(Inkscape::ERROR_MESSAGE, _("If you want to clone several objects, <b>group</b> them and <b>clone the group</b>."));
+        desktop->messageStack()->flash(Inkscape::ERROR_MESSAGE, _("If you want to clone several objects, <b>group</b> them and <b>clone the group</b>."));
         return;
     }
 

@@ -16,13 +16,13 @@
 
 namespace Inkscape {
 
-MessageContext::MessageContext(std::shared_ptr<MessageStack> stack)
-: _stack(std::move(stack)), _message_id(0), _flash_message_id(0)
+MessageContext::MessageContext(MessageStack &stack)
+    : _stack{&stack}
 {}
 
-MessageContext::~MessageContext() {
+MessageContext::~MessageContext()
+{
     clear();
-    _stack = nullptr;
 }
 
 void MessageContext::set(MessageType type, gchar const *message) {
@@ -78,7 +78,7 @@ void MessageContext::clear() {
     }
 }
 
-}
+} // namespace Inkscape
 
 /*
   Local Variables:

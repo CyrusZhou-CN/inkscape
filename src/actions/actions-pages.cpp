@@ -13,13 +13,13 @@
 #include <giomm.h>
 #include <glibmm/i18n.h>
 
-#include "actions-helper.h"
 #include "actions-pages.h"
 #include "desktop.h"
 #include "document-undo.h"
 #include "inkscape-application.h"
 #include "inkscape-window.h"
 #include "page-manager.h"
+#include "preferences.h"
 
 #include "object/sp-page.h"
 #include "ui/icon-names.h"
@@ -85,7 +85,7 @@ void set_move_objects(SPDocument *doc)
         active = !active; // toggle
         action->change_state(active);
 
-        Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+        auto prefs = Inkscape::Preferences::get();
         prefs->setBool("/tools/pages/move_objects", active);
     } else {
         g_warning("Can't find page-move-objects action group!");

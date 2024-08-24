@@ -18,7 +18,6 @@
 #include "actions-helper.h"
 #include "actions-object-align.h"
 
-//#include <iostream>
 #include <limits>
 
 #include <giomm.h>  // Not <gtkmm.h>! To eventually allow a headless version!
@@ -28,6 +27,7 @@
 #include "enums.h"                // Clones
 #include "filter-chemistry.h"     // LPE bool
 #include "inkscape-application.h"
+#include "preferences.h"
 #include "selection.h"
 #include "text-editing.h"
 

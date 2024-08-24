@@ -24,6 +24,7 @@
 #include "object/sp-guide.h"
 #include "object/sp-namedview.h"
 #include "page-manager.h"
+#include "preferences.h"
 #include "ui/widget/spinbutton.h"
 
 namespace Inkscape::UI::Dialog {
@@ -342,7 +343,7 @@ void GuidelinePropertiesDialog::_setup()
     }
 
     set_modal(true);
-    _desktop->setWindowTransient(gobj());
+    _desktop->setWindowTransient(*this);
 
     set_default_widget(*ok);
 }

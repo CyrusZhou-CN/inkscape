@@ -347,8 +347,7 @@ CanvasGrid::ToggleCommandPalette()
     _command_palette->toggle();
 }
 
-void
-CanvasGrid::showNotice(Glib::ustring const &msg, unsigned timeout)
+void CanvasGrid::showNotice(Glib::ustring const &msg, int timeout)
 {
     _notice->show(msg, timeout);
 }

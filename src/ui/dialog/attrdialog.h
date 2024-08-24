@@ -94,7 +94,7 @@ private:
     Glib::ustring _value_path;
     Glib::ustring _value_editing;
     // Status bar
-    std::shared_ptr<Inkscape::MessageStack> _message_stack;
+    std::unique_ptr<Inkscape::MessageStack> _message_stack;
     std::unique_ptr<Inkscape::MessageContext> _message_context;
     // Widgets
     Gtk::ScrolledWindow& _scrolled_window;

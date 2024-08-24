@@ -18,6 +18,7 @@
 
 #include <2geom/sbasis-to-bezier.h>
 
+#include "preferences.h"
 #include "style.h"
 
 #include "helper/geom.h"

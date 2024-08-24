@@ -26,6 +26,7 @@
 #include "display/control/ctrl-handle-manager.h"
 #include "display/control/ctrl-handle-styling.h"
 #include "display/curve.h"
+#include "preferences.h"
 #include "ui/widget/canvas.h" // autoscroll
 
 Inkscape::Rubberband *Inkscape::Rubberband::_instance = nullptr;

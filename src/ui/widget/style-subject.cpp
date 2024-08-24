@@ -78,10 +78,8 @@ int StyleSubject::Selection::queryStyle(SPStyle *query, int property) {
 
 void StyleSubject::Selection::_afterDesktopSwitch(SPDesktop *desktop) {
     _sel_changed.disconnect();
-    _subsel_changed.disconnect();
     _sel_modified.disconnect();
     if (desktop) {
-        _subsel_changed = desktop->connectToolSubselectionChanged(sigc::hide(sigc::mem_fun(*this, &Selection::_emitChanged)));
         Inkscape::Selection *selection = desktop->getSelection();
         if (selection) {
             _sel_changed = selection->connectChanged(sigc::hide(sigc::mem_fun(*this, &Selection::_emitChanged)));

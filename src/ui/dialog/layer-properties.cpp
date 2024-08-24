@@ -101,7 +101,7 @@ void LayerPropertiesDialog::_showDialog(LayerPropertiesDialogType type, SPDeskto
     dialog->_setup();
 
     dialog->set_modal(true);
-    desktop->setWindowTransient(dialog->gobj());
+    desktop->setWindowTransient(*dialog);
     dialog->property_destroy_with_parent() = true;
 
     dialog->present();

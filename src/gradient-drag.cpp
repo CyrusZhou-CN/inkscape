@@ -204,7 +204,7 @@ Glib::ustring GrDrag::makeStopSafeColor( gchar const *str, bool &isNull )
     return colorStr;
 }
 
-bool GrDrag::styleSet( const SPCSSAttr *css, bool switch_style)
+bool GrDrag::styleSet(SPCSSAttr const *css, bool switch_style)
 {
     if (selected.empty()) {
         if (draggers.empty()) {
@@ -689,7 +689,7 @@ GrDrag::GrDrag(SPDesktop *desktop) :
             (gpointer)this )
         );
 
-    style_set_connection = desktop->connectSetStyleEx( sigc::mem_fun(*this, &GrDrag::styleSet) );
+    style_set_connection = desktop->connectSetStyle(sigc::mem_fun(*this, &GrDrag::styleSet));
 
     style_query_connection = desktop->connectQueryStyle(
         sigc::bind(
@@ -1961,7 +1961,7 @@ void GrDrag::deselect_all()
 void GrDrag::deselectAll()
 {
     deselect_all();
-    desktop->emit_gradient_stop_selected(this, nullptr);
+    desktop->emit_gradient_stop_selected(nullptr);
 }
 
 /**
@@ -2062,7 +2062,7 @@ void GrDrag::setSelected(GrDragger *dragger, bool add_to_selection, bool overrid
         }
     }
     if (seldragger) {
-        desktop->emit_gradient_stop_selected(this, nullptr);
+        desktop->emit_gradient_stop_selected(nullptr);
     }
 }
 
@@ -2076,7 +2076,7 @@ void GrDrag::setDeselected(GrDragger *dragger)
         selected.erase(dragger);
         dragger->deselect();
     }
-    desktop->emit_gradient_stop_selected(this, nullptr);
+    desktop->emit_gradient_stop_selected(nullptr);
 }
 
 /**
@@ -2717,7 +2717,7 @@ void GrDrag::selected_move(double x, double y, bool write_repr, bool scale_radia
     auto prefs = Inkscape::Preferences::get();
     bool const rotated = prefs->getBool("/options/moverotated/value", true);
     if (rotated) {
-        delta *= Geom::Rotate(-desktop->current_rotation());
+        delta *= desktop->current_rotation().inverse();
     }
 
     for(auto d : selected) {

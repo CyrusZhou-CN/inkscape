@@ -23,23 +23,17 @@
 #include <string>
 #include <vector>
 
+#include <glib/gi18n.h>
+
 #include "desktop.h"
-#include "display/control/canvas-item-grid.h"
 #include "document.h"
 #include "document-undo.h"
-#include "extension/db.h"
-#include "extension/effect.h"
-#include "extension/input.h"
-#include "extension/output.h"
-#include "extension/system.h"
 #include "file.h"
 #include "inkscape.h"
-#include "io/dir-util.h"
+#include "inkscape-window.h"
 #include "io/sys.h"
 #include "live_effects/effect.h"
 #include "live_effects/lpeobject.h"
-#include "message.h"
-#include "message-stack.h"
 #include "object/filters/composite.h"
 #include "object/persp3d.h"
 #include "object/sp-defs.h"
@@ -54,9 +48,7 @@
 #include "object/sp-text.h"
 #include "object/sp-tspan.h"
 #include "preferences.h"
-#include "print.h"
 #include "proj_pt.h"
-#include "selection-chemistry.h"
 #include "style.h"
 #include "text-editing.h"
 #include "ui/dialog-run.h"
@@ -308,7 +300,7 @@ int gui_request_dpi_fix_method(SPDocument *doc)
 {
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
     Gtk::Dialog scale_dialog(_("Convert legacy Inkscape file"));
-    scale_dialog.set_transient_for(*(INKSCAPE.active_desktop()->getToplevel()));
+    scale_dialog.set_transient_for(*INKSCAPE.active_desktop()->getInkscapeWindow());
     scale_dialog.set_margin(10);
     scale_dialog.set_resizable(false);
     Gtk::Label explanation;

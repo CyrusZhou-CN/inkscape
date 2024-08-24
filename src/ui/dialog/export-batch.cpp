@@ -29,6 +29,7 @@
 #include "desktop.h"
 #include "document-undo.h"
 #include "document.h"
+#include "inkscape-window.h"
 #include "io/sys.h"
 #include "layer-manager.h"
 #include "message-stack.h"
@@ -644,7 +645,7 @@ void BatchExport::onExport()
     std::string name = name_text.get_text();
 
     if (!Inkscape::IO::file_test(path.c_str(), (GFileTest)(G_FILE_TEST_IS_DIR))) {
-        Gtk::Window *window = _desktop->getToplevel();
+        auto const window = _desktop->getInkscapeWindow();
         if (!Inkscape::IO::file_test(path.c_str(), (GFileTest)(G_FILE_TEST_EXISTS))) {
             auto dialog = Gtk::MessageDialog(*window, _("Can not save to a directory that is actually a file."), true, Gtk::MessageType::ERROR, Gtk::ButtonsType::OK);
             UI::dialog_run(dialog);

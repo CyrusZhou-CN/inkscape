@@ -24,6 +24,7 @@
 #include "desktop.h"
 #include "document.h"
 #include "inkscape.h"
+#include "preferences.h"
 #include "selection.h"
 #include "selection-chemistry.h"
 #include "text-editing.h"
@@ -38,7 +39,6 @@
 #include "ui/pack.h"
 
 namespace Inkscape::UI::Dialog {
-
 namespace {
 
 void show(std::vector<SPItem*> const &list, Glib::ustring const &out)

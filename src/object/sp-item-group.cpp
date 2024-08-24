@@ -23,8 +23,7 @@
 #include "document-undo.h"
 #include "document.h"
 #include "enums.h"
-#include "persp3d.h"
-#include "selection-chemistry.h"
+#include "preferences.h"
 #include "style.h"
 
 #include "box3d.h"
@@ -33,11 +32,8 @@
 #include "sp-defs.h"
 #include "sp-desc.h"
 #include "sp-flowtext.h"
-#include "sp-item-transform.h"
 #include "sp-mask.h"
 #include "sp-offset.h"
-#include "sp-path.h"
-#include "sp-rect.h"
 #include "sp-root.h"
 #include "sp-switch.h"
 #include "sp-textpath.h"
@@ -50,10 +46,8 @@
 #include "live_effects/lpe-clone-original.h"
 #include "live_effects/lpeobject-reference.h"
 #include "live_effects/lpeobject.h"
-#include "svg/css-ostringstream.h"
 #include "svg/svg.h"
 #include "xml/repr.h"
-#include "xml/sp-css-attr.h"
 
 using Inkscape::DocumentUndo;
 
@@ -532,7 +526,7 @@ sp_item_group_ungroup (SPGroup *group, std::vector<SPItem*> &children)
     SPDocument *doc = group->document;
     SPRoot *root = doc->getRoot();
     SPObject *defs = root->defs;
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    auto const prefs = Inkscape::Preferences::get();
     // TODO handle better ungrouping
     // now is used in clipmask LPE on remove
     prefs->setBool("/options/onungroup", true);

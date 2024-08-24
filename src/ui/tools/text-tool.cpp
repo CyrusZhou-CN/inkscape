@@ -35,6 +35,7 @@
 #include "desktop.h"
 #include "document-undo.h"
 #include "document.h"
+#include "inkscape-window.h"
 #include "message-context.h"
 #include "message-stack.h"
 #include "rubberband.h"
@@ -139,7 +140,7 @@ TextTool::TextTool(SPDesktop *desktop)
         sigc::mem_fun(*this, &TextTool::_selectionModified)
     );
     style_set_connection = _desktop->connectSetStyle(
-        sigc::mem_fun(*this, &TextTool::_styleSet)
+        sigc::hide(sigc::mem_fun(*this, &TextTool::_styleSet))
     );
     style_query_connection = _desktop->connectQueryStyle(
         sigc::mem_fun(*this, &TextTool::_styleQueried)
@@ -243,7 +244,7 @@ bool TextTool::item_handler(SPItem *item, CanvasEvent const &event)
             if (event.button == 1 && dragging_state) {
                 dragging_state = 0;
                 discard_delayed_snap_event();
-                _desktop->emit_text_cursor_moved(this, this);
+                _desktop->emit_text_cursor_moved(this);
                 ret = true;
             }
         },
@@ -382,7 +383,7 @@ bool TextTool::root_handler(CanvasEvent const &event)
                 return;
             }
 
-            if (!have_viable_layer(_desktop, _desktop->getMessageStack())) {
+            if (!have_viable_layer(_desktop, _desktop->messageStack())) {
                 ret = true;
                 return;
             }
@@ -579,7 +580,7 @@ bool TextTool::root_handler(CanvasEvent const &event)
                 }
             }
             creating = false;
-            _desktop->emit_text_cursor_moved(this, this);
+            _desktop->emit_text_cursor_moved(this);
 
             ret = true;
         },
@@ -600,7 +601,7 @@ bool TextTool::root_handler(CanvasEvent const &event)
                 bool preedit_activation = mod_ctrl(event) && mod_shift(event) && !mod_alt(event)
                                           && (group0_keyval == GDK_KEY_U || group0_keyval == GDK_KEY_u);
 
-                auto surface = _desktop->getToplevel()->get_surface()->gobj();
+                auto surface = _desktop->getInkscapeWindow()->get_surface()->gobj();
                 if (unimode || !imc || preedit_activation || !gtk_im_context_filter_key(imc, true, surface, const_cast<GdkDevice*>(event.device->gobj()), event.time, event.keycode, (GdkModifierType)event.modifiers, event.group)) {
                     // IM did not consume the key, or we're in unimode
 
@@ -1194,7 +1195,7 @@ bool TextTool::root_handler(CanvasEvent const &event)
             }
         },
         [&] (KeyReleaseEvent const &event) {
-            auto surface = _desktop->getToplevel()->get_surface()->gobj();
+            auto surface = _desktop->getInkscapeWindow()->get_surface()->gobj();
             if (!unimode && imc && gtk_im_context_filter_key(imc, false, surface, const_cast<GdkDevice*>(event.device->gobj()), event.time, event.keycode, (GdkModifierType)event.modifiers, event.group)) {
                 ret = true;
             }
@@ -1666,7 +1667,7 @@ void TextTool::_updateCursor(bool scroll_to_see)
         }
     }
 
-    _desktop->emit_text_cursor_moved(this, this);
+    _desktop->emit_text_cursor_moved(this);
 }
 
 void TextTool::_updateTextSelection()

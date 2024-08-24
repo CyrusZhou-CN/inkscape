@@ -32,6 +32,7 @@
 #include "object/sp-item-transform.h"
 #include "object/sp-namedview.h"
 #include "page-manager.h"
+#include "preferences.h"
 #include "selection.h"
 #include "ui/builder-utils.h"
 #include "ui/icon-names.h"

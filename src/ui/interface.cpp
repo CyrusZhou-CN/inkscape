@@ -32,8 +32,8 @@
 #include <gtkmm/messagedialog.h>   // for MessageDialog, ButtonsType
 
 #include "desktop.h"               // for SPDesktop
-#include "file.h"                  // for file_import
 #include "inkscape-application.h"  // for InkscapeApplication
+#include "inkscape-window.h"
 #include "inkscape.h"              // for Application, SP_ACTIVE_DOCUMENT
 
 #include "io/sys.h"                // for file_test, sanitizeString
@@ -98,7 +98,7 @@ bool sp_ui_overwrite_file(std::string const &filename)
                                               "The file already exists in \"%2\". Replacing it will overwrite its contents."),
                                             basename, dirname);
 
-    auto window = SP_ACTIVE_DESKTOP->getToplevel();
+    auto window = SP_ACTIVE_DESKTOP->getInkscapeWindow();
     auto dlg = Gtk::MessageDialog(*window, msg, true, Gtk::MessageType::QUESTION, Gtk::ButtonsType::NONE);
     dlg.add_button(_("_Cancel"), Gtk::ResponseType::NO);
     dlg.add_button(_("Replace"), Gtk::ResponseType::YES);

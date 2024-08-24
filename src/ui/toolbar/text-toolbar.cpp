@@ -1885,7 +1885,7 @@ void TextToolbar::watch_ec(SPDesktop *desktop, Inkscape::UI::Tools::ToolBase *to
         c_selection_changed =
             desktop->getSelection()->connectChangedFirst(sigc::mem_fun(*this, &TextToolbar::selection_changed));
         c_selection_modified = desktop->getSelection()->connectModifiedFirst(sigc::mem_fun(*this, &TextToolbar::selection_modified));
-        c_subselection_changed = desktop->connect_text_cursor_moved([this](void* sender, Inkscape::UI::Tools::TextTool* tool){
+        c_subselection_changed = desktop->connect_text_cursor_moved([this] (Inkscape::UI::Tools::TextTool *tool){
             subselection_changed(tool);
         });
         this->_sub_active_item = nullptr;

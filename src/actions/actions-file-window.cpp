@@ -22,6 +22,7 @@
 #include "inkscape-window.h"
 #include "desktop.h"
 #include "file.h"
+#include "preferences.h"
 #include "ui/dialog/save-template-dialog.h"
 #include "ui/dialog/new-from-template.h"
 

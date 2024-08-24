@@ -20,6 +20,7 @@
 #include <2geom/path-intersection.h>
 #include <2geom/circle.h>
 
+#include "preferences.h"
 #include "style.h"
 
 #include "display/curve.h"

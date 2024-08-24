@@ -52,7 +52,7 @@ namespace {
 void log(MessageType type, char const *message)
 {
     if (auto desktop = SP_ACTIVE_DESKTOP) {
-        desktop->getMessageStack()->flash(type, message);
+        desktop->messageStack()->flash(type, message);
     } else {
         if (type == MessageType::ERROR_MESSAGE) {
             g_error("%s", message);

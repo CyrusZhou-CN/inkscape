@@ -833,7 +833,7 @@ void PenTool::_lastpointMove(gdouble x, gdouble y) {
     auto prefs = Inkscape::Preferences::get();
     bool const rotated = prefs->getBool("/options/moverotated/value", true);
     if (rotated) {
-        delta *= Geom::Rotate(-_desktop->current_rotation());
+        delta *= _desktop->current_rotation().inverse();
     }
 
     // green

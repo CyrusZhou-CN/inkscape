@@ -99,7 +99,7 @@ void PowerstrokePropertiesDialog::showDialog(SPDesktop *desktop, Geom::Point con
     dialog->_apply_button.set_label(_("_Move"));
 
     dialog->set_modal(true);
-    desktop->setWindowTransient (dialog->gobj());
+    desktop->setWindowTransient(*dialog);
     dialog->property_destroy_with_parent() = true;
 
     dialog->present();

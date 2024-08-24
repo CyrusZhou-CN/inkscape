@@ -26,6 +26,7 @@
 
 #include "desktop.h"
 #include "inkscape.h"
+#include "inkscape-window.h"
 #include "message-stack.h"
 #include "preferences.h"
 #include "selcue.h"
@@ -787,7 +788,7 @@ void PrefEntryFileButtonHBox::onRelatedButtonClickedCallback()
         if (!selectPrefsFileInstance) {
             selectPrefsFileInstance =
                 Inkscape::UI::Dialog::FileOpenDialog::create(
-                    *desktop->getToplevel(),
+                    *desktop->getInkscapeWindow(),
                     open_path,
                     Inkscape::UI::Dialog::EXE_TYPES,
                     _("Select a bitmap editor")).release();

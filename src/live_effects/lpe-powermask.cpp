@@ -12,9 +12,9 @@
 #include <2geom/intersection-graph.h>
 
 #include "extract-uri.h"
-#include "selection.h"
-
 #include "inkscape.h"
+#include "preferences.h"
+#include "selection.h"
 
 #include "live_effects/lpeobject-reference.h"
 #include "live_effects/lpeobject.h"

@@ -10,12 +10,10 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_INKSCAPE_SELECTION_DESCRIPTION_HANDLER_H
-#define SEEN_INKSCAPE_SELECTION_DESCRIPTION_HANDLER_H
+#ifndef INKSCAPE_SELECTION_DESCRIBER_H
+#define INKSCAPE_SELECTION_DESCRIBER_H
 
-#include <cstddef>
-#include <memory>
-#include <sigc++/sigc++.h>
+#include "helper/auto-connection.h"
 #include "message-context.h"
 
 namespace Inkscape {
@@ -23,14 +21,16 @@ namespace Inkscape {
 class MessageStack;
 class Selection;
 
-class SelectionDescriber : public sigc::trackable {
+class SelectionDescriber : public sigc::trackable
+{
 public:
-    SelectionDescriber(Inkscape::Selection *selection, std::shared_ptr<MessageStack> stack, char *when_selected, char *when_nothing);
+    SelectionDescriber(Inkscape::Selection *selection, MessageStack &stack, char *when_selected, char *when_nothing);
     ~SelectionDescriber();
 
     void updateMessage(Inkscape::Selection *selection);
+
 private:
-    sigc::connection *_selection_changed_connection;
+    auto_connection _selection_changed_connection;
 
     MessageContext _context;
 
@@ -38,9 +38,9 @@ private:
     char *_when_nothing;
 };
 
-}
+} // namespace Inkscape
 
-#endif
+#endif // INKSCAPE_SELECTION_DESCRIBER_H
 
 /*
   Local Variables:

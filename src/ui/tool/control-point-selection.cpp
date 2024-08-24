@@ -549,15 +549,11 @@ bool ControlPointSelection::_keyboardMove(KeyPressEvent const &event, Geom::Poin
 
     bool const rotated = prefs->getBool("/options/moverotated/value", true);
     if (rotated) {
-        delta *= Geom::Rotate(-_desktop->current_rotation());
+        delta *= _desktop->current_rotation().inverse();
     }
 
     transform(Geom::Translate(delta));
-    if (fabs(dir[Geom::X]) > 0) {
-        signal_commit.emit(COMMIT_KEYBOARD_MOVE_X);
-    } else {
-        signal_commit.emit(COMMIT_KEYBOARD_MOVE_Y);
-    }
+    signal_commit.emit(dir.x() != 0 ? COMMIT_KEYBOARD_MOVE_X : COMMIT_KEYBOARD_MOVE_Y);
     return true;
 }
 

@@ -85,22 +85,17 @@ static int count_filtered (const std::vector<SPItem*> &items)
 
 namespace Inkscape {
 
-SelectionDescriber::SelectionDescriber(Inkscape::Selection *selection, std::shared_ptr<MessageStack> stack, char *when_selected, char *when_nothing)
-    : _context(std::move(stack)),
-      _when_selected (when_selected),
-      _when_nothing (when_nothing)
+SelectionDescriber::SelectionDescriber(Inkscape::Selection *selection, MessageStack &stack, char *when_selected, char *when_nothing)
+    : _context{stack}
+    , _when_selected{when_selected}
+    , _when_nothing{when_nothing}
 {
-    _selection_changed_connection = new sigc::connection (
-             selection->connectChanged(
-                 sigc::mem_fun(*this, &SelectionDescriber::updateMessage)));
+    _selection_changed_connection = selection->connectChanged(
+                 sigc::mem_fun(*this, &SelectionDescriber::updateMessage));
     updateMessage(selection);
 }
 
-SelectionDescriber::~SelectionDescriber()
-{
-    _selection_changed_connection->disconnect();
-    delete _selection_changed_connection;
-}
+SelectionDescriber::~SelectionDescriber() = default;
 
 void SelectionDescriber::updateMessage(Inkscape::Selection *selection) {
 	std::vector<SPItem*> items(selection->items().begin(), selection->items().end());

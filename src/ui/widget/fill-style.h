@@ -15,6 +15,7 @@
 #ifndef SEEN_DIALOGS_SP_FILL_STYLE_H
 #define SEEN_DIALOGS_SP_FILL_STYLE_H
 
+#include "ui/operation-blocker.h"
 #include "ui/widget/paint-selector.h"
 
 #include <gtkmm/box.h>
@@ -42,6 +43,7 @@ class FillNStroke : public Gtk::Box {
     guint32        _last_drag = 0;
     guint          _drag_id   = 0;
     bool           _update    = false;
+    OperationBlocker _blocker;
 
     sigc::connection subselChangedConn;
     sigc::connection eventContextConn;

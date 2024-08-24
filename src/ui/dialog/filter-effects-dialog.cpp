@@ -36,14 +36,18 @@
 #include <gtkmm/button.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/enums.h>
+#include <gtkmm/frame.h>
 #include <gtkmm/gestureclick.h>
 #include <gtkmm/grid.h>
 #include <gtkmm/image.h>
 #include <gtkmm/label.h>
+#include <gtkmm/menubutton.h>
 #include <gtkmm/paned.h>
 #include <gtkmm/popover.h>
 #include <gtkmm/scrolledwindow.h>
+#include <gtkmm/searchentry2.h>
 #include <gtkmm/sizegroup.h>
+#include <gtkmm/snapshot.h>
 #include <gtkmm/textview.h>
 #include <gtkmm/treeviewcolumn.h>
 #include <gtkmm/treeview.h>
@@ -56,13 +60,12 @@
 #include "document.h"
 #include "filter-chemistry.h"
 #include "filter-enums.h"
-#include "inkscape.h"
+#include "inkscape-window.h"
 #include "layer-manager.h"
+#include "preferences.h"
 #include "selection.h"
 #include "style.h"
 #include "display/nr-filter-types.h"
-#include "include/gtkmm_version.h"
-#include "io/sys.h"
 #include "object/filters/blend.h"
 #include "object/filters/colormatrix.h"
 #include "object/filters/componenttransfer-funcnode.h"
@@ -690,7 +693,7 @@ private:
         if (!selectFeImageFileInstance) {
             selectFeImageFileInstance =
                 Inkscape::UI::Dialog::FileOpenDialog::create(
-                    *_dialog.getDesktop()->getToplevel(),
+                    *_dialog.getDesktop()->getInkscapeWindow(),
                     open_path,
                     Inkscape::UI::Dialog::SVG_TYPES, /* TODO: any image, not just svg */
                     (char const *)_("Select an image to be used as input.")).release();

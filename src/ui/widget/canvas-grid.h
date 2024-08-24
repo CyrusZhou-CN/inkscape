@@ -77,7 +77,7 @@ public:
     void ShowCommandPalette(bool state = true);
     void ToggleCommandPalette();
 
-    void showNotice(Glib::ustring const &msg, unsigned timeout = 0);
+    void showNotice(Glib::ustring const &msg, int timeout = 0);
 
     void setPopover(Gtk::Popover *popover) { _popoverbin.setPopover(popover); }
 

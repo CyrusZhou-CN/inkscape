@@ -1079,7 +1079,7 @@ void SvgFontsDialog::set_glyph_description_from_selected_path() {
     if (!selection)
         return;
 
-    Inkscape::MessageStack *msgStack = getDesktop()->getMessageStack();
+    Inkscape::MessageStack *msgStack = getDesktop()->messageStack();
     if (selection->isEmpty()){
         char *msg = _("Select a <b>path</b> to define the curves of a glyph");
         msgStack->flash(Inkscape::ERROR_MESSAGE, msg);
@@ -1119,7 +1119,7 @@ void SvgFontsDialog::missing_glyph_description_from_selected_path(){
     if (!selection)
         return;
 
-    Inkscape::MessageStack *msgStack = getDesktop()->getMessageStack();
+    Inkscape::MessageStack *msgStack = getDesktop()->messageStack();
     if (selection->isEmpty()){
         char *msg = _("Select a <b>path</b> to define the curves of a glyph");
         msgStack->flash(Inkscape::ERROR_MESSAGE, msg);

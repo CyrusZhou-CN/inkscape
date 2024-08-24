@@ -31,19 +31,17 @@
 #include <gtkmm/spinbutton.h>
 
 #include "inkscape.h"
+#include "preferences.h"
+#include "style.h"
+
 #include "display/curve.h"
 #include "helper/geom.h"
 #include "live_effects/lpeobject.h"
-#include "live_effects/parameter/satellite-reference.h"
 #include "object/sp-item-group.h"
 #include "object/sp-object.h"
 #include "object/sp-path.h"
 #include "object/sp-shape.h"
 #include "object/sp-text.h"
-#include "path-chemistry.h"
-#include "path/path-boolop.h"
-#include "style.h"
-#include "svg/path-string.h"
 #include "svg/svg.h"
 #include "ui/icon-loader.h"
 #include "ui/icon-names.h"
@@ -52,7 +50,6 @@
 #include "ui/pack.h"
 #include "ui/util.h"
 #include "util-string/ustring-format.h"
-#include "xml/sp-css-attr.h"
 
 namespace Inkscape::LivePathEffect {
 

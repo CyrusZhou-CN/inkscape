@@ -113,7 +113,7 @@ ToolBase::ToolBase(SPDesktop *desktop, std::string &&prefs_path, std::string &&c
     set_cursor(_cursor_default);
     _desktop->getCanvas()->grab_focus();
 
-    message_context = std::make_unique<Inkscape::MessageContext>(desktop->messageStack());
+    message_context = std::make_unique<Inkscape::MessageContext>(*desktop->messageStack());
 
     // Make sure no delayed snapping events are carried over after switching tools
     // (this is only an additional safety measure against sloppy coding, because each
@@ -291,7 +291,7 @@ bool ToolBase::_keyboardMove(KeyEvent const &event, Geom::Point const &dir)
 
     bool const rotated = prefs->getBool("/options/moverotated/value", true);
     if (rotated) {
-        delta *= Geom::Rotate(-_desktop->current_rotation());
+        delta *= _desktop->current_rotation().inverse();
     }
 
     bool moved = false;

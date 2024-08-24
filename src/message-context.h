@@ -12,8 +12,8 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_INKSCAPE_MESSAGE_CONTEXT_H
-#define SEEN_INKSCAPE_MESSAGE_CONTEXT_H
+#ifndef INKSCAPE_MESSAGE_CONTEXT_H
+#define INKSCAPE_MESSAGE_CONTEXT_H
 
 #include <cstdarg>
 #include <memory>
@@ -34,7 +34,8 @@ class MessageStack;
   *
   * @see Inkscape::MessageStack
   */
-class MessageContext {
+class MessageContext
+{
 public:
     /** Constructs an Inkscape::MessageContext referencing a particular
       * Inkscape::MessageStack, which will be used for our messages
@@ -43,7 +44,7 @@ public:
       *
       * @param stack the Inkscape::MessageStack to use for our messages
       */
-    MessageContext(std::shared_ptr<MessageStack> stack);
+    MessageContext(MessageStack &stack);
     ~MessageContext();
 
     /** @brief pushes a message on the stack, replacing our old message
@@ -101,14 +102,15 @@ public:
     void clear();
 
 private:
-    std::shared_ptr<MessageStack> _stack; ///< the message stack to use
-    MessageId _message_id; ///< our current message id, or 0
-    MessageId _flash_message_id; ///< current flashed message id, or 0
+    MessageStack *_stack; ///< the message stack to use
+    MessageId _message_id = 0; ///< our current message id, or 0
+    MessageId _flash_message_id = 0; ///< current flashed message id, or 0
 };
 
-}
+} // namespace Inkscape
 
-#endif
+#endif // INKSCAPE_MESSAGE_CONTEXT_H
+
 /*
   Local Variables:
   mode:c++
