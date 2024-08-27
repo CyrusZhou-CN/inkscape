@@ -1385,7 +1385,13 @@ bool CanvasPrivate::emit_event(CanvasEvent &event)
     inspect_event(event,
         [&] (EnterEvent &event) { conv(event.pos); },
         [&] (MotionEvent &event) { conv(event.pos); },
-        [&] (ButtonEvent &event) { conv(event.pos, &event.orig_pos); },
+        [&] (ButtonPressEvent &event) {
+            // on_button_pressed() will call process_event() and therefore also emit_event() twice, on the same event
+            if (event.num_press == 1) { // Only convert the coordinates once, on the first call
+                conv(event.pos, &event.orig_pos);
+            }
+        },
+        [&] (ButtonReleaseEvent &event) { conv(event.pos); },
         [&] (KeyEvent &event) {
             if (event.pos) {
                 event.orig_pos.emplace();

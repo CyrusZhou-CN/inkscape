@@ -574,28 +574,19 @@ bool NodeTool::root_handler(CanvasEvent const &event)
 
             // If the selector received the doubleclick event, then we're at some distance from
             // the path; otherwise, the doubleclick event would have been received by
-            // CurveDragPoint; we will insert nodes into the path anyway but only if we can snap
-            // to the path. Otherwise the position would not be very well defined.
+            // CurveDragPoint
             if (!(event.modifiers & GDK_SHIFT_MASK)) {
-                auto &m = _desktop->getNamedView()->snap_manager;
-                m.setup(_desktop);
-                auto scp = Inkscape::SnapCandidatePoint(desktop_pt, Inkscape::SNAPSOURCE_OTHER_HANDLE);
-                auto sp = m.freeSnap(scp, Geom::OptRect(), true);
-                m.unSetup();
+                // The first click of the double click will have cleared the path selection, because
+                // we clicked aside of the path. We need to undo this on double click
+                auto selection = _desktop->getSelection();
+                selection->addList(_previous_selection);
 
-                if (sp.getSnapped()) {
-                    // The first click of the double click will have cleared the path selection, because
-                    // we clicked aside of the path. We need to undo this on double click
-                    auto selection = _desktop->getSelection();
-                    selection->addList(_previous_selection);
-
-                   // The selection has been restored, and the signal selection_changed has been emitted,
-                   // which has again forced a restore of the _mmap variable of the MultiPathManipulator (this->_multipath)
-                   // Now we can insert the new nodes as if nothing has happened!
-                    _multipath->insertNode(_desktop->d2w(sp.getPoint()));
-                    ret = true;
-                    return;
-                }
+                // The selection has been restored, and the signal selection_changed has been emitted,
+                // which has again forced a restore of the _mmap variable of the MultiPathManipulator (this->_multipath)
+                // Now we can insert the new nodes as if nothing has happened!
+                _multipath->insertNode(desktop_pt);
+                ret = true;
+                return;
             }
 
         }

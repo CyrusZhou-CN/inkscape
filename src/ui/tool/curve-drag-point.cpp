@@ -178,6 +178,7 @@ bool CurveDragPoint::doubleclicked(ButtonReleaseEvent const &event)
         _pm.update(true);
         _pm._commit(_("Straighten segments"));
     } else {
+        _pm._updateDragPoint(_desktop->d2w(position()));
         _insertNode(true);
     }
     return true;

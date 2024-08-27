@@ -100,7 +100,7 @@ protected:
 void sp_validate_marker(SPMarker *sp_marker, SPDocument *doc);
 void sp_marker_show_dimension (SPMarker *marker, unsigned int key, unsigned int size);
 Inkscape::DrawingItem *sp_marker_show_instance (SPMarker *marker, Inkscape::DrawingItem *parent,
-				      unsigned int key, unsigned int pos,
+				      unsigned int key, unsigned int pos, unsigned int z_order,
 				      Geom::Affine const &base, float linewidth);
 void sp_marker_hide (SPMarker *marker, unsigned int key);
 const char *generate_marker (std::vector<Inkscape::XML::Node*> &reprs, Geom::Rect bounds, SPDocument *document, Geom::Point center, Geom::Affine move);

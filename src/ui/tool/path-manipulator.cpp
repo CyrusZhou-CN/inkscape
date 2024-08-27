@@ -1782,38 +1782,47 @@ void PathManipulator::_commit(Glib::ustring const &annotation, gchar const *key)
  * point of the path. */
 Geom::Coord PathManipulator::_updateDragPoint(Geom::Point const &evp)
 {
+    auto &m = _desktop->getNamedView()->snap_manager;
+    m.setup(_desktop);
+    Inkscape::SnapCandidatePoint scp(_desktop->w2d(evp), Inkscape::SNAPSOURCE_OTHER_HANDLE);
+    Inkscape::SnappedPoint sp = m.freeSnap(scp, Geom::OptRect(), false);
+    m.unSetup();
+
     Geom::Coord dist = HUGE_VAL;
 
     Geom::Affine to_desktop = _getTransform();
     Geom::PathVector pv = _spcurve.get_pathvector();
-    std::optional<Geom::PathVectorTime> pvp =
-        pv.nearestTime(_desktop->w2d(evp) * to_desktop.inverse());
+    std::optional<Geom::PathVectorTime> pvp = pv.nearestTime(sp.getPoint() * to_desktop.inverse());
     if (!pvp) return dist;
-    Geom::Point nearest_pt = _desktop->d2w(pv.pointAt(*pvp) * to_desktop);
 
-    double fracpart = pvp->t;
-    std::list<SubpathPtr>::iterator spi = _subpaths.begin();
-    for (unsigned i = 0; i < pvp->path_index; ++i, ++spi) {}
-    NodeList::iterator first = (*spi)->before(pvp->asPathTime());
-    
-    dist = Geom::distance(evp, nearest_pt);
-
+    Geom::Point nearest_pt_dt = pv.pointAt(*pvp) * to_desktop;
+    Geom::Point nearest_pt = _desktop->d2w(nearest_pt_dt);
+    dist = Geom::distance(_desktop->d2w(sp.getPoint()), nearest_pt);
     double stroke_tolerance = _getStrokeTolerance();
-    if (first && first.next() &&
-        fracpart != 0.0 &&
-        fracpart != 1.0 &&
-        dist < stroke_tolerance)
-    {
-        // stroke_tolerance is at least two.
-        int tolerance = std::max(2, (int)stroke_tolerance);
-        _dragpoint->setVisible(true);
-        _dragpoint->setPosition(_desktop->w2d(nearest_pt));
-        _dragpoint->setSize(2 * tolerance - 1);
-        _dragpoint->setTimeValue(fracpart);
-        _dragpoint->setIterator(first);
-    } else {
-        _dragpoint->setVisible(false);
+
+    bool drag_point_updated = false;
+    if (dist < stroke_tolerance) {
+
+        double fracpart = pvp->t;
+        std::list<SubpathPtr>::iterator spi = _subpaths.begin();
+        for (unsigned i = 0; i < pvp->path_index; ++i, ++spi) {}
+        NodeList::iterator first = (*spi)->before(pvp->asPathTime());
+
+        if (first && first.next() &&
+            fracpart != 0.0 &&
+            fracpart != 1.0) {
+
+            drag_point_updated = true;
+            // stroke_tolerance is at least two.
+            int tolerance = std::max(2, (int)stroke_tolerance);
+            _dragpoint->setPosition(_desktop->w2d(nearest_pt));
+            _dragpoint->setSize(2 * tolerance - 1);
+            _dragpoint->setTimeValue(fracpart);
+            _dragpoint->setIterator(first);
+        }
     }
+
+    _dragpoint->setVisible(drag_point_updated);
 
     return dist;
 }
