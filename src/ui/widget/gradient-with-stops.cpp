@@ -115,9 +115,9 @@ void GradientWithStops::css_changed(GtkCssStyleChange * /*change*/)
 
     // load and cache cursors
     if (!_cursor_mouseover) {
-        _cursor_mouseover = Gdk::Cursor::create("grab");
-        _cursor_dragging =  Gdk::Cursor::create("grabbing");
-        _cursor_insert =    Gdk::Cursor::create("crosshair");
+        _cursor_mouseover = Gdk::Cursor::create(Glib::ustring("grab"));
+        _cursor_dragging =  Gdk::Cursor::create(Glib::ustring("grabbing"));
+        _cursor_insert =    Gdk::Cursor::create(Glib::ustring("crosshair"));
         set_stop_cursor(nullptr);
     }
 }

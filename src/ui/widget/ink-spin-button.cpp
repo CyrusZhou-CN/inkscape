@@ -409,7 +409,7 @@ void InkSpinButton::on_motion_leave() {
 void InkSpinButton::on_motion_enter_value(double x, double y) {
     _old_cursor = get_cursor();
     if (!g_resizing_cursor) {
-        g_resizing_cursor = Gdk::Cursor::create("ew-resize");
+        g_resizing_cursor = Gdk::Cursor::create(Glib::ustring("ew-resize"));
     }
     _current_cursor = g_resizing_cursor;
     set_cursor(_current_cursor);

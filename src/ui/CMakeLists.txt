@@ -300,6 +300,7 @@ set(ui_SRC
 	pack.h
 	popup-menu.h
 	shape-editor.h
+        shape-editor-knotholders.h
 	simple-pref-pusher.h
 	shortcuts.h
 	svg-renderer.h

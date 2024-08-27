@@ -19,46 +19,35 @@
 #include <glibmm/i18n.h>
 
 #include "desktop.h"
+#include "display/control/snap-indicator.h"
 #include "document-undo.h"
 #include "knot-holder-entity.h"
 #include "knot.h"
-#include "style.h"
-
-#include "display/control/snap-indicator.h"
-
 #include "object/box3d.h"
 #include "object/sp-ellipse.h"
 #include "object/sp-hatch.h"
+#include "object/sp-marker.h"
 #include "object/sp-offset.h"
 #include "object/sp-pattern.h"
 #include "object/sp-rect.h"
 #include "object/sp-shape.h"
 #include "object/sp-spiral.h"
 #include "object/sp-star.h"
-#include "object/sp-marker.h"
-#include "object/filters/gaussian-blur.h"
-
+#include "style.h"
 #include "ui/icon-names.h"
 #include "ui/shape-editor.h"
 #include "ui/tools/arc-tool.h"
 #include "ui/tools/node-tool.h"
 #include "ui/tools/rect-tool.h"
 #include "ui/tools/spiral-tool.h"
-#include "ui/tools/tweak-tool.h"
-
 
 using Inkscape::DocumentUndo;
 
-KnotHolder::KnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler) :
-    desktop(desktop),
-    item(item),
-    //XML Tree being used directly for item->getRepr() while it shouldn't be...
-    repr(item ? item->getRepr() : nullptr),
-    entity(),
-    released(relhandler),
-    local_change(FALSE),
-    dragging(false),
-    _edit_transform(Geom::identity())
+KnotHolder::KnotHolder(SPDesktop *desktop, SPItem *item)
+    : desktop(desktop)
+    , item(item)
+    // XML Tree being used directly for item->getRepr() while it shouldn't be...
+    , repr(item ? item->getRepr() : nullptr)
 {
     if (!desktop || !item) {
         g_warning ("Error! Throw an exception, please!");
@@ -135,7 +124,15 @@ void
 KnotHolder::knot_mousedown_handler(SPKnot *knot, guint state)
 {
     if (!(state & GDK_SHIFT_MASK)) {
-        unselect_knots();
+        // TODO: handle this event in the Node Tool
+        if (auto *nt = dynamic_cast<Inkscape::UI::Tools::NodeTool *>(desktop->getTool())) {
+            for (auto &_shape_editor : nt->_shape_editors) {
+                Inkscape::UI::ShapeEditor *shape_editor = _shape_editor.second.get();
+                if (shape_editor && shape_editor->knotholder) {
+                    shape_editor->knotholder->unselect_knots();
+                }
+            }
+        }
     }
     for(auto e : this->entity) {
         if (!(state & GDK_SHIFT_MASK)) {
@@ -217,22 +214,11 @@ KnotHolder::transform_selected(Geom::Affine transform){
     }
 }
 
-void
-KnotHolder::unselect_knots(){
-    Inkscape::UI::Tools::NodeTool *nt = dynamic_cast<Inkscape::UI::Tools::NodeTool*>(desktop->getTool());
-    if (nt) {
-        for (auto &_shape_editor : nt->_shape_editors) {
-            Inkscape::UI::ShapeEditor *shape_editor = _shape_editor.second.get();
-            if (shape_editor && shape_editor->has_knotholder()) {
-                KnotHolder * knotholder = shape_editor->knotholder;
-                if (knotholder) {
-                    for (auto e : knotholder->entity) {
-                        if (e->knot->is_selected()) {
-                            e->knot->selectKnot(false);
-                        }
-                    }
-                }
-            }
+void KnotHolder::unselect_knots()
+{
+    for (auto e : entity) {
+        if (e->knot->is_selected()) {
+            e->knot->selectKnot(false);
         }
     }
 }
@@ -281,68 +267,58 @@ KnotHolder::knot_moved_handler(SPKnot *knot, Geom::Point const &p, guint state)
 void
 KnotHolder::knot_ungrabbed_handler(SPKnot *knot, guint state)
 {
-    this->dragging = false;
+    dragging = false;
     desktop->getSnapIndicator()->remove_snaptarget();
 
-    if (this->released) {
-        this->released(this->item);
+    // if a point is dragged while not selected, it should select itself,
+    // even if it was just unselected in the mousedown event handler.
+    if (!knot->is_selected()) {
+        knot->selectKnot(true);
     } else {
-        // if a point is dragged while not selected, it should select itself,
-        // even if it was just unselected in the mousedown event handler.
-        if (!(knot->is_selected())) {
-            knot->selectKnot(true);
-        } else {
-            for(auto e : this->entity) {
-                if (e->knot == knot) {
-                    e->knot_ungrabbed(e->knot->position(), e->knot->drag_origin * item->i2dt_affine().inverse() * _edit_transform.inverse(), state);
-                    if (e->knot->is_lpe) {
-                        return;
-                    }
-                    break;
+        for (auto e : entity) {
+            if (e->knot == knot) {
+                e->knot_ungrabbed(e->knot->position(),
+                                  e->knot->drag_origin * item->i2dt_affine().inverse() * _edit_transform.inverse(),
+                                  state);
+                if (e->knot->is_lpe) {
+                    return;
                 }
+                break;
             }
         }
-
-        SPObject *object = (SPObject *) this->item;
-
-        // Caution: this call involves a screen update, which may process events, and as a
-        // result the knotholder may be destructed. So, after the updateRepr, we cannot use any
-        // fields of this knotholder (such as this->item), but only values we have saved beforehand
-        // (such as object).
-        object->updateRepr();
-
-
-        SPFilter *filter = (object->style) ? object->style->getFilter() : nullptr;
-        if (filter) {
-            filter->updateRepr();
-        }
-        Glib::ustring icon_name;
-
-        // TODO extract duplicated blocks;
-        if (is<SPRect>(object)) {
-            icon_name = INKSCAPE_ICON("draw-rectangle");
-        } else if (is<SPBox3D>(object)) {
-            icon_name = INKSCAPE_ICON("draw-cuboid");
-        } else if (is<SPGenericEllipse>(object)) {
-            icon_name = INKSCAPE_ICON("draw-ellipse");
-        } else if (is<SPStar>(object)) {
-            icon_name = INKSCAPE_ICON("draw-polygon-star");
-        } else if (is<SPSpiral>(object)) {
-            icon_name = INKSCAPE_ICON("draw-spiral");
-        } else if (is<SPMarker>(object)) {
-            icon_name = INKSCAPE_ICON("tool-pointer");
-        } else {
-            auto offset = cast<SPOffset>(object);
-            if (offset) {
-                if (offset->sourceHref) {
-                    icon_name = INKSCAPE_ICON("path-offset-linked");
-                } else {
-                    icon_name = INKSCAPE_ICON("path-offset-dynamic");
-                }
-            }
-        }
-        DocumentUndo::done(object->document, _("Move handle"), icon_name);
     }
+
+    SPObject *object = item;
+
+    // Caution: this call involves a screen update, which may process events, and as a
+    // result the knotholder may be destructed. So, after the updateRepr, we cannot use any
+    // fields of this knotholder (such as this->item), but only values we have saved beforehand
+    // (such as object).
+    object->updateRepr();
+
+    SPFilter *filter = (object->style) ? object->style->getFilter() : nullptr;
+    if (filter) {
+        filter->updateRepr();
+    }
+    Glib::ustring icon_name;
+
+    // TODO extract duplicated blocks;
+    if (is<SPRect>(object)) {
+        icon_name = INKSCAPE_ICON("draw-rectangle");
+    } else if (is<SPBox3D>(object)) {
+        icon_name = INKSCAPE_ICON("draw-cuboid");
+    } else if (is<SPGenericEllipse>(object)) {
+        icon_name = INKSCAPE_ICON("draw-ellipse");
+    } else if (is<SPStar>(object)) {
+        icon_name = INKSCAPE_ICON("draw-polygon-star");
+    } else if (is<SPSpiral>(object)) {
+        icon_name = INKSCAPE_ICON("draw-spiral");
+    } else if (is<SPMarker>(object)) {
+        icon_name = INKSCAPE_ICON("tool-pointer");
+    } else if (auto offset = cast<SPOffset>(object)) {
+        icon_name = offset->sourceHref ? INKSCAPE_ICON("path-offset-linked") : INKSCAPE_ICON("path-offset-dynamic");
+    }
+    DocumentUndo::done(object->document, _("Move handle"), icon_name);
 }
 
 void KnotHolder::add(KnotHolderEntity *e)

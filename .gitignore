@@ -40,6 +40,20 @@ CPackConfig.cmake
 CPackSourceConfig.cmake
 cmake_uninstall.cmake
 
+# Debian packaging
+/debian
+/obj-x86_64-linux-gnu
+/packaging/debian/.cpack
+/packaging/debian/.debhelper
+/packaging/debian/*.log
+/packaging/debian/*.substvars
+/packaging/debian/debhelper-build-stamp
+/packaging/debian/files
+/packaging/debian/inkscape*/
+/packaging/debian/lib*/
+/packaging/debian/tmp/
+
+
 # Translations
 po/*.gmo
 

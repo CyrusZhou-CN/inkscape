@@ -18,13 +18,11 @@
 #include "document.h"
 #include "live_effects/effect.h"
 #include "object/sp-lpe-item.h"
+#include "shape-editor-knotholders.h"
 #include "ui/knot/knot-holder.h"
 
 namespace Inkscape {
 namespace UI {
-
-KnotHolder *createKnotHolder(SPItem *item, SPDesktop *desktop, double edit_rotation, int edit_marker_mode);
-KnotHolder *createLPEKnotHolder(SPItem *item, SPDesktop *desktop);
 
 bool ShapeEditor::_blockSetItem = false;
 
@@ -41,8 +39,8 @@ ShapeEditor::~ShapeEditor() {
 }
 
 void ShapeEditor::unset_item(bool keep_knotholder) {
-    if (this->knotholder) {
-        Inkscape::XML::Node *old_repr = this->knotholder->repr;
+    if (knotholder) {
+        Inkscape::XML::Node *old_repr = knotholder->repr;
         if (old_repr && old_repr == knotholder_listener_attached_for) {
             old_repr->removeObserver(*this);
             Inkscape::GC::release(old_repr);
@@ -50,12 +48,11 @@ void ShapeEditor::unset_item(bool keep_knotholder) {
         }
 
         if (!keep_knotholder) {
-            delete this->knotholder;
-            this->knotholder = nullptr;
+            knotholder.reset();
         }
     }
-    if (this->lpeknotholder) {
-        Inkscape::XML::Node *old_repr = this->lpeknotholder->repr;
+    if (lpeknotholder) {
+        Inkscape::XML::Node *old_repr = lpeknotholder->repr;
         bool remove = false;
         if (old_repr && old_repr == lpeknotholder_listener_attached_for) {
             old_repr->removeObserver(*this);
@@ -64,8 +61,7 @@ void ShapeEditor::unset_item(bool keep_knotholder) {
         }
 
         if (!keep_knotholder) {
-            delete this->lpeknotholder;
-            this->lpeknotholder = nullptr;
+            lpeknotholder.reset();
         }
         if (remove) {
             lpeknotholder_listener_attached_for = nullptr;
@@ -73,27 +69,26 @@ void ShapeEditor::unset_item(bool keep_knotholder) {
     }
 }
 
-bool ShapeEditor::has_knotholder() {
-    return this->knotholder != nullptr || this->lpeknotholder != nullptr;
-}
-
 void ShapeEditor::update_knotholder() {
-    if (this->knotholder)
-        this->knotholder->update_knots();
-    if (this->lpeknotholder)
-        this->lpeknotholder->update_knots();
+    if (knotholder) {
+        knotholder->update_knots();
+    }
+    if (lpeknotholder) {
+        lpeknotholder->update_knots();
+    }
 }
 
-bool ShapeEditor::has_local_change() {
-    return (this->knotholder && this->knotholder->local_change != 0) || (this->lpeknotholder && this->lpeknotholder->local_change != 0);
+bool ShapeEditor::has_local_change() const
+{
+    return (knotholder && knotholder->local_change) || (lpeknotholder && lpeknotholder->local_change);
 }
 
 void ShapeEditor::decrement_local_change() {
-    if (this->knotholder) {
-        this->knotholder->local_change = FALSE;
+    if (knotholder) {
+        knotholder->local_change = false;
     }
-    if (this->lpeknotholder) {
-        this->lpeknotholder->local_change = FALSE;
+    if (lpeknotholder) {
+        lpeknotholder->local_change = false;
     }
 }
 
@@ -124,9 +119,9 @@ void ShapeEditor::set_item(SPItem *item) {
 
     if (item) {
         Inkscape::XML::Node *repr;
-        if (!this->knotholder) {
+        if (!knotholder) {
             // only recreate knotholder if none is present
-            this->knotholder = createKnotHolder(item, desktop, _edit_rotation, _edit_marker_mode);
+            knotholder = create_knot_holder(item, desktop, _edit_rotation, _edit_marker_mode);
         }
         auto lpe = cast<SPLPEItem>(item);
         if (!(lpe &&
@@ -134,19 +129,18 @@ void ShapeEditor::set_item(SPItem *item) {
             lpe->getCurrentLPE()->isVisible() &&
             lpe->getCurrentLPE()->providesKnotholder()))
         {
-            delete this->lpeknotholder;
-            this->lpeknotholder = nullptr;
+            lpeknotholder.reset();
         }
-        if (!this->lpeknotholder) {
+        if (!lpeknotholder) {
             // only recreate knotholder if none is present
-            this->lpeknotholder = createLPEKnotHolder(item, desktop);
+            lpeknotholder = create_LPE_knot_holder(item, desktop);
         }
-        if (this->knotholder) {
+        if (knotholder) {
             knotholder->install_modification_watch(); // let knotholder know item's attribute may have changed
-            this->knotholder->setEditTransform(_edit_transform);
-            this->knotholder->update_knots();
+            knotholder->setEditTransform(_edit_transform);
+            knotholder->update_knots();
             // setting new listener
-            repr = this->knotholder->repr;
+            repr = knotholder->repr;
             if (repr != knotholder_listener_attached_for) {
                 Inkscape::GC::anchor(repr);
                 repr->addObserver(*this);

@@ -296,18 +296,19 @@ bool ToolBase::_keyboardMove(KeyEvent const &event, Geom::Point const &dir)
 
     bool moved = false;
     if (shape_editor && shape_editor->has_knotholder()) {
-        KnotHolder * knotholder = shape_editor->knotholder;
+        auto &knotholder = shape_editor->knotholder;
         if (knotholder && knotholder->knot_selected()) {
             knotholder->transform_selected(Geom::Translate(delta));
             moved = true;
         }
     } else {
+        // TODO: eliminate this dynamic cast by using inheritance
         auto nt = dynamic_cast<Inkscape::UI::Tools::NodeTool *>(_desktop->getTool());
         if (nt) {
             for (auto &_shape_editor : nt->_shape_editors) {
                 ShapeEditor *shape_editor = _shape_editor.second.get();
                 if (shape_editor && shape_editor->has_knotholder()) {
-                    KnotHolder * knotholder = shape_editor->knotholder;
+                    auto &knotholder = shape_editor->knotholder;
                     if (knotholder && knotholder->knot_selected()) {
                         knotholder->transform_selected(Geom::Translate(delta));
                         moved = true;
@@ -474,7 +475,7 @@ bool ToolBase::root_handler(CanvasEvent const &event)
                 if (panning_cursor == 0) {
                     panning_cursor = 1;
                     auto window = dynamic_cast<Gtk::Window *>(_desktop->getCanvas()->get_root());
-                    auto cursor = Gdk::Cursor::create("move");
+                    auto cursor = Gdk::Cursor::create(Glib::ustring("move"));
                     window->set_cursor(cursor);
                 }
 
@@ -950,7 +951,7 @@ bool ToolBase::item_handler(SPItem *item, CanvasEvent const &event)
         return true;
     } else if (button.button == 1 && shape_editor && shape_editor->has_knotholder()) {
         // This allows users to select an arbitary position in a pattern to edit on canvas.
-        auto knotholder = shape_editor->knotholder;
+        auto &knotholder = shape_editor->knotholder;
         auto point = button.pos;
         if (_desktop->getItemAtPoint(point, true) == knotholder->getItem()) {
             return knotholder->set_item_clickpos(_desktop->w2d(point) * _desktop->dt2doc());

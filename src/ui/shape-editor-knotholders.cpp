@@ -14,21 +14,17 @@
 
 // Declared in shape-editor.cpp.
 
+#include <algorithm>
 #include <glibmm/i18n.h>
 
-#include "preferences.h"
 #include "desktop.h"
 #include "document.h"
-#include "style.h"
-
 #include "live_effects/effect.h"
-
 #include "object/box3d.h"
-#include "object/sp-marker.h"
 #include "object/sp-ellipse.h"
 #include "object/sp-flowtext.h"
 #include "object/sp-item.h"
-#include "object/sp-namedview.h"
+#include "object/sp-marker.h"
 #include "object/sp-offset.h"
 #include "object/sp-pattern.h"
 #include "object/sp-rect.h"
@@ -36,149 +32,144 @@
 #include "object/sp-star.h"
 #include "object/sp-text.h"
 #include "object/sp-textpath.h"
-#include "object/sp-tspan.h"
+#include "preferences.h"
+#include "style.h"
 #include "svg/css-ostringstream.h"
-
-#include "ui/knot/knot-holder.h"
 #include "ui/knot/knot-holder-entity.h"
+#include "ui/knot/knot-holder.h"
 
 class RectKnotHolder : public KnotHolder {
 public:
-    RectKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler);
+    RectKnotHolder(SPDesktop *desktop, SPItem *item);
     ~RectKnotHolder() override = default;;
 };
 
 class Box3DKnotHolder : public KnotHolder {
 public:
-    Box3DKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler);
+    Box3DKnotHolder(SPDesktop *desktop, SPItem *item);
     ~Box3DKnotHolder() override = default;;
 };
 
 class MarkerKnotHolder : public KnotHolder {
 public:
-    MarkerKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler, double edit_rotation, int edit_marker_mode);
+    MarkerKnotHolder(SPDesktop *desktop, SPItem *item, double edit_rotation, int edit_marker_mode);
     ~MarkerKnotHolder() override = default;;
 };
 
 class ArcKnotHolder : public KnotHolder {
 public:
-    ArcKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler);
+    ArcKnotHolder(SPDesktop *desktop, SPItem *item);
     ~ArcKnotHolder() override = default;;
 };
 
 class StarKnotHolder : public KnotHolder {
 public:
-    StarKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler);
+    StarKnotHolder(SPDesktop *desktop, SPItem *item);
     ~StarKnotHolder() override = default;;
 };
 
 class SpiralKnotHolder : public KnotHolder {
 public:
-    SpiralKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler);
+    SpiralKnotHolder(SPDesktop *desktop, SPItem *item);
     ~SpiralKnotHolder() override = default;;
 };
 
 class OffsetKnotHolder : public KnotHolder {
 public:
-    OffsetKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler);
+    OffsetKnotHolder(SPDesktop *desktop, SPItem *item);
     ~OffsetKnotHolder() override = default;;
 };
 
 class TextKnotHolder : public KnotHolder {
 public:
-    TextKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler);
+    TextKnotHolder(SPDesktop *desktop, SPItem *item);
     ~TextKnotHolder() override = default;;
 };
 
 class FlowtextKnotHolder : public KnotHolder {
 public:
-    FlowtextKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler);
+    FlowtextKnotHolder(SPDesktop *desktop, SPItem *item);
     ~FlowtextKnotHolder() override = default;;
 };
 
 class MiscKnotHolder : public KnotHolder {
 public:
-    MiscKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler);
+    MiscKnotHolder(SPDesktop *desktop, SPItem *item);
     ~MiscKnotHolder() override = default;;
 };
 
 namespace {
 
-static KnotHolder *sp_lpe_knot_holder(SPLPEItem *item, SPDesktop *desktop)
+std::unique_ptr<KnotHolder> make_lpe_knot_holder(SPLPEItem *item, SPDesktop *desktop)
 {
-    KnotHolder *knot_holder = new KnotHolder(desktop, item, nullptr);
+    auto knot_holder = std::make_unique<KnotHolder>(desktop, item);
 
-    Inkscape::LivePathEffect::Effect *effect = item->getCurrentLPE();
-    effect->addHandles(knot_holder, item);
+    item->getCurrentLPE()->addHandles(knot_holder.get(), item);
     for (auto i : knot_holder->entity) {
         i->knot->is_lpe = true;
     }
     return knot_holder;
 }
-
 } // namespace
 
 namespace Inkscape {
 namespace UI {
 
-KnotHolder *createKnotHolder(SPItem *item, SPDesktop *desktop, double edit_rotation = 0.0, int edit_marker_mode = -1)
+std::unique_ptr<KnotHolder> create_knot_holder(SPItem *item, SPDesktop *desktop, double edit_rotation,
+                                               int edit_marker_mode)
 {
-    KnotHolder *knotholder = nullptr;
+    std::unique_ptr<KnotHolder> knotholder;
 
     if (is<SPRect>(item)) {
-        knotholder = new RectKnotHolder(desktop, item, nullptr);
+        knotholder = std::make_unique<RectKnotHolder>(desktop, item);
     } else if (is<SPBox3D>(item)) {
-        knotholder = new Box3DKnotHolder(desktop, item, nullptr);
+        knotholder = std::make_unique<Box3DKnotHolder>(desktop, item);
     } else if (is<SPMarker>(item)) {
-        knotholder = new MarkerKnotHolder(desktop, item, nullptr, edit_rotation, edit_marker_mode);
+        knotholder = std::make_unique<MarkerKnotHolder>(desktop, item, edit_rotation, edit_marker_mode);
     } else if (is<SPGenericEllipse>(item)) {
-        knotholder = new ArcKnotHolder(desktop, item, nullptr);
+        knotholder = std::make_unique<ArcKnotHolder>(desktop, item);
     } else if (is<SPStar>(item)) {
-        knotholder = new StarKnotHolder(desktop, item, nullptr);
+        knotholder = std::make_unique<StarKnotHolder>(desktop, item);
     } else if (is<SPSpiral>(item)) {
-        knotholder = new SpiralKnotHolder(desktop, item, nullptr);
+        knotholder = std::make_unique<SpiralKnotHolder>(desktop, item);
     } else if (is<SPOffset>(item)) {
-        knotholder = new OffsetKnotHolder(desktop, item, nullptr);
-    } else if (is<SPText>(item)) {
-        auto text = cast<SPText>(item);
-
+        knotholder = std::make_unique<OffsetKnotHolder>(desktop, item);
+    } else if (auto text = cast<SPText>(item)) {
         // Do not allow conversion to 'inline-size' wrapped text if on path!
         // <textPath> might not be first child if <title> or <desc> is present.
-        bool is_on_path = false;
-        for (auto child : text->childList(false)) {
-            if (is<SPTextPath>(child)) is_on_path = true;
-        }
+        auto const text_children = text->childList(false);
+        bool const is_on_path = std::any_of(text_children.begin(), text_children.end(), is<SPTextPath, SPObject>);
         if (!is_on_path) {
-            knotholder = new TextKnotHolder(desktop, item, nullptr);
+            knotholder = std::make_unique<TextKnotHolder>(desktop, item);
         }
     } else {
         auto flowtext = cast<SPFlowtext>(item);
         if (flowtext && flowtext->has_internal_frame()) {
-            knotholder = new FlowtextKnotHolder(desktop, flowtext->get_frame(nullptr), nullptr);
+            knotholder = std::make_unique<FlowtextKnotHolder>(desktop, flowtext->get_frame(nullptr));
         } else if ((item->style->fill.isPaintserver() && cast<SPPattern>(item->style->getFillPaintServer())) ||
                    (item->style->stroke.isPaintserver() && cast<SPPattern>(item->style->getStrokePaintServer()))) {
-            knotholder = new KnotHolder(desktop, item, nullptr);
+            knotholder = std::make_unique<KnotHolder>(desktop, item);
             knotholder->add_pattern_knotholder();
         }
     }
-    if (!knotholder) knotholder = new KnotHolder(desktop, item, nullptr);
+    if (!knotholder) {
+        knotholder = std::make_unique<KnotHolder>(desktop, item);
+    }
     knotholder->add_filter_knotholder();
 
     return knotholder;
 }
 
-KnotHolder *createLPEKnotHolder(SPItem *item, SPDesktop *desktop)
+std::unique_ptr<KnotHolder> create_LPE_knot_holder(SPItem *item, SPDesktop *desktop)
 {
-    KnotHolder *knotholder = nullptr;
-
     auto lpe = cast<SPLPEItem>(item);
     if (lpe &&
         lpe->getCurrentLPE() &&
         lpe->getCurrentLPE()->isVisible() &&
         lpe->getCurrentLPE()->providesKnotholder()) {
-        knotholder = sp_lpe_knot_holder(lpe, desktop);
+        return make_lpe_knot_holder(lpe, desktop);
     }
-    return knotholder;
+    return {};
 }
 
 }
@@ -563,8 +554,8 @@ RectKnotHolderEntityCenter::knot_set(Geom::Point const &p, Geom::Point const &/*
     rect->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
 }
 
-RectKnotHolder::RectKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler) :
-    KnotHolder(desktop, item, relhandler)
+RectKnotHolder::RectKnotHolder(SPDesktop *desktop, SPItem *item)
+    : KnotHolder(desktop, item)
 {
     RectKnotHolderEntityRX *entity_rx = new RectKnotHolderEntityRX();
     RectKnotHolderEntityRY *entity_ry = new RectKnotHolderEntityRY();
@@ -831,8 +822,8 @@ Box3DKnotHolderEntityCenter::knot_set(Geom::Point const &new_pos, Geom::Point co
     box->position_set();
 }
 
-Box3DKnotHolder::Box3DKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler) :
-    KnotHolder(desktop, item, relhandler)
+Box3DKnotHolder::Box3DKnotHolder(SPDesktop *desktop, SPItem *item)
+    : KnotHolder(desktop, item)
 {
     Box3DKnotHolderEntity0 *entity_corner0 = new Box3DKnotHolderEntity0();
     Box3DKnotHolderEntity1 *entity_corner1 = new Box3DKnotHolderEntity1();
@@ -1332,8 +1323,8 @@ MarkerKnotHolderEntityScale3::knot_get() const
     * getMarkerRotation(item, _edit_rotation, _edit_marker_mode);
 }
 
-MarkerKnotHolder::MarkerKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler, double edit_rotation, int edit_marker_mode) 
-    : KnotHolder(desktop, item, relhandler)
+MarkerKnotHolder::MarkerKnotHolder(SPDesktop *desktop, SPItem *item, double edit_rotation, int edit_marker_mode)
+    : KnotHolder(desktop, item)
 {
     MarkerKnotHolderEntityReference *entity_reference = new MarkerKnotHolderEntityReference(edit_rotation, edit_marker_mode);
     MarkerKnotHolderEntityOrient *entity_orient = new MarkerKnotHolderEntityOrient(edit_rotation, edit_marker_mode);
@@ -1635,9 +1626,8 @@ ArcKnotHolderEntityCenter::knot_get() const
     return Geom::Point(ge->cx.computed, ge->cy.computed);
 }
 
-
-ArcKnotHolder::ArcKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler) :
-    KnotHolder(desktop, item, relhandler)
+ArcKnotHolder::ArcKnotHolder(SPDesktop *desktop, SPItem *item)
+    : KnotHolder(desktop, item)
 {
     ArcKnotHolderEntityRX *entity_rx = new ArcKnotHolderEntityRX();
     ArcKnotHolderEntityRY *entity_ry = new ArcKnotHolderEntityRY();
@@ -1831,8 +1821,8 @@ StarKnotHolderEntity2::knot_click(unsigned int state)
     sp_star_knot_click(item, state);
 }
 
-StarKnotHolder::StarKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler) :
-    KnotHolder(desktop, item, relhandler)
+StarKnotHolder::StarKnotHolder(SPDesktop *desktop, SPItem *item)
+    : KnotHolder(desktop, item)
 {
     auto star = cast<SPStar>(item);
     g_assert(item != nullptr);
@@ -2076,8 +2066,8 @@ SpiralKnotHolderEntityInner::knot_click(unsigned int state)
     }
 }
 
-SpiralKnotHolder::SpiralKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler) :
-    KnotHolder(desktop, item, relhandler)
+SpiralKnotHolder::SpiralKnotHolder(SPDesktop *desktop, SPItem *item)
+    : KnotHolder(desktop, item)
 {
     SpiralKnotHolderEntityCenter *entity_center = new SpiralKnotHolderEntityCenter();
     SpiralKnotHolderEntityInner *entity_inner = new SpiralKnotHolderEntityInner();
@@ -2150,8 +2140,8 @@ OffsetKnotHolderEntity::knot_get() const
     return np;
 }
 
-OffsetKnotHolder::OffsetKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler) :
-    KnotHolder(desktop, item, relhandler)
+OffsetKnotHolder::OffsetKnotHolder(SPDesktop *desktop, SPItem *item)
+    : KnotHolder(desktop, item)
 {
     OffsetKnotHolderEntity *entity_offset = new OffsetKnotHolderEntity();
     entity_offset->create(desktop, item, this, Inkscape::CANVAS_ITEM_CTRL_TYPE_SHAPER, "Offset:entity",
@@ -2512,8 +2502,8 @@ TextKnotHolderEntityShapeInside::knot_set(Geom::Point const &p, Geom::Point cons
     text->updateRepr();
 }
 
-TextKnotHolder::TextKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler) :
-    KnotHolder(desktop, item, relhandler)
+TextKnotHolder::TextKnotHolder(SPDesktop *desktop, SPItem *item)
+    : KnotHolder(desktop, item)
 {
     auto text = cast<SPText>(item);
     g_assert(text != nullptr);
@@ -2588,8 +2578,8 @@ FlowtextKnotHolderEntity::knot_set(Geom::Point const &p, Geom::Point const &orig
     set_internal(p, origin, state);
 }
 
-FlowtextKnotHolder::FlowtextKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler) :
-    KnotHolder(desktop, item, relhandler)
+FlowtextKnotHolder::FlowtextKnotHolder(SPDesktop *desktop, SPItem *item)
+    : KnotHolder(desktop, item)
 {
     g_assert(item != nullptr);
 

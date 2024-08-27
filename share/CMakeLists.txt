@@ -147,6 +147,12 @@ if(UNIX)
   install(FILES
     bash-completion/completions/inkscape
     DESTINATION ${SHARE_INSTALL}/bash-completion/completions)
+  install(FILES
+    application-registry/inkscape.applications
+    DESTINATION ${SHARE_INSTALL}/application-registry/)
+  install(FILES
+    branding/inkscape.xpm
+    DESTINATION ${SHARE_INSTALL}/pixmaps/)
 
 endif()
 

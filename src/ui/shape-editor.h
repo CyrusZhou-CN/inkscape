@@ -37,13 +37,14 @@ public:
 
     void update_knotholder(); //((deprecated))
 
-    bool has_local_change();
+    bool has_local_change() const;
     void decrement_local_change();
 
     bool knot_mouseover() const;
-    KnotHolder *knotholder{nullptr};
-    KnotHolder *lpeknotholder{nullptr};
-    bool has_knotholder();
+    std::unique_ptr<KnotHolder> knotholder;
+    std::unique_ptr<KnotHolder> lpeknotholder;
+    bool has_knotholder() const { return knotholder || lpeknotholder; }
+
     static void blockSetItem(bool b) { _blockSetItem = b; } // kludge
 private:
     void reset_item();

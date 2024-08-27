@@ -8,6 +8,7 @@
  */
 
 #include <cmath>
+#include <iomanip>
 #include <gtest/gtest.h>
 
 namespace {

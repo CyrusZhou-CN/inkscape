@@ -628,7 +628,7 @@ bool NodeTool::item_handler(SPItem *item, CanvasEvent const &event)
         }
         for (auto &se : _shape_editors) {
             // This allows users to select an arbitary position in a pattern to edit on canvas.
-            if (auto knotholder = se.second->knotholder) {
+            if (auto &knotholder = se.second->knotholder) {
                 auto const point = event.pos;
 
                 // This allows us to dive into groups and find what the real item is

@@ -64,14 +64,15 @@ void NodeSatelliteArrayParam::reloadKnots()
 {
     SPDesktop *desktop = SP_ACTIVE_DESKTOP;
     if (desktop && !_global_knot_hide) {
+        // TODO: move this code to the Node Tool
         Inkscape::UI::Tools::NodeTool *nt = dynamic_cast<Inkscape::UI::Tools::NodeTool *>(desktop->getTool());
         if (nt) {
             for (auto &_shape_editor : nt->_shape_editors) {
                 Inkscape::UI::ShapeEditor *shape_editor = _shape_editor.second.get();
                 if (shape_editor && shape_editor->lpeknotholder) {
+                    // TODO: move this code to ShapeEditor
                     SPItem *item = shape_editor->lpeknotholder->item;
-                    delete shape_editor->lpeknotholder;
-                    shape_editor->lpeknotholder = nullptr;
+                    shape_editor->lpeknotholder.reset();
                     shape_editor->set_item(item);
                 }
             }

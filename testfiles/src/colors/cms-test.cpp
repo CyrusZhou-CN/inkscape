@@ -144,9 +144,10 @@ TEST_F(ColorCmsSystem, getOutputProfiles)
 
 TEST_F(ColorCmsSystem, refreshProfiles)
 {
+    ASSERT_EQ(cms->getDirectoryPaths().size(), 1);
     cms->clearDirectoryPaths();
     cms->refreshProfiles();
-    ASSERT_GE(cms->getProfiles().size(), 3);
+    ASSERT_GE(cms->getDirectoryPaths().size(), 5);
 }
 
 // ================= CMS::Profile ================= //

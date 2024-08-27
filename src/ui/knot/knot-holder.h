@@ -47,12 +47,9 @@ class SPItem;
 class SPDesktop;
 class SPKnot;
 
-/* fixme: Think how to make callbacks most sensitive (Lauris) */
-typedef void (* SPKnotHolderReleasedFunc) (SPItem *item);
-
 class KnotHolder {
 public:
-    KnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler);
+    KnotHolder(SPDesktop *desktop, SPItem *item);
     virtual ~KnotHolder();
 
     KnotHolder() = delete; // declared but not defined
@@ -85,7 +82,7 @@ public:
     bool set_item_clickpos(Geom::Point loc);
     void install_modification_watch();
 
-    std::list<KnotHolderEntity *> entity;
+    std::list<KnotHolderEntity *> entity;   // TODO: convert to std::unique_ptr
     friend class Inkscape::UI::ShapeEditor; // FIXME why?
     friend class Inkscape::LivePathEffect::NodeSatelliteArrayParam;                    // why?
     friend class Inkscape::LivePathEffect::PowerStrokePointArrayParamKnotHolderEntity; // why?
@@ -97,11 +94,9 @@ protected:
     SPItem *item; // TODO: Remove this and keep the actual item (e.g., SPRect etc.) in the item-specific knotholders
     Inkscape::XML::Node *repr; ///< repr of the item, for setting and releasing listeners.
 
-    SPKnotHolderReleasedFunc released;
+    bool local_change = false; ///< if true, no need to recreate knotholder if repr was changed.
 
-    bool local_change; ///< if true, no need to recreate knotholder if repr was changed.
-
-    bool dragging;
+    bool dragging = false;
 
     Geom::Affine _edit_transform;
     Inkscape::auto_connection _watch_fill;
