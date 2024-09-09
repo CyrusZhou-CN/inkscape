@@ -21,6 +21,7 @@
 #include "scroll-utils.h"
 #include "ui/controller.h"
 #include "ui/tools/tool-base.h"
+#include "ui/util.h"
 #include "ui/widget/popover-menu-item.h"
 #include "ui/widget/popover-menu.h"
 #include "unit-menu.h"
@@ -39,9 +40,7 @@ MathSpinButton::MathSpinButton(BaseObjectType *cobject, const Glib::RefPtr<Gtk::
 int MathSpinButton::on_input(double &newvalue)
 {
     try {
-        auto eval = Inkscape::Util::ExpressionEvaluator(get_text().c_str(), nullptr);
-        auto result = eval.evaluate();
-        newvalue = result.value;
+        newvalue = Util::ExpressionEvaluator{::get_text(*this)}.evaluate().value;
     } catch (Inkscape::Util::EvaluatorException const &e) {
         g_message ("%s", e.what());
         return false;
@@ -74,15 +73,13 @@ int SpinButton::on_input(double &newvalue)
             } else {
                 unit = _unit_tracker->getActiveUnit();
             }
-            Inkscape::Util::ExpressionEvaluator eval = Inkscape::Util::ExpressionEvaluator(get_text().c_str(), unit);
-            result = eval.evaluate();
+            result = Util::ExpressionEvaluator{::get_text(*this), unit}.evaluate();
             // check if output dimension corresponds to input unit
             if (result.dimension != (unit->isAbsolute() ? 1 : 0) ) {
                 throw Inkscape::Util::EvaluatorException("Input dimensions do not match with parameter dimensions.","");
             }
         } else {
-            Inkscape::Util::ExpressionEvaluator eval = Inkscape::Util::ExpressionEvaluator(get_text().c_str(), nullptr);
-            result = eval.evaluate();
+            result = Util::ExpressionEvaluator{::get_text(*this)}.evaluate();
         }
         newvalue = result.value;
     } catch (Inkscape::Util::EvaluatorException const &e) {

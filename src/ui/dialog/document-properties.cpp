@@ -1772,13 +1772,11 @@ GridWidget::GridWidget(SPGrid *grid)
     // Pressing "Set" button will calculate grid angles to produce parallelograms with requested widh to height ratio.
     apply->set_tooltip_text(_("Automatically calculate angles from width to height ratio\nof a single grid parallelogram"));
     apply->signal_clicked().connect([=, this](){
-        auto text = _aspect_ratio->get_text();
         try {
-            ExpressionEvaluator ex(text.c_str());
-            auto result = ex.evaluate();
-            if (!std::isfinite(result.value) || result.value <= 0) return;
+            auto const result = ExpressionEvaluator{get_text(*_aspect_ratio)}.evaluate().value;
+            if (!std::isfinite(result) || result <= 0) return;
 
-            auto angle = Geom::deg_from_rad(std::atan(1.0 / result.value));
+            auto angle = Geom::deg_from_rad(std::atan(1.0 / result));
             if (angle > 0.0 && angle < 90.0) {
                 _angle_x->setValue(angle, false);
                 _angle_z->setValue(angle, false);

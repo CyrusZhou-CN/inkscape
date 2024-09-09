@@ -542,6 +542,11 @@ void restrict_minsize_to_square(Gtk::Widget& widget, int min_size_px) {
     style_context->add_provider(css, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 2);
 }
 
+char const *get_text(Gtk::Editable const &editable)
+{
+    return gtk_editable_get_text(const_cast<GtkEditable *>(editable.gobj())); // C API is const-incorrect
+}
+
 /*
   Local Variables:
   mode:c++

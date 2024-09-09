@@ -7,6 +7,7 @@
 #include "ink-spin-button.h"
 #include <iomanip>
 
+#include "ui/util.h"
 #include "util/expression-evaluator.h"
 
 namespace Inkscape::UI::Widget {
@@ -479,13 +480,11 @@ void InkSpinButton::show_arrows(bool on) {
 bool InkSpinButton::commit_entry() {
     try {
         double value = 0.0;
-        auto text = _entry.get_text();
+        auto text = get_text(_entry);
         if (_dont_evaluate) {
             value = std::stod(text);
-        }
-        else {
-            Util::ExpressionEvaluator evaluator(text.c_str(), nullptr);
-            value = evaluator.evaluate().value;
+        } else {
+            value = Util::ExpressionEvaluator{text}.evaluate().value;
         }
         _adjustment->set_value(value);
         return true;
