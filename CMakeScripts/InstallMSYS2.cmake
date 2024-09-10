@@ -332,33 +332,37 @@ if(WIN32)
   )
 
   set(site_packages "lib/python${python_version}/site-packages")
-  # Python packages installed via pacman
-  set(packages
-      "python-lxml" "python-numpy" "python-pillow" "python-six" "python-cairo" "python-cssselect"
-      "python-gobject" "python-coverage" "python-pyserial" "python-packaging" "python-zstandard" "scour")
-  foreach(package ${packages})
-    list_files_pacman(${package} paths)
-    install_list(FILES ${paths}
-      ROOT ${MINGW_PATH}
-      COMPONENT python
-      INCLUDE ${site_packages} # only include content from "site-packages" (we might consider to install everything)
-      EXCLUDE ".pyc$"
-    )
-  endforeach()
 
-  # Python packages for the extensions manager, and clipart importer extensions
-  set(packages
-      "python-appdirs" "python-msgpack" "python-lockfile" "python-cachecontrol"
-      "python-idna" "python-urllib3" "python-chardet" "python-certifi" "python-requests" "python-beautifulsoup4" "python-filelock")
-  foreach(package ${packages})
-    list_files_pacman(${package} paths)
-    install_list(FILES ${paths}
-      ROOT ${MINGW_PATH}
-      COMPONENT extension_manager
-      INCLUDE ${site_packages} # only include content from "site-packages" (we might consider to install everything)
-      EXCLUDE ".pyc$"
-    )
-  endforeach()
+  # Ignored for crossink compiling
+  if (NOT WITH_CROSSINK)
+    # Python packages installed via pacman
+    set(packages
+        "python-lxml" "python-numpy" "python-pillow" "python-six" "python-cairo" "python-cssselect"
+        "python-gobject" "python-coverage" "python-pyserial" "python-packaging" "python-zstandard" "scour")
+    foreach(package ${packages})
+      list_files_pacman(${package} paths)
+      install_list(FILES ${paths}
+        ROOT ${MINGW_PATH}
+        COMPONENT python
+        INCLUDE ${site_packages} # only include content from "site-packages" (we might consider to install everything)
+        EXCLUDE ".pyc$"
+      )
+    endforeach()
+
+    # Python packages for the extensions manager, and clipart importer extensions
+    set(packages
+        "python-appdirs" "python-msgpack" "python-lockfile" "python-cachecontrol"
+        "python-idna" "python-urllib3" "python-chardet" "python-certifi" "python-requests" "python-beautifulsoup4" "python-filelock")
+    foreach(package ${packages})
+      list_files_pacman(${package} paths)
+      install_list(FILES ${paths}
+        ROOT ${MINGW_PATH}
+        COMPONENT extension_manager
+        INCLUDE ${site_packages} # only include content from "site-packages" (we might consider to install everything)
+        EXCLUDE ".pyc$"
+      )
+    endforeach()
+  endif()
 
   # Python packages installed via pip
   set(packages "")

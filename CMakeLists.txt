@@ -129,6 +129,7 @@ option(WITH_NLS "Compile with Native Language Support (using gettext)" ON)
 option(WITH_JEMALLOC "Compile with JEMALLOC support" OFF)
 option(WITH_ASAN "Compile with Clang's AddressSanitizer (for debugging purposes)" OFF)
 option(WITH_INTERNAL_2GEOM "Prefer internal copy of lib2geom" OFF)
+option(WITH_CROSSINK "Cross-compiling with Crossroads" OFF)
 cmake_dependent_option(WITH_X11 "Compile with X11 support" ON "UNIX; NOT APPLE" OFF)
 
 option(WITH_FUZZ "Compile for fuzzing purpose (use 'make fuzz' only)" OFF)
