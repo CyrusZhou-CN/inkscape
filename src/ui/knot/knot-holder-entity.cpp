@@ -548,6 +548,9 @@ SPGaussianBlur *BlurKnotHolderEntity::_blur() const
 Geom::Point BlurKnotHolderEntity::_pos() const
 {
     auto box = item->bbox(Geom::identity(), SPItem::VISUAL_BBOX);
+    if (box.empty()) {
+        return Geom::Point(Geom::infinity(), Geom::infinity());
+    }
     if (_dir == Geom::Y) {
         return Geom::Point(box->midpoint()[Geom::X], box->top());
     }
