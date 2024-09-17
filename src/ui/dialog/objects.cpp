@@ -1686,6 +1686,16 @@ Gtk::EventSequenceState ObjectsPanel::on_click(Gtk::GestureClick const &gesture,
                 getDesktop()->layerManager().setCurrentLayer(item, true);
             }
 
+            // If the item under cursor is not selected, we select it before opening the
+            // contextmenu. Otherwise, if the item hasn't been selected with left-click
+            // beforehand, ContextMenu's constructor may select the item and cause the list
+            // to scroll to it. Also, if the item is the parent group of a selected object,
+            // it won't get selected by ContextMenu's constructor.
+            // See https://gitlab.com/inkscape/inkscape/-/issues/5243
+            if (!selection->includes(item)) {
+                selectCursorItem(state);
+            }
+
             // true == hide menu item for opening this dialog!
             std::vector<SPItem *> items = {item};
             auto menu = Gtk::make_managed<ContextMenu>(getDesktop(), item, items, true);

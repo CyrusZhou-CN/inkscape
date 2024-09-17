@@ -13,6 +13,7 @@
 #include <sigc++/signal.h>
 #include <vector>
 
+#include "colors/color.h"
 #include "helper/auto-connection.h"
 
 namespace Inkscape::Colors {

@@ -77,8 +77,10 @@ using FinishMethod = Glib::RefPtr<Gio::File> (Gtk::FileDialog::*)
         }
     }, Glib::RefPtr<Gio::Cancellable>{});
 
-    for (auto const main_context = Glib::MainContext::get_default();
-         !responded && main_context->iteration(false);) {} // Await resp.
+    auto const main_context = Glib::MainContext::get_default();
+    while (!responded) {
+         main_context->iteration(true);
+    }
 
     return file_path;
 }
