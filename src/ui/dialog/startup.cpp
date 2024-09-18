@@ -239,7 +239,8 @@ StartScreen::StartScreen()
         tabs.set_current_page(2);
         notebook_switch(nullptr, 2);
     }
-
+    // Refresh keyboard warning message
+    keyboard_changed();
     set_modal(true);
     // set_position(Gtk::WIN_POS_CENTER_ALWAYS); // Gone.
     property_resizable() = false;
@@ -692,16 +693,15 @@ StartScreen::keyboard_changed()
 
     auto &keys_warning = get_widget<Gtk::InfoBar>(builder, "keys_warning");
     if (set_to != "inkscape.xml" && set_to != "default.xml") {
-        keys_warning.set_message_type(Gtk::MessageType::WARNING);
         keys_warning.set_visible(true);
     } else {
+        keys_warning.set_message_type(Gtk::MessageType::WARNING);
         keys_warning.set_visible(false);
     }
 }
 
 /**
- * Set Dark Switch based on current selected theme.
- * We will disable switch if current theme doesn't have prefer dark theme option.
+ * Set current state of Dark Switch based on current selected theme.
  */
 
 void StartScreen::refresh_dark_switch()
@@ -717,7 +717,6 @@ void StartScreen::refresh_dark_switch()
     Glib::ustring current_theme = prefs->getString("/theme/gtkTheme", prefs->getString("/theme/defaultGtkTheme", ""));
 
     auto &dark_toggle = get_widget<Gtk::Switch>(builder, "dark_toggle");
-    dark_toggle.set_sensitive(themes[current_theme]);
     dark_toggle.set_active(dark);
 }
 

@@ -362,6 +362,8 @@
                         <child>
                           <object class="GtkSeparator">
                             <property name="halign">center</property>
+                            <property name="margin-start">5</property>
+                            <property name="margin-end">5</property>
                           </object>
                         </child>
                         <child>
@@ -379,6 +381,8 @@
                         <child>
                           <object class="GtkSeparator">
                             <property name="halign">center</property>
+                            <property name="margin-start">5</property>
+                            <property name="margin-end">5</property>
                           </object>
                         </child>
                         <child>

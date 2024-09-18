@@ -216,7 +216,7 @@ bool DropperTool::root_handler(CanvasEvent const &event)
             double R2, G2, B2, A2;
             drawing->averageColor(pick_area, R2, G2, B2, A2);
 
-            if (pick == PICK_VISIBLE) {
+            if (pick == PICK_VISIBLE || A2 == 0) {
                 // Compose with page color
                 auto bg = _desktop->getDocument()->getPageManager().getDefaultBackgroundColor();
                 R2 = R2 + bg[0] * (1 - A2);

@@ -65,6 +65,7 @@
 #include "helper/auto-connection.h"
 #include "object/color-profile.h"
 #include "object/sp-grid.h"
+#include "object/sp-guide.h"
 #include "object/sp-root.h"
 #include "object/sp-script.h"
 #include "streq.h"
@@ -308,25 +309,33 @@ void set_color(SPDesktop* desktop, Glib::ustring operation, SPAttr color_key, SP
 void set_document_dimensions(SPDesktop* desktop, double width, double height, const Inkscape::Util::Unit* unit) {
     if (!desktop) return;
 
-    Inkscape::Util::Quantity width_quantity  = Inkscape::Util::Quantity(width, unit);
-    Inkscape::Util::Quantity height_quantity = Inkscape::Util::Quantity(height, unit);
+    auto new_width_q = Inkscape::Util::Quantity(width, unit);
+    auto new_height_q = Inkscape::Util::Quantity(height, unit);
     SPDocument* doc = desktop->getDocument();
-    Inkscape::Util::Quantity const old_height = doc->getHeight();
-    auto rect = Geom::Rect(Geom::Point(0, 0), Geom::Point(width_quantity.value("px"), height_quantity.value("px")));
+    Inkscape::Util::Quantity const old_height_q = doc->getHeight();
+    auto rect = Geom::Rect(Geom::Point(0, 0), Geom::Point(new_width_q.value("px"), new_height_q.value("px")));
     doc->fitToRect(rect, false);
 
     // The origin for the user is in the lower left corner; this point should remain stationary when
     // changing the page size. The SVG's origin however is in the upper left corner, so we must compensate for this
     if (!doc->is_yaxisdown()) {
-        Geom::Translate const vert_offset(Geom::Point(0, (old_height.value("px") - height_quantity.value("px"))));
+        auto const vert_offset = Geom::Translate(Geom::Point(0, (old_height_q.value("px") - new_height_q.value("px"))));
         doc->getRoot()->translateChildItems(vert_offset);
+    } else {
+        // when this is_yaxisdown is true, we need to translate just the guides
+        // the guides simply need their new converted positions
+        // in reference to: https://gitlab.com/inkscape/inkscape/-/issues/1230
+        for (auto guide : doc->getNamedView()->guides) {
+            guide->moveto(guide->getPoint() * Geom::Translate(0, 0), true);
+        }
     }
+
     // units: this is most likely not needed, units are part of document size attributes
     // if (unit) {
         // set_namedview_value(desktop, "", SPAttr::UNITS)
         // write_str_to_xml(desktop, _("Set document unit"), "unit", unit->abbr.c_str());
     // }
-    doc->setWidthAndHeight(width_quantity, height_quantity, true);
+    doc->setWidthAndHeight(new_width_q, new_height_q, true);
 
     DocumentUndo::done(doc, _("Set page size"), "");
 }

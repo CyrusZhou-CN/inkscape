@@ -75,7 +75,6 @@ void SPGrid::create_new(SPDocument *document, Inkscape::XML::Node *parent, GridT
 
     new_grid->setEnabled(true);
     new_grid->setVisible(true);
-    new_grid->setUnit(document->getDisplayUnit()->abbr);
     Inkscape::GC::release(new_node);
 }
 
@@ -254,57 +253,29 @@ void SPGrid::set(SPAttr key, const gchar* value)
 }
 
 /**
- * checks for old grid attriubte keys from version 0.46, and 
- * sets the old defaults to the newer attribute keys
+ * checks for old grid attriubte keys from version 0.46 to
+ * determine if there needs to be legacy attribute conversion
  */
 void SPGrid::_checkOldGrid(SPDocument *doc, Inkscape::XML::Node *repr)
 {
-    // set old settings
-    const char* gridspacingx    = "1px";
-    const char* gridspacingy    = "1px";
-    const char* gridoriginy     = "0px";
-    const char* gridoriginx     = "0px";
-    const char* gridempspacing  = "5";
-    const char* gridcolor       = "#3f3fff";
-    const char* gridempcolor    = "#3f3fff";
-    const char* gridopacity     = "0.15";
-    const char* gridempopacity  = "0.38";
+    // the old defaults
+    std::unordered_map<const char *, const char *> legacyattrs = {
+        { "gridoriginx", "0px" },
+        { "gridoriginy", "0px" },
+        { "gridspacingx", "1px" },
+        { "gridspacingy", "1px" },
+        { "gridcolor", "#3f3fff" },
+        { "gridempcolor", "#3f3fff" },
+        { "gridopacity", "0.15" },
+        { "gridempopacity", "0.38" },
+        { "gridempspacing", "5" },
+    };
 
-    if (auto originx = repr->attribute("gridoriginx")) {
-        gridoriginx = originx;
-        _legacy = true;
-    }
-    if (auto originy = repr->attribute("gridoriginy")) {
-        gridoriginy = originy;
-        _legacy = true;
-    }
-    if (auto spacingx = repr->attribute("gridspacingx")) {
-        gridspacingx = spacingx;
-        _legacy = true;
-    }
-    if (auto spacingy = repr->attribute("gridspacingy")) {
-        gridspacingy = spacingy;
-        _legacy = true;
-    }
-    if (auto minorcolor = repr->attribute("gridcolor")) {
-        gridcolor = minorcolor;
-        _legacy = true;
-    }
-    if (auto majorcolor = repr->attribute("gridempcolor")) {
-        gridempcolor = majorcolor;
-        _legacy = true;
-    }
-    if (auto majorinterval = repr->attribute("gridempspacing")) {
-        gridempspacing = majorinterval;
-        _legacy = true;
-    }
-    if (auto minoropacity = repr->attribute("gridopacity")) {
-        gridopacity = minoropacity;
-        _legacy = true;
-    }
-    if (auto majoropacity = repr->attribute("gridempopacity")) {
-        gridempopacity = majoropacity;
-        _legacy = true;
+    for (auto &iter : legacyattrs) {
+        if (auto attr = repr->attribute(iter.first)) {
+            _legacy = true;
+            iter.second = attr;
+        }
     }
 
     if (_legacy) {
@@ -314,15 +285,15 @@ void SPGrid::_checkOldGrid(SPDocument *doc, Inkscape::XML::Node *repr)
         Inkscape::XML::Node *newnode = xml_doc->createElement("inkscape:grid");
         newnode->setAttribute("id", "GridFromPre046Settings");
         newnode->setAttribute("type", getSVGType());
-        newnode->setAttribute("originx", gridoriginx);
-        newnode->setAttribute("originy", gridoriginy);
-        newnode->setAttribute("spacingx", gridspacingx);
-        newnode->setAttribute("spacingy", gridspacingy);
-        newnode->setAttribute("color", gridcolor);
-        newnode->setAttribute("empcolor", gridempcolor);
-        newnode->setAttribute("opacity", gridopacity);
-        newnode->setAttribute("empopacity", gridempopacity);
-        newnode->setAttribute("empspacing", gridempspacing);
+        newnode->setAttribute("originx", legacyattrs["gridoriginx"]);
+        newnode->setAttribute("originy", legacyattrs["gridoriginy"]);
+        newnode->setAttribute("spacingx", legacyattrs["gridspacingx"]);
+        newnode->setAttribute("spacingy", legacyattrs["gridspacingy"]);
+        newnode->setAttribute("color", legacyattrs["gridcolor"]);
+        newnode->setAttribute("empcolor", legacyattrs["gridempcolor"]);
+        newnode->setAttribute("opacity", legacyattrs["gridopacity"]);
+        newnode->setAttribute("empopacity", legacyattrs["gridempopacity"]);
+        newnode->setAttribute("empspacing", legacyattrs["gridempspacing"]);
 
         repr->appendChild(newnode);
         Inkscape::GC::release(newnode);
@@ -339,6 +310,7 @@ void SPGrid::_checkOldGrid(SPDocument *doc, Inkscape::XML::Node *repr)
         repr->removeAttribute("gridempspacing");
     }
     else if (repr->attribute("id")) {
+        // TODO(james): These need to come from preferences
         // fix v1.2 grids without spacing, units, origin defined
         auto fix = [&] (SPAttr attr, char const *value) {
             auto key = sp_attribute_name(attr);
@@ -347,13 +319,27 @@ void SPGrid::_checkOldGrid(SPDocument *doc, Inkscape::XML::Node *repr)
                 set(attr, value);
             }
         };
+        auto fix_double = [&] (SPAttr attr, double value) {
+            auto key = sp_attribute_name(attr);
+            if (!repr->attribute(key)) {
+                const char *value_cstr = std::to_string(value).c_str();
+                repr->setAttribute(key, value_cstr);
+                set(attr, value_cstr);
+            }
+        };
 
-        fix(SPAttr::ORIGINX, "0");
-        fix(SPAttr::ORIGINY, "0");
-        fix(SPAttr::SPACINGY, "1");
-        switch (readGridType(repr->attribute("type")).value_or(GridType::RECTANGULAR)) {
+        Geom::Scale scale = document->getDocumentScale().inverse();
+        Geom::Point default_origin = Geom::Point(0, 0) * scale;
+        Geom::Point default_spacing = Geom::Point(1, 1) * scale;
+
+        fix_double(SPAttr::ORIGINX, default_origin[Geom::X]);
+        fix_double(SPAttr::ORIGINY, default_origin[Geom::Y]);
+        fix_double(SPAttr::SPACINGY, default_spacing[Geom::Y]);
+
+        GridType type = readGridType(repr->attribute("type")).value_or(GridType::RECTANGULAR);
+        switch (type) {
             case GridType::RECTANGULAR:
-                fix(SPAttr::SPACINGX, "1");
+                fix_double(SPAttr::SPACINGX, default_spacing[Geom::X]);
                 break;
             case GridType::AXONOMETRIC:
                 fix(SPAttr::ANGLE_X, "30");
@@ -365,18 +351,15 @@ void SPGrid::_checkOldGrid(SPDocument *doc, Inkscape::XML::Node *repr)
                 break;
         }
 
-        const char* unit = nullptr;
-        if (auto nv = repr->parent()) {
-            // check display unit from named view (parent)
-            unit = nv->attribute("units");
-            // check document units if there are no display units defined
-            if (!unit) {
-                unit = nv->attribute("inkscape:document-units");
-                auto display_units = sp_parse_document_units(unit);
-                unit = display_units->abbr.c_str();
-            }
+        auto prefs = Inkscape::Preferences::get();
+        std::string prefpath = "/options/grids/" + std::string(getSVGType()) + "/units";
+        Glib::ustring unit = prefs->getString(prefpath);
+        if (unit.empty()) {
+            setUnit("px");
+        } else {
+            setUnit(unit);
         }
-        fix(SPAttr::UNITS, unit ? unit : "px");
+        fix(SPAttr::UNITS, unit.c_str() ? unit.c_str() : "px");
     }
 }
 
@@ -781,9 +764,11 @@ void SPGrid::setUnit(const Glib::ustring &units)
 {
     if (units.empty()) return;
 
-    getRepr()->setAttribute("units", units.c_str());
-
-    requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+    if (auto new_unit = UnitTable::get().getUnit(units)) {
+        getRepr()->setAttribute("units", units.c_str());
+        _display_unit = new_unit;
+        requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+    }
 }
 
 void SPGrid::setType(GridType type) {
