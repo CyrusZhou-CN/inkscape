@@ -42,8 +42,6 @@
 
 #include "3rdparty/libcroco/src/cr-cascade.h"  // for CRCascade
 
-#include "inkgc/gc-managed.h"
-
 #include "composite-undo-stack-observer.h"
 // XXX only for testing!
 #include "console-output-undo-observer.h"
@@ -100,18 +98,13 @@ namespace Inkscape {
 } // namespace Inkscape
 
 /// Typed SVG document implementation.
-class SPDocument : public Inkscape::GC::Managed<Inkscape::GC::SCANNED, Inkscape::GC::MANUAL>
+class SPDocument
 {
 public:
     /// For sanity check in SPObject::requestDisplayUpdate
     unsigned update_in_progress = 0;
 
-protected:
-    // Protect against allocation of SPDocument in non-GC-scanned memory.
-    // Necessary while SPDocument still contains GC-managed pointers.
     SPDocument();
-
-public:
     ~SPDocument();
     SPDocument(SPDocument const &) = delete;
     SPDocument &operator=(SPDocument const &) = delete;

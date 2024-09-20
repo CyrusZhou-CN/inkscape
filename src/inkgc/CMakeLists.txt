@@ -5,10 +5,8 @@ set(libgc_SRC
 	# -------
 	# Headers
 	gc-alloc.h
-	../gc-anchored.h
 	gc-core.h
 	gc-managed.h
-	gc-soft-ptr.h
 )
 
 add_inkscape_lib(gc_LIB "${libgc_SRC}")

@@ -351,7 +351,7 @@ std::unique_ptr<SPDocument> SPDocument::createDoc(
     bool keepalive,
     SPDocument *parent)
 {
-    auto document = std::unique_ptr<SPDocument>(new SPDocument());
+    auto document = std::make_unique<SPDocument>();
 
     Inkscape::XML::Node *rroot = rdoc->root();
 

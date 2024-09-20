@@ -322,9 +322,9 @@ void SPGrid::_checkOldGrid(SPDocument *doc, Inkscape::XML::Node *repr)
         auto fix_double = [&] (SPAttr attr, double value) {
             auto key = sp_attribute_name(attr);
             if (!repr->attribute(key)) {
-                const char *value_cstr = std::to_string(value).c_str();
-                repr->setAttribute(key, value_cstr);
-                set(attr, value_cstr);
+                auto str = std::to_string(value);
+                repr->setAttribute(key, str.c_str());
+                set(attr, str.c_str());
             }
         };
 
@@ -356,10 +356,11 @@ void SPGrid::_checkOldGrid(SPDocument *doc, Inkscape::XML::Node *repr)
         Glib::ustring unit = prefs->getString(prefpath);
         if (unit.empty()) {
             setUnit("px");
+            fix(SPAttr::UNITS, "px");
         } else {
             setUnit(unit);
+            fix(SPAttr::UNITS, unit.c_str());
         }
-        fix(SPAttr::UNITS, unit.c_str() ? unit.c_str() : "px");
     }
 }
 

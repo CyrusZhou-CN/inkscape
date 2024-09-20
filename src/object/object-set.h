@@ -31,8 +31,6 @@
 
 #include <sigc++/connection.h>
 
-#include <inkgc/gc-soft-ptr.h>
-
 #include "sp-object.h"
 #include "sp-item.h"
 #include "sp-item-group.h"
@@ -519,8 +517,8 @@ protected:
     virtual void _remove3DBoxesRecursively(SPObject *obj);
 
     MultiIndexContainer _container;
-    GC::soft_ptr<SPDesktop> _desktop;
-    GC::soft_ptr<SPDocument> _document;
+    SPDesktop * _desktop = nullptr;
+    SPDocument *_document = nullptr;
     std::list<SPBox3D *> _3dboxes;
     std::unordered_map<SPObject*, sigc::connection> _releaseConnections;
 

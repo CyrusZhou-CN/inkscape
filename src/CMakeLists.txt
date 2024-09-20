@@ -31,7 +31,6 @@ set(inkscape_SRC
   filter-chemistry.cpp
   filter-enums.cpp
   gc-anchored.cpp
-  gc-finalized.cpp
   gradient-chemistry.cpp
   gradient-drag.cpp
   guide-snapper.cpp
@@ -111,7 +110,6 @@ set(inkscape_SRC
   filter-chemistry.h
   filter-enums.h
   gc-anchored.h
-  gc-finalized.h
   gradient-chemistry.h
   gradient-drag.h
   guide-snapper.h
