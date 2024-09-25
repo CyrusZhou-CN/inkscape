@@ -208,11 +208,16 @@ view_focus_toggle(InkscapeWindow *win)
     dt->focusMode(!dt->is_focusMode());
 }
 
-void
-canvas_command_palette(InkscapeWindow *win)
+void canvas_command_palette(InkscapeWindow *win)
 {
-    SPDesktop* dt = win->get_desktop();
-    dt->toggleCommandPalette();
+    // We have to defer showing the command palette until idle, otherwise the application menu
+    // will steal back the focus from the command palette, instantly closing it again. Even then,
+    // it doesn't behave properly, vanishing when the mouse is next moved.
+    // Todo: Report/fix these issues upstream.
+    Glib::signal_idle().connect(sigc::track_object([win] {
+        win->get_desktop()->toggleCommandPalette();
+        return false; // once
+    }, *win));
 }
 
 /*

@@ -22,6 +22,7 @@
 #include <glibmm/error.h>
 #include <glibmm/i18n.h>
 #include <glibmm/main.h>
+#include <glibmm/regex.h>
 #include <glibmm/variant.h>
 #include <giomm/action.h>
 #include <gtkmm/accelerator.h>
@@ -46,7 +47,6 @@
 #include "message-stack.h"
 #include "preferences.h"
 #include "selection.h"
-#include "include/glibmm_version.h"
 #include "inkscape-application.h"
 #include "inkscape-window.h"
 #include "io/resource.h"
@@ -54,7 +54,6 @@
 #include "ui/controller.h"
 #include "ui/shortcuts.h"
 #include "ui/util.h"
-#include "util/callback-converter.h"
 
 using Inkscape::UI::create_builder;
 using Inkscape::UI::get_widget;
@@ -80,21 +79,23 @@ CommandPalette::CommandPalette()
 
     // Close the CommandPalette when the toplevel Window receives an Escape key press.
     // & also when the focused widget of said window is no longer a descendent of the Palette.
-    /* Iʼve done it like so because changing ::key-*-events to GtkEventControllerKey
-     * resulted in a LOT of weird stuff happening, and essential presses being lost.
-     * and even before changing to a controller, itʼs nice to have 1 handler, not 3!
-     * Itʼd probably make sense to move this to the main window when thereʼs time */
-    // TODO: GTK4: can maybe move this back to self once Windows donʼt intercept/forward/etc key events
-    Controller::add_key_on_window<&CommandPalette::on_window_key_pressed>(_CPBase, *this,
-                                                                          Gtk::PropagationPhase::CAPTURE);
-    Controller::add_focus_on_window(_CPBase, sigc::mem_fun(*this, &CommandPalette::on_window_focus));
-
-    _CPFilter.signal_search_changed().connect(sigc::mem_fun(*this, &CommandPalette::on_activate_cpfilter));
+    Controller::add_key<&CommandPalette::on_key_pressed>(_CPBase, *this, Gtk::PropagationPhase::CAPTURE);
 
     auto focus = Gtk::EventControllerFocus::create();
-    focus->set_propagation_phase(Gtk::PropagationPhase::BUBBLE);
-    _CPFilter.add_controller(focus);
-    focus->signal_enter().connect([this] { on_activate_cpfilter(); });
+    focus->property_contains_focus().signal_changed().connect([this, &focus = *focus] {
+        if (!focus.contains_focus()) {
+            close();
+        }
+    });
+    _CPBase.add_controller(focus);
+
+    // Fixme (GTKmm): signal_activate() not wrapped.
+    g_signal_connect(_CPFilter.gobj(), "activate", G_CALLBACK(+[] (GtkSearchEntry *self, void *data) {
+        auto cp = reinterpret_cast<CommandPalette *>(data);
+        cp->on_activate_cpfilter();
+    }), this);
+
+    Controller::add_key<&CommandPalette::on_entry_keypress>(_CPFilter, *this);
 
     set_mode(CPMode::SEARCH);
 
@@ -121,7 +122,7 @@ CommandPalette::CommandPalette()
 
                 // Note: Do not check if the file exists, to avoid long delays. See https://gitlab.com/inkscape/inkscape/-/issues/2348 .
 
-                if (not valid_file) {
+                if (!valid_file) {
                     continue;
                 }
 
@@ -165,7 +166,7 @@ CommandPalette::CommandPalette()
 
 void CommandPalette::open()
 {
-    if (not _win_doc_actions_loaded) {
+    if (!_win_doc_actions_loaded) {
         // loading actions can be very slow
         load_app_actions();
         // win doc don't exist at construction so loading at first time opening Command Palette
@@ -173,10 +174,11 @@ void CommandPalette::open()
         _win_doc_actions_loaded = true;
     }
 
+    _CPBase.set_visible(true);
+
     _CPFilter.grab_focus();
 
     _is_open = true;
-
 }
 
 void CommandPalette::close()
@@ -194,11 +196,7 @@ void CommandPalette::close()
 
 void CommandPalette::toggle()
 {
-    if (not _is_open) {
-        open();
-        return;
-    }
-    close();
+    _is_open ? close() : open();
 }
 
 void CommandPalette::append_recent_file_operation(const Glib::ustring &path, bool is_suggestion, bool is_import)
@@ -207,7 +205,6 @@ void CommandPalette::append_recent_file_operation(const Glib::ustring &path, boo
     auto &CPOperation        (get_widget<Gtk::Box>   (operation_builder, "CPOperation"));
     auto &CPGroup            (get_widget<Gtk::Label> (operation_builder, "CPGroup"));
     auto &CPName             (get_widget<Gtk::Label> (operation_builder, "CPName"));
-    auto &CPShortcut         (get_widget<Gtk::Label> (operation_builder, "CPShortcut"));
     auto &CPActionFullButton (get_widget<Gtk::Button>(operation_builder, "CPActionFullButton"));
     auto &CPActionFullLabel  (get_widget<Gtk::Label> (operation_builder, "CPActionFullLabel"));
     auto &CPDescription      (get_widget<Gtk::Label> (operation_builder, "CPDescription"));
@@ -337,27 +334,24 @@ void CommandPalette::on_search()
 
 bool CommandPalette::on_filter_full_action_name(Gtk::ListBoxRow *child)
 {
-    if (auto CPActionFullLabel = get_full_action_name(child);
-        CPActionFullLabel and _search_text == CPActionFullLabel->get_text()) {
-        return true;
-    }
-    return false;
+    auto CPActionFullLabel = get_full_action_name(child);
+    return CPActionFullLabel && _search_text == CPActionFullLabel->get_text();
 }
 
 bool CommandPalette::on_filter_recent_file(Gtk::ListBoxRow *child, bool const is_import)
 {
     auto CPActionFullLabel = get_full_action_name(child);
     if (is_import) {
-        if (CPActionFullLabel and CPActionFullLabel->get_text() == "import") {
-            auto [CPName, CPDescription] = get_name_desc(child);
+        if (CPActionFullLabel && CPActionFullLabel->get_text() == "import") {
+            auto [_, CPDescription] = get_name_desc(child);
             if (CPDescription && CPDescription->get_text() == _search_text) {
                 return true;
             }
         }
         return false;
     }
-    if (CPActionFullLabel and CPActionFullLabel->get_text() == "open") {
-        auto [CPName, CPDescription] = get_name_desc(child);
+    if (CPActionFullLabel && CPActionFullLabel->get_text() == "open") {
+        auto [_, CPDescription] = get_name_desc(child);
         if (CPDescription && CPDescription->get_text() == _search_text) {
             return true;
         }
@@ -365,9 +359,9 @@ bool CommandPalette::on_filter_recent_file(Gtk::ListBoxRow *child, bool const is
     return false;
 }
 
-bool CommandPalette::on_window_key_pressed(GtkEventControllerKey const * /*controller*/,
-                                           unsigned const keyval, unsigned /*keycode*/,
-                                           GdkModifierType /*state*/)
+bool CommandPalette::on_key_pressed(GtkEventControllerKey const * /*controller*/,
+                                    unsigned const keyval, unsigned /*keycode*/,
+                                    GdkModifierType /*state*/)
 {
     g_return_val_if_fail(_is_open, false);
 
@@ -379,18 +373,10 @@ bool CommandPalette::on_window_key_pressed(GtkEventControllerKey const * /*contr
     return false; // Pass the key event which are not used
 }
 
-void CommandPalette::on_window_focus(Gtk::Widget const * const focus)
-{
-    // TODO: GTK4: EventControllerFocus.property_contains_focus() should make this slightly nicer?
-    if (!focus || !is_descendant_of(*focus, _CPBase)) {
-        close();
-    }
-}
-
 void CommandPalette::on_activate_cpfilter()
 {
     if (_mode == CPMode::SEARCH) {
-        if (auto selected_row = _CPSuggestions.get_selected_row(); selected_row) {
+        if (auto selected_row = _CPSuggestions.get_selected_row()) {
             selected_row->activate();
         }
     } else if (_mode == CPMode::INPUT) {
@@ -400,19 +386,20 @@ void CommandPalette::on_activate_cpfilter()
     }
 }
 
-// Fixme: Why is this unused?
-bool CommandPalette::on_focus_cpfilter(Gtk::DirectionType const direction)
+bool CommandPalette::on_entry_keypress(GtkEventControllerKey const *, unsigned keyval, unsigned, GdkModifierType)
 {
     if (_mode != CPMode::SEARCH) return false;
 
-    if (direction == Gtk::DirectionType::UP) {
+    if (keyval == GDK_KEY_Up) {
         set_mode(CPMode::HISTORY);
         return true;
-    }
-
-    if (direction == Gtk::DirectionType::DOWN) {
-        // Unselect so we go to 1st row
-        _CPSuggestions.unselect_all();
+    } else if (keyval == GDK_KEY_Down) {
+        if (auto row = _CPSuggestions.get_row_at_index(0)) {
+            // Go to first row of suggestions.
+            _CPSuggestions.select_row(*row);
+            row->grab_focus();
+            return true;
+        }
     }
 
     return false;
@@ -432,7 +419,7 @@ void CommandPalette::show_suggestions()
 
 void CommandPalette::on_action_fullname_clicked(const Glib::ustring &action_fullname)
 {
-    static auto clipboard = Gdk::Display::get_default()->get_clipboard();
+    auto clipboard = Gdk::Display::get_default()->get_clipboard();
     clipboard->set_text(action_fullname);
 }
 
@@ -459,12 +446,10 @@ void CommandPalette::on_history_selection_changed(Gtk::ListBoxRow *lb)
 
 bool CommandPalette::operate_recent_file(Glib::ustring const &uri, bool const import)
 {
-    static auto prefs = Inkscape::Preferences::get();
-
     bool write_to_history = true;
 
     // if the last element in CPHistory is already this, don't update history file
-    if (not UI::get_children(_CPHistory).empty()) {
+    if (!UI::get_children(_CPHistory).empty()) {
         if (const auto last_operation = _history_xml.get_last_operation(); last_operation.has_value()) {
             if (uri.raw() == last_operation->data) {
                 bool last_operation_was_import = last_operation->history_type == HistoryType::IMPORT_FILE;
@@ -1169,7 +1154,7 @@ void CommandPalette::set_mode(CPMode mode)
  */
 CommandPalette::ActionPtrName CommandPalette::get_action_ptr_name(Glib::ustring full_action_name)
 {
-    static auto gapp = InkscapeApplication::instance()->gtk_app();
+    auto gapp = InkscapeApplication::instance()->gtk_app();
     // TODO: Optimisation: only try to assign if null, make static
     const auto win = InkscapeApplication::instance()->get_active_window();
     const auto doc = InkscapeApplication::instance()->get_active_document();
@@ -1193,7 +1178,7 @@ CommandPalette::ActionPtrName CommandPalette::get_action_ptr_name(Glib::ustring 
 
 bool CommandPalette::execute_action(const ActionPtrName &action_ptr_name, const Glib::ustring &value)
 {
-    if (not value.empty()) {
+    if (!value.empty()) {
         _history_xml.add_action_parameter(action_ptr_name.second, value);
     }
 
@@ -1365,17 +1350,12 @@ void CommandPalette::load_win_doc_actions()
     }
 }
 
-Gtk::Box &CommandPalette::get_base_widget()
-{
-    return _CPBase;
-}
-
 // CPHistoryXML ---------------------------------------------------------------
 CPHistoryXML::CPHistoryXML()
     : _file_path(IO::Resource::profile_path("cphistory.xml"))
 {
     _xml_doc = sp_repr_read_file(_file_path.c_str(), nullptr);
-    if (not _xml_doc) {
+    if (!_xml_doc) {
         _xml_doc = sp_repr_document_new("cphistory");
 
         /* STRUCTURE EXAMPLE ------------------ Illustration 1
@@ -1422,6 +1402,7 @@ CPHistoryXML::~CPHistoryXML()
 {
     Inkscape::GC::release(_xml_doc);
 }
+
 void CPHistoryXML::add_action(const std::string &full_action_name)
 {
     add_operation(HistoryType::ACTION, full_action_name);
@@ -1431,6 +1412,7 @@ void CPHistoryXML::add_import(const std::string &uri)
 {
     add_operation(HistoryType::IMPORT_FILE, uri);
 }
+
 void CPHistoryXML::add_open(const std::string &uri)
 {
     add_operation(HistoryType::OPEN_FILE, uri);

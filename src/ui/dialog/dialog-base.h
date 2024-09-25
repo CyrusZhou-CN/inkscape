@@ -90,8 +90,8 @@ protected:
 
 private:
     bool blink_off(); // timer callback
-    bool on_window_key_pressed(GtkEventControllerKey const *controller,
-                               unsigned keyval, unsigned keycode, GdkModifierType state);
+    bool on_key_pressed(GtkEventControllerKey const *controller,
+                        unsigned keyval, unsigned keycode, GdkModifierType state);
     // return if dialog is on visible tab
     bool _showing = true;
     void unsetDesktop();

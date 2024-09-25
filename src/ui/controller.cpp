@@ -130,20 +130,6 @@ Gtk::GestureDrag &add_drag(Gtk::Widget &widget,
     return drag;
 }
 
-// TODO: GTK4: EventControllerFocus.property_contains_focus() should make this slightly nicer?
-void add_focus_on_window(Gtk::Widget &widget, WindowFocusSlot slot)
-{
-    static auto connections = std::unordered_map<Gtk::Widget *, std::vector<auto_connection>>{};
-    widget.signal_map().connect([&widget, slot = std::move(slot)]
-    {
-        auto &window = dynamic_cast<Gtk::Window &>(*widget.get_root());
-        auto connection = window.property_focus_widget().signal_changed().connect(
-            [=, &window]{ slot(window.property_focus_widget().get_value()); });
-        connections[&widget].emplace_back(std::move(connection));
-    });
-    widget.signal_unmap().connect([&widget]{ connections.erase(&widget); });
-}
-
 Gtk::DragSource &add_drag_source(Gtk::Widget &widget,
                                  AddDragSourceArgs &&args,
                                  Gtk::PropagationPhase const phase,

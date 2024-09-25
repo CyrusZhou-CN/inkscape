@@ -409,10 +409,6 @@ void add_key_on_window(Gtk::Widget &widget, Listener &listener,
 /// The argument is the new focused widget of the window.
 using WindowFocusSlot = sigc::slot<void (Gtk::Widget *)>;
 
-/// Wait for widget to be mapped in a window, add a slot handling ::set-focus on
-/// that window, & keep said slot connected until the widget is (next) unmapped.
-void add_focus_on_window(Gtk::Widget &widget, WindowFocusSlot slot);
-
 } // namespace Inkscape::UI::Controller
 
 #endif // SEEN_UI_CONTROLLER_H
