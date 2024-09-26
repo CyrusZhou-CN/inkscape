@@ -18,6 +18,7 @@
 #include <poppler/GfxFont.h>
 #include <poppler/GfxState.h>
 #include <poppler/PDFDoc.h>
+#include <poppler/PDFDocEncoding.h>
 #include "libnrtype/font-factory.h"
 
 /**
@@ -575,20 +576,39 @@ std::string getDictString(Dict *dict, const char *key)
     return getString(obj.getString());
 }
 
+std::string getString(const std::unique_ptr<GooString> &value)
+{
+    return getString(value.get());
+}
+
 /**
  * Convert PDF strings, which can be formatted as UTF8, UTF16BE or UTF16LE into
  * a predictable UTF8 string consistant with svg requirements.
  */
 std::string getString(const GooString *value)
 {
-    if (_POPPLER_HAS_UNICODE_BOM(value)) {
-        return g_convert(value->getCString () + 2, value->getLength () - 2,
-                         "UTF-8", "UTF-16BE", NULL, NULL, NULL);
-    } else if (_POPPLER_HAS_UNICODE_BOMLE(value)) {
-        return g_convert(value->getCString () + 2, value->getLength () - 2,
-                         "UTF-8", "UTF-16LE", NULL, NULL, NULL);
+    if (value) {
+        int stringLength;
+        char *str = nullptr;
+
+        if (_POPPLER_HAS_UNICODE_BOM(value)) {
+            str = g_convert(value->getCString () + 2, value->getLength () - 2,
+                            "UTF-8", "UTF-16BE", NULL, NULL, NULL);
+        } else if (_POPPLER_HAS_UNICODE_BOMLE(value)) {
+            str = g_convert(value->getCString () + 2, value->getLength () - 2,
+                            "UTF-8", "UTF-16LE", NULL, NULL, NULL);
+        } else if (char *utf16 = pdfDocEncodingToUTF16(value->toStr(), &stringLength))  {
+            str = g_convert(utf16, stringLength, "UTF-8", "UTF-16", NULL, NULL, NULL);
+            g_free(utf16);
+        }
+        if (str) {
+            std::string copy = str;
+            g_free(str);
+            return copy;
+        }
+        g_warning("Couldn't parse text in PDF from UTF16.");
     }
-    return value->toStr();
+    return "";
 }
 
 void pdf_debug_array(const Array *array, int depth, XRef *xref)

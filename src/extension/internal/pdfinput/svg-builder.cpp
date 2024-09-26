@@ -35,6 +35,7 @@
 #include "pdf-utils.h"
 #include <png.h>
 #include "poppler-cairo-font-engine.h"
+#include "rdf.h"
 
 #include "colors/cms/profile.h"
 #include "colors/document-cms.h"
@@ -241,6 +242,13 @@ void SvgBuilder::setMargins(const Geom::Rect &page, const Geom::Rect &margins, c
             << bleed.bottom() - page.bottom() << " "
             << page.left() - bleed.left();
         _page->setAttribute("bleed", val.str());
+    }
+}
+
+void SvgBuilder::setMetadata(char const *name, const std::string &content)
+{
+    if (name && !content.empty()) {
+        rdf_set_work_entity(_doc, rdf_find_entity(name), content.c_str());
     }
 }
 
@@ -1579,7 +1587,10 @@ Inkscape::XML::Node* SvgBuilder::_flushTextPath(GfxState *state, double text_sca
             // Set to 'node' because if the style does NOT change, we won't have a group
             // but still need to set this text's position and blend modes.
             node = _renderText(glyph.cairo_font, text_size, text_transform, cairo_glyphs, cairo_glyph_count);
-            assert (node);
+            if (!node) {
+                g_warning("Empty or broken text in PDF file.");
+                return nullptr;
+            }
             _setTextStyle(node, glyph.state, nullptr, text_transform);
 
             if (text_group) {
@@ -1664,11 +1675,12 @@ void SvgBuilder::_flushText(GfxState *state)
     } else {
         text_node = _flushTextText(state, text_scale, text_transform);
     }
-    assert(text_node);
 
-    _setBlendMode(text_node, state);
-    svgSetTransform(text_node, text_transform * _page_affine);
-    _setClipPath(text_node);
+    if (text_node) {
+        _setBlendMode(text_node, state);
+        svgSetTransform(text_node, text_transform * _page_affine);
+        _setClipPath(text_node);
+    }
 
     _aria_label = "";
     _glyphs.clear();

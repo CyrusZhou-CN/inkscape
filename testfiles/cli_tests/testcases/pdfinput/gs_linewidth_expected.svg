@@ -11,7 +11,10 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
      id="defs1">
     <clipPath
@@ -99,4 +102,13 @@
        transform="matrix(1.0008984,0,0,1.0008984,45.340516,45.340516)"
        clip-path="url(#clipPath8)" />
   </g>
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:date>D:20210813115043+00'00'</dc:date>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
 </svg>

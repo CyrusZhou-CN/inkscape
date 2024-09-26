@@ -308,6 +308,17 @@ PdfParser::PdfParser(std::shared_ptr<PDFDoc> pdf_doc, Inkscape::Extension::Inter
         builder->cropPage(getRect(cropBox) * scale);
     }
 
+    if (auto meta = pdf_doc->readMetadata()) {
+        // TODO: Parse this metadat RDF document and extract SVG RDF details from it.
+        // meta->getCString()
+    }
+
+    builder->setMetadata("title", getString(pdf_doc->getDocInfoStringEntry("Title")));
+    builder->setMetadata("description", getString(pdf_doc->getDocInfoStringEntry("Subject")));
+    builder->setMetadata("creator", getString(pdf_doc->getDocInfoStringEntry("Author")));
+    builder->setMetadata("subject", getString(pdf_doc->getDocInfoStringEntry("Keywords")));
+    builder->setMetadata("date", getString(pdf_doc->getDocInfoStringEntry("CreationDate")));
+
     saveState();
     formDepth = 0;
 
