@@ -76,6 +76,13 @@ bool ActionAccel::isTriggeredBy(GtkEventControllerKey const * const controller,
     return _accels.find(accelerator) != _accels.end();
 }
 
+bool ActionAccel::isTriggeredBy(Gtk::EventControllerKey const &controller,
+                                unsigned keyval, unsigned keycode, Gdk::ModifierType state) const
+{
+    auto const accelerator = Shortcuts::getInstance().get_from(controller, keyval, keycode, state);
+    return _accels.find(accelerator) != _accels.end();
+}
+
 } // namespace Inkscape::Util
 
 /*

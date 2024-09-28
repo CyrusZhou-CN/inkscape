@@ -23,7 +23,10 @@
 #include <gtkmm/cellrenderer.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/dragsource.h>
+#include <gtkmm/droptarget.h>
 #include <gtkmm/enums.h>
+#include <gtkmm/eventcontrollerkey.h>
+#include <gtkmm/eventcontrollermotion.h>
 #include <gtkmm/gestureclick.h>
 #include <gtkmm/icontheme.h>
 #include <gtkmm/popover.h>
@@ -83,6 +86,24 @@ static double const SELECTED_ALPHA[8] = {
 };
 
 namespace Inkscape::UI::Dialog {
+
+namespace {
+
+void connect_on_window_when_mapped(Glib::RefPtr<Gtk::EventController> controller, Gtk::Widget &widget)
+{
+    auto const on_map = [controller, &widget] {
+        auto& window = dynamic_cast<Gtk::Window &>(*widget.get_root());
+        window.add_controller(controller);
+    };
+    auto const on_unmap = [controller, &widget] {
+        auto& window = dynamic_cast<Gtk::Window &>(*widget.get_root());
+        window.remove_controller(controller);
+    };
+    widget.signal_map().connect(on_map);
+    widget.signal_unmap().connect(on_unmap);
+}
+
+} // namespace
 
 using Inkscape::XML::Node;
 using namespace Inkscape::UI::Widget;
@@ -924,18 +945,29 @@ ObjectsPanel::ObjectsPanel()
     _tree.get_selection()->set_mode(Gtk::SelectionMode::NONE);
 
     //Set up tree signals
-    Controller::add_click(_tree,
-        sigc::bind(sigc::mem_fun(*this, &ObjectsPanel::on_click), EventType::pressed ),
-        sigc::bind(sigc::mem_fun(*this, &ObjectsPanel::on_click), EventType::released),
-        Controller::Button::any, Gtk::PropagationPhase::TARGET);
-    Controller::add_key<&ObjectsPanel::on_tree_key_pressed>(_tree, *this);
-    Controller::add_motion<&ObjectsPanel::on_motion_enter ,
-                           &ObjectsPanel::on_motion_motion,
-                           &ObjectsPanel::on_motion_leave >
-                       (_tree, *this, Gtk::PropagationPhase::TARGET);
-    // Track Alt key on parent window so we donʼt need to have key focus to work
-    Controller::add_key_on_window<&ObjectsPanel::on_window_key_pressed ,
-                                  &ObjectsPanel::on_window_key_released>(_tree, *this);
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(0); // any
+    click->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    click->signal_pressed().connect(Controller::use_state([this](auto &&...args) { return on_click(args..., EventType::pressed); }, *click));
+    click->signal_released().connect(Controller::use_state([this](auto &&...args) { return on_click(args..., EventType::released); }, *click));
+    _tree.add_controller(click);
+
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect([this, &key = *key](auto &&...args) { return on_tree_key_pressed(key, args...); }, true);
+    _tree.add_controller(key);
+
+    auto const motion = Gtk::EventControllerMotion::create();
+    motion->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    motion->signal_enter().connect(sigc::mem_fun(*this, &ObjectsPanel::on_motion_enter));
+    motion->signal_leave().connect(sigc::mem_fun(*this, &ObjectsPanel::on_motion_leave));
+    motion->signal_motion().connect([this, &motion = *motion](auto &&...args) { on_motion_motion(&motion, args...); });
+    _tree.add_controller(motion);
+
+    // Track Alt key on parent window so we don't need to have key focus to work
+    auto const window_key = Gtk::EventControllerKey::create();
+    window_key->signal_key_pressed().connect([this, &window_key = *window_key](auto &&...args) { return on_window_key(window_key, args..., EventType::pressed); }, true);
+    window_key->signal_key_released().connect([this, &window_key = *window_key](auto &&...args) { on_window_key(window_key, args..., EventType::released); });
+    connect_on_window_when_mapped(window_key, _tree);
 
     // Before expanding a row, replace the dummy child with the actual children
     _tree.signal_test_expand_row().connect([this](const Gtk::TreeModel::iterator &iter, const Gtk::TreeModel::Path &) {
@@ -957,19 +989,19 @@ ObjectsPanel::ObjectsPanel()
         }
     });
 
-    drag_source = &Controller::add_drag_source(_tree, {
-        .actions = Gdk::DragAction::MOVE,
-        .prepare = sigc::mem_fun(*this, &ObjectsPanel::on_prepare),
-        .begin   = sigc::mem_fun(*this, &ObjectsPanel::on_drag_begin),
-        .end     = sigc::mem_fun(*this, &ObjectsPanel::on_drag_end  )
-        },         Gtk::PropagationPhase::CAPTURE);
+    auto const drag = Gtk::DragSource::create();
+    drag->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    drag->set_actions(Gdk::DragAction::MOVE);
+    drag->signal_prepare().connect([this, &drag = *drag](auto &&...args) { return on_prepare(drag, args...); }, false); // before
+    drag->signal_drag_begin().connect(sigc::mem_fun(*this, &ObjectsPanel::on_drag_begin));
+    drag->signal_drag_end().connect(sigc::mem_fun(*this, &ObjectsPanel::on_drag_end));
+    _tree.add_controller(drag);
 
-    Controller::add_drop_target(_tree, {
-        .actions = Gdk::DragAction::MOVE,
-        .types   = { Glib::Value<Glib::ustring>::value_type() },
-        .motion  = sigc::mem_fun(*this, &ObjectsPanel::on_drag_motion),
-        .drop    = sigc::mem_fun(*this, &ObjectsPanel::on_drag_drop  )
-        },         Gtk::PropagationPhase::CAPTURE);
+    auto const drop = Gtk::DropTarget::create(Glib::Value<Glib::ustring>::value_type(), Gdk::DragAction::MOVE);
+    drop->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    drop->signal_motion().connect(sigc::mem_fun(*this, &ObjectsPanel::on_drag_motion), false); // before
+    drop->signal_drop().connect(sigc::mem_fun(*this, &ObjectsPanel::on_drag_drop), false); // before
+    _tree.add_controller(drop);
 
     //Set up the label editing signals
     _text_renderer->signal_edited().connect(sigc::mem_fun(*this, &ObjectsPanel::_handleEdited));
@@ -1340,9 +1372,8 @@ bool ObjectsPanel::toggleLocked(Gdk::ModifierType const state, Gtk::TreeModel::R
  * Handles keyboard events on the TreeView
  * @return Whether the event should be eaten (om nom nom)
  */
-bool ObjectsPanel::on_tree_key_pressed(GtkEventControllerKey const * const controller,
-                                       unsigned const keyval, unsigned const keycode,
-                                       GdkModifierType const state)
+bool ObjectsPanel::on_tree_key_pressed(Gtk::EventControllerKey const &controller,
+                                       unsigned keyval, unsigned keycode, Gdk::ModifierType state)
 {
     auto desktop = getDesktop();
     if (!desktop)
@@ -1353,7 +1384,7 @@ bool ObjectsPanel::on_tree_key_pressed(GtkEventControllerKey const * const contr
     Gtk::TreeViewColumn *column;
     _tree.get_cursor(path, column);
 
-    auto const shift = Controller::has_flag(state, GDK_SHIFT_MASK);
+    auto const shift = Controller::has_flag(state, Gdk::ModifierType::SHIFT_MASK);
     auto const shortcut = Inkscape::Shortcuts::get_from(controller, keyval, keycode, state);
     switch (shortcut.get_key()) {
         case GDK_KEY_Escape:
@@ -1428,24 +1459,9 @@ bool ObjectsPanel::on_tree_key_pressed(GtkEventControllerKey const * const contr
     return false;
 }
 
-bool ObjectsPanel::on_window_key_pressed(GtkEventControllerKey const * const controller,
-                                         unsigned const keyval, unsigned const keycode,
-                                         GdkModifierType const state)
-{
-    return on_window_key(controller, keyval, keycode, state, EventType::pressed);
-}
-
-bool ObjectsPanel::on_window_key_released(GtkEventControllerKey const * const controller,
-                                          unsigned const keyval, unsigned const keycode,
-                                          GdkModifierType const state)
-{
-    return on_window_key(controller, keyval, keycode, state, EventType::released);
-}
-
-bool ObjectsPanel::on_window_key(GtkEventControllerKey const * const controller,
-                                 unsigned const keyval, unsigned const keycode,
-                                 GdkModifierType const state,
-                                 EventType const event_type)
+bool ObjectsPanel::on_window_key(Gtk::EventControllerKey const &controller,
+                                 unsigned keyval, unsigned keycode,
+                                 Gdk::ModifierType state, EventType event_type)
 {
     auto desktop = getDesktop();
     if (!desktop)
@@ -1467,22 +1483,21 @@ bool ObjectsPanel::on_window_key(GtkEventControllerKey const * const controller,
  */
 
 // Set a status bar text when entering the widget
-void ObjectsPanel::on_motion_enter(GtkEventControllerMotion const * /*controller*/,
-                                   double /*ex*/, double /*ey*/)
+void ObjectsPanel::on_motion_enter(double /*ex*/, double /*ey*/)
 {
     _msg_id = getDesktop()->messageStack()->push(Inkscape::NORMAL_MESSAGE,
          _("<b>Hold ALT</b> while hovering over item to highlight, "
            "<b>hold SHIFT</b> and click to hide/lock all."));
 }
 // watch mouse leave too to clear any state.
-void ObjectsPanel::on_motion_leave(GtkEventControllerMotion const * /*controller*/)
+void ObjectsPanel::on_motion_leave()
 {
     getDesktop()->messageStack()->cancel(_msg_id);
     on_motion_motion(nullptr, 0, 0);
 }
 
-void ObjectsPanel::on_motion_motion(GtkEventControllerMotion const * const controller,
-                                    double const ex, double const ey)
+void ObjectsPanel::on_motion_motion(Gtk::EventControllerMotion const *controller,
+                                    double ex, double ey)
 {
     if (_is_editing) return;
 
@@ -1539,8 +1554,8 @@ void ObjectsPanel::on_motion_motion(GtkEventControllerMotion const * const contr
         }
     }
 
-    auto const state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(controller));
-    _handleTransparentHover(Controller::has_flag(state, GDK_ALT_MASK));
+    auto const state = controller->get_current_event_state();
+    _handleTransparentHover(Controller::has_flag(state, Gdk::ModifierType::ALT_MASK));
 }
 
 void ObjectsPanel::_handleTransparentHover(bool enabled)
@@ -1825,8 +1840,7 @@ bool ObjectsPanel::cleanDummyChildren(Gtk::TreeModel::Row row)
  *
  * Refuses drops onto self.
  */
-Gdk::DragAction ObjectsPanel::on_drag_motion(Gtk::DropTarget const &/*controller*/,
-                                             double const x, double const y)
+Gdk::DragAction ObjectsPanel::on_drag_motion(double x, double y)
 {
     auto selection = getSelection();
     auto document = getDocument();
@@ -1887,9 +1901,7 @@ Gdk::DragAction ObjectsPanel::on_drag_motion(Gtk::DropTarget const &/*controller
  *
  * Do the actual work of drag-and-drop.
  */
-bool ObjectsPanel::on_drag_drop(Gtk::DropTarget const &/*controller*/,
-                                Glib::ValueBase const &/*value*/,
-                                double const x, double const y)
+bool ObjectsPanel::on_drag_drop(Glib::ValueBase const &/*value*/, double x, double y)
 {
     Gtk::TreeModel::Path path;
     Gtk::TreeView::DropPosition pos;
@@ -1933,8 +1945,7 @@ bool ObjectsPanel::on_drag_drop(Gtk::DropTarget const &/*controller*/,
     return true;
 }
 
-Glib::RefPtr<Gdk::ContentProvider>
-ObjectsPanel::on_prepare(Gtk::DragSource const &controller, double x, double y)
+Glib::RefPtr<Gdk::ContentProvider> ObjectsPanel::on_prepare(Gtk::DragSource &controller, double x, double y)
 {
     Gtk::TreeModel::Path path;
     Gtk::TreeView::DropPosition pos;
@@ -1943,7 +1954,7 @@ ObjectsPanel::on_prepare(Gtk::DragSource const &controller, double x, double y)
     if (path) {
         // Set icon (or else icon is determined by provider value).
         auto surface = _tree.create_row_drag_icon(path);
-        drag_source->set_icon(surface, x, 12); // Must used saved 'drag_source' as 'controller' is 'const'!
+        controller.set_icon(surface, x, 12);
     }
 
     // We must have some kind of value which matches DropTarget type! Use a string for now.
@@ -1954,8 +1965,7 @@ ObjectsPanel::on_prepare(Gtk::DragSource const &controller, double x, double y)
     return provider;
 }
 
-void ObjectsPanel::on_drag_begin(Gtk::DragSource const &controller,
-                                 Glib::RefPtr<Gdk::Drag> const &/*drag*/)
+void ObjectsPanel::on_drag_begin(Glib::RefPtr<Gdk::Drag> const &/*drag*/)
 {
     _scroll_lock = true;
 
@@ -1997,8 +2007,7 @@ void ObjectsPanel::drag_end_impl()
     current_item = nullptr;
 }
 
-void ObjectsPanel::on_drag_end(Gtk::DragSource const &/*controller*/,
-                               Glib::RefPtr<Gdk::Drag> const &/*drag*/, bool /*delete_data*/)
+void ObjectsPanel::on_drag_end(Glib::RefPtr<Gdk::Drag> const &/*drag*/, bool /*delete_data*/)
 {
     drag_end_impl();
 }

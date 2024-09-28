@@ -52,6 +52,8 @@ class Builder;
 class CheckButton;
 class DragSource;
 class DropTarget;
+class EventControllerKey;
+class EventControllerMotion;
 class GestureClick;
 class Popover;
 class Scale;
@@ -171,19 +173,15 @@ private:
     enum class EventType {pressed, released};
     Gtk::EventSequenceState on_click(Gtk::GestureClick const &gesture,
                                      int n_press, double x, double y,
-                                     EventType);
-    bool on_tree_key_pressed   (GtkEventControllerKey const *controller,
-                                unsigned keyval, unsigned keycode, GdkModifierType state);
-    bool on_window_key_pressed (GtkEventControllerKey const *controller,
-                                unsigned keyval, unsigned keycode, GdkModifierType state);
-    bool on_window_key_released(GtkEventControllerKey const *controller,
-                                unsigned keyval, unsigned keycode, GdkModifierType state);
-    bool on_window_key         (GtkEventControllerKey const *controller,
-                                unsigned keyval, unsigned keycode, GdkModifierType state,
-                                EventType);
-    void on_motion_enter (GtkEventControllerMotion const *controller, double x, double y);
-    void on_motion_motion(GtkEventControllerMotion const *controller, double x, double y);
-    void on_motion_leave (GtkEventControllerMotion const *controller);
+                                     EventType type);
+    bool on_tree_key_pressed(Gtk::EventControllerKey const &controller,
+                             unsigned keyval, unsigned keycode, Gdk::ModifierType state);
+    bool on_window_key(Gtk::EventControllerKey const &controller,
+                       unsigned keyval, unsigned keycode, Gdk::ModifierType state,
+                       EventType type);
+    void on_motion_enter(double x, double y);
+    void on_motion_leave();
+    void on_motion_motion(Gtk::EventControllerMotion const *controller, double x, double y);
 
     void _searchActivated();
     
@@ -193,16 +191,13 @@ private:
 
     bool select_row( Glib::RefPtr<Gtk::TreeModel> const & model, Gtk::TreeModel::Path const & path, bool b );
 
+    Glib::RefPtr<Gdk::ContentProvider> on_prepare(Gtk::DragSource &controller, double x, double y);
+    void on_drag_begin(Glib::RefPtr<Gdk::Drag> const &drag);
+    void on_drag_end(Glib::RefPtr<Gdk::Drag> const &drag, bool delete_data);
+    Gdk::DragAction on_drag_motion(double x, double y);
+    bool on_drag_drop(Glib::ValueBase const &value, double x, double y);
+
     void drag_end_impl();
-    Glib::RefPtr<Gdk::ContentProvider> on_prepare(Gtk::DragSource const &controller, double x, double y);
-    void on_drag_begin(Gtk::DragSource const &controller, Glib::RefPtr<Gdk::Drag> const &drag);
-    void on_drag_end  (Gtk::DragSource const &controller, Glib::RefPtr<Gdk::Drag> const &drag,
-                       bool delete_data);
-    Gdk::DragAction on_drag_motion(Gtk::DropTarget const &controller,
-                                   double x, double y);
-    bool            on_drag_drop  (Gtk::DropTarget const &controller,
-                                   Glib::ValueBase const &value,
-                                   double x, double y);
 
     void selectRange(Gtk::TreeModel::Path start, Gtk::TreeModel::Path end);
     bool selectCursorItem(Gdk::ModifierType state);
@@ -220,9 +215,6 @@ private:
     std::map<SPBlendMode, Gtk::CheckButton *> _blend_items;
     std::map<SPBlendMode, Glib::ustring> _blend_mode_names;
     Inkscape::UI::Widget::ImageToggler* _item_state_toggler;
-
-    // Need to save as controllers are 'const' in callbacks.
-    Gtk::DragSource* drag_source = nullptr;
 
     // Special column dragging mode
     Gtk::TreeViewColumn* _drag_column = nullptr;

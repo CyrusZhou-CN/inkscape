@@ -17,6 +17,8 @@
 #include <glibmm/i18n.h>
 #include <glibmm/main.h>
 #include <gtkmm/eventcontroller.h>
+#include <gtkmm/eventcontrollerkey.h>
+#include <gtkmm/gestureclick.h>
 
 #include "layer-properties.h"
 #include "desktop.h"
@@ -297,9 +299,14 @@ void LayerPropertiesDialog::_setup_layers_controls()
 
     _tree.set_expander_column(*_tree.get_column(nameColNum));
 
-    Controller::add_key<&LayerPropertiesDialog::on_key_pressed>(_tree, *this);
-    Controller::add_click(_tree, sigc::mem_fun(*this, &LayerPropertiesDialog::on_click_pressed),
-                          {}, Controller::Button::left);
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect([this, &key = *key](auto &&...args) { return on_key_pressed(key, args...); }, true);
+    _tree.add_controller(key);
+
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(1); // left
+    click->signal_pressed().connect(Controller::use_state([this](auto &, auto &&...args) { return on_click_pressed(args...); }, *click));
+    _tree.add_controller(click);
 
     _scroller.set_child(_tree);
     _scroller.set_policy(Gtk::PolicyType::AUTOMATIC, Gtk::PolicyType::AUTOMATIC);
@@ -372,9 +379,8 @@ SPObject *LayerPropertiesDialog::_selectedLayer()
     return nullptr;
 }
 
-bool LayerPropertiesDialog::on_key_pressed(GtkEventControllerKey const * const controller,
-                                           unsigned const keyval, unsigned const keycode,
-                                           GdkModifierType const state)
+bool LayerPropertiesDialog::on_key_pressed(Gtk::EventControllerKey const &controller,
+                                           unsigned keyval, unsigned keycode, Gdk::ModifierType state)
 {
     auto const latin_keyval = Inkscape::UI::Tools::get_latin_keyval(controller, keyval, keycode, state);
     switch (latin_keyval) {
@@ -387,8 +393,7 @@ bool LayerPropertiesDialog::on_key_pressed(GtkEventControllerKey const * const c
     return false;
 }
 
-Gtk::EventSequenceState LayerPropertiesDialog::on_click_pressed(Gtk::GestureClick const & /*click*/,
-                                                                int const n_press, double /*x*/, double /*y*/)
+Gtk::EventSequenceState LayerPropertiesDialog::on_click_pressed(int n_press, double /*x*/, double /*y*/)
 {
     if (n_press == 2) {
         _apply();

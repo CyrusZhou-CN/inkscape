@@ -32,6 +32,7 @@
 #include "layer-manager.h"
 
 namespace Gtk {
+class EventControllerKey;
 class GestureClick;
 }
 
@@ -132,11 +133,10 @@ private:
     void _addLayer(SPObject* layer, Gtk::TreeModel::Row* parentRow, SPObject* target, int level);
     SPObject* _selectedLayer();
 
-    bool on_key_pressed(GtkEventControllerKey const *controller,
+    bool on_key_pressed(Gtk::EventControllerKey const &controller,
                         unsigned keyval, unsigned keycode,
-                        GdkModifierType state);
-    Gtk::EventSequenceState on_click_pressed(Gtk::GestureClick const &click,
-                                             int n_press, double x, double y);
+                        Gdk::ModifierType state);
+    Gtk::EventSequenceState on_click_pressed(int n_press, double x, double y);
 
     void _doCreate();
     void _doMove();

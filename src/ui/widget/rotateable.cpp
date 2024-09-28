@@ -9,6 +9,8 @@
  */
 
 #include <sigc++/functors/mem_fun.h>
+#include <gtkmm/eventcontrollermotion.h>
+#include <gtkmm/eventcontrollerscroll.h>
 #include <gtkmm/gestureclick.h>
 #include <2geom/point.h>
 
@@ -27,16 +29,24 @@ Rotateable::Rotateable():
     modifier(0),
     current_axis(axis)
 {
-    Controller::add_click(*this, sigc::mem_fun(*this, &Rotateable::on_click  ),
-                                 sigc::mem_fun(*this, &Rotateable::on_release),
-                          Controller::Button::left);
-    Controller::add_motion<nullptr, &Rotateable::on_motion, nullptr>(*this, *this);
-    Controller::add_scroll<nullptr, &Rotateable::on_scroll, nullptr>(*this, *this,
-                                                                     GTK_EVENT_CONTROLLER_SCROLL_VERTICAL);
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(1); // left
+    click->signal_pressed().connect(Controller::use_state(sigc::mem_fun(*this, &Rotateable::on_click), *click));
+    click->signal_released().connect(Controller::use_state(sigc::mem_fun(*this, &Rotateable::on_release), *click));
+    add_controller(click);
+
+    auto const motion = Gtk::EventControllerMotion::create();
+    motion->signal_motion().connect([this, &motion = *motion](auto &&...args) { on_motion(motion, args...); });
+    add_controller(motion);
+
+    auto const scroll = Gtk::EventControllerScroll::create();
+    scroll->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
+    scroll->signal_scroll().connect([this, &scroll = *scroll](auto &&...args) { return on_scroll(scroll, args...); }, true);
+    add_controller(scroll);
 }
 
 Gtk::EventSequenceState Rotateable::on_click(Gtk::GestureClick const &click,
-                                             int /*n_press*/, double const x, double const y)
+                                             int /*n_press*/, double x, double y)
 {
     drag_started_x = x;
     drag_started_y = y;
@@ -48,7 +58,7 @@ Gtk::EventSequenceState Rotateable::on_click(Gtk::GestureClick const &click,
     return Gtk::EventSequenceState::NONE; // no claim, would stop release being fired
 }
 
-unsigned Rotateable::get_single_modifier(unsigned const old, unsigned const state)
+unsigned Rotateable::get_single_modifier(unsigned old, unsigned state)
 {
     if (old == 0 || old == 3) {
         if (state & GDK_CONTROL_MASK)
@@ -86,8 +96,7 @@ unsigned Rotateable::get_single_modifier(unsigned const old, unsigned const stat
     return old;
 }
 
-void Rotateable::on_motion(GtkEventControllerMotion const * const motion,
-                           double const x, double const y)
+void Rotateable::on_motion(Gtk::EventControllerMotion const &motion, double x, double y)
 {
     if (!dragging) {
         return;
@@ -102,8 +111,8 @@ void Rotateable::on_motion(GtkEventControllerMotion const * const motion,
         if (fabs(force) < 0.002)
             force = 0; // snap to zero
 
-        auto const state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(motion));
-        auto const new_modifier = get_single_modifier(modifier, state);
+        auto const state = motion.get_current_event_state();
+        auto const new_modifier = get_single_modifier(modifier, static_cast<unsigned>(state));
         if (modifier != new_modifier) {
             // user has switched modifiers in mid drag, close past drag and start a new
             // one, redefining axis temporarily
@@ -120,7 +129,7 @@ void Rotateable::on_motion(GtkEventControllerMotion const * const motion,
 
 
 Gtk::EventSequenceState Rotateable::on_release(Gtk::GestureClick const & /*click*/,
-                                               int /*n_press*/, double const x, double const y)
+                                               int /*n_press*/, double x, double y)
 {
     if (dragging && working) {
         double angle = atan2(y - drag_started_y, x - drag_started_x);
@@ -140,8 +149,7 @@ Gtk::EventSequenceState Rotateable::on_release(Gtk::GestureClick const & /*click
     return Gtk::EventSequenceState::NONE;
 }
 
-bool Rotateable::on_scroll(GtkEventControllerScroll const * const scroll,
-                           double /*dx*/, double const dy)
+bool Rotateable::on_scroll(Gtk::EventControllerScroll const &scroll, double /*dx*/, double dy)
 {
     double change = 0.0;
     double delta_y_clamped = CLAMP(dy, -1.0, 1.0); // values > 1 result in excessive changes
@@ -152,8 +160,8 @@ bool Rotateable::on_scroll(GtkEventControllerScroll const * const scroll,
     drag_started_y = event->y;
 #endif
 
-    auto const state = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(scroll));
-    modifier = get_single_modifier(modifier, state);
+    auto const state = scroll.get_current_event_state();
+    modifier = get_single_modifier(modifier, static_cast<unsigned>(state));
     dragging = false;
     working = false;
     scrolling = true;

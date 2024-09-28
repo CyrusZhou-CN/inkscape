@@ -352,46 +352,46 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
         return std::shared_ptr<SymbolItem>();
     };
 
-    Controller::add_drag_source(_gridview, {
-        .button  = Controller::Button::left,
-        .actions = Gdk::DragAction::COPY,
-        .prepare = [=, this](Gtk::DragSource& source, double x , double y) -> Glib::RefPtr<Gdk::ContentProvider> {
-            auto dragged = find_item(x, y);
-            if (!dragged) {
-                return nullptr;
-            }
-
-            auto const dims = getSymbolDimensions(dragged);
-            sendToClipboard(*dragged, Geom::Rect(-0.5 * dims, 0.5 * dims), false);
-
-            Glib::Value<DnDSymbol> value;
-            value.init(value.value_type());
-            value.set(DnDSymbol{dragged->symbol_id, dragged->unique_key, dragged->symbol_document});
-            auto content = Gdk::ContentProvider::create(value);
-            source.set_content(content);
-            return content;
-        },
-        .begin = [this](Gtk::DragSource& source, const Glib::RefPtr<Gdk::Drag>& drag) {
-            auto c = source.get_content();
-            if (!c) return;
-
-            Glib::Value<DnDSymbol> value;
-            value.init(value.value_type());
-            c->get_value(value);
-            const auto& symbol = value.get();
-            auto tex = get_image(symbol.unique_key, symbol.document, symbol.id);
-            // TODO: scale for high dpi display (somehow)
-            int x = 0, y = 0;
-            if (tex) {
-                x = tex->get_intrinsic_width() / 2;
-                y = tex->get_intrinsic_height() / 2;
-            }
-            //TODO: use x AND y; right now setting Y cancels d&d, b/c icon gets in the way of d&d, so target cannot be found!
-            source.set_icon(tex, x, 0);
-
-            // drag->set_hotspot(x, y); what's that do?
+    auto const source = Gtk::DragSource::create();
+    auto drag_prepare = [this, find_item, &source = *source](double x, double y) -> Glib::RefPtr<Gdk::ContentProvider> {
+        auto dragged = find_item(x, y);
+        if (!dragged) {
+            return nullptr;
         }
-    });
+
+        auto const dims = getSymbolDimensions(dragged);
+        sendToClipboard(*dragged, Geom::Rect(-0.5 * dims, 0.5 * dims), false);
+
+        Glib::Value<DnDSymbol> value;
+        value.init(value.value_type());
+        value.set(DnDSymbol{dragged->symbol_id, dragged->unique_key, dragged->symbol_document});
+        auto content = Gdk::ContentProvider::create(value);
+        source.set_content(content);
+        return content;
+    };
+    auto drag_begin = [this, &source = *source](Glib::RefPtr<Gdk::Drag> const &drag) {
+        auto c = source.get_content();
+        if (!c) return;
+
+        Glib::Value<DnDSymbol> value;
+        value.init(value.value_type());
+        c->get_value(value);
+        const auto& symbol = value.get();
+        auto tex = get_image(symbol.unique_key, symbol.document, symbol.id);
+        // TODO: scale for high dpi display (somehow)
+        int x = 0, y = 0;
+        if (tex) {
+            x = tex->get_intrinsic_width() / 2;
+            y = tex->get_intrinsic_height() / 2;
+        }
+        //TODO: use x AND y; right now setting Y cancels d&d, b/c icon gets in the way of d&d, so target cannot be found!
+        source.set_icon(tex, x, 0);
+
+        // drag->set_hotspot(x, y); what's that do?
+    };
+    source->signal_prepare().connect(std::move(drag_prepare), false); // before
+    source->signal_drag_begin().connect(std::move(drag_begin));
+    _gridview.add_controller(source);
 
     scroller = &get_widget<Gtk::ScrolledWindow>(_builder, "scroller");
 

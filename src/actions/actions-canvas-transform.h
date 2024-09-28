@@ -15,6 +15,7 @@ class InkscapeWindow;
 class InkscapeApplication;
 
 void add_actions_canvas_transform(InkscapeWindow* win);
+void apply_preferences_canvas_transform(InkscapeWindow *win);
 
 #endif // INK_ACTIONS_CANVAS_TRANSFORM_H
 

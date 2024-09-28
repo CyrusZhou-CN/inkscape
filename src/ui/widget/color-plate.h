@@ -12,6 +12,10 @@
 
 #include "colors/color.h"
 
+namespace Gtk {
+class EventControllerMotion;
+}
+
 namespace Inkscape::UI::Widget {
 
 class ColorPlate : public Gtk::DrawingArea {
@@ -34,7 +38,7 @@ protected:
     void draw_plate(const Cairo::RefPtr<Cairo::Context>& ctx);
 
 private:
-    void on_motion(const GtkEventControllerMotion* motion, double x, double y);
+    void on_motion(Gtk::EventControllerMotion const &motion, double x, double y);
     Geom::OptRect get_area() const;
     Geom::OptRect get_active_area() const;
     Colors::Color get_color_at(const Geom::Point& point) const;

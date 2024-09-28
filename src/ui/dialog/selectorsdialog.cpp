@@ -248,9 +248,11 @@ SelectorsDialog::SelectorsDialog()
     }
     _treeView.set_expander_column(*(_treeView.get_column(1)));
 
-    Controller::add_click(_treeView, {}, // Needs to be release, not press.
-                          sigc::mem_fun(*this, &SelectorsDialog::onTreeViewClickReleased),
-                          Controller::Button::left);
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(1); // left
+    click->signal_released().connect(sigc::mem_fun(*this, &SelectorsDialog::onTreeViewClickReleased));
+    _treeView.add_controller(click);
+
     _treeView.signal_row_expanded().connect(sigc::mem_fun(*this, &SelectorsDialog::_rowExpand));
     _treeView.signal_row_collapsed().connect(sigc::mem_fun(*this, &SelectorsDialog::_rowCollapse));
 
@@ -1174,9 +1176,7 @@ void SelectorsDialog::_delSelector()
  * on a selector selects the matching objects on the desktop. A double click will
  * in addition open the CSS dialog.
  */
-Gtk::EventSequenceState SelectorsDialog::onTreeViewClickReleased(Gtk::GestureClick const &click,
-                                                                 int /*n_press*/,
-                                                                 double const x, double const y)
+void SelectorsDialog::onTreeViewClickReleased(int /*n_press*/, double x, double y)
 {
     g_debug("SelectorsDialog::onTreeViewClickReleased: Entrance");
 
@@ -1206,8 +1206,6 @@ Gtk::EventSequenceState SelectorsDialog::onTreeViewClickReleased(Gtk::GestureCli
     _selectObjects(x, y);
     _updating = false;
     _selectRow();
-
-    return Gtk::EventSequenceState::NONE;
 }
 
 // -------------------------------------------------------------------

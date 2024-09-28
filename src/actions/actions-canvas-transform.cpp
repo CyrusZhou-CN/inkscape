@@ -302,16 +302,11 @@ std::vector<std::vector<Glib::ustring>> raw_data_canvas_transform =
 void
 add_actions_canvas_transform(InkscapeWindow* win)
 {
+    apply_preferences_canvas_transform(win);
+
     auto prefs = Inkscape::Preferences::get();
 
     bool rotate_lock = prefs->getBool("/options/rotationlock");
-
-    SPDesktop* dt = win->get_desktop();
-    if (dt) {
-        dt->set_rotation_lock(rotate_lock);
-    } else {
-        show_output("add_actions_canvas_transform: no desktop!");
-    }
 
     Glib::VariantType Double(Glib::VARIANT_TYPE_DOUBLE);
 
@@ -354,6 +349,20 @@ add_actions_canvas_transform(InkscapeWindow* win)
         return;
     }
     app->get_action_extra_data().add_data(raw_data_canvas_transform);
+}
+
+void apply_preferences_canvas_transform(InkscapeWindow *win)
+{
+    auto prefs = Inkscape::Preferences::get();
+
+    bool rotate_lock = prefs->getBool("/options/rotationlock");
+
+    SPDesktop *dt = win->get_desktop();
+    if (dt) {
+        dt->set_rotation_lock(rotate_lock);
+    } else {
+        show_output("apply_preferences_canvas_transform: no desktop!");
+    }
 }
 
 /*

@@ -28,6 +28,7 @@ class Builder;
 class CellEditable;
 class CellRendererText;
 class Entry;
+class EventControllerKey;
 class Label;
 class ListStore;
 class Popover;
@@ -121,10 +122,8 @@ private:
     auto_connection _message_changed_connection;
     void onCreateClicked();
     void onAttrDelete(Glib::ustring const &path);
-    bool onTreeViewKeyPressed (GtkEventControllerKey const *controller,
-                               unsigned keyval, unsigned keycode, GdkModifierType state);
-    bool onTreeViewKeyReleased(GtkEventControllerKey const *controller,
-                               unsigned keyval, unsigned keycode, GdkModifierType state);
+    bool onTreeViewKeyPressed (unsigned keyval, unsigned keycode, Gdk::ModifierType state);
+    void onTreeViewKeyReleased(unsigned keyval, unsigned keycode, Gdk::ModifierType state);
     void truncateDigits() const;
     void popClosed();
     void startNameEdit(Gtk::CellEditable *cell, const Glib::ustring &path);
@@ -154,8 +153,7 @@ private:
     auto_connection _close_popup;
     int _rounding_precision = 0;
 
-    bool onPopoverKeyPressed(GtkEventControllerKey const *controller,
-                             unsigned keyval, unsigned keycode, GdkModifierType state);
+    bool onPopoverKeyPressed(unsigned keyval, unsigned keycode, Gdk::ModifierType state);
 
     void setPrecision(int const n);
 

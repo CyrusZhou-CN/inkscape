@@ -14,6 +14,7 @@
 #include <cairomm/pattern.h>
 #include <gdkmm/general.h>
 #include <gtkmm/drawingarea.h>
+#include <gtkmm/eventcontrollermotion.h>
 #include <gtkmm/gestureclick.h>
 #include <sigc++/functors/mem_fun.h>
 #include <utility>
@@ -48,11 +49,15 @@ ColorSlider::ColorSlider(
 
     set_draw_func(sigc::mem_fun(*this, &ColorSlider::draw_func));
 
-    Controller::add_click(*this,
-                          sigc::mem_fun(*this, &ColorSlider::on_click_pressed ),
-                          sigc::mem_fun(*this, &ColorSlider::on_click_released),
-                          Controller::Button::left);
-    Controller::add_motion<nullptr, &ColorSlider::on_motion, nullptr>(*this, *this);
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(1); // left
+    click->signal_pressed().connect([this, &click = *click](auto &&...args) { on_click_pressed(click, args...); });
+    add_controller(click);
+
+    auto const motion = Gtk::EventControllerMotion::create();
+    motion->signal_motion().connect([this, &motion = *motion](auto &&...args) { on_motion(motion, args...); });
+    add_controller(motion);
+
     _changed_connection = _colors->signal_changed.connect([this]() {
         queue_draw();
     });
@@ -74,27 +79,19 @@ static double get_value_at(Gtk::Widget const &self, double const x, double const
     return CLAMP((x - area->left()) / area->width(), 0.0, 1.0);
 }
 
-Gtk::EventSequenceState ColorSlider::on_click_pressed(Gtk::GestureClick const &click,
-                                                      int /*n_press*/, double const x, double const y)
+void ColorSlider::on_click_pressed(Gtk::GestureClick const &click,
+                                   int /*n_press*/, double const x, double const y)
 {
     update_component(x, y, click.get_current_event_state());
-    return Gtk::EventSequenceState::NONE;
 }
 
-Gtk::EventSequenceState ColorSlider::on_click_released(Gtk::GestureClick const & /*click*/,
-                                                       int /*n_press*/, double /*x*/, double /*y*/)
+void ColorSlider::on_motion(Gtk::EventControllerMotion const &motion, double x, double y)
 {
-    return Gtk::EventSequenceState::NONE;
-}
-
-void ColorSlider::on_motion(GtkEventControllerMotion const * const motion,
-                            double const x, double const y)
-{
-    auto state = Controller::get_event_modifiers(motion);
-    if (Controller::has_flag(state, GDK_BUTTON1_MASK)) {
+    auto const state = motion.get_current_event_state();
+    if (Controller::has_flag(state, Gdk::ModifierType::BUTTON1_MASK)) {
         // only update color if user is dragging the slider;
         // don't rely on any click/release events, as release event might be lost leading to unintended updates
-        update_component(x, y, static_cast<Gdk::ModifierType>(state));
+        update_component(x, y, state);
     }
 }
 

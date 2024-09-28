@@ -42,6 +42,7 @@
 #include <gtkmm/dialog.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/enums.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/fontchooserdialog.h>
 #include <gtkmm/icontheme.h>
 #include <gtkmm/image.h>
@@ -368,7 +369,9 @@ InkscapePreferences::InkscapePreferences()
         }
     });
 
-    Controller::add_key<&InkscapePreferences::on_navigate_key_pressed>(_search, *this);
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect([this](auto &&...args) { return on_navigate_key_pressed(args...); }, true);
+    _search.add_controller(key);
 
     _page_list_model_filter->set_visible_func([this](Gtk::TreeModel::const_iterator const &row){
         auto key_lower = _search.get_text().lowercase();
@@ -637,16 +640,15 @@ Gtk::TreePath InkscapePreferences::get_prev_result(Gtk::TreeModel::iterator &ite
  * @return Always returns False to label the key press event as handled, this
  * prevents the search bar from retaining focus for other keyboard event.
  */
-bool InkscapePreferences::on_navigate_key_pressed(GtkEventControllerKey const * /*controller*/,
-                                                  unsigned keyval, unsigned /*keycode*/,
-                                                  GdkModifierType state)
+bool InkscapePreferences::on_navigate_key_pressed(unsigned keyval, unsigned /*keycode*/,
+                                                  Gdk::ModifierType state)
 {
     if (keyval != GDK_KEY_F3 || _search_results.size() == 0) {
         return false;
     }
 
-    GdkModifierType modmask = gtk_accelerator_get_default_mod_mask();
-    if ((state & modmask) == GDK_SHIFT_MASK) {
+    auto const modmask = Gtk::Accelerator::get_default_mod_mask();
+    if ((state & modmask) == Gdk::ModifierType::SHIFT_MASK) {
         Gtk::TreeModel::iterator curr = _page_list.get_selection()->get_selected();
         auto _page_list_selection = _page_list.get_selection();
         auto prev = get_prev_result(curr);
@@ -3300,9 +3302,12 @@ void InkscapePreferences::initKeyboardShortcuts(Gtk::TreeModel::iterator iter_ui
     kb_reset->signal_clicked().connect( sigc::mem_fun(*this, &InkscapePreferences::onKBReset) );
     kb_import->signal_clicked().connect( sigc::mem_fun(*this, &InkscapePreferences::onKBImport) );
     kb_export->signal_clicked().connect( sigc::mem_fun(*this, &InkscapePreferences::onKBExport) );
-    Controller::add_key<nullptr, &InkscapePreferences::onKBSearchKeyReleased>(_kb_search, *this);
     _kb_filelist.signal_changed().connect( sigc::mem_fun(*this, &InkscapePreferences::onKBList) );
     _page_keyshortcuts.signal_realize().connect( sigc::mem_fun(*this, &InkscapePreferences::onKBRealize) );
+
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_released().connect([this](auto &&...args) { onKBSearchKeyReleased(); });
+    _kb_search.add_controller(key);
 
     _keyboard_sizegroup = Gtk::SizeGroup::create(Gtk::SizeGroup::Mode::HORIZONTAL);
     _keyboard_sizegroup->add_widget(*kb_reset);
@@ -3352,9 +3357,7 @@ void InkscapePreferences::onKBExport()
     Inkscape::Shortcuts::getInstance().export_shortcuts();
 }
 
-bool InkscapePreferences::onKBSearchKeyReleased(GtkEventControllerKey const * /*controller*/,
-                                                unsigned /*keyval*/, unsigned /*keycode*/,
-                                                GdkModifierType /*state*/)
+void InkscapePreferences::onKBSearchKeyReleased()
 {
     _kb_filter->refilter();
     auto search = _kb_search.get_text();
@@ -3363,7 +3366,6 @@ bool InkscapePreferences::onKBSearchKeyReleased(GtkEventControllerKey const * /*
     } else {
         _kb_tree.collapse_all();
     }
-    return FALSE;
 }
 
 void InkscapePreferences::onKBTreeCleared(const Glib::ustring& path)

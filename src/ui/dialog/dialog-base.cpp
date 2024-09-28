@@ -18,6 +18,7 @@
 #include <glibmm/refptr.h>
 #include <gtkmm/adjustment.h>
 #include <gtkmm/cssprovider.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/notebook.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/viewport.h>
@@ -69,7 +70,10 @@ DialogBase::DialogBase(char const * const prefs_path, Glib::ustring dialog_type)
     set_name(_dialog_type); // Essential for dialog functionality
     set_margin(1); // Essential for dialog UI
 
-    Controller::add_key<&DialogBase::on_key_pressed>(*this, *this, Gtk::PropagationPhase::CAPTURE);
+    auto const key = Gtk::EventControllerKey::create();
+    key->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    key->signal_key_pressed().connect([this, &key = *key](auto &&...args) { return on_key_pressed(key, args...); }, true);
+    add_controller(key);
 }
 
 DialogBase::~DialogBase() {
@@ -99,9 +103,8 @@ void DialogBase::on_map() {
     ensure_size();
 }
 
-bool DialogBase::on_key_pressed(GtkEventControllerKey const *controller,
-                                unsigned keyval, unsigned keycode,
-                                GdkModifierType state)
+bool DialogBase::on_key_pressed(Gtk::EventControllerKey const &controller,
+                                unsigned keyval, unsigned keycode, Gdk::ModifierType state)
 {
     switch (Inkscape::UI::Tools::get_latin_keyval(controller, keyval, keycode, state)) {
         case GDK_KEY_Escape:

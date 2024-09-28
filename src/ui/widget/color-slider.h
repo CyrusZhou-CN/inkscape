@@ -12,7 +12,6 @@
 #ifndef SEEN_COLOR_SLIDER_H
 #define SEEN_COLOR_SLIDER_H
 
-#include <gtk/gtk.h> // GtkEventController*
 #include <glibmm/refptr.h>
 #include <gtkmm/drawingarea.h>
 #include <gtkmm/gesture.h> // Gtk::EventSequenceState
@@ -23,6 +22,7 @@
 
 namespace Gtk {
 class Builder;
+class EventControllerMotion;
 class GestureClick;
 } // namespace Gtk
 
@@ -54,11 +54,8 @@ protected:
 private:
     void draw_func(Cairo::RefPtr<Cairo::Context> const &cr, int width, int height);
 
-    Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const &click,
-                                              int n_press, double x, double y);
-    Gtk::EventSequenceState on_click_released(Gtk::GestureClick const &click,
-                                              int n_press, double x, double y);
-    void on_motion(GtkEventControllerMotion const *motion, double x, double y);
+    void on_click_pressed(Gtk::GestureClick const &click, int n_press, double x, double y);
+    void on_motion(Gtk::EventControllerMotion const &motion, double x, double y);
     void update_component(double x, double y, Gdk::ModifierType const state);
 
     Inkscape::auto_connection _changed_connection;

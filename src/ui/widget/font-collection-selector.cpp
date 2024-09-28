@@ -17,6 +17,8 @@
 #include <glibmm/i18n.h>
 #include <glibmm/markup.h>
 #include <gtkmm/cellrenderertext.h>
+#include <gtkmm/droptarget.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/messagedialog.h>
 #include <gtkmm/treestore.h>
 #include <set>
@@ -156,16 +158,17 @@ void FontCollectionSelector::setup_signals()
                                        sigc::mem_fun(*this, &FontCollectionSelector::icon_cell_data_func));
 
     del_icon_renderer->signal_activated().connect(sigc::mem_fun(*this, &FontCollectionSelector::on_delete_icon_clicked));
-    Controller::add_key<&FontCollectionSelector::on_key_pressed>(*treeview, *this);
+
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect([this, &key = *key](auto &&...args) { return on_key_pressed(key, args...); }, true);
+    treeview->add_controller(key);
 
     // Signals for drag and drop.
-    Controller::add_drop_target(*treeview, {
-        .actions = Gdk::DragAction::COPY,
-        .types   = {G_TYPE_STRING},
-        .motion  = sigc::mem_fun(*this, &FontCollectionSelector::on_drop_motion),
-        .drop    = sigc::mem_fun(*this, &FontCollectionSelector::on_drop_drop),
-        .leave   = sigc::mem_fun(*this, &FontCollectionSelector::on_drop_leave)
-    });
+    auto const drop = Gtk::DropTarget::create(G_TYPE_STRING, Gdk::DragAction::COPY);
+    drop->signal_motion().connect(sigc::mem_fun(*this, &FontCollectionSelector::on_drop_motion), false); // before
+    drop->signal_drop().connect(sigc::mem_fun(*this, &FontCollectionSelector::on_drop_drop), false); // before
+    drop->signal_leave().connect(sigc::mem_fun(*this, &FontCollectionSelector::on_drop_leave));
+    treeview->add_controller(drop);
 
     treeview->get_selection()->signal_changed().connect([this]{ on_selection_changed(); });
 }
@@ -455,9 +458,8 @@ void FontCollectionSelector::deletion_warning_message_dialog(Glib::ustring const
     dialog_show_modal_and_selfdestruct(std::move(dialog), get_root());
 }
 
-bool FontCollectionSelector::on_key_pressed(GtkEventControllerKey const * const controller,
-                                            unsigned const keyval, unsigned const keycode,
-                                            GdkModifierType state)
+bool FontCollectionSelector::on_key_pressed(Gtk::EventControllerKey const &controller,
+                                            unsigned keyval, unsigned keycode, Gdk::ModifierType state)
 {
     switch (Inkscape::UI::Tools::get_latin_keyval(controller, keyval, keycode, state)) {
         case GDK_KEY_Delete:
@@ -468,7 +470,7 @@ bool FontCollectionSelector::on_key_pressed(GtkEventControllerKey const * const 
     return false;
 }
 
-Gdk::DragAction FontCollectionSelector::on_drop_motion(Gtk::DropTarget const &, double x, double y)
+Gdk::DragAction FontCollectionSelector::on_drop_motion(double x, double y)
 {
     Gtk::TreeModel::Path path;
     Gtk::TreeView::DropPosition pos;
@@ -491,12 +493,12 @@ Gdk::DragAction FontCollectionSelector::on_drop_motion(Gtk::DropTarget const &, 
     return {};
 }
 
-void FontCollectionSelector::on_drop_leave(Gtk::DropTarget const &target)
+void FontCollectionSelector::on_drop_leave()
 {
     treeview->get_selection()->unselect_all();
 }
 
-bool FontCollectionSelector::on_drop_drop(Gtk::DropTarget const &, Glib::ValueBase const &, double x, double y)
+bool FontCollectionSelector::on_drop_drop(Glib::ValueBase const &, double x, double y)
 {
     // 1. Get the row at which the data is dropped.
     Gtk::TreePath path;

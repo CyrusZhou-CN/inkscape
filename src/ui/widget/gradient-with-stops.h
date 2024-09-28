@@ -73,13 +73,10 @@ public:
 private:
     void draw_func(Cairo::RefPtr<Cairo::Context> const &cr, int width, int height);
     void css_changed(GtkCssStyleChange *change) final;
-    Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const &click,
-                                              int n_press, double x, double y);
-    Gtk::EventSequenceState on_click_released(Gtk::GestureClick const &click,
-                                              int n_press, double x, double y);
-    void on_motion(GtkEventControllerMotion const *motion, double x, double y);
-    bool on_key_pressed(GtkEventControllerKey const *controller,
-                        unsigned keyval, unsigned keycode, GdkModifierType state);
+    void on_click_pressed(int n_press, double x, double y);
+    void on_click_released(int n_press, double x, double y);
+    void on_motion(double x, double y);
+    bool on_key_pressed(unsigned keyval, unsigned keycode, Gdk::ModifierType state);
     std::optional<bool> focus(Gtk::DirectionType direction) final;
 
     void modified();

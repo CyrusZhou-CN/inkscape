@@ -40,8 +40,8 @@ private:
 
     // Signal handlers
     void _onPageNumberChanged();
-    Gtk::EventSequenceState _onSpinButtonClickPressed(Gtk::GestureClick const &click, int n_press, double x, double y);
-    Gtk::EventSequenceState _onSpinButtonClickReleased(Gtk::GestureClick const &click, int n_press, double x, double y);
+    void _onSpinButtonClickPressed(int n_press, double x, double y);
+    void _onSpinButtonClickReleased(int n_press, double x, double y);
 
     Gtk::Box *vbox1;
     Gtk::Button *cancelbutton;

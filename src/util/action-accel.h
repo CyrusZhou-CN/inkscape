@@ -25,6 +25,10 @@
 
 #include "helper/auto-connection.h"
 
+namespace Gtk {
+class EventControllerKey;
+}
+
 namespace Inkscape { struct KeyEvent; }
 
 namespace Inkscape::Util {
@@ -128,6 +132,18 @@ public:
      */
     bool isTriggeredBy(GtkEventControllerKey const *controller,
                        unsigned keyval, unsigned keycode, GdkModifierType state) const;
+
+    /**
+     * @brief Checks whether a key controller and its signal handler arguments trigger this action.
+     * @param controller - Gtk::EventController emitting ::key-pressed or released signal
+     * @param keyval - the keyval received by the signal handler
+     * @param keycode - the hardware key code received by the signal handler
+     * @param state - the keyboard modifier state received by the signal handler
+     * @return true if one of the keyboard shortcuts for the action is triggered by the arguments,
+     *         false otherwise.
+     */
+    bool isTriggeredBy(Gtk::EventControllerKey const &controller,
+                       unsigned keyval, unsigned keycode, Gdk::ModifierType state) const;
 };
 
 } // namespace Inkscape::Util

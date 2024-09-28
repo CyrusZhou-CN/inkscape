@@ -35,7 +35,9 @@
 #include <gdkmm/seat.h>
 #include <gtkmm/button.h>
 #include <gtkmm/checkbutton.h>
+#include <gtkmm/dragsource.h>
 #include <gtkmm/enums.h>
+#include <gtkmm/eventcontrollermotion.h>
 #include <gtkmm/frame.h>
 #include <gtkmm/gestureclick.h>
 #include <gtkmm/grid.h>
@@ -1352,8 +1354,10 @@ FilterEffectsDialog::FilterModifier::FilterModifier(FilterEffectsDialog& d, Glib
 
     _cell_toggle.signal_toggled().connect(sigc::mem_fun(*this, &FilterModifier::on_selection_toggled));
 
-    Controller::add_click(_list, {}, // no pressed handler,
-        sigc::mem_fun(*this, &FilterModifier::filter_list_click_released), Controller::Button::right);
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(3); // right
+    click->signal_released().connect(Controller::use_state(sigc::mem_fun(*this, &FilterModifier::filter_list_click_released), *click));
+    _list.add_controller(click);
 
     _list.get_selection()->signal_changed().connect(sigc::mem_fun(*this, &FilterModifier::on_filter_selection_changed));
     _observer->signal_changed().connect(signal_filter_changed().make_slot());
@@ -1761,21 +1765,25 @@ FilterEffectsDialog::PrimitiveList::PrimitiveList(FilterEffectsDialog& d)
 {
     _inputs_count = FPInputConverter._length;
 
-    Controller::add_click(*this,
-        sigc::mem_fun(*this, &PrimitiveList::on_click_pressed ),
-        sigc::mem_fun(*this, &PrimitiveList::on_click_released),
-        Controller::Button::any,
-        Gtk::PropagationPhase::TARGET);
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(0); // any
+    click->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    click->signal_pressed().connect(Controller::use_state(sigc::mem_fun(*this, &PrimitiveList::on_click_pressed), *click));
+    click->signal_released().connect(Controller::use_state(sigc::mem_fun(*this, &PrimitiveList::on_click_released), *click));
+    add_controller(click);
 
-    Controller::add_motion<nullptr,
-                           &PrimitiveList::on_motion_motion,
-                           nullptr>
-                          (*this, *this, Gtk::PropagationPhase::TARGET);
+    auto const motion = Gtk::EventControllerMotion::create();
+    motion->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    motion->signal_motion().connect(sigc::mem_fun(*this, &PrimitiveList::on_motion_motion));
+    add_controller(motion);
 
     _model = Gtk::ListStore::create(_columns);
 
     set_reorderable(true);
-    Controller::add_drag_source(*this, {.end = sigc::mem_fun(*this, &PrimitiveList::on_drag_end)});
+
+    auto const drag = Gtk::DragSource::create();
+    drag->signal_drag_end().connect(sigc::mem_fun(*this, &PrimitiveList::on_drag_end));
+    add_controller(drag);
 
     set_model(_model);
     append_column(_("_Effect"), _columns.type);
@@ -2333,8 +2341,7 @@ FilterEffectsDialog::PrimitiveList::on_click_pressed(Gtk::GestureClick const & /
     return Gtk::EventSequenceState::NONE;
 }
 
-void FilterEffectsDialog::PrimitiveList::on_motion_motion(GtkEventControllerMotion const * /*motion*/,
-                                                          double const wx, double const wy)
+void FilterEffectsDialog::PrimitiveList::on_motion_motion(double wx, double wy)
 {
     const int speed = 10;
     const int limit = 15;
@@ -2543,8 +2550,7 @@ void FilterEffectsDialog::PrimitiveList::sanitize_connections(const Gtk::TreeMod
 }
 
 // Reorder the filter primitives to match the list order
-void FilterEffectsDialog::PrimitiveList::on_drag_end(Gtk::DragSource const &/*source*/,
-                                                     Glib::RefPtr<Gdk::Drag> const &/*&drag*/,
+void FilterEffectsDialog::PrimitiveList::on_drag_end(Glib::RefPtr<Gdk::Drag> const &/*&drag*/,
                                                      bool /*delete_data*/)
 {
     SPFilter* filter = _dialog._filter_modifier.get_selected_filter();

@@ -103,8 +103,7 @@ private:
     Gtk::Widget *_selected_page;
     std::vector<auto_connection> _conn;
     std::vector<auto_connection> _connmenu;
-    using TabConnection = std::variant<auto_connection, Glib::RefPtr<Gtk::EventController>>;
-    std::multimap<Gtk::Widget *, TabConnection> _tab_connections;
+    std::multimap<Gtk::Widget *, auto_connection> _tab_connections;
 
     static std::list<DialogNotebook *> _instances;
     void add_highlight_header();

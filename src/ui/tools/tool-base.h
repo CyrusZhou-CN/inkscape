@@ -32,6 +32,7 @@
 #include "util/action-accel.h"
 
 namespace Gtk {
+class EventControllerKey;
 class Widget;
 } // namespace Gtk
 
@@ -252,6 +253,9 @@ unsigned get_latin_keyval_impl(unsigned event_keyval, unsigned event_keycode,
                                unsigned *consumed_modifiers);
 unsigned get_latin_keyval(GtkEventControllerKey const *controller,
                           unsigned keyval, unsigned keycode, GdkModifierType state,
+                          unsigned *consumed_modifiers = nullptr);
+unsigned get_latin_keyval(Gtk::EventControllerKey const &controller,
+                          unsigned keyval, unsigned keycode, Gdk::ModifierType state,
                           unsigned *consumed_modifiers = nullptr);
 unsigned get_latin_keyval(KeyEvent const &event, unsigned *consumed_modifiers = nullptr);
 

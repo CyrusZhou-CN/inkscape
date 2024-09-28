@@ -119,7 +119,7 @@ private:
     bool set_cell_markup();
     void entry_activate_cb();
     bool match_selected_cb(Gtk::TreeModel::iterator const &iter);
-    bool keypress_cb(GtkEventControllerKey const *, unsigned keyval, unsigned, GdkModifierType);
+    bool keypress_cb(unsigned keyval, unsigned, Gdk::ModifierType);
 
     Glib::ustring check_comma_separated_text() const;
 };

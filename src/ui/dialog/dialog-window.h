@@ -20,6 +20,10 @@
 
 class InkscapeWindow;
 
+namespace Gtk {
+class EventControllerKey;
+}
+
 namespace Inkscape::UI::Dialog {
 
 class DialogContainer;
@@ -43,8 +47,8 @@ public:
     DialogContainer *get_container() { return _container; }
 
 private:
-    bool on_key_pressed(GtkEventControllerKey *controller,
-                        unsigned keyval, unsigned keycode, GdkModifierType state);
+    bool on_key_pressed(Gtk::EventControllerKey &controller,
+                        unsigned keyval, unsigned keycode, Gdk::ModifierType state);
 
     InkscapeApplication *_app = nullptr;
 

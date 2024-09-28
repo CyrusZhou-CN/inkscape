@@ -7,6 +7,8 @@
 #include <2geom/rect.h>
 #include <cairomm/refptr.h>
 #include <cairomm/surface.h>
+#include <gtkmm/eventcontrollermotion.h>
+#include <gtkmm/gestureclick.h>
 
 #include "colors/color.h"
 #include "colors/utils.h"
@@ -234,8 +236,14 @@ ColorPlate::ColorPlate() {
         draw_plate(ctx);
     });
 
-    Controller::add_motion<nullptr, &ColorPlate::on_motion, nullptr>(*this, *this, Gtk::PropagationPhase::TARGET);
-    Controller::add_click(*this, [this](Gtk::GestureClick&, int, double x, double y) {
+    auto const motion = Gtk::EventControllerMotion::create();
+    motion->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    motion->signal_motion().connect([this, &motion = *motion](auto &&...args) { on_motion(motion, args...); });
+    add_controller(motion);
+
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(1); // left
+    click->signal_pressed().connect(Controller::use_state([this](auto &, int, double x, double y) {
         // verify click location
         if (auto area = get_active_area()) {
             bool inside = false;
@@ -251,7 +259,8 @@ ColorPlate::ColorPlate() {
         _down = {};
         _drag = false;
         return Gtk::EventSequenceState::NONE;
-    }, {}, Controller::Button::left);
+    }, *click));
+    add_controller(click);
 }
 
 void ColorPlate::draw_plate(const Cairo::RefPtr<Cairo::Context>& ctx) {
@@ -324,11 +333,11 @@ void ColorPlate::fire_color_changed() {
     }
 }
 
-void ColorPlate::on_motion(const GtkEventControllerMotion* motion, double x, double y) {
+void ColorPlate::on_motion(Gtk::EventControllerMotion const &motion, double x, double y) {
     if (!_drag) return;
 
-    auto state = Controller::get_event_modifiers(motion);
-    auto drag = Controller::has_flag(state, GDK_BUTTON1_MASK);
+    auto state = motion.get_current_event_state();
+    auto drag = Controller::has_flag(state, Gdk::ModifierType::BUTTON1_MASK);
     if (!drag) return;
 
     // drag move

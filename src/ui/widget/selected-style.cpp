@@ -184,10 +184,13 @@ SelectedStyle::SelectedStyle()
             return true;
         }, true);
         swatch[i]->add_controller(target);
-        Controller::add_click(*swatch[i], {}, sigc::mem_fun(*this,
-                                                            i == 0 ?
-                                                            &SelectedStyle::on_fill_click :
-                                                            &SelectedStyle::on_stroke_click));
+
+        auto const click = Gtk::GestureClick::create();
+        auto const callback = i == 0 ? sigc::mem_fun(*this, &SelectedStyle::on_fill_click)
+                                     : sigc::mem_fun(*this, &SelectedStyle::on_stroke_click);
+        click->set_button(0); // any
+        click->signal_released().connect(Controller::use_state(std::move(callback), *click));
+        swatch[i]->add_controller(click);
 
         grid->attach(*label[i],  0, i, 1, 1);
         grid->attach(*tag[i],    1, i, 1, 1);
@@ -202,8 +205,12 @@ SelectedStyle::SelectedStyle()
     stroke_width_rotateable = Gtk::make_managed<RotateableStrokeWidth>(this);
     stroke_width_rotateable->append(*stroke_width);
     stroke_width_rotateable->set_size_request(SELECTED_STYLE_STROKE_WIDTH, -1);
-    Controller::add_click(*stroke_width_rotateable, {},
-                          sigc::mem_fun(*this, &SelectedStyle::on_sw_click));
+    {
+        auto const click = Gtk::GestureClick::create();
+        click->set_button(0); // any
+        click->signal_released().connect(Controller::use_state(sigc::mem_fun(*this, &SelectedStyle::on_sw_click), *click));
+        stroke_width_rotateable->add_controller(click);
+    }
     grid->attach(*stroke_width_rotateable, 3, 1, 1, 1);
 
     // Opacity
@@ -219,11 +226,12 @@ SelectedStyle::SelectedStyle()
     opacity_box->append(*opacity_label);
     opacity_box->append(*opacity_sb);
 
-    Controller::add_click(
-        *opacity_box,
-        [] (Gtk::GestureClick const &, int, double, double) { return Gtk::EventSequenceState::CLAIMED; },
-        sigc::mem_fun(*this, &SelectedStyle::on_opacity_click),
-        Controller::Button::middle, Gtk::PropagationPhase::CAPTURE);
+    auto const click = Gtk::GestureClick::create();
+    click->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    click->set_button(2); // middle
+    click->signal_pressed().connect([&click = *click](auto &&...) { click.set_state(Gtk::EventSequenceState::CLAIMED); });
+    click->signal_released().connect(Controller::use_state(sigc::mem_fun(*this, &SelectedStyle::on_opacity_click), *click));
+    opacity_box->add_controller(click);
 
     on_popup_menu(*opacity_box, sigc::mem_fun(*this, &SelectedStyle::on_opacity_popup));
     opacity_sb->signal_value_changed().connect(sigc::mem_fun(*this, &SelectedStyle::on_opacity_changed));

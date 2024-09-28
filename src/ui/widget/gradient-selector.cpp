@@ -16,6 +16,7 @@
 
 #include <string>
 #include <glibmm/i18n.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/treeview.h>
@@ -84,7 +85,9 @@ GradientSelector::GradientSelector()
     count_column->set_clickable(true);
     count_column->set_resizable(true);
 
-    Controller::add_key<&GradientSelector::onKeyPressed>(*_treeview, *this);
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect(sigc::mem_fun(*this, &GradientSelector::onKeyPressed), true);
+    _treeview->add_controller(key);
 
     _treeview->set_visible(true);
 
@@ -268,21 +271,9 @@ void GradientSelector::moveSelection(int amount, bool down, bool toEnd)
     _treeview->scroll_to_row(_store->get_path(iter), 0.5);
 }
 
-bool GradientSelector::onKeyPressed(GtkEventControllerKey const * controller,
-                                    unsigned /*keyval*/, unsigned const keycode,
-                                    GdkModifierType const state)
+bool GradientSelector::onKeyPressed(unsigned keyval, unsigned /*keycode*/, Gdk::ModifierType state)
 {
-    auto display = Gdk::Display::get_default();
-    auto key = 0u;
-    gdk_display_translate_key(gdk_display_get_default(),
-                              keycode,
-                              state,
-                              0,
-                              &key,
-                              nullptr,
-                              nullptr,
-                              nullptr);
-    switch (key) {
+    switch (keyval) {
         case GDK_KEY_Up:
         case GDK_KEY_KP_Up:
             moveSelection(-1);

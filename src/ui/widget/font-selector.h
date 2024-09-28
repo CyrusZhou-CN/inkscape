@@ -142,10 +142,8 @@ private:
     bool set_cell_markup();
     void on_realize_list();
     // For drag and drop.
-    Glib::RefPtr<Gdk::ContentProvider> on_drag_prepare(Gtk::DragSource const &source,
-                                                       double x, double y);
-    void on_drag_begin(Gtk::DragSource &source,
-                       Glib::RefPtr<Gdk::Drag> const &drag);
+    Glib::RefPtr<Gdk::ContentProvider> on_drag_prepare(double x, double y);
+    void on_drag_begin(Gtk::DragSource &source, Glib::RefPtr<Gdk::Drag> const &drag);
 
     // font selector interface
     Gtk::Widget* box() override { return this; }

@@ -171,8 +171,11 @@ void ToolToolbar::attachHandlers(Glib::RefPtr<Gtk::Builder> builder, InkscapeWin
             }
             return Gtk::EventSequenceState::NONE;
         };
-        Controller::add_click(*radio, std::move(on_click_pressed), {},
-                              Controller::Button::any);
+
+        const auto click = Gtk::GestureClick::create();
+        click->set_button(0); // any
+        click->signal_pressed().connect(Controller::use_state(std::move(on_click_pressed), *click), true);
+        radio->add_controller(click);
     }
 }
 

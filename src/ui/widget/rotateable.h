@@ -17,6 +17,8 @@
 
 namespace Gtk {
 class GestureClick;
+class EventControllerMotion;
+class EventControllerScroll;
 } // namespace Gtk
 
 namespace Inkscape::UI::Widget {
@@ -42,14 +44,14 @@ private:
     bool dragging;
     bool working;
 
-    unsigned get_single_modifier(unsigned old, unsigned state);
+    static unsigned get_single_modifier(unsigned old, unsigned state);
 
     Gtk::EventSequenceState on_click  (Gtk::GestureClick const &click,
                                        int n_press, double x, double y);
     Gtk::EventSequenceState on_release(Gtk::GestureClick const &click,
                                        int n_press, double x, double y);
-    void on_motion(GtkEventControllerMotion const *motion, double  x, double  y);
-    bool on_scroll(GtkEventControllerScroll const *scroll, double dx, double dy);
+    void on_motion(Gtk::EventControllerMotion const &motion, double  x, double  y);
+    bool on_scroll(Gtk::EventControllerScroll const &scroll, double dx, double dy);
 
     virtual void do_motion (double /*by*/, unsigned /*state*/) {}
     virtual void do_release(double /*by*/, unsigned /*state*/) {}

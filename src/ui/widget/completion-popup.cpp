@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <gtkmm/entrycompletion.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/menubutton.h>
 #include <gtkmm/searchentry2.h>
 #include <gtkmm/liststore.h>
@@ -28,7 +29,10 @@ CompletionPopup::CompletionPopup() :
     _popover_menu{Gtk::PositionType::BOTTOM},
     _completion(get_object<Gtk::EntryCompletion>(_builder, "completion"))
 {
-    Controller::add_key<&CompletionPopup::onPopoverKeyPressed>(_popover_menu, *this, Gtk::PropagationPhase::CAPTURE);
+    auto const key = Gtk::EventControllerKey::create();
+    key->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    key->signal_key_pressed().connect(sigc::mem_fun(*this, &CompletionPopup::onPopoverKeyPressed), true);
+    _popover_menu.add_controller(key);
     _button.set_popover(_popover_menu);
 
     _list = std::dynamic_pointer_cast<Gtk::ListStore>(_builder->get_object("list"));
@@ -79,9 +83,7 @@ CompletionPopup::CompletionPopup() :
 
 CompletionPopup::~CompletionPopup() = default;
 
-bool CompletionPopup::onPopoverKeyPressed(GtkEventControllerKey const * /*controller*/,
-                                     unsigned keyval, unsigned /*keycode*/,
-                                     GdkModifierType state) {
+bool CompletionPopup::onPopoverKeyPressed(unsigned keyval, unsigned /*keycode*/, Gdk::ModifierType /*state*/) {
     if (!_button.get_active()) {
         return false;
     }

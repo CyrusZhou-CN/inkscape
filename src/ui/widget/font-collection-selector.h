@@ -35,6 +35,7 @@ class CellRenderer;
 class CellRendererText;
 class DragSource;
 class DropTarget;
+class EventControllerKey;
 class TreeStore;
 } // namespace Gtk
 
@@ -96,13 +97,12 @@ public:
 
 private:
     void deletion_warning_message_dialog(Glib::ustring const &collection_name, sigc::slot<void(int)> onresponse);
-    bool on_key_pressed(GtkEventControllerKey const * controller,
-                        unsigned keyval, unsigned keycode, GdkModifierType state);
+    bool on_key_pressed(Gtk::EventControllerKey const &controller,
+                        unsigned keyval, unsigned keycode, Gdk::ModifierType state);
 
-    Gdk::DragAction on_drop_motion(Gtk::DropTarget const &target, double x, double y);
-    void on_drop_leave(Gtk::DropTarget const &target);
-    bool on_drop_drop  (Gtk::DropTarget const &target,
-                        Glib::ValueBase const &value, double x, double y);
+    Gdk::DragAction on_drop_motion(double x, double y);
+    void on_drop_leave();
+    bool on_drop_drop(Glib::ValueBase const &value, double x, double y);
 
     void on_selection_changed();
 

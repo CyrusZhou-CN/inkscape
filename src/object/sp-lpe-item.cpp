@@ -725,10 +725,16 @@ SPLPEItem * SPLPEItem::removeAllPathEffects(bool keep_paths, bool recursive)
         if (grp) {
             std::vector<SPItem *> item_list = grp->item_list();
             for (auto iter : item_list) {
+                sp_object_ref(iter);
+            }
+            for (auto iter : item_list) {
                 auto subitem = cast<SPLPEItem>(iter);
-                if (subitem) {
+                if (subitem && subitem->document) {
                     subitem->removeAllPathEffects(keep_paths, recursive);
                 }
+            }
+            for (auto iter : item_list) {
+                sp_object_unref(iter);
             }
         }
     }

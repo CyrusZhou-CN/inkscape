@@ -55,9 +55,6 @@ public:
     void setDesktop(SPDesktop *desktop);
 
 private:
-    Gtk::EventSequenceState on_click(Gtk::GestureClick const &click,
-                                     int n_press, double x, double y);
-
     using PrefObs = Preferences::PreferencesObserver;
 
     SPDesktop *_desktop;

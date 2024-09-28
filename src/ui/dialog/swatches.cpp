@@ -27,10 +27,12 @@
 #include <glibmm/i18n.h>
 #include <glibmm/ustring.h>
 #include <glibmm/utility.h>
+#include <gtkmm/accelerator.h>
 #include <gtkmm/box.h>
 #include <gtkmm/builder.h>
 #include <gtkmm/button.h>
 #include <gtkmm/cellrenderertext.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/label.h>
 #include <gtkmm/menubutton.h>
 #include <gtkmm/searchentry2.h>
@@ -609,16 +611,17 @@ void SwatchesPanel::update_loaded_palette_entry() {
 
 void SwatchesPanel::setup_selector_menu()
 {
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect(sigc::mem_fun(*this, &SwatchesPanel::on_selector_key_pressed), true);
     _selector.set_popover(*_selector_menu);
-    Controller::add_key<&SwatchesPanel::on_selector_key_pressed>(_selector, *this);
+    _selector.add_controller(key);
 }
 
-bool SwatchesPanel::on_selector_key_pressed(GtkEventControllerKey const * controller,
-                                            unsigned const keyval, unsigned /*keycode*/,
-                                            GdkModifierType const state)
+bool SwatchesPanel::on_selector_key_pressed(unsigned const keyval, unsigned /*keycode*/,
+                                            Gdk::ModifierType const state)
 {
     // We act like GtkComboBox in that we only move the active item if no modifier key was pressed:
-    if (Controller::has_flag(state, gtk_accelerator_get_default_mod_mask())) return false;
+    if (Controller::has_flag(state, Gtk::Accelerator::get_default_mod_mask())) return false;
 
     auto const begin = _palettes.cbegin(), end = _palettes.cend();
     auto it = std::find_if(begin, end, [&](auto &p){ return p.first.id == _current_palette_id; });

@@ -28,6 +28,7 @@
 #include <gtkmm/button.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/enums.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/image.h>
 #include <gtkmm/label.h>
 #include <gtkmm/liststore.h>
@@ -169,8 +170,10 @@ AttrDialog::AttrDialog()
         col->signal_clicked().connect(sigc::mem_fun(*this, &AttrDialog::onCreateClicked), false);
     }
 
-    Controller::add_key<&AttrDialog::onTreeViewKeyPressed, &AttrDialog::onTreeViewKeyReleased>
-                       (_treeView, *this);
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect(sigc::mem_fun(*this, &AttrDialog::onTreeViewKeyPressed), true);
+    key->signal_key_released().connect(sigc::mem_fun(*this, &AttrDialog::onTreeViewKeyReleased));
+    _treeView.add_controller(key);
 
     _nameRenderer = Gtk::make_managed<Gtk::CellRendererText>();
     _nameRenderer->property_editable() = true;
@@ -218,7 +221,11 @@ AttrDialog::AttrDialog()
 
     _popover->set_parent(*this);
     _popover->signal_closed().connect([this]{ popClosed(); });
-    Controller::add_key<&AttrDialog::onPopoverKeyPressed>(*_popover, *this, Gtk::PropagationPhase::CAPTURE);
+
+    auto const popover_key = Gtk::EventControllerKey::create();
+    popover_key->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    popover_key->signal_key_pressed().connect(sigc::mem_fun(*this, &AttrDialog::onPopoverKeyPressed), true);
+    _popover->add_controller(popover_key);
 
     get_widget<Gtk::Button>(_builder, "btn-truncate").signal_clicked().connect([this]{ truncateDigits(); });
 
@@ -275,16 +282,14 @@ void AttrDialog::adjust_popup_edit_size()
     }
 }
 
-bool AttrDialog::onPopoverKeyPressed(GtkEventControllerKey const * /*controller*/,
-                                     unsigned keyval, unsigned /*keycode*/,
-                                     GdkModifierType state)
+bool AttrDialog::onPopoverKeyPressed(unsigned keyval, unsigned /*keycode*/, Gdk::ModifierType state)
 {
     if (!_popover->is_visible()) return false;
 
     switch (keyval) {
         case GDK_KEY_Return:
         case GDK_KEY_KP_Enter:
-            if (Controller::has_flag(state, GDK_SHIFT_MASK)) {
+            if (Controller::has_flag(state, Gdk::ModifierType::SHIFT_MASK)) {
                 valueEditedPop();
                 return true;
             }
@@ -635,8 +640,7 @@ void AttrDialog::notifyContentChanged(XML::Node & /*repr*/, Util::ptr_shared /*o
  * @brief AttrDialog::onTreeViewKeyPressed
  * Delete or create elements based on key presses
  */
-bool AttrDialog::onTreeViewKeyPressed(GtkEventControllerKey const * /*controller*/,
-                                      unsigned keyval, unsigned /*keycode*/, GdkModifierType state)
+bool AttrDialog::onTreeViewKeyPressed(unsigned keyval, unsigned /*keycode*/, Gdk::ModifierType state)
 {
     if (!_repr) {
         return false;
@@ -659,7 +663,7 @@ bool AttrDialog::onTreeViewKeyPressed(GtkEventControllerKey const * /*controller
 
         case GDK_KEY_Return:
         case GDK_KEY_KP_Enter:
-            if (_popover->is_visible() && Controller::has_flag(state, GDK_SHIFT_MASK)) {
+            if (_popover->is_visible() && Controller::has_flag(state, Gdk::ModifierType::SHIFT_MASK)) {
                 valueEditedPop();
                 return true;
             }
@@ -668,23 +672,19 @@ bool AttrDialog::onTreeViewKeyPressed(GtkEventControllerKey const * /*controller
     return false;
 }
 
-bool AttrDialog::onTreeViewKeyReleased(GtkEventControllerKey const * /*controller*/,
-                                       unsigned keyval, unsigned /*keycode*/, GdkModifierType state)
+void AttrDialog::onTreeViewKeyReleased(unsigned keyval, unsigned /*keycode*/, Gdk::ModifierType state)
 {
-    if (_editingEntry == nullptr) return false;
+    if (_editingEntry == nullptr) return;
 
     switch (keyval) {
         case GDK_KEY_Return:
         case GDK_KEY_KP_Enter:
-            if (_embedNewline && Controller::has_flag(state, GDK_SHIFT_MASK)) {
+            if (_embedNewline && Controller::has_flag(state, Gdk::ModifierType::SHIFT_MASK)) {
                 auto pos = _editingEntry->get_position();
                 _editingEntry->insert_text("\n", 1, pos);
                 _editingEntry->set_position(pos + 1);
-                return true;
             }
     }
-
-    return false;
 }
 
 void AttrDialog::storeMoveToNext(Gtk::TreeModel::Path modelpath)

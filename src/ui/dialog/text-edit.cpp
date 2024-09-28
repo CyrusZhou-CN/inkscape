@@ -17,6 +17,7 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#include <gtkmm/eventcontrollerkey.h>
 #include "preferences.h"
 #ifdef HAVE_CONFIG_H
 # include "config.h"  // only include where actually required!
@@ -165,7 +166,10 @@ TextEdit::TextEdit()
     append(*contents);
 
     /* Signal handlers */
-    Controller::add_key<&TextEdit::captureUndo, nullptr>(*text_view, *this);
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect([this, &key = *key](auto&& ...args) { return captureUndo(key, args...); }, true);
+    text_view->add_controller(key);
+
     text_buffer->signal_changed().connect([this] { onChange(); });
 
     setasdefault_button.signal_clicked().connect([this] { onSetDefault(); });
@@ -195,9 +199,8 @@ TextEdit::TextEdit()
 
 TextEdit::~TextEdit() = default;
 
-bool TextEdit::captureUndo(GtkEventControllerKey const * const controller,
-                           unsigned const keyval, unsigned const keycode,
-                           GdkModifierType const state)
+bool TextEdit::captureUndo(Gtk::EventControllerKey const &controller,
+                           unsigned keyval, unsigned keycode, Gdk::ModifierType state)
 {
     for (auto const accel: {&_undo, &_redo}) {
         if (accel->isTriggeredBy(controller, keyval, keycode, state)) {

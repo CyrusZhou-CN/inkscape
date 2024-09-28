@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <gtkmm/entry.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/menubutton.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/textview.h>
@@ -814,7 +815,10 @@ public:
         _svgd_edit->setStyle(theme);
         _data.set_wrap_mode(Gtk::WrapMode::WORD);
 
-        Controller::add_key<&PathPanel::on_key_pressed>(_data, *this);
+        auto const key = Gtk::EventControllerKey::create();
+        key->signal_key_pressed().connect(sigc::mem_fun(*this, &PathPanel::on_key_pressed), true);
+        _data.add_controller(key);
+
         auto& wnd = get_widget<Gtk::ScrolledWindow>(builder, "path-data-wnd");
         wnd.set_child(_data);
 
@@ -877,11 +881,11 @@ public:
     }
 
 private:
-    bool on_key_pressed(const GtkEventControllerKey* controller, unsigned keyval, unsigned keycode, GdkModifierType state) {
+    bool on_key_pressed(unsigned keyval, unsigned keycode, Gdk::ModifierType state) {
         switch (keyval) {
         case GDK_KEY_Return:
         case GDK_KEY_KP_Enter:
-            return Controller::has_flag(state, GDK_SHIFT_MASK) ? commit_d() : false;
+            return Controller::has_flag(state, Gdk::ModifierType::SHIFT_MASK) ? commit_d() : false;
         }
         return false;
     }

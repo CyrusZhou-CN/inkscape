@@ -549,9 +549,9 @@ private:
 
     // pinch zoom
     std::optional<double> _begin_zoom;
-    void on_zoom_begin(GtkGesture     const *zoom, GdkEventSequence const *sequence);
-    void on_zoom_scale(GtkGestureZoom const *zoom, double                  scale   );
-    void on_zoom_end  (GtkGesture     const *zoom, GdkEventSequence const *sequence);
+    void on_zoom_begin(Gdk::EventSequence *sequence);
+    void on_zoom_scale(double scale);
+    void on_zoom_end(Gdk::EventSequence *sequence);
 
     void onStatusMessage(Inkscape::MessageType type, char const *message);
     void onDocumentFilenameSet(char const *filename);

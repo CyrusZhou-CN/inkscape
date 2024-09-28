@@ -27,6 +27,7 @@
 
 namespace Gtk {
 class Adjustment;
+class EventControllerMotion;
 class GestureClick;
 class Snapshot;
 class SpinButton;
@@ -48,9 +49,9 @@ private:
                                               int n_press, double x, double y);
     Gtk::EventSequenceState on_click_released(Gtk::GestureClick const &click,
                                               int n_press, double x, double y);
-    void on_motion_enter (GtkEventControllerMotion const *motion, double x, double y);
-    void on_motion_motion(GtkEventControllerMotion const *motion, double x, double y);
-    void on_motion_leave (GtkEventControllerMotion const *motion);
+    void on_motion_enter(double x, double y);
+    void on_motion_motion(Gtk::EventControllerMotion const &motion, double x, double y);
+    void on_motion_leave();
 
     double get_fraction();
     void set_adjustment_value(double x, bool constrained = false);
@@ -89,8 +90,7 @@ private:
     InkScale                      *_scale        = nullptr;
     GtkWidget                     *_focus_widget = nullptr;
 
-    bool on_key_released(GtkEventControllerKey const * controller,
-                         unsigned keyval, unsigned keycode, GdkModifierType state);
+    void on_key_released(unsigned keyval, unsigned keycode, Gdk::ModifierType state);
 };
 
 #endif // SEEN_INK_SPINSCALE_H

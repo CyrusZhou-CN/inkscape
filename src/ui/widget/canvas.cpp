@@ -323,18 +323,33 @@ Canvas::Canvas()
     set_name("InkscapeCanvas");
 
     // Events
-    Controller::add_scroll<nullptr, &Canvas::on_scroll, nullptr>
-                          (*this, *this, GTK_EVENT_CONTROLLER_SCROLL_BOTH_AXES);
-    Controller::add_click(*this, sigc::mem_fun(*this, &Canvas::on_button_pressed ),
-                                 sigc::mem_fun(*this, &Canvas::on_button_released));
-    Controller::add_key<&Canvas::on_key_pressed, &Canvas::on_key_released, nullptr>(*this, *this);
-    Controller::add_motion<&Canvas::on_enter, &Canvas::on_motion, &Canvas::on_leave>(*this, *this);
+    auto const scroll = Gtk::EventControllerScroll::create();
+    scroll->set_flags(Gtk::EventControllerScroll::Flags::BOTH_AXES);
+    scroll->signal_scroll().connect([this, &scroll = *scroll](auto &&...args) { return on_scroll(scroll, args...); }, true);
+    add_controller(scroll);
 
-    auto focus = Gtk::EventControllerFocus::create();
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(0);
+    click->signal_pressed().connect(Controller::use_state([this](auto &&...args) { return on_button_pressed(args...); }, *click));
+    click->signal_released().connect(Controller::use_state([this](auto &&...args) { return on_button_released(args...); }, *click));
+    add_controller(click);
+
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect([this, &key = *key](auto &&...args) { return on_key_pressed(key, args...); }, true);
+    key->signal_key_released().connect([this, &key = *key](auto &&...args) { on_key_released(key, args...); });
+    add_controller(key);
+
+    auto const motion = Gtk::EventControllerMotion::create();
+    motion->signal_enter().connect([this, &motion = *motion](auto &&...args) { on_enter(motion, args...); });
+    motion->signal_motion().connect([this, &motion = *motion](auto &&...args) { on_motion(motion, args...); });
+    motion->signal_leave().connect([this, &motion = *motion](auto &&...args) { on_leave(motion, args...); });
+    add_controller(motion);
+
+    auto const focus = Gtk::EventControllerFocus::create();
     focus->set_propagation_phase(Gtk::PropagationPhase::BUBBLE);
-    add_controller(focus);
     focus->signal_enter().connect(sigc::mem_fun(*this, &Canvas::on_focus_in));
     focus->signal_leave().connect(sigc::mem_fun(*this, &Canvas::on_focus_out));
+    add_controller(focus);
 
     // Updater
     d->updater = Updater::create(pref_to_updater(d->prefs.update_strategy));
@@ -899,24 +914,23 @@ void Canvas::enable_autoscroll()
  * Event handling
  */
 
-bool Canvas::on_scroll(GtkEventControllerScroll const *controller_c, double dx, double dy)
+bool Canvas::on_scroll(Gtk::EventControllerScroll const &controller, double dx, double dy)
 {
-    auto controller = const_wrap(controller_c, true);
-    auto gdkevent = controller->get_current_event();
-    _state = (int)controller->get_current_event_state();
+    auto gdkevent = controller.get_current_event();
+    _state = (int)controller.get_current_event_state();
 
     auto event = ScrollEvent();
     event.modifiers = _state;
-    event.device = controller->get_current_event_device();
+    event.device = controller.get_current_event_device();
     event.delta = { dx, dy };
-    event.unit = controller->get_unit();
+    event.unit = controller.get_unit();
     event.extinput = extinput_from_gdkevent(*gdkevent);
 
     return d->process_event(event);
 }
 
 Gtk::EventSequenceState Canvas::on_button_pressed(Gtk::GestureClick const &controller,
-                                                  int const n_press, double const x, double const y)
+                                                  int n_press, double x, double y)
 {
     _state = (int)controller.get_current_event_state();
     d->last_mouse = Geom::Point(x, y);
@@ -962,7 +976,7 @@ Gtk::EventSequenceState Canvas::on_button_pressed(Gtk::GestureClick const &contr
 }
 
 Gtk::EventSequenceState Canvas::on_button_released(Gtk::GestureClick const &controller,
-                                                   int /*n_press*/, double const x, double const y)
+                                                   int /*n_press*/, double x, double y)
 {
     _state = (int)controller.get_current_event_state();
     d->last_mouse = Geom::Point(x, y);
@@ -1032,15 +1046,14 @@ Gtk::EventSequenceState Canvas::on_button_released(Gtk::GestureClick const &cont
     return result;
 }
 
-void Canvas::on_enter(GtkEventControllerMotion const *controller_c, double x, double y)
+void Canvas::on_enter(Gtk::EventControllerMotion const &controller, double x, double y)
 {
     if (d->delayed_leave_event) {
         d->delayed_leave_event = false;
         return;
     }
 
-    auto controller = const_wrap(controller_c, true);
-    _state = (int)controller->get_current_event_state();
+    _state = (int)controller.get_current_event_state();
     d->last_mouse = Geom::Point(x, y);
 
     auto event = EnterEvent();
@@ -1050,15 +1063,14 @@ void Canvas::on_enter(GtkEventControllerMotion const *controller_c, double x, do
     d->process_event(event);
 }
 
-void Canvas::on_leave(GtkEventControllerMotion const *controller_c)
+void Canvas::on_leave(Gtk::EventControllerMotion const &controller)
 {
     if (d->unreleased_presses != 0) {
         d->delayed_leave_event = true;
         return;
     }
 
-    auto controller = const_wrap(controller_c, true);
-    _state = (int)controller->get_current_event_state();
+    _state = (int)controller.get_current_event_state();
     d->last_mouse = {};
 
     auto event = LeaveEvent();
@@ -1078,43 +1090,41 @@ void Canvas::on_focus_out()
     _signal_focus_out.emit();
 }
 
-bool Canvas::on_key_pressed(GtkEventControllerKey const *controller_c,
-                            unsigned keyval, unsigned keycode, GdkModifierType const state)
+bool Canvas::on_key_pressed(Gtk::EventControllerKey const &controller,
+                            unsigned keyval, unsigned keycode, Gdk::ModifierType state)
 {
-    auto controller = const_wrap(controller_c, true);
-    _state = state;
+    _state = static_cast<int>(state);
 
     auto event = KeyPressEvent();
     event.modifiers = _state;
-    event.device = controller->get_current_event_device();
+    event.device = controller.get_current_event_device();
     event.keyval = keyval;
     event.keycode = keycode;
-    event.group = controller->get_group();
-    event.time = controller->get_current_event_time();
+    event.group = controller.get_group();
+    event.time = controller.get_current_event_time();
     event.pos = d->last_mouse;
 
     return d->process_event(event);
 }
 
-bool Canvas::on_key_released(GtkEventControllerKey const *controller_c,
-                             unsigned keyval, unsigned keycode, GdkModifierType const state)
+void Canvas::on_key_released(Gtk::EventControllerKey const &controller,
+                             unsigned keyval, unsigned keycode, Gdk::ModifierType state)
 {
-    auto controller = const_wrap(controller_c, true);
-    _state = state;
+    _state = static_cast<int>(state);
 
     auto event = KeyReleaseEvent();
     event.modifiers = _state;
-    event.device = controller->get_current_event_device();
+    event.device = controller.get_current_event_device();
     event.keyval = keyval;
     event.keycode = keycode;
-    event.group = controller->get_group();
-    event.time = controller->get_current_event_time();
+    event.group = controller.get_group();
+    event.time = controller.get_current_event_time();
     event.pos = d->last_mouse;
 
-    return d->process_event(event);
+    d->process_event(event);
 }
 
-void Canvas::on_motion(GtkEventControllerMotion const *controller_c, double x, double y)
+void Canvas::on_motion(Gtk::EventControllerMotion const &controller, double x, double y)
 {
     auto const mouse = Geom::Point{x, y};
     if (mouse == d->last_mouse) {
@@ -1122,8 +1132,7 @@ void Canvas::on_motion(GtkEventControllerMotion const *controller_c, double x, d
     }
     d->last_mouse = mouse;
 
-    auto controller = const_wrap(controller_c, true);
-    _state = (int)controller->get_current_event_state();
+    _state = (int)controller.get_current_event_state();
 
     // Handle interactions with the split view controller.
     if (_split_mode == SplitMode::XRAY) {
@@ -1196,10 +1205,10 @@ void Canvas::on_motion(GtkEventControllerMotion const *controller_c, double x, d
 
     auto event = MotionEvent();
     event.modifiers = _state;
-    event.device = controller->get_current_event_device();
+    event.device = controller.get_current_event_device();
     event.pos = *d->last_mouse;
-    event.time = controller->get_current_event_time();
-    event.extinput = extinput_from_gdkevent(*controller->get_current_event());
+    event.time = controller.get_current_event_time();
+    event.extinput = extinput_from_gdkevent(*controller.get_current_event());
 
     d->process_event(event);
 }

@@ -21,6 +21,7 @@
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/combobox.h>
 #include <gtkmm/cssprovider.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/infobar.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/notebook.h>
@@ -173,7 +174,10 @@ StartScreen::StartScreen()
     // Add signals and setup things.
     auto prefs = Inkscape::Preferences::get();
 
-    Controller::add_key<&StartScreen::on_key_pressed>(*this, *this);
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect(sigc::mem_fun(*this, &StartScreen::on_key_pressed), true);
+    add_controller(key);
+
     _tabs_switch_page_conn = tabs.signal_switch_page().connect(sigc::mem_fun(*this, &StartScreen::notebook_switch));
 
     // Setup the lists of items
@@ -435,13 +439,11 @@ StartScreen::notebook_next(Gtk::Widget *button)
 /**
  * When a key is pressed in the main window.
  */
-bool StartScreen::on_key_pressed(GtkEventControllerKey const * /*controller*/,
-                                 unsigned const keyval, unsigned /*keycode*/,
-                                 GdkModifierType const state)
+bool StartScreen::on_key_pressed(unsigned keyval, unsigned /*keycode*/, Gdk::ModifierType state)
 {
 #ifdef GDK_WINDOWING_QUARTZ
     // On macOS only, if user press Cmd+Q => exit
-    if (keyval == 'q' && state == (GDK_MOD2_MASK | GDK_META_MASK)) {
+    if (keyval == 'q' && static_cast<GdkModifierType>(state) == (GDK_MOD2_MASK | GDK_META_MASK)) {
         close();
         return false;
     }

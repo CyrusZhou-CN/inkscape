@@ -29,6 +29,7 @@ class File;
 
 namespace Gtk {
 class Application;
+class EventControllerKey;
 class Shortcut;
 class Widget;
 class Window;
@@ -107,6 +108,9 @@ public:
     /// Controller provides the group. It can be nullptr; if so, we use group 0.
     static Gtk::AccelKey get_from(GtkEventControllerKey const *controller,
                                   unsigned keyval, unsigned keycode, GdkModifierType state,
+                                  bool fix = false);
+    static Gtk::AccelKey get_from(Gtk::EventControllerKey const &controller,
+                                  unsigned keyval, unsigned keycode, Gdk::ModifierType state,
                                   bool fix = false);
     static Gtk::AccelKey get_from_event(KeyEvent const &event, bool fix = false);
 

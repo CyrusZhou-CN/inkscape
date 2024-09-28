@@ -64,11 +64,9 @@ private:
     Gtk::CellRendererText *text_renderer = nullptr;
 
     // ==== Controllers ====
-    Gtk::DragSource* drag_source;
-
-    Glib::RefPtr<Gdk::ContentProvider> on_prepare(Gtk::DragSource const &controller, double x, double y);
-    Gdk::DragAction on_drag_motion(Gtk::DropTarget const & /*controller*/, double const x, double const y);
-    bool            on_drag_drop(  Gtk::DropTarget const & /*controller*/, Glib::ValueBase const & /*value*/, double const x, double const y);
+    Glib::RefPtr<Gdk::ContentProvider> on_prepare(Gtk::DragSource &controller, double x, double y);
+    Gdk::DragAction on_drag_motion(double x, double y);
+    bool on_drag_drop(Glib::ValueBase const &/*value*/, double x, double y);
 };
 
 } // namespace Inkscape::UI::Widget

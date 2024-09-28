@@ -31,6 +31,7 @@
 #include <gtkmm/builder.h>
 #include <gtkmm/button.h>
 #include <gtkmm/eventcontrollerfocus.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/label.h>
 #include <gtkmm/listbox.h>
 #include <gtkmm/listboxrow.h>
@@ -79,7 +80,10 @@ CommandPalette::CommandPalette()
 
     // Close the CommandPalette when the toplevel Window receives an Escape key press.
     // & also when the focused widget of said window is no longer a descendent of the Palette.
-    Controller::add_key<&CommandPalette::on_key_pressed>(_CPBase, *this, Gtk::PropagationPhase::CAPTURE);
+    auto const key = Gtk::EventControllerKey::create();
+    key->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    key->signal_key_pressed().connect(sigc::mem_fun(*this, &CommandPalette::on_key_pressed), true);
+    _CPBase.add_controller(key);
 
     auto focus = Gtk::EventControllerFocus::create();
     focus->property_contains_focus().signal_changed().connect([this, &focus = *focus] {
@@ -95,7 +99,9 @@ CommandPalette::CommandPalette()
         cp->on_activate_cpfilter();
     }), this);
 
-    Controller::add_key<&CommandPalette::on_entry_keypress>(_CPFilter, *this);
+    auto const entry_key = Gtk::EventControllerKey::create();
+    entry_key->signal_key_pressed().connect([this](auto &&...args) { return on_entry_keypress(args...); }, true);
+    _CPFilter.add_controller(entry_key);
 
     set_mode(CPMode::SEARCH);
 
@@ -359,9 +365,7 @@ bool CommandPalette::on_filter_recent_file(Gtk::ListBoxRow *child, bool const is
     return false;
 }
 
-bool CommandPalette::on_key_pressed(GtkEventControllerKey const * /*controller*/,
-                                    unsigned const keyval, unsigned /*keycode*/,
-                                    GdkModifierType /*state*/)
+bool CommandPalette::on_key_pressed(unsigned keyval, unsigned /*keycode*/, Gdk::ModifierType /*state*/)
 {
     g_return_val_if_fail(_is_open, false);
 
@@ -386,7 +390,7 @@ void CommandPalette::on_activate_cpfilter()
     }
 }
 
-bool CommandPalette::on_entry_keypress(GtkEventControllerKey const *, unsigned keyval, unsigned, GdkModifierType)
+bool CommandPalette::on_entry_keypress(unsigned keyval, unsigned, Gdk::ModifierType)
 {
     if (_mode != CPMode::SEARCH) return false;
 

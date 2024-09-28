@@ -150,10 +150,10 @@ FontSelector::FontSelector(bool with_size, bool with_variations)
     update_variations(font_lister->get_fontspec());
 
     // For drag and drop.
-    Controller::add_drag_source(family_treeview, {
-        .prepare = sigc::mem_fun(*this, &FontSelector::on_drag_prepare),
-        .begin   = sigc::mem_fun(*this, &FontSelector::on_drag_begin  )
-    });
+    auto const drag = Gtk::DragSource::create();
+    drag->signal_prepare().connect(sigc::mem_fun(*this, &FontSelector::on_drag_prepare), false); // before
+    drag->signal_drag_begin().connect([this, &drag = *drag](auto &&...args) { on_drag_begin(drag, args...); });
+    family_treeview.add_controller(drag);
 
     // Add signals
     family_treeview.get_selection()->signal_changed().connect(sigc::mem_fun(*this, &FontSelector::on_family_changed));
@@ -202,8 +202,7 @@ void FontSelector::on_drag_begin(Gtk::DragSource &source,
     source.set_icon(paintable, 0, 0);
 }
 
-Glib::RefPtr<Gdk::ContentProvider> FontSelector::on_drag_prepare(Gtk::DragSource const &/*source*/,
-                                                                 double /*x*/, double /*y*/)
+Glib::RefPtr<Gdk::ContentProvider> FontSelector::on_drag_prepare(double /*x*/, double /*y*/)
 {
     Inkscape::FontLister *font_lister = Inkscape::FontLister::get_instance();
     Glib::ustring family_name = font_lister->get_dragging_family();

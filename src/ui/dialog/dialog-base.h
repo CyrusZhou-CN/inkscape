@@ -19,6 +19,10 @@
 
 #include "inkscape-application.h"
 
+namespace Gtk {
+class EventControllerKey;
+}
+
 class SPDesktop;
 
 namespace Inkscape::UI::Dialog {
@@ -90,8 +94,8 @@ protected:
 
 private:
     bool blink_off(); // timer callback
-    bool on_key_pressed(GtkEventControllerKey const *controller,
-                        unsigned keyval, unsigned keycode, GdkModifierType state);
+    bool on_key_pressed(Gtk::EventControllerKey const &controller,
+                        unsigned keyval, unsigned keycode, Gdk::ModifierType state);
     // return if dialog is on visible tab
     bool _showing = true;
     void unsetDesktop();

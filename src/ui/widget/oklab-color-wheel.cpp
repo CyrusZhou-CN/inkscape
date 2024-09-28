@@ -273,7 +273,7 @@ Gtk::EventSequenceState OKWheel::on_click_released(int /*n_press*/, double /*x*/
 }
 
 /** @brief Handle a drag (motion notify event). */
-void OKWheel::on_motion(GtkEventControllerMotion const * /*motion*/, double x, double y)
+void OKWheel::on_motion(Gtk::EventControllerMotion const &/*motion*/, double x, double y)
 {
     if (_adjusting) {
         _setColor(_event2abstract({x, y}));

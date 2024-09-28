@@ -25,6 +25,7 @@
 #include <gtkmm/accelerator.h>
 #include <gtkmm/actionable.h>
 #include <gtkmm/application.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/shortcut.h>
 #include <gtkmm/window.h>
 
@@ -459,6 +460,13 @@ Shortcuts::get_from(GtkEventControllerKey const * const controller,
     auto const mcontroller = const_cast<GtkEventControllerKey *>(controller);
     auto const group = controller ? gtk_event_controller_key_get_group(mcontroller) : 0u;
     return get_from_event_impl(keyval, keycode, state, group, fix);
+}
+
+Gtk::AccelKey
+Shortcuts::get_from(Gtk::EventControllerKey const &controller,
+                    unsigned keyval, unsigned keycode, Gdk::ModifierType state, bool fix)
+{
+    return get_from_event_impl(keyval, keycode, static_cast<GdkModifierType>(state), controller.get_group(), fix);
 }
 
 Gtk::AccelKey

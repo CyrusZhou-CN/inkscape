@@ -71,9 +71,13 @@ RvngImportDialog::RvngImportDialog(std::vector<RVNGString> const &pages)
 
     // Connect signals
     _pageNumberSpin->signal_value_changed().connect(sigc::mem_fun(*this, &RvngImportDialog::_onPageNumberChanged));
-    UI::Controller::add_click(*_pageNumberSpin, sigc::mem_fun(*this, &RvngImportDialog::_onSpinButtonClickPressed ),
-                              sigc::mem_fun(*this, &RvngImportDialog::_onSpinButtonClickReleased),
-                              UI::Controller::Button::any, Gtk::PropagationPhase::TARGET);
+
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(0); // any
+    click->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    click->signal_pressed().connect(sigc::mem_fun(*this, &RvngImportDialog::_onSpinButtonClickPressed));
+    click->signal_released().connect(sigc::mem_fun(*this, &RvngImportDialog::_onSpinButtonClickReleased));
+    _pageNumberSpin->add_controller(click);
 
     _setPreviewPage();
 }
@@ -91,17 +95,15 @@ void RvngImportDialog::_onPageNumberChanged()
     _setPreviewPage();
 }
 
-Gtk::EventSequenceState RvngImportDialog::_onSpinButtonClickReleased(const Gtk::GestureClick &, int, double, double)
+void RvngImportDialog::_onSpinButtonClickReleased(int, double, double)
 {
     _spinning = false;
     _setPreviewPage();
-    return Gtk::EventSequenceState::NONE;
 }
 
-Gtk::EventSequenceState RvngImportDialog::_onSpinButtonClickPressed(const Gtk::GestureClick &, int, double, double)
+void RvngImportDialog::_onSpinButtonClickPressed(int, double, double)
 {
     _spinning = true;
-    return Gtk::EventSequenceState::NONE;
 }
 
 /**

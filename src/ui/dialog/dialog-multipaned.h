@@ -108,9 +108,9 @@ private:
     Gtk::Allocation allocation2;
 
     // drag on handle/separator
-    Gtk::EventSequenceState on_drag_begin (Gtk::GestureDrag const &gesture, double  start_x, double  start_y);
-    Gtk::EventSequenceState on_drag_end   (Gtk::GestureDrag const &gesture, double offset_x, double offset_y);
-    Gtk::EventSequenceState on_drag_update(Gtk::GestureDrag const &gesture, double offset_x, double offset_y);
+    Gtk::EventSequenceState on_drag_begin (double  start_x, double  start_y);
+    Gtk::EventSequenceState on_drag_end   (double offset_x, double offset_y);
+    Gtk::EventSequenceState on_drag_update(double offset_x, double offset_y);
     // drag+drop data
     bool on_drag_data        (Glib::ValueBase const &value, double x, double y);
     bool on_prepend_drag_data(Glib::ValueBase const &value, double x, double y);

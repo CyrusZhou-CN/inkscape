@@ -52,8 +52,7 @@ protected:
 
 private:
     void notebook_next(Gtk::Widget *button);
-    bool on_key_pressed(GtkEventControllerKey const *controller,
-                        unsigned keyval, unsigned keycode, GdkModifierType state);
+    bool on_key_pressed(unsigned keyval, unsigned keycode, Gdk::ModifierType state);
     Gtk::TreeModel::Row active_combo(std::string widget_name);
     void set_active_combo(std::string widget_name, std::string unique_id);
     void show_toggle();

@@ -81,21 +81,21 @@ static SPObject *get_linked_fill(SPObject *source)
 static void convert_fill_color(SPCSSAttr *css, SPObject *source)
 {
     auto color = source->style->fill.getColor();
-    color.addOpacity(source->style->fill_opacity.value);
+    color.addOpacity(double(source->style->fill_opacity));
     sp_repr_css_set_property_string(css, "fill", color.toString());
 }
 
 static void convert_stroke_color(SPCSSAttr *css, SPObject *source)
 {
     auto color = source->style->stroke.getColor();
-    color.addOpacity(source->style->stroke_opacity.value);
+    color.addOpacity(double(source->style->stroke_opacity));
     sp_repr_css_set_property_string(css, "fill", color.toString());
 }
 
 static void revert_stroke_color(SPCSSAttr *css, SPObject *source)
 {
     auto color = source->style->fill.getColor();
-    color.addOpacity(source->style->fill_opacity.value);
+    color.addOpacity(double(source->style->fill_opacity));
     sp_repr_css_set_property_string(css, "stroke", color.toString());
 }
 

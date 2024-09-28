@@ -33,6 +33,7 @@ class Context;
 } // namespace Cairo
 
 namespace Gtk {
+class EventControllerMotion;
 class GestureClick;
 class Popover;
 } // namespace Gtk
@@ -67,9 +68,8 @@ private:
     void css_changed(GtkCssStyleChange *) override;
     void on_prefs_changed();
 
-    void on_motion(GtkEventControllerMotion const *motion, double x, double y);
-    Gtk::EventSequenceState on_click_pressed(Gtk::GestureClick const &click,
-                                             int n_press, double x, double y);
+    void on_motion(Gtk::EventControllerMotion &motion, double x, double y);
+    Gtk::EventSequenceState on_click_pressed(int n_press, double x, double y);
 
     std::unique_ptr<Gtk::Popover> create_context_menu();
     Cairo::RefPtr<Cairo::Surface> draw_label(Cairo::RefPtr<Cairo::Surface> const &surface_in, int label_value);

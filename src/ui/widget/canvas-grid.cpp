@@ -159,14 +159,20 @@ CanvasGrid::CanvasGrid(SPDesktopWidget *dtw)
     attach(_vscrollbar,    1, 1, 1, 1);
 
     // For creating guides, etc.
-    Controller::add_click(*_hruler,            sigc::mem_fun(*this, &CanvasGrid::_rulerButtonPress  ),
-                                    sigc::bind(sigc::mem_fun(*this, &CanvasGrid::_rulerButtonRelease), true ),
-                          Controller::Button::left);
-    Controller::add_motion<nullptr, &CanvasGrid::_rulerMotion<true>, nullptr>(*_hruler, *this);
-    Controller::add_click(*_vruler,            sigc::mem_fun(*this, &CanvasGrid::_rulerButtonPress  ),
-                                    sigc::bind(sigc::mem_fun(*this, &CanvasGrid::_rulerButtonRelease), false),
-                          Controller::Button::left);
-    Controller::add_motion<nullptr, &CanvasGrid::_rulerMotion<false>, nullptr>(*_vruler, *this);
+    auto const bind_controllers = [&](auto& ruler, RulerOrientation orientation) {
+        auto const click = Gtk::GestureClick::create();
+        click->set_button(1); // left
+        click->signal_pressed().connect(Controller::use_state([this](auto &&...args) { return _rulerButtonPress(args...); }, *click));
+        click->signal_released().connect(Controller::use_state([this, orientation](auto &&...args) { return _rulerButtonRelease(args..., orientation); }, *click));
+        ruler->add_controller(click);
+
+        auto const motion = Gtk::EventControllerMotion::create();
+        motion->signal_motion().connect([this, orientation, &motion = *motion](auto &&...args) { _rulerMotion(motion, args..., orientation); });
+        ruler->add_controller(motion);
+    };
+
+    bind_controllers(_hruler, RulerOrientation::horizontal);
+    bind_controllers(_vruler, RulerOrientation::vertical);
 }
 
 CanvasGrid::~CanvasGrid() = default;
@@ -449,13 +455,14 @@ void CanvasGrid::_createGuideItem(Geom::Point const &pos, bool horiz)
     _active_guide->set_stroke(desktop->getNamedView()->getGuideHiColor().toRGBA());
 }
 
-void CanvasGrid::_rulerMotion(GtkEventControllerMotion const *controller_c, double x, double y, bool horiz)
+void CanvasGrid::_rulerMotion(Gtk::EventControllerMotion const &controller, double x, double y, RulerOrientation orientation)
 {
     if (!_ruler_clicked) {
         return;
     }
 
     // Get the position in canvas coordinates.
+    auto const horiz = orientation == RulerOrientation::horizontal;
     auto const pos = Geom::Point(x, y) + _rulerToCanvas(horiz);
 
     if (!_ruler_dragged) {
@@ -472,14 +479,12 @@ void CanvasGrid::_rulerMotion(GtkEventControllerMotion const *controller_c, doub
     }
 
     // Synthesize the CanvasEvent.
-    auto controller = const_wrap(controller_c, true);
-
     auto event = MotionEvent();
-    event.modifiers = (unsigned)controller->get_current_event_state();
-    event.device = controller->get_current_event_device();
+    event.modifiers = (unsigned)controller.get_current_event_state();
+    event.device = controller.get_current_event_device();
     event.pos = pos;
-    event.time = controller->get_current_event_time();
-    event.extinput = extinput_from_gdkevent(*controller->get_current_event());
+    event.time = controller.get_current_event_time();
+    event.extinput = extinput_from_gdkevent(*controller.get_current_event());
 
     rulerMotion(event, horiz);
 }
@@ -584,12 +589,13 @@ void CanvasGrid::_createGuide(Geom::Point origin, Geom::Point normal)
 
 // End guide creation or toggle guides on/off.
 Gtk::EventSequenceState CanvasGrid::_rulerButtonRelease(Gtk::GestureClick const &gesture,
-                                                        int /*n_press*/, double x, double y, bool horiz)
+                                                        int /*n_press*/, double x, double y, RulerOrientation orientation)
 {
     if (!_ruler_clicked) {
         return Gtk::EventSequenceState::NONE;
     }
 
+    auto const horiz = orientation == RulerOrientation::horizontal;
     auto const desktop = _dtw->get_desktop();
 
     if (_active_guide) {

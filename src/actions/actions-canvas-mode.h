@@ -14,6 +14,7 @@
 class InkscapeWindow;
 
 void add_actions_canvas_mode(InkscapeWindow* win);
+void apply_preferences_canvas_mode(InkscapeWindow *win);
 
 #endif // INK_ACTIONS_CANVAS_MODE_H
 

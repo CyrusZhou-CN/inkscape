@@ -18,6 +18,10 @@
 #include <gdkmm/cursor.h>
 #include <gdkmm/general.h>
 #include <gtkmm/drawingarea.h>
+#include <gtkmm/eventcontrollerkey.h>
+#include <gtkmm/eventcontrollermotion.h>
+#include <gtkmm/gestureclick.h>
+#include <gtkmm/window.h>
 #include <sigc++/functors/mem_fun.h>
 
 #include "display/cairo-utils.h"
@@ -59,11 +63,20 @@ GradientWithStops::GradientWithStops() :
 
     set_draw_func(sigc::mem_fun(*this, &GradientWithStops::draw_func));
 
-    Controller::add_click(*this, sigc::mem_fun(*this, &GradientWithStops::on_click_pressed ),
-                                          sigc::mem_fun(*this, &GradientWithStops::on_click_released),
-                          Controller::Button::left);
-    Controller::add_motion<nullptr, &GradientWithStops::on_motion, nullptr>(*this, *this);
-    Controller::add_key<&GradientWithStops::on_key_pressed>(*this, *this);
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(1); // left
+    click->signal_pressed().connect(sigc::mem_fun(*this, &GradientWithStops::on_click_pressed));
+    click->signal_released().connect(sigc::mem_fun(*this, &GradientWithStops::on_click_released));
+    add_controller(click);
+
+    auto const motion = Gtk::EventControllerMotion::create();
+    motion->signal_motion().connect(sigc::mem_fun(*this, &GradientWithStops::on_motion));
+    add_controller(motion);
+
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect(sigc::mem_fun(*this, &GradientWithStops::on_key_pressed), true);
+    add_controller(key);
+
     set_focusable(true);
 }
 
@@ -268,15 +281,13 @@ std::optional<bool> GradientWithStops::focus(Gtk::DirectionType const direction)
     return true;
 }
 
-bool GradientWithStops::on_key_pressed(GtkEventControllerKey const * /*controller*/,
-                                       unsigned const keyval, unsigned /*keycode*/,
-                                       GdkModifierType const state)
+bool GradientWithStops::on_key_pressed(unsigned keyval, unsigned /*keycode*/, Gdk::ModifierType state)
 {
     // currently all keyboard activity involves acting on focused stop handle; bail if nothing's selected
     if (_focused_stop < 0) return false;
 
     auto delta = _stop_move_increment;
-    if (Controller::has_flag(state, GDK_SHIFT_MASK)) {
+    if (Controller::has_flag(state, Gdk::ModifierType::SHIFT_MASK)) {
         delta *= 10;
     }
 
@@ -300,11 +311,9 @@ bool GradientWithStops::on_key_pressed(GtkEventControllerKey const * /*controlle
     return false;
 }
 
-Gtk::EventSequenceState GradientWithStops::on_click_pressed(Gtk::GestureClick const & /*click*/,
-                                                            int const n_press,
-                                                            double const x, double const y)
+void GradientWithStops::on_click_pressed(int n_press, double x, double y)
 {
-    if (!_gradient) return Gtk::EventSequenceState::NONE;
+    if (!_gradient) return;
 
     if (n_press == 1) {
         // single button press selects stop and can start dragging it
@@ -319,7 +328,7 @@ Gtk::EventSequenceState GradientWithStops::on_click_pressed(Gtk::GestureClick co
 
         if (index < 0) {
             set_focused_stop(-1); // no stop
-            return Gtk::EventSequenceState::NONE;
+            return;
         }
 
         set_focused_stop(index);
@@ -340,7 +349,7 @@ Gtk::EventSequenceState GradientWithStops::on_click_pressed(Gtk::GestureClick co
     } else if (n_press == 2) {
         // double-click may insert a new stop
         auto const index = find_stop_at(x, y);
-        if (index >= 0) return Gtk::EventSequenceState::NONE;
+        if (index >= 0) return;
 
         auto layout = get_layout();
         if (layout.width > 0 && x > layout.x && x < layout.x + layout.width) {
@@ -349,17 +358,12 @@ Gtk::EventSequenceState GradientWithStops::on_click_pressed(Gtk::GestureClick co
             _signal_add_stop_at.emit(position);
         }
     }
-
-    return Gtk::EventSequenceState::NONE;
 }
 
-Gtk::EventSequenceState GradientWithStops::on_click_released(Gtk::GestureClick const & /*click*/,
-                                                             int /*n_press*/,
-                                                             double const x, double const y)
+void GradientWithStops::on_click_released(int /*n_press*/, double x, double y)
 {
     set_stop_cursor(get_cursor(x, y));
     _dragging = false;
-    return Gtk::EventSequenceState::NONE;
 }
 
 // move stop by a given amount (delta)
@@ -376,8 +380,7 @@ void GradientWithStops::move_stop(int stop_index, double offset_shift) {
     }
 }
 
-void GradientWithStops::on_motion(GtkEventControllerMotion const * /*motion*/,
-                                  double const x, double const y)
+void GradientWithStops::on_motion(double x, double y)
 {
     if (!_gradient) return;
 

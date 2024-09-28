@@ -3,7 +3,6 @@ set(ui_SRC
 	builder-utils.cpp
 	clipboard.cpp
 	contextmenu.cpp
-	controller.cpp
 	cursor-utils.cpp
 	dialog-events.cpp
 	dialog-run.cpp

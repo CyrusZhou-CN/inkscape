@@ -27,6 +27,7 @@
 #include <gtkmm/dragsource.h>
 #include <gtkmm/droptarget.h>
 #include <gtkmm/expander.h>
+#include <gtkmm/gestureclick.h>
 #include <gtkmm/image.h>
 #include <gtkmm/label.h>
 #include <gtkmm/listbox.h>
@@ -157,11 +158,10 @@ LivePathEffectEditor::LivePathEffectEditor()
 {
     _LPEContainer.signal_map().connect(sigc::mem_fun(*this, &LivePathEffectEditor::map_handler) );
 
-    Controller::add_click(_LPEContainer, [this](Gtk::GestureClick const &, int, double, double)
-    {
-        dnd = false; // hack to fix DnD freezing expander
-        return Gtk::EventSequenceState::NONE;
-    });
+    // hack to fix DnD freezing expander
+    auto const click = Gtk::GestureClick::create();
+    click->signal_pressed().connect([this](auto &&...) { dnd = false; });
+    _LPEContainer.add_controller(click);
 
     setMenu();
     append(_LPEContainer);
@@ -725,10 +725,10 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
     int const total = static_cast<int>(effectlist.size());
 
     if (total > 1) {
-        auto &target = Controller::add_drop_target(_LPEContainer,
-            { .actions = Gdk::DragAction::MOVE, .types = {G_TYPE_INT}});
+        auto const target = Gtk::DropTarget::create(Glib::Value<int>::value_type(), Gdk::DragAction::MOVE);
+        _LPEContainer.add_controller(target);
 
-        target.signal_drop().connect([this](Glib::ValueBase const &value, double /*x*/, double const y)
+        target->signal_drop().connect([this](Glib::ValueBase const &value, double /*x*/, double const y)
         {
             if (!dnd) return false;
 
@@ -738,7 +738,7 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
             return accepted;
         }, false); // before
 
-        target.signal_motion().connect([this](double /*x*/, double const y)
+        target->signal_motion().connect([this](double /*x*/, double const y)
         {
             update_before_after_classes(_LPEContainer, y < 90);
             return Gdk::DragAction::MOVE;
@@ -797,21 +797,23 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
                          counter == 0, counter == total - 1);
 
         if (total > 1) {
-            auto &source = Controller::add_drag_source(*LPEDrag, {.actions = Gdk::DragAction::MOVE});
+            auto const source = Gtk::DragSource::create();
+            source->set_actions(Gdk::DragAction::MOVE);
+            LPEDrag->add_controller(source);
 
             // TODO: GTK4: Figure out how to replicate previous 50% transparency. CSS or Paintable?
             LPEEffect->add_css_class("drag-icon");
-            source.set_icon(Gtk::WidgetPaintable::create(*LPEEffect), 0, 0);
+            source->set_icon(Gtk::WidgetPaintable::create(*LPEEffect), 0, 0);
             LPEEffect->remove_css_class("drag-icon");
 
-            source.signal_drag_begin().connect([this](Glib::RefPtr<Gdk::Drag> const &){
+            source->signal_drag_begin().connect([this](Glib::RefPtr<Gdk::Drag> const &){
                 dnd = true;
             });
 
             auto row = dynamic_cast<Gtk::ListBoxRow *>(LPEEffect->get_parent());
             g_assert(row);
 
-            source.signal_prepare().connect([=](double, double)
+            source->signal_prepare().connect([=](double, double)
             {
                 Glib::Value<int> value;
                 value.init(G_TYPE_INT);
@@ -819,15 +821,15 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
                 return Gdk::ContentProvider::create(value);
             }, false); // before
 
-            source.signal_drag_end().connect([this](Glib::RefPtr<Gdk::Drag> const &, bool)
+            source->signal_drag_end().connect([this](Glib::RefPtr<Gdk::Drag> const &, bool)
             {
                 dnd = false;
             });
 
-            auto &target = Controller::add_drop_target(*row,
-                { .actions = Gdk::DragAction::MOVE, .types = {G_TYPE_INT}});
+            auto const target = Gtk::DropTarget::create(Glib::Value<int>::value_type(), Gdk::DragAction::MOVE);
+            row->add_controller(target);
 
-            target.signal_drop().connect([=, this](Glib::ValueBase const &value, double, double)
+            target->signal_drop().connect([=, this](Glib::ValueBase const &value, double, double)
             {
                 if (!dnd) return false;
 
@@ -836,7 +838,7 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
                 return accepted;
             }, false); // before
 
-            target.signal_motion().connect([=](double /*x*/, double const y)
+            target->signal_motion().connect([=](double /*x*/, double const y)
             {
                 int const half = row->get_allocated_height() / 2;
                 update_before_after_classes(*row, y < half);
@@ -851,21 +853,23 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
         LPEExpander->property_expanded().signal_changed().connect(sigc::bind(
                 sigc::mem_fun(*this, &LivePathEffectEditor::expanded_notify), LPEExpander));
 
-        Controller::add_click(*LPEOpenExpander, [=, this](Gtk::GestureClick const &, int, double, double)
-        {
+        auto const expander_click = Gtk::GestureClick::create();
+        expander_click->set_button(1); // left
+        expander_click->signal_pressed().connect([this, LPEExpander, &expander_click = *expander_click](auto &&...) {
            LPEExpander->set_expanded(!LPEExpander->get_expanded());
-           return Gtk::EventSequenceState::CLAIMED;
-        }, {}, Controller::Button::left);
+           expander_click.set_state(Gtk::EventSequenceState::CLAIMED);
+        });
+        LPEOpenExpander->add_controller(expander_click);
 
         LPEHide->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &LivePathEffectEditor::toggleVisible), lpe, LPEHide));
         LPEErase->signal_clicked().connect([=, this](){ removeEffect(LPEExpander);});
 
-        Controller::add_click(*LPEDrag, [this](Gtk::GestureClick const &, int, double const x, double const y)
-        {
+        auto const drag_click = Gtk::GestureClick::create();
+        drag_click->signal_pressed().connect([this](int, double x, double y) {
             dndx = x;
             dndy = y;
-            return Gtk::EventSequenceState::NONE;
         });
+        LPEDrag->add_controller(drag_click);
 
         if (total > 1) {
             LPEDrag->set_cursor("grab");
@@ -982,6 +986,9 @@ LivePathEffectEditor::clear_lpe_list()
     UI::remove_all_children( LPEListBox    );
     UI::remove_all_children(_LPEParentBox  );
     UI::remove_all_children(_LPECurrentItem);
+
+    _LPEExpanders.clear();
+    current_lperef = std::make_pair(nullptr, nullptr);
 }
 
 SPLPEItem * LivePathEffectEditor::clonetolpeitem()

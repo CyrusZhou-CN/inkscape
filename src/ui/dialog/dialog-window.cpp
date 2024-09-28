@@ -18,6 +18,7 @@
 #include <giomm/actiongroup.h>
 #include <gtkmm/application.h>
 #include <gtkmm/box.h>
+#include <gtkmm/eventcontrollerkey.h>
 
 #include "document.h"
 #include "inkscape.h"
@@ -143,8 +144,10 @@ DialogWindow::DialogWindow(InkscapeWindow *inkscape_window, Gtk::Widget *page)
     themecontext->themechangecallback();
 
     // TODO: Double-check the phase. This needs to be called after default Window handlerʼs CAPTURE
-    Controller::add_key<&DialogWindow::on_key_pressed>
-                       (*this, *this, Gtk::PropagationPhase::TARGET);
+    auto const key = Gtk::EventControllerKey::create();
+    key->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    key->signal_key_pressed().connect([this, &key = *key](auto &&...args) { return on_key_pressed(key, args...); }, true);
+    add_controller(key);
 
     // window is created hidden; don't show it now, its size needs to be restored
 }
@@ -238,12 +241,11 @@ void DialogWindow::update_window_size_to_fit_children()
     // before GTK4 removed the ability to do that.
 }
 
-bool DialogWindow::on_key_pressed(GtkEventControllerKey * const controller,
-                                  unsigned const keyval, unsigned const keycode,
-                                  GdkModifierType const state)
+bool DialogWindow::on_key_pressed(Gtk::EventControllerKey &controller,
+                                  unsigned keyval, unsigned keycode, Gdk::ModifierType state)
 {
     assert(_inkscape_window);
-    return gtk_event_controller_key_forward(controller, _inkscape_window->Gtk::Widget::gobj());
+    return controller.forward(*_inkscape_window);
 }
 
 } // namespace Inkscape::UI::Dialog

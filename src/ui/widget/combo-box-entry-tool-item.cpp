@@ -114,7 +114,10 @@ ComboBoxEntryToolItem::ComboBoxEntryToolItem(Glib::ustring name, Glib::ustring l
 
         // Add signal for GtkEntry to check if finished typing.
         _entry->signal_activate().connect(sigc::mem_fun(*this, &ComboBoxEntryToolItem::entry_activate_cb));
-        Controller::add_key<&ComboBoxEntryToolItem::keypress_cb>(*_entry, *this);
+
+        auto const key = Gtk::EventControllerKey::create();
+        key->signal_key_pressed().connect([this](auto &&...args) { return keypress_cb(args...); }, true);
+        _entry->add_controller(key);
     }
 
     set_tooltip(_tooltip.c_str());
@@ -462,7 +465,7 @@ void ComboBoxEntryToolItem::defocus()
     }
 }
 
-bool ComboBoxEntryToolItem::keypress_cb(GtkEventControllerKey const *, unsigned keyval, unsigned, GdkModifierType)
+bool ComboBoxEntryToolItem::keypress_cb(unsigned keyval, unsigned, Gdk::ModifierType)
 {
     switch (keyval) {
         case GDK_KEY_Escape:

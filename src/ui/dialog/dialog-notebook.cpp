@@ -186,9 +186,10 @@ DialogNotebook::DialogNotebook(DialogContainer *container)
     menubtn->set_name("DialogMenuButton");
 
     // =============== Signals ==================
-    auto &source = Controller::add_drag_source(*this);
-    _conn.emplace_back(source.signal_drag_begin().connect(sigc::mem_fun(*this, &DialogNotebook::on_drag_begin)));
-    _conn.emplace_back(source.signal_drag_end().connect(sigc::mem_fun(*this, &DialogNotebook::on_drag_end)));
+    auto const source = Gtk::DragSource::create();
+    add_controller(source);
+    _conn.emplace_back(source->signal_drag_begin().connect(sigc::mem_fun(*this, &DialogNotebook::on_drag_begin)));
+    _conn.emplace_back(source->signal_drag_end().connect(sigc::mem_fun(*this, &DialogNotebook::on_drag_end)));
     _conn.emplace_back(_notebook.signal_page_added().connect(sigc::mem_fun(*this, &DialogNotebook::on_page_added)));
     _conn.emplace_back(_notebook.signal_page_removed().connect(sigc::mem_fun(*this, &DialogNotebook::on_page_removed)));
     _conn.emplace_back(_notebook.signal_switch_page().connect(sigc::mem_fun(*this, &DialogNotebook::on_page_switch)));
@@ -981,15 +982,16 @@ void DialogNotebook::add_tab_connections(Gtk::Widget * const page)
             sigc::bind(sigc::mem_fun(*this, &DialogNotebook::on_close_button_click_event), page), true);
     _tab_connections.emplace(page, std::move(close_connection));
 
-    auto click = Gtk::GestureClick::create();
+    auto const click = Gtk::GestureClick::create();
     tab->add_controller(click);
     click->set_button(0); // all
-    click->signal_pressed().connect([this, page, &click = *click.get()](int const n_press, double const x, double const y)
-    {
-        auto const state = on_tab_click_event(click, n_press, x, y, page);
-        if (state != Gtk::EventSequenceState::NONE) click.set_state(state);
-    });
-    _tab_connections.emplace(page, std::move(click));
+    sigc::connection click_connection = click->signal_pressed().connect(
+        [this, page, &click = *click](int const n_press, double const x, double const y) {
+            auto const state = on_tab_click_event(click, n_press, x, y, page);
+            if (state != Gtk::EventSequenceState::NONE)
+                click.set_state(state);
+        });
+    _tab_connections.emplace(page, std::move(click_connection));
 }
 
 /**

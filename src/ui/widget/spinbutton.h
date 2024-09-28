@@ -20,6 +20,7 @@
 
 namespace Gtk {
 class Builder;
+class EventControllerKey;
 } // namespace Gtk
 
 namespace Inkscape::UI::Widget {
@@ -112,8 +113,8 @@ private:
      * @retval false continue with default handler.
      * @retval true  don't call default handler.
      */
-    bool on_key_pressed(GtkEventControllerKey const * controller,
-                        unsigned keyval, unsigned keycode, GdkModifierType state);
+    bool on_key_pressed(Gtk::EventControllerKey const &controller,
+                        unsigned keyval, unsigned keycode, Gdk::ModifierType state);
 
     bool on_popup_menu(PopupMenuOptionalClick);
     void create_popover_menu();

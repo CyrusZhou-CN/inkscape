@@ -20,7 +20,9 @@
 #include <gtkmm/box.h>
 #include <gtkmm/drawingarea.h>
 #include <gtkmm/droptarget.h>
+#include <gtkmm/eventcontrollermotion.h>
 #include <gtkmm/gestureclick.h>
+#include <gtkmm/gesturedrag.h>
 #include <gtkmm/image.h>
 #include <gtkmm/label.h>
 #include <gtkmm/overlay.h>
@@ -191,16 +193,12 @@ public:
     void set_drag_updated(bool updated );
 
 private:
-    void on_motion_enter (GtkEventControllerMotion const *motion,
-                          double x, double y);
-    void on_motion_motion(GtkEventControllerMotion const *motion,
-                          double x, double y);
-    void on_motion_leave (GtkEventControllerMotion const *motion);
+    void on_motion_enter (double x, double y);
+    void on_motion_motion(double x, double y);
+    void on_motion_leave ();
 
-    Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const &gesture,
-                                              int n_press, double x, double y);
-    Gtk::EventSequenceState on_click_released(Gtk::GestureClick const &gesture,
-                                              int n_press, double x, double y);
+    Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const &gesture);
+    Gtk::EventSequenceState on_click_released(Gtk::GestureClick const &gesture);
 
     void toggle_multipaned();
     void update_click_indicator(double x, double y);
@@ -247,15 +245,19 @@ MyHandle::MyHandle(Gtk::Orientation orientation, int size = get_handle_size())
     _drawing_area->set_draw_func(sigc::mem_fun(*this, &MyHandle::draw_func));
     add_overlay(*_drawing_area);
 
-    Controller::add_motion<&MyHandle::on_motion_enter ,
-                           &MyHandle::on_motion_motion,
-                           &MyHandle::on_motion_leave >
-                          (*_drawing_area, *this, Gtk::PropagationPhase::TARGET);
+    auto const motion = Gtk::EventControllerMotion::create();
+    motion->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    motion->signal_enter().connect(sigc::mem_fun(*this, &MyHandle::on_motion_enter));
+    motion->signal_motion().connect(sigc::mem_fun(*this, &MyHandle::on_motion_motion));
+    motion->signal_leave().connect(sigc::mem_fun(*this, &MyHandle::on_motion_leave));
+    _drawing_area->add_controller(motion);
 
-    Controller::add_click(*_drawing_area,
-                          sigc::mem_fun(*this, &MyHandle::on_click_pressed ),
-                          sigc::mem_fun(*this, &MyHandle::on_click_released),
-                          Controller::Button::any, Gtk::PropagationPhase::TARGET);
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(0); // any
+    click->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    click->signal_pressed().connect(Controller::use_state([this, &click = *click](auto &&...) { return on_click_pressed(click); }, *click));
+    click->signal_released().connect(Controller::use_state([this, &click = *click](auto &&...) { return on_click_released(click); }, *click));
+    _drawing_area->add_controller(click);
 }
 
 // draw rectangle with rounded corners
@@ -308,8 +310,7 @@ void MyHandle::set_drag_updated(bool const updated) {
 /**
  * Change the mouse pointer into a resize icon to show you can drag.
  */
-void MyHandle::on_motion_enter(GtkEventControllerMotion const * /*motion*/,
-                               double const x, double const y)
+void MyHandle::on_motion_enter(double x, double y)
 {
     if (get_orientation() == Gtk::Orientation::HORIZONTAL) {
         set_cursor("col-resize");
@@ -320,7 +321,7 @@ void MyHandle::on_motion_enter(GtkEventControllerMotion const * /*motion*/,
     update_click_indicator(x, y);
 }
 
-void MyHandle::on_motion_leave(GtkEventControllerMotion const * /*motion*/)
+void MyHandle::on_motion_leave()
 {
     set_cursor("");
     show_click_indicator(false);
@@ -350,8 +351,7 @@ bool MyHandle::is_click_resize_active() const {
     return get_orientation() == Gtk::Orientation::HORIZONTAL;
 }
 
-Gtk::EventSequenceState MyHandle::on_click_pressed(Gtk::GestureClick const &gesture,
-                                                   int /*n_press*/, double /*x*/, double /*y*/)
+Gtk::EventSequenceState MyHandle::on_click_pressed(Gtk::GestureClick const &gesture)
 {
     // Detect single-clicks, except after a (moving/updated) drag
     _click = !_drag_updated && gesture.get_current_button() == 1;
@@ -359,8 +359,7 @@ Gtk::EventSequenceState MyHandle::on_click_pressed(Gtk::GestureClick const &gest
     return Gtk::EventSequenceState::NONE;
 }
 
-Gtk::EventSequenceState MyHandle::on_click_released(Gtk::GestureClick const &gesture,
-                                                    int /*n_press*/, double /*x*/, double /*y*/)
+Gtk::EventSequenceState MyHandle::on_click_released(Gtk::GestureClick const &gesture)
 {
     // single-click on active zone?
     if (_click && gesture.get_current_button() == 1 && _click_indicator) {
@@ -423,8 +422,7 @@ void MyHandle::toggle_multipaned() {
     }
 }
 
-void MyHandle::on_motion_motion(GtkEventControllerMotion const * /*motion*/,
-                                double const x, double const y)
+void MyHandle::on_motion_motion(double x, double y)
 {
     // motion invalidates click; it activates resizing
     _click = false;
@@ -475,11 +473,13 @@ DialogMultipaned::DialogMultipaned(Gtk::Orientation orientation)
     dropzone_e->set_parent(*this);
 
     // ============ Connect signals =============
-    Controller::add_drag(*this,
-        sigc::mem_fun(*this, &DialogMultipaned::on_drag_begin ),
-        sigc::mem_fun(*this, &DialogMultipaned::on_drag_update),
-        sigc::mem_fun(*this, &DialogMultipaned::on_drag_end   ),
-        Gtk::PropagationPhase::CAPTURE);
+    auto const drag = Gtk::GestureDrag::create();
+    drag->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    drag->signal_drag_begin().connect(Controller::use_state([this](auto&, auto &&...args) { return on_drag_begin(args...); }, *drag));
+    drag->signal_drag_update().connect(Controller::use_state([this](auto&, auto &&...args) { return on_drag_update(args...); }, *drag));
+    drag->signal_drag_end().connect(Controller::use_state([this](auto&, auto &&...args) { return on_drag_end(args...); }, *drag));
+    add_controller(drag);
+
     _connections.emplace_back(
         _drop_target->signal_drop().connect(
             sigc::mem_fun(*this, &DialogMultipaned::on_drag_data), false)); // before
@@ -974,8 +974,7 @@ void DialogMultipaned::remove(Gtk::Widget &widget)
     }
 }
 
-Gtk::EventSequenceState DialogMultipaned::on_drag_begin(Gtk::GestureDrag const & /*gesture*/,
-                                                        double const start_x, double const start_y)
+Gtk::EventSequenceState DialogMultipaned::on_drag_begin(double start_x, double start_y)
 {
     _hide_widget1 = _hide_widget2 = nullptr;
     _resizing_widget1 = _resizing_widget2 = nullptr;
@@ -1026,8 +1025,7 @@ Gtk::EventSequenceState DialogMultipaned::on_drag_begin(Gtk::GestureDrag const &
     return Gtk::EventSequenceState::CLAIMED;
 }
 
-Gtk::EventSequenceState DialogMultipaned::on_drag_end(Gtk::GestureDrag const & /*gesture*/,
-                                                      double const offset_x, double const offset_y)
+Gtk::EventSequenceState DialogMultipaned::on_drag_end(double offset_x, double offset_y)
 {
     if (_handle >= 0 && _handle < children.size()) {
         if (auto my_handle = dynamic_cast<MyHandle*>(children[_handle].get())) {
@@ -1156,8 +1154,7 @@ double collapse_curve(double val, double size) {
     return val;
 }
 
-Gtk::EventSequenceState DialogMultipaned::on_drag_update(Gtk::GestureDrag const & /*gesture*/,
-                                                         double offset_x, double offset_y)
+Gtk::EventSequenceState DialogMultipaned::on_drag_update(double offset_x, double offset_y)
 {
     if (_handle < 0) {
         return Gtk::EventSequenceState::NONE;

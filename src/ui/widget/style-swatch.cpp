@@ -159,8 +159,6 @@ StyleSwatch::StyleSwatch(SPCSSAttr *css, gchar const *main_tip, Gtk::Orientation
 
     setStyle (css);
 
-    Controller::add_click(*_table, sigc::mem_fun(*this, &StyleSwatch::on_click));
-
     if (main_tip) {
         _table->set_tooltip_text(main_tip);
     }
@@ -172,17 +170,6 @@ void StyleSwatch::setToolName(const Glib::ustring& tool_name) {
 
 void StyleSwatch::setDesktop(SPDesktop *desktop) {
     _desktop = desktop;
-}
-
-Gtk::EventSequenceState StyleSwatch::on_click(Gtk::GestureClick const & /*click*/,
-                                              int /*n_press*/, double /*x*/, double /*y*/)
-{
-    if (_desktop && !_tool_name.empty()) {
-        auto win = _desktop->getInkscapeWindow();
-        open_tool_preferences(win, _tool_name);
-        return Gtk::EventSequenceState::CLAIMED;
-    }
-    return Gtk::EventSequenceState::NONE;
 }
 
 StyleSwatch::~StyleSwatch()

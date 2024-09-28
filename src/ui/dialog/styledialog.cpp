@@ -33,6 +33,7 @@
 #include <gtkmm/dialog.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/eventcontrollerfocus.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/label.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/treemodel.h>
@@ -1384,7 +1385,9 @@ void StyleDialog::_activeToggled(const Glib::ustring &path, Glib::RefPtr<Gtk::Tr
 void StyleDialog::_addTreeViewHandlers(Gtk::TreeView &treeview)
 {
     // This seems needed to get Tab to work as it usually does OotB, in e.g. AttrDialog. Unsure why
-    Controller::add_key<nullptr, &StyleDialog::_onTreeViewKeyReleased>(treeview, *this);
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_released().connect(sigc::mem_fun(*this, &StyleDialog::_onTreeViewKeyReleased));
+    treeview.add_controller(key);
 
     // and since the above somehow doesnʼt fire on focus-out of final cell, we have to do this too…
     auto focus = Gtk::EventControllerFocus::create();
@@ -1422,9 +1425,7 @@ void StyleDialog::_setEditingEntry(Gtk::Entry * const entry, Glib::ustring endCh
     entry->signal_editing_done().connect([this]{ _setEditingEntry(nullptr, {}); });
 }
 
-bool StyleDialog::_onTreeViewKeyReleased(GtkEventControllerKey const * /*controller*/,
-                                         unsigned keyval, unsigned /*keycode*/,
-                                         GdkModifierType /*state*/)
+void StyleDialog::_onTreeViewKeyReleased(unsigned keyval, unsigned /*keycode*/, Gdk::ModifierType /*state*/)
 {
     g_debug("StyleDialog::_onTreeViewKeyReleased");
 
@@ -1434,8 +1435,6 @@ bool StyleDialog::_onTreeViewKeyReleased(GtkEventControllerKey const * /*control
 
         _editingEntry->editing_done();
     }
-
-    return false;
 }
 
 void StyleDialog::_onTreeViewFocusLeave()

@@ -160,8 +160,7 @@ public:
     Gtk::Entry *_editingEntry = nullptr;
     void _addTreeViewHandlers(Gtk::TreeView &treeview);
     void _setEditingEntry(Gtk::Entry *entry, Glib::ustring endChars);
-    bool _onTreeViewKeyReleased(GtkEventControllerKey const *controller,
-                                unsigned keyval, unsigned keycode, GdkModifierType state);
+    void _onTreeViewKeyReleased(unsigned keyval, unsigned keycode, Gdk::ModifierType state);
     void _onTreeViewFocusLeave();
 
     void _onLinkObj(Glib::ustring const &path, Glib::RefPtr<Gtk::TreeStore> const &store);

@@ -18,6 +18,7 @@
 #include <iostream>
 #include <glibmm/main.h>
 #include <gtkmm/builder.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/window.h>
 #include <sigc++/functors/mem_fun.h>
 
@@ -54,7 +55,9 @@ InkviewWindow::InkviewWindow(Gio::Application::type_vec_files files,
     _documents.resize(_files.size()); // We keep _documents and _files in sync.
 
     // Callbacks
-    Inkscape::UI::Controller::add_key<&InkviewWindow::key_press>(*this, *this);
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect(sigc::mem_fun(*this, &InkviewWindow::key_press), true);
+    add_controller(key);
 
     if (_timer) {
         Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &InkviewWindow::on_timer), _timer);
@@ -263,7 +266,7 @@ void InkviewWindow::show_last()
     show_prev();
 }
 
-bool InkviewWindow::key_press(GtkEventControllerKey *, unsigned keyval, unsigned, GdkModifierType)
+bool InkviewWindow::key_press(unsigned keyval, unsigned, Gdk::ModifierType)
 {
     switch (keyval) {
         case GDK_KEY_Up:

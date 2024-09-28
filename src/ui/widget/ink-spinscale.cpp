@@ -22,6 +22,8 @@
 #include <gdkmm/general.h>
 #include <gdkmm/cursor.h>
 #include <gtkmm/adjustment.h>
+#include <gtkmm/eventcontrollerkey.h>
+#include <gtkmm/eventcontrollermotion.h>
 #include <gtkmm/gestureclick.h>
 #include <gtkmm/snapshot.h>
 #include <gtkmm/spinbutton.h>
@@ -43,13 +45,19 @@ InkScale::InkScale(Glib::RefPtr<Gtk::Adjustment> adjustment, Gtk::SpinButton* sp
 {
     set_name("InkScale");
 
-    Controller::add_click(*this, sigc::mem_fun(*this, &InkScale::on_click_pressed ),
-                                 sigc::mem_fun(*this, &InkScale::on_click_released),
-                          Controller::Button::any, Gtk::PropagationPhase::TARGET);
-    Controller::add_motion<&InkScale::on_motion_enter ,
-                           &InkScale::on_motion_motion,
-                           &InkScale::on_motion_leave >
-                          (*this, *this, Gtk::PropagationPhase::TARGET);
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(0); // any
+    click->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    click->signal_pressed().connect(Controller::use_state(sigc::mem_fun(*this, &InkScale::on_click_pressed), *click));
+    click->signal_released().connect(Controller::use_state(sigc::mem_fun(*this, &InkScale::on_click_released), *click));
+    add_controller(click);
+
+    auto const motion = Gtk::EventControllerMotion::create();
+    motion->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    motion->signal_enter().connect(sigc::mem_fun(*this, &InkScale::on_motion_enter));
+    motion->signal_leave().connect(sigc::mem_fun(*this, &InkScale::on_motion_leave));
+    motion->signal_motion().connect([this, &motion = *motion](auto &&...args) { on_motion_motion(motion, args...); });
+    add_controller(motion);
 }
 
 void
@@ -146,21 +154,18 @@ Gtk::EventSequenceState InkScale::on_click_released(Gtk::GestureClick const & /*
     return Gtk::EventSequenceState::CLAIMED;
 }
 
-void
-InkScale::on_motion_enter(GtkEventControllerMotion const * /*motion*/, double /*x*/, double /*y*/)
+void InkScale::on_motion_enter(double /*x*/, double /*y*/)
 {
     set_cursor("n-resize");
 }
 
-void
-InkScale::on_motion_motion(GtkEventControllerMotion const * const motion, double const x, double /*y*/)
+void InkScale::on_motion_motion(Gtk::EventControllerMotion const &motion, double x, double /*y*/)
 {
     if (!_dragging) {
         return;
     }
 
-    auto const cstate = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(motion));
-    auto const state = Gdk::ModifierType{static_cast<Gdk::ModifierType>(cstate)};
+    auto const state = motion.get_current_event_state();
     if (!Controller::has_flag(state, Gdk::ModifierType::ALT_MASK)) {
         // Absolute change
         auto const constrained = get_constrained(state);
@@ -172,8 +177,7 @@ InkScale::on_motion_motion(GtkEventControllerMotion const * const motion, double
     }
 }
 
-void
-InkScale::on_motion_leave(GtkEventControllerMotion const * /*motion*/)
+void InkScale::on_motion_leave()
 {
     set_cursor(Glib::RefPtr<Gdk::Cursor>{});
 }
@@ -233,7 +237,10 @@ InkSpinScale::InkSpinScale(double value, double lower,
 {
     // TODO: Why does the ctor from doubles do this stuff but the other doesnʼt?
     _spinbutton->set_valign(Gtk::Align::FILL);
-    Controller::add_key<nullptr, &InkSpinScale::on_key_released>(*this, *this); // phase?
+
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_released().connect(sigc::mem_fun(*this, &InkSpinScale::on_key_released));
+    add_controller(key);
 }
 
 InkSpinScale::InkSpinScale(Glib::RefPtr<Gtk::Adjustment> adjustment)
@@ -272,9 +279,7 @@ InkSpinScale::set_focus_widget(GtkWidget * focus_widget) {
 }
 
 // Return focus to canvas.
-bool
-InkSpinScale::on_key_released(GtkEventControllerKey const * /*controller*/,
-                              unsigned const keyval, unsigned /*keycode*/, GdkModifierType /*state*/)
+void InkSpinScale::on_key_released(unsigned keyval, unsigned /*keycode*/, Gdk::ModifierType /*state*/)
 {
     switch (keyval) {
         case GDK_KEY_Escape:
@@ -285,8 +290,6 @@ InkSpinScale::on_key_released(GtkEventControllerKey const * /*controller*/,
             }
             break;
     }
-
-    return false;
 }
 
 /*

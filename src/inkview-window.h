@@ -68,7 +68,7 @@ private:
     void show_first();
     void show_last();
 
-    bool key_press(GtkEventControllerKey *controller, unsigned keyval, unsigned keycode, GdkModifierType state);
+    bool key_press(unsigned keyval, unsigned keycode, Gdk::ModifierType state);
     bool on_timer();
 };
 

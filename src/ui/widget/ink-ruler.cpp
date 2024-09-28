@@ -21,6 +21,8 @@
 #include <gdkmm/general.h>
 #include <gtkmm/binlayout.h>
 #include <gtkmm/drawingarea.h>
+#include <gtkmm/eventcontrollermotion.h>
+#include <gtkmm/gestureclick.h>
 #include <gtkmm/popovermenu.h>
 
 #include "ink-ruler.h"
@@ -78,8 +80,14 @@ Ruler::Ruler(Gtk::Orientation orientation)
 
     set_draw_func(sigc::mem_fun(*this, &Ruler::draw_func));
 
-    Controller::add_motion<nullptr, &Ruler::on_motion, nullptr>(*this, *this);
-    Controller::add_click(*this, sigc::mem_fun(*this, &Ruler::on_click_pressed), {}, Controller::Button::right);
+    auto const motion = Gtk::EventControllerMotion::create();
+    motion->signal_motion().connect([this, &motion = *motion](auto &&...args) { return on_motion(motion, args...); });
+    add_controller(motion);
+
+    auto const click = Gtk::GestureClick::create();
+    click->set_button(3); // right
+    click->signal_pressed().connect(Controller::use_state([this](auto &, auto &&...args) { return on_click_pressed(args...); }, *click));
+    add_controller(click);
 
     auto prefs = Inkscape::Preferences::get();
     _watch_prefs = prefs->createObserver("/options/ruler/show_bbox", sigc::mem_fun(*this, &Ruler::on_prefs_changed));
@@ -162,18 +170,19 @@ void Ruler::set_selection(double lower, double upper)
 void
 Ruler::add_track_widget(Gtk::Widget& widget)
 {
-    Controller::add_motion<nullptr, &Ruler::on_motion, nullptr>(widget, *this,
-        Gtk::PropagationPhase::TARGET, Controller::When::before); // We connected 1st to event, so continue
+    auto const motion = Gtk::EventControllerMotion::create();
+    motion->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    motion->signal_motion().connect([this, &motion = *motion](auto &&...args) { return on_motion(motion, args...); }, false); // before
+    widget.add_controller(motion);
 }
 
 // Draws marker in response to motion events from canvas.  Position is defined in ruler pixel
 // coordinates. The routine assumes that the ruler is the same width (height) as the canvas. If
 // not, one could use Gtk::Widget::translate_coordinates() to convert the coordinates.
-void
-Ruler::on_motion(GtkEventControllerMotion const * motion, double const x, double const y)
+void Ruler::on_motion(Gtk::EventControllerMotion &motion, double x, double y)
 {
     // This may come from a widget other than `this`, so translate to accommodate border, etc.
-    auto const widget = Glib::wrap(gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(motion)));
+    auto const widget = motion.get_widget();
     double drawing_x{}, drawing_y{};
     widget->translate_coordinates(*this, std::lround(x), std::lround(y), drawing_x, drawing_y);
 
@@ -190,7 +199,7 @@ Ruler::on_motion(GtkEventControllerMotion const * motion, double const x, double
     queue_draw();
 }
 
-Gtk::EventSequenceState Ruler::on_click_pressed(Gtk::GestureClick const &, int, double x, double y)
+Gtk::EventSequenceState Ruler::on_click_pressed(int /*n_press*/, double x, double y)
 {
     UI::popup_at(*_popover, *this, x, y);
     return Gtk::EventSequenceState::CLAIMED;

@@ -30,6 +30,7 @@
 #include <gdkmm/texture.h>
 #include <gtkmm/binlayout.h>
 #include <gtkmm/dragsource.h>
+#include <gtkmm/eventcontrollermotion.h>
 #include <gtkmm/gestureclick.h>
 #include <gtkmm/popover.h>
 #include <gtkmm/popovermenu.h>
@@ -158,21 +159,23 @@ void ColorItem::common_setup()
 
     set_draw_func(sigc::mem_fun(*this, &ColorItem::draw_func));
 
-    Controller::add_drag_source(*this, {
-        .button  = Controller::Button::left,
-        .actions = Gdk::DragAction::MOVE | Gdk::DragAction::COPY,
-        .prepare = sigc::mem_fun(*this, &ColorItem::on_drag_prepare),
-        .begin   = sigc::mem_fun(*this, &ColorItem::on_drag_begin)
-    });
+    auto const drag = Gtk::DragSource::create();
+    drag->set_button(1); // left
+    drag->set_actions(Gdk::DragAction::MOVE | Gdk::DragAction::COPY);
+    drag->signal_prepare().connect([this](auto &&...) { return on_drag_prepare(); }, false); // before
+    drag->signal_drag_begin().connect([this, &drag = *drag](auto &&...) { on_drag_begin(drag); });
+    add_controller(drag);
 
-    Controller::add_motion<&ColorItem::on_motion_enter,
-                           nullptr,
-                           &ColorItem::on_motion_leave>
-                          (*this, *this, Gtk::PropagationPhase::TARGET);
+    auto const motion = Gtk::EventControllerMotion::create();
+    motion->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    motion->signal_enter().connect([this](auto &&...) { on_motion_enter(); });
+    motion->signal_leave().connect([this](auto &&...) { on_motion_leave(); });
+    add_controller(motion);
 
-    Controller::add_click(*this,
-                          sigc::mem_fun(*this, &ColorItem::on_click_pressed),
-                          sigc::mem_fun(*this, &ColorItem::on_click_released));
+    auto const click = Gtk::GestureClick::create();
+    click->signal_pressed().connect(Controller::use_state([this](auto& controller, auto &&...) { return on_click_pressed(controller); }, *click));
+    click->signal_released().connect(Controller::use_state([this](auto& controller, auto &&...) { return on_click_released(controller); }, *click));
+    add_controller(click);
 }
 
 void ColorItem::set_pinned_pref(const std::string &path)
@@ -287,8 +290,7 @@ void ColorItem::size_allocate_vfunc(int width, int height, int baseline)
     cache_dirty = true;
 }
 
-void ColorItem::on_motion_enter(GtkEventControllerMotion const * /*motion*/,
-                                double /*x*/, double /*y*/)
+void ColorItem::on_motion_enter()
 {
     assert(dialog);
 
@@ -299,7 +301,7 @@ void ColorItem::on_motion_enter(GtkEventControllerMotion const * /*motion*/,
     }
 }
 
-void ColorItem::on_motion_leave(GtkEventControllerMotion const * /*motion*/)
+void ColorItem::on_motion_leave()
 {
     assert(dialog);
 
@@ -309,8 +311,7 @@ void ColorItem::on_motion_leave(GtkEventControllerMotion const * /*motion*/)
     }
 }
 
-Gtk::EventSequenceState ColorItem::on_click_pressed(Gtk::GestureClick const &click,
-                                                    int /*n_press*/, double /*x*/, double /*y*/)
+Gtk::EventSequenceState ColorItem::on_click_pressed(Gtk::GestureClick const &click)
 {
     assert(dialog);
 
@@ -322,8 +323,7 @@ Gtk::EventSequenceState ColorItem::on_click_pressed(Gtk::GestureClick const &cli
     return Gtk::EventSequenceState::CLAIMED;
 }
 
-Gtk::EventSequenceState ColorItem::on_click_released(Gtk::GestureClick const &click,
-                                                     int /*n_press*/, double /*x*/, double /*y*/)
+Gtk::EventSequenceState ColorItem::on_click_released(Gtk::GestureClick const &click)
 {
     assert(dialog);
 
@@ -507,7 +507,7 @@ void ColorItem::action_convert(Glib::ustring const &name)
     DocumentUndo::done(doc, _("Add gradient stop"), INKSCAPE_ICON("color-gradient"));
 }
 
-Glib::RefPtr<Gdk::ContentProvider> ColorItem::on_drag_prepare(Gtk::DragSource const &, double, double)
+Glib::RefPtr<Gdk::ContentProvider> ColorItem::on_drag_prepare()
 {
     if (!dialog) return {};
 
@@ -521,7 +521,7 @@ Glib::RefPtr<Gdk::ContentProvider> ColorItem::on_drag_prepare(Gtk::DragSource co
     return Gdk::ContentProvider::create(value);
 }
 
-void ColorItem::on_drag_begin(Gtk::DragSource &source, Glib::RefPtr<Gdk::Drag> const &/*drag*/)
+void ColorItem::on_drag_begin(Gtk::DragSource &source)
 {
     constexpr int w = 32;
     constexpr int h = 24;

@@ -82,8 +82,7 @@ private:
 
     /* Tree */
     bool _checkForSelected(const Gtk::TreePath &path, const Gtk::TreeModel::iterator &iter, SPGradient *vector);
-    bool onKeyPressed(GtkEventControllerKey const * controller,
-                      unsigned keyval, unsigned keycode, GdkModifierType state);
+    bool onKeyPressed(unsigned keyval, unsigned keycode, Gdk::ModifierType state);
     void onTreeSelection();
     void onGradientRename(const Glib::ustring &path_string, const Glib::ustring &new_text);
     void onTreeNameColClick();

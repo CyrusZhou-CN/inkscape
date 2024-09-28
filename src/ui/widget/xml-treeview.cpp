@@ -395,21 +395,17 @@ XmlTreeView::XmlTreeView()
     append_column(*text_column);
 
     enable_model_drag_source ();
-    drag_source = &Inkscape::UI::Controller::add_drag_source(*this, {
-            .actions = Gdk::DragAction::MOVE,
-            .prepare = sigc::mem_fun(*this, &XmlTreeView::on_prepare)
-         // .begin   = sigc::mem_fun(*this, &XmlTreeView::on_drag_begin),
-         // .end     = sigc::mem_fun(*this, &XmlTreeView::on_drag_end)
-        },         Gtk::PropagationPhase::CAPTURE);
+    auto const drag = Gtk::DragSource::create();
+    drag->set_actions(Gdk::DragAction::MOVE);
+    drag->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    drag->signal_prepare().connect([this, &drag = *drag](auto &&...args) { return on_prepare(drag, args...); }, false); // before
+    add_controller(drag);
 
-    std::vector<GType> types;
-    types.emplace_back(Glib::Value<void*>::value_type());
-    Inkscape::UI::Controller::add_drop_target(*this, {
-            .actions = Gdk::DragAction::MOVE,
-            .types   = types,
-            .motion  = sigc::mem_fun(*this, &XmlTreeView::on_drag_motion),
-            .drop    = sigc::mem_fun(*this, &XmlTreeView::on_drag_drop)
-        },         Gtk::PropagationPhase::CAPTURE);
+    auto const drop = Gtk::DropTarget::create(Glib::Value<void*>::value_type(), Gdk::DragAction::MOVE);
+    drop->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    drop->signal_motion().connect(sigc::mem_fun(*this, &XmlTreeView::on_drag_motion), false); // before
+    drop->signal_drop().connect(sigc::mem_fun(*this, &XmlTreeView::on_drag_drop), false); // before
+    add_controller(drop);
 
     // build_tree(); Don't do now as this is explicitely called in xml-tree.cpp!
 }
@@ -486,7 +482,7 @@ XmlTreeView::set_style(Inkscape::UI::Syntax::XMLStyles const &new_style)
 }
 
 Glib::RefPtr<Gdk::ContentProvider>
-XmlTreeView::on_prepare(Gtk::DragSource const &controller, double x, double y)
+XmlTreeView::on_prepare(Gtk::DragSource &controller, double x, double y)
 {
     Gtk::TreeModel::Path path;
     Gtk::TreeView::DropPosition pos;
@@ -519,7 +515,7 @@ XmlTreeView::on_prepare(Gtk::DragSource const &controller, double x, double y)
 
         // Set icon (or else icon is determined by provider value).
         auto surface = create_row_drag_icon(path);
-        drag_source->set_icon(surface, x, 12); // Can't use 'controller' since it is 'const'!
+        controller.set_icon(surface, x, 12);
     }
 
     // We must have some kind of value which matches DropTarget type, even if we don't use it!
@@ -530,8 +526,7 @@ XmlTreeView::on_prepare(Gtk::DragSource const &controller, double x, double y)
     return provider;
 }
 
-Gdk::DragAction
-XmlTreeView:: on_drag_motion(Gtk::DropTarget const & /*controller*/, double const x, double const y)
+Gdk::DragAction XmlTreeView::on_drag_motion(double const x, double const y)
 {
     Gtk::TreeModel::Path path;
     Gtk::TreeView::DropPosition pos;
@@ -559,8 +554,7 @@ XmlTreeView:: on_drag_motion(Gtk::DropTarget const & /*controller*/, double cons
     return Gdk::DragAction::MOVE; // Drag at bottom moves object to end.
 }
 
-bool
-XmlTreeView:: on_drag_drop(  Gtk::DropTarget const & /*controller*/, Glib::ValueBase const &value, double const x, double const y)
+bool XmlTreeView::on_drag_drop(Glib::ValueBase const &value, double x, double y)
 {
     auto pointer = static_cast<Glib::Value<void*> const &>(value).get();
     assert (pointer);

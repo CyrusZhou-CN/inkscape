@@ -91,17 +91,17 @@ private:
     void draw_func(Cairo::RefPtr<Cairo::Context> const&, int width, int height);
     void size_allocate_vfunc(int width, int height, int baseline) override;
 
-    Glib::RefPtr<Gdk::ContentProvider> on_drag_prepare(Gtk::DragSource const &source, double x, double y);
-    void on_drag_begin(Gtk::DragSource &source, Glib::RefPtr<Gdk::Drag> const &drag);
+    Glib::RefPtr<Gdk::ContentProvider> on_drag_prepare();
+    void on_drag_begin(Gtk::DragSource &source);
 
     // Common post-construction setup.
     void common_setup();
 
-    void on_motion_enter(GtkEventControllerMotion const *motion, double x, double y);
-    void on_motion_leave(GtkEventControllerMotion const *motion);
+    void on_motion_enter();
+    void on_motion_leave();
 
-    Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const &click, int n_press, double x, double y);
-    Gtk::EventSequenceState on_click_released(Gtk::GestureClick const &click, int n_press, double x, double y);
+    Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const &click);
+    Gtk::EventSequenceState on_click_released(Gtk::GestureClick const &click);
 
     // Perform the on-click action of setting the fill or stroke.
     void on_click(bool stroke);

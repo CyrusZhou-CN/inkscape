@@ -25,6 +25,7 @@
  */
 
 #include <glibmm/i18n.h>
+#include <gtkmm/gesturezoom.h>
 #include <sigc++/adaptors/bind.h>
 #include <2geom/transforms.h>
 #include <2geom/rect.h>
@@ -202,8 +203,12 @@ SPDesktop::SPDesktop(SPNamedView *namedview_, Inkscape::UI::Widget::Canvas *canv
     // display rect and zoom are now handled in sp_desktop_widget_realize()
 
     // pinch zoom
-    Inkscape::UI::Controller::add_zoom<&SPDesktop::on_zoom_begin, &SPDesktop::on_zoom_scale, &SPDesktop::on_zoom_end>
-                                      (*canvas, *this, Gtk::PropagationPhase::CAPTURE);
+    auto const zoom = Gtk::GestureZoom::create();
+    zoom->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    zoom->signal_begin().connect(sigc::mem_fun(*this, &SPDesktop::on_zoom_begin));
+    zoom->signal_scale_changed().connect(sigc::mem_fun(*this, &SPDesktop::on_zoom_scale));
+    zoom->signal_end().connect(sigc::mem_fun(*this, &SPDesktop::on_zoom_end));
+    canvas->add_controller(zoom);
 
     /* Set up notification of rebuilding the document, this allows
        for saving object related settings in the document. */
@@ -1379,12 +1384,12 @@ void SPDesktop::emit_text_cursor_moved(Inkscape::UI::Tools::TextTool *tool) {
  * pinch zoom
  */
 
-void SPDesktop::on_zoom_begin(GtkGesture const * /*zoom*/, GdkEventSequence const * /*sequence*/)
+void SPDesktop::on_zoom_begin(Gdk::EventSequence * /*sequence*/)
 {
     _begin_zoom = current_zoom();
 }
 
-void SPDesktop::on_zoom_scale(GtkGestureZoom const * /*zoom*/, double const scale)
+void SPDesktop::on_zoom_scale(double const scale)
 {
     if (!_begin_zoom) {
         std::cerr << "on_zoom_scale: Missed on_zoom_begin event" << std::endl;
@@ -1395,7 +1400,7 @@ void SPDesktop::on_zoom_scale(GtkGestureZoom const * /*zoom*/, double const scal
     zoom_absolute(w2d(world_point), *_begin_zoom * scale);
 }
 
-void SPDesktop::on_zoom_end(GtkGesture const * /*zoom*/, GdkEventSequence const * /*sequence*/)
+void SPDesktop::on_zoom_end(Gdk::EventSequence * /*sequence*/)
 {
     _begin_zoom.reset();
 }

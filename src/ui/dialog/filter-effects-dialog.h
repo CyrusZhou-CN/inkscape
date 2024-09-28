@@ -246,15 +246,13 @@ private:
         void snapshot_vfunc(Glib::RefPtr<Gtk::Snapshot> const &snapshot) override;
         void css_changed(GtkCssStyleChange *change) override;
 
-        void on_drag_end(Gtk::DragSource const &source,
-                         Glib::RefPtr<Gdk::Drag> const &drag, bool delete_data);
+        void on_drag_end(Glib::RefPtr<Gdk::Drag> const &drag, bool delete_data);
 
         Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const &click,
                                                   int n_press, double x, double y);
         Gtk::EventSequenceState on_click_released(Gtk::GestureClick const &click,
                                                   int n_press, double x, double y);
-        void on_motion_motion(GtkEventControllerMotion const *motion,
-                              double x, double y);
+        void on_motion_motion(double x, double y);
 
         void init_text();
 

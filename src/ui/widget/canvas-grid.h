@@ -32,6 +32,7 @@ namespace Gtk {
 class Adjustment;
 class Builder;
 class CheckButton;
+class EventControllerMotion;
 class GestureClick;
 } // namespace Gtk
 
@@ -154,19 +155,15 @@ private:
     Geom::IntPoint _rulerToCanvas(bool horiz) const;
     void _createGuideItem(Geom::Point const &pos, bool horiz);
     void _createGuide(Geom::Point origin, Geom::Point normal);
+
+    enum class RulerOrientation {vertical, horizontal};
     Gtk::EventSequenceState _rulerButtonPress  (Gtk::GestureClick const &gesture,
                                                 int n_press, double x, double y);
     Gtk::EventSequenceState _rulerButtonRelease(Gtk::GestureClick const &gesture,
-                                                int n_press, double x, double y, bool horiz);
-    void _rulerMotion(GtkEventControllerMotion const *controller, double x, double y, bool horiz);
+                                                int n_press, double x, double y, RulerOrientation orientation);
+    void _rulerMotion(Gtk::EventControllerMotion const &controller,
+                      double x, double y, RulerOrientation orientation);
     void _blinkLockButton();
-
-    // Temporarily required due to use of C callbacks.
-    template <bool horiz>
-    void _rulerMotion(GtkEventControllerMotion const *controller, double x, double y)
-    {
-        _rulerMotion(controller, x, y, horiz);
-    }
 
     // Scroll handling.
     bool _updating = false;

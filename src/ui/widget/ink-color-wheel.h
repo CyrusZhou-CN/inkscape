@@ -35,6 +35,7 @@
 namespace Gtk {
 class Builder;
 class DrawingArea;
+class EventControllerMotion;
 class GestureClick;
 } // namespace Gtk
 
@@ -114,18 +115,19 @@ private:
     virtual void on_drawing_area_draw(Cairo::RefPtr<Cairo::Context> const &cr, int, int) = 0;
 
     /// All event controllers are connected to the DrawingArea.
-    virtual Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const &click,
+    virtual Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const& controller, 
                                                       int n_press, double x, double y) = 0;
     virtual Gtk::EventSequenceState on_click_released(int n_press, double x, double y) = 0;
-    virtual Gtk::EventSequenceState _on_click_released(Gtk::GestureClick const &click,
-                                                      int n_press, double x, double y);
-    virtual void on_motion(GtkEventControllerMotion const *motion, double x, double y) = 0;
-    void _on_motion(GtkEventControllerMotion const *motion, double x, double y);
-    virtual bool on_key_pressed(GtkEventControllerKey const *key_event,
-                                unsigned keyval, unsigned keycode, GdkModifierType state)
-                               { return false; }
-    bool on_key_released(GtkEventControllerKey const *key_event,
-                         unsigned keyval, unsigned keycode, GdkModifierType state);
+
+    virtual void on_motion(Gtk::EventControllerMotion const &motion, double x, double y) = 0;
+    void _on_motion(Gtk::EventControllerMotion const &motion, double x, double y);
+
+    virtual bool on_key_pressed(unsigned keyval, unsigned keycode, Gdk::ModifierType state)
+    {
+        return false;
+    }
+
+    void on_key_released(unsigned keyval, unsigned keycode, Gdk::ModifierType state);
 };
 
 /**
@@ -162,12 +164,11 @@ private:
     DragMode _mode = DragMode::NONE;
     bool _focus_on_ring = true;
 
-    Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const &click,
+    Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const& controller,
                                               int n_press, double x, double y) final;
     Gtk::EventSequenceState on_click_released(int n_press, double x, double y) final;
-    void on_motion(GtkEventControllerMotion const *motion, double x, double y) final;
-    bool on_key_pressed(GtkEventControllerKey const *key_event,
-                        unsigned keyval, unsigned keycode, GdkModifierType state) final;
+    void on_motion(Gtk::EventControllerMotion const &motion, double x, double y) final;
+    bool on_key_pressed(unsigned keyval, unsigned keycode, Gdk::ModifierType state) final;
 
     // caches to speed up drawing
     using TriangleCorners = std::array<ColorPoint, 3>;
@@ -218,12 +219,11 @@ private:
     void _updatePolygon();
     bool _vertex() const;
 
-    Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const &click,
+    Gtk::EventSequenceState on_click_pressed (Gtk::GestureClick const& controller,
                                               int n_press, double x, double y) final;
     Gtk::EventSequenceState on_click_released(int n_press, double x, double y) final;
-    void on_motion(GtkEventControllerMotion const *motion, double x, double y) final;
-    bool on_key_pressed(GtkEventControllerKey const *key_event,
-                        unsigned keyval, unsigned keycode, GdkModifierType state) final;
+    void on_motion(Gtk::EventControllerMotion const &motion, double x, double y) final;
+    bool on_key_pressed(unsigned keyval, unsigned keycode, Gdk::ModifierType state) final;
 
     double _scale = 1.0;
     std::unique_ptr<PickerGeometry> _picker_geometry;

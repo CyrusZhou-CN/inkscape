@@ -33,6 +33,9 @@ class Rectangle;
 } // namespace Gdk
 
 namespace Gtk {
+class EventControllerKey;
+class EventControllerMotion;
+class EventControllerScroll;
 class GestureClick;
 } // namespace Gtk
 
@@ -149,29 +152,28 @@ public:
 
 private:
     // EventControllerScroll
-    bool on_scroll(GtkEventControllerScroll const *controller,
-                   double dx, double dy);
+    bool on_scroll(Gtk::EventControllerScroll const &controller, double dx, double dy);
 
-    // GtkGestureClick
+    // GestureClick
     Gtk::EventSequenceState on_button_pressed (Gtk::GestureClick const &controller,
                                                int n_press, double x, double y);
     Gtk::EventSequenceState on_button_released(Gtk::GestureClick const &controller,
                                                int n_press, double x, double y);
 
     // EventControllerMotion
-    void on_motion(GtkEventControllerMotion const *controller, double x, double y);
-    void on_enter (GtkEventControllerMotion const *controller, double x, double y);
-    void on_leave (GtkEventControllerMotion const *controller);
+    void on_motion(Gtk::EventControllerMotion const &controller, double x, double y);
+    void on_enter (Gtk::EventControllerMotion const &controller, double x, double y);
+    void on_leave (Gtk::EventControllerMotion const &controller);
 
     // EventControllerFocus
     void on_focus_in();
     void on_focus_out();
 
     // EventControllerKey
-    bool on_key_pressed (GtkEventControllerKey const *controller,
-                         unsigned keyval, unsigned keycode, GdkModifierType state);
-    bool on_key_released(GtkEventControllerKey const *controller,
-                         unsigned keyval, unsigned keycode, GdkModifierType state);
+    bool on_key_pressed (Gtk::EventControllerKey const &controller,
+                         unsigned keyval, unsigned keycode, Gdk::ModifierType state);
+    void on_key_released(Gtk::EventControllerKey const &controller,
+                         unsigned keyval, unsigned keycode, Gdk::ModifierType state);
 
     void on_realize() final;
     void on_unrealize() final;

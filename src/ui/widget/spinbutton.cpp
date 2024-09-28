@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <gtkmm/enums.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/object.h>
 #include <gtkmm/popovermenu.h>
 #include <gtkmm/checkbutton.h>
@@ -50,7 +51,9 @@ int MathSpinButton::on_input(double &newvalue)
 
 void SpinButton::_construct()
 {
-    Controller::add_key<&SpinButton::on_key_pressed>(*this, *this);
+    auto const key = Gtk::EventControllerKey::create();
+    key->signal_key_pressed().connect([this, &key = *key](auto &&...args) { return on_key_pressed(key, args...); }, true);
+    add_controller(key);
 
     property_has_focus().signal_changed().connect(sigc::mem_fun(*this, &SpinButton::on_has_focus_changed));
     UI::on_popup_menu(*this, sigc::mem_fun(*this, &SpinButton::on_popup_menu));
@@ -97,17 +100,21 @@ void SpinButton::on_has_focus_changed()
     }
 }
 
-bool SpinButton::on_key_pressed(GtkEventControllerKey const * const controller,
-                                unsigned const keyval, unsigned const keycode,
-                                GdkModifierType const state)
+bool SpinButton::on_key_pressed(Gtk::EventControllerKey const &controller,
+                                unsigned keyval, unsigned keycode, Gdk::ModifierType state)
 {
     bool inc = false;
     double val = 0;
 
     if (_increment > 0) {
-        constexpr auto modifiers = GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SUPER_MASK | GDK_HYPER_MASK | GDK_META_MASK;
+        constexpr auto modifiers = Gdk::ModifierType::SHIFT_MASK |
+			   Gdk::ModifierType::CONTROL_MASK |
+			   Gdk::ModifierType::ALT_MASK |
+			   Gdk::ModifierType::SUPER_MASK |
+			   Gdk::ModifierType::HYPER_MASK |
+			   Gdk::ModifierType::META_MASK;
         // no modifiers pressed?
-        if ((state & modifiers) == 0) {
+        if (!Controller::has_flag(state, modifiers)) {
             inc = true;
             val = get_value();
         }
@@ -132,7 +139,7 @@ bool SpinButton::on_key_pressed(GtkEventControllerKey const * const controller,
 
         case GDK_KEY_z:
         case GDK_KEY_Z:
-            if (Controller::has_flag(state, GDK_CONTROL_MASK)) {
+            if (Controller::has_flag(state, Gdk::ModifierType::CONTROL_MASK)) {
                 _stay = true;
                 undo();
                 return true; // I consumed the event

@@ -228,16 +228,6 @@ Cairo::RefPtr<Cairo::LinearGradient> create_cubic_gradient(
 void set_dark_titlebar(Glib::RefPtr<Gdk::Surface> const &surface, bool is_dark);
 unsigned int get_color_value(const Glib::ustring color);
 
-// Cover for Glib::wrap not passing through const.
-template <typename T>
-auto const_wrap(T const *p, bool take_copy = false)
-{
-    auto unconst_p = const_cast<T*>(p);
-    auto unconst_wrapped = Glib::wrap(unconst_p, take_copy);
-    using wrapped_T = typename decltype(unconst_wrapped)::element_type;
-    return std::shared_ptr<wrapped_T const>(std::move(unconst_wrapped));
-}
-
 // Parse string that can contain floating point numbers and round them to given precision;
 // Used on path data ("d" attribute).
 Glib::ustring round_numbers(const Glib::ustring& text, int precision);

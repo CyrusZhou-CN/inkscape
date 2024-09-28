@@ -23,6 +23,7 @@
 #include <gdkmm/device.h>
 #include <gdkmm/display.h>
 #include <gdkmm/seat.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/window.h>
 #include <glibmm/i18n.h>
 
@@ -1359,6 +1360,14 @@ unsigned get_latin_keyval(GtkEventControllerKey const * const controller,
 {
     auto const group = gtk_event_controller_key_get_group(const_cast<GtkEventControllerKey *>(controller));
     return get_latin_keyval_impl(keyval, keycode, state, group, consumed_modifiers);
+}
+
+unsigned get_latin_keyval(Gtk::EventControllerKey const &controller,
+                          unsigned keyval, unsigned keycode, Gdk::ModifierType state,
+                          unsigned *consumed_modifiers /*= nullptr*/)
+{
+    auto const group = controller.get_group();
+    return get_latin_keyval_impl(keyval, keycode, static_cast<GdkModifierType>(state), group, consumed_modifiers);
 }
 
 unsigned get_latin_keyval(KeyEvent const &event, unsigned *consumed_modifiers)
