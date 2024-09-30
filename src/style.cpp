@@ -1421,7 +1421,7 @@ sp_css_attr_from_style(SPStyle const *const style, guint const flags)
 }
 
 // Called in: selection-chemistry.cpp, widgets/stroke-marker-selector.cpp, widgets/stroke-style.cpp,
-// ui/tools/freehand-base.cpp
+// ui/tools/freehand-base.cpp, pattern-manipulation.cpp
 /**
  * \pre object != NULL
  * \pre flags in {IFSET, ALWAYS}.

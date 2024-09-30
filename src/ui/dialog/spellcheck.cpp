@@ -93,12 +93,8 @@ SpellCheck::SpellCheck(Glib::RefPtr<Gtk::Builder> const &builder)
     append(UI::get_widget<Gtk::Box>(builder, "main_box"));
 
     _provider = spelling_provider_get_default();
-    foreach<SpellingLanguageInfo>(list_languages(_provider).get(), [&] (auto lang) {
-        _langs.push_back({
-            .name = spelling_language_info_get_name(lang),
-            .code = spelling_language_info_get_code(lang)
-        });
-    });
+    list_language_names_and_codes(_provider,
+                                  [&](auto name, auto code) { _langs.push_back({.name = name, .code = code}); });
 
     if (_langs.empty()) {
         banner_label.set_markup(Glib::ustring::compose("<i>%1</i>", _("No dictionaries installed")));

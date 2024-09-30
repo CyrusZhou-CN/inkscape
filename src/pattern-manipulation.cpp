@@ -136,3 +136,4 @@ std::string sp_get_pattern_label(SPPattern* pattern) {
     const char* pat_id = stock_id ? stock_id : _(repr->attribute("id"));
     return std::string(pat_id ? pat_id : "");
 }
+

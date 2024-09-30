@@ -38,9 +38,29 @@ void foreach(char **strs, F &&f)
     }
 }
 
-inline auto list_languages(SpellingProvider *provider)
+template <typename F>
+inline void list_language_names_and_codes(SpellingProvider *provider, F &&cb)
 {
-    return Util::delete_with<g_ptr_array_unref>(spelling_provider_list_languages(provider));
+#if SPELLING_CHECK_VERSION(0, 3, 0)
+    auto const languages = Util::delete_with<g_object_unref>(spelling_provider_list_languages(provider));
+    auto const n_items = g_list_model_get_n_items(languages.get());
+
+    for (auto i = 0U; i < n_items; ++i) {
+        auto const language = static_cast<SpellingLanguage *>(g_list_model_get_item(languages.get(), i));
+        auto const name = spelling_language_get_name(language);
+        auto const code = spelling_language_get_code(language);
+        cb(name, code);
+    }
+#else
+    // TODO: remove when libspelling has API stability
+    auto const languages = Util::delete_with<g_ptr_array_unref>(spelling_provider_list_languages(provider));
+    foreach
+        <SpellingLanguageInfo>(languages.get(), [&](auto language) {
+            auto const name = spelling_language_info_get_name(language);
+            auto const code = spelling_language_info_get_code(language);
+            cb(name, code);
+        });
+#endif
 }
 
 inline auto list_corrections_c(SpellingChecker *checker, char const *word)
