@@ -249,7 +249,6 @@ StartScreen::StartScreen()
     // set_position(Gtk::WIN_POS_CENTER_ALWAYS); // Gone.
     property_resizable() = false;
     set_default_size(700, 360);
-    set_visible(true);
 }
 
 StartScreen::~StartScreen()
@@ -308,8 +307,7 @@ StartScreen::enlist_recent_files()
 {
     RecentCols cols;
 
-    // We're not sure why we have to ask C for the TreeStore object
-    auto store = Glib::wrap(GTK_LIST_STORE(gtk_tree_view_get_model(recent_treeview.gobj())));
+    auto store = &dynamic_cast<Gtk::ListStore &>(*recent_treeview.get_model());
     store->clear();
     // Now sort the result by visited time
     store->set_sort_column(cols.col_dt, Gtk::SortType::DESCENDING);
@@ -627,7 +625,7 @@ StartScreen::filter_themes()
 {
     ThemeCols cols;
     // We need to disable themes which aren't available.
-    auto store = Glib::wrap(GTK_LIST_STORE(gtk_combo_box_get_model(themes.gobj())));
+    auto store = &dynamic_cast<Gtk::ListStore &>(*themes.get_model());
     auto available = INKSCAPE.themecontext->get_available_themes();
 
     // Detect use of custom theme here, detect defaults used in many systems.
@@ -663,7 +661,7 @@ StartScreen::enlist_keys()
     NameIdCols cols;
     auto &keys = get_widget<Gtk::ComboBox>(builder, "keys");
 
-    auto store = Glib::wrap(GTK_LIST_STORE(gtk_combo_box_get_model(keys.gobj())));
+    auto store = &dynamic_cast<Gtk::ListStore &>(*keys.get_model());
     store->clear();
 
     for (auto const &item : Inkscape::Shortcuts::get_file_names()) {
