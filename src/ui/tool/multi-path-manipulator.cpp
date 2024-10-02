@@ -114,10 +114,9 @@ bool prepare_join(IterPair &join_iters)
 } // anonymous namespace
 
 
-MultiPathManipulator::MultiPathManipulator(PathSharedData &data, sigc::connection &chg)
+MultiPathManipulator::MultiPathManipulator(PathSharedData &data)
     : PointManipulator(data.node_data.desktop, *data.node_data.selection)
     , _path_data(data)
-    , _changed(chg)
 {
     _selection.signal_commit.connect(
         sigc::mem_fun(*this, &MultiPathManipulator::_commit));
@@ -134,10 +133,9 @@ MultiPathManipulator::~MultiPathManipulator()
 /** Remove empty manipulators. */
 void MultiPathManipulator::cleanup()
 {
-    for (MapType::iterator i = _mmap.begin(); i != _mmap.end(); ) {
-        if (i->second->empty()) i = _mmap.erase(i);
-        else ++i;
-    }
+    std::erase_if(_mmap, [] (auto const &i) {
+        return i.second->empty();
+    });
 }
 
 /**
@@ -892,11 +890,9 @@ void MultiPathManipulator::_done(gchar const *reason, bool alert_LPE) {
 }
 
 /** Commits changes to XML, adds undo stack entry and removes empty manipulators. */
-void MultiPathManipulator::_doneWithCleanup(gchar const *reason, bool alert_LPE) {
-    _changed.block();
+void MultiPathManipulator::_doneWithCleanup(char const *reason, bool alert_LPE) {
     _done(reason, alert_LPE);
     cleanup();
-    _changed.unblock();
 }
 
 /** Get an outline color based on the shape's role (normal, mask, LPE parameter, etc.). */

@@ -147,7 +147,7 @@ NodeTool::NodeTool(SPDesktop *desktop)
     }
     data.node_data.selection = this->_selected_nodes;
 
-    this->_multipath = new Inkscape::UI::MultiPathManipulator(data, this->_selection_changed_connection);
+    this->_multipath = new Inkscape::UI::MultiPathManipulator(data);
 
     this->_multipath->signal_coords_changed.connect([this] {
         _desktop->emit_control_point_selected(_selected_nodes);
@@ -353,14 +353,11 @@ void gather_items(NodeTool *nt, SPItem *base, SPObject *obj, Inkscape::UI::Shape
     }
 }
 
-void NodeTool::selection_changed(Inkscape::Selection *sel) {
-    using namespace Inkscape::UI;
-
+void NodeTool::selection_changed(Inkscape::Selection *sel)
+{
     std::set<ShapeRecord> shapes;
 
-    auto items= sel->items();
-    for(auto i=items.begin();i!=items.end();++i){
-        SPItem *item = *i;
+    for (auto item : sel->items()) {
         if (item) {
             gather_items(this, nullptr, item, SHAPE_ROLE_NORMAL, shapes);
         }
@@ -368,29 +365,25 @@ void NodeTool::selection_changed(Inkscape::Selection *sel) {
 
     // use multiple ShapeEditors for now, to allow editing many shapes at once
     // needs to be rethought
-    for (auto i = this->_shape_editors.begin(); i != this->_shape_editors.end();) {
+    std::erase_if(_shape_editors, [&] (auto const &i) {
         ShapeRecord s;
-        s.object = i->first;
+        s.object = i.first;
+        return !shapes.contains(s);
+    });
 
-        if (shapes.find(s) == shapes.end()) {
-            this->_shape_editors.erase(i++);
-        } else {
-            ++i;
-        }
-    }
-
-    for (const auto & r : shapes) {
-        if (this->_shape_editors.find(cast<SPItem>(r.object)) == this->_shape_editors.end()) {
+    for (auto const &r : shapes) {
+        auto item = cast<SPItem>(r.object);
+        auto [it, inserted] = _shape_editors.try_emplace(item);
+        if (inserted) {
             auto si = std::make_unique<ShapeEditor>(_desktop, r.edit_transform);
-            auto item = cast<SPItem>(r.object);
             si->set_item(item);
-            this->_shape_editors.insert({item, std::move(si)});
+            it->second = std::move(si);
         }
     }
 
     std::vector<SPItem *> vec(sel->items().begin(), sel->items().end());
-    _previous_selection = _current_selection;
-    _current_selection = vec;
+    _previous_selection = std::move(_current_selection);
+    _current_selection = std::move(vec);
     _multipath->setItems(shapes);
     update_tip();
     sp_update_helperpath(_desktop);

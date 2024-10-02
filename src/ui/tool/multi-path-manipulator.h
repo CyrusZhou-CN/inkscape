@@ -35,7 +35,7 @@ struct PathSharedData;
 class MultiPathManipulator : public PointManipulator
 {
 public:
-    MultiPathManipulator(PathSharedData &data, sigc::connection &chg);
+    MultiPathManipulator(PathSharedData &data);
     ~MultiPathManipulator() override;
 
     bool event(Inkscape::UI::Tools::ToolBase *tool, CanvasEvent const &event) override;
@@ -134,7 +134,6 @@ public:
     PathSharedData const &_path_data;
 
 private:
-    sigc::connection &_changed;
     ModifierTracker _tracker;
     bool _show_handles;
     bool _show_outline;
