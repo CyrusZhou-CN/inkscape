@@ -419,9 +419,8 @@ private:
     /* Undo/Redo state */
     bool sensitive; /* If we save actions to undo stack */
     Inkscape::XML::Event * partial; /* partial undo log when interrupted */
-    int history_size;
-    std::vector<Inkscape::Event *> undo; /* Undo stack of reprs */
-    std::vector<Inkscape::Event *> redo; /* Redo stack of reprs */
+    std::deque<Inkscape::Event *> undo; /* Undo stack of reprs */
+    std::deque<Inkscape::Event *> redo; /* Redo stack of reprs */
     /* Undo listener */
     Inkscape::CompositeUndoStackObserver undoStackObservers;
 

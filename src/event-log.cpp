@@ -17,6 +17,7 @@
 #include "document.h"
 #include "actions/actions-undo-document.h"
 #include "util/signal-blocker.h"
+#include "preferences.h"
 
 namespace
 {
@@ -181,10 +182,14 @@ EventLog::EventLog(SPDocument* document) :
     // add initial pseudo event
     Gtk::TreeRow curr_row = *(_event_list_store->append());
     _curr_event = _last_saved = _last_event = curr_row.get_iter();
+
+    // Save it so it can be modified
+    _first_event = curr_row.get_iter();
     
     auto &_columns = getColumns();
-    curr_row[_columns.description] = _("[Unchanged]");
+    curr_row[_columns.description] = _("[No more changes]");
     curr_row[_columns.icon_name] = "document-new";
+    curr_row[_columns.child_count] = 0;
 }
 
 EventLog::~EventLog() {
@@ -337,6 +342,52 @@ EventLog::notifyUndoCommitEvent(Event* log)
     }
 
     updateUndoVerbs();
+}
+
+void
+EventLog::notifyUndoExpired(Event *log)
+{
+    auto &columns = getColumns();
+
+    if (_event_list_store->children().size() == 1)
+        return; // Nothing to do, nothing in the undo log
+
+    // We only have to look at one item because we never expire from the middle.
+    iterator iter = _event_list_store->children().begin();
+
+    // Skip first item, it's the non-event label
+    if (iter == _first_event)
+        iter++;
+
+    assert((*iter)[columns.event] == log);
+
+    iterator to_remove;
+    if (iter->children().size() > 0) {
+        // Move first child's log to parent as the parent is being deleted
+        to_remove = iter->children().begin();
+
+        Event *child_log = (*to_remove)[columns.event];
+        Glib::ustring desc = (*to_remove)[columns.description];
+        (*iter)[columns.event] = child_log;
+        (*iter)[columns.description] = desc;
+    } else {
+        to_remove = iter;
+    }
+
+    // This should never happen as we should never expire undo items from the middle.
+    assert(to_remove->children().size() == 0);
+
+    if (auto parent = to_remove->parent()) {
+        (*parent)[columns.child_count] = to_remove->parent()->children().size() - 1;
+    }
+
+    _event_list_store->erase(to_remove);
+
+    // Tell the user about the forgotten undo stack
+    if ((*_first_event)[columns.child_count] == 0) {
+        (*_first_event)[columns.description] = _("[Changes forgotten]");
+    }
+    (*_first_event)[columns.child_count] = (*_first_event)[columns.child_count] + 1;
 }
 
 void

@@ -35,6 +35,12 @@ ConsoleOutputUndoObserver::notifyUndoCommitEvent(Event* /*log*/)
 }
 
 void
+ConsoleOutputUndoObserver::notifyUndoExpired(Event* /*log*/)
+{
+    //g_message("notifyUndoCommitEvent(SPDocumentUndo::maybe_done) called; log=%p\n", log->event);
+}
+
+void
 ConsoleOutputUndoObserver::notifyClearUndoEvent()
 {
     //g_message("notifyClearUndoEvent(sp_document_clear_undo) called);

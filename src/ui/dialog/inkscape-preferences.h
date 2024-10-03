@@ -439,6 +439,8 @@ protected:
 
     // System page
     UI::Widget::PrefSpinButton  _misc_simpl;
+    UI::Widget::PrefSpinButton  _undo_size;
+    UI::Widget::PrefCheckButton _undo_limit;
     Gtk::Entry                  _sys_user_prefs;
     Gtk::Entry                  _sys_tmp_files;
     Gtk::Entry                  _sys_extension_dir;

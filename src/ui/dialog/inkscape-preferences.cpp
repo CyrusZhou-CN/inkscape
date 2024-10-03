@@ -2555,6 +2555,15 @@ void InkscapePreferences::initPageBehavior()
     _page_behavior.add_line( false, _("_Simplification threshold:"), _misc_simpl, "",
                            _("How strong is the Node tool's Simplify command by default. If you invoke this command several times in quick succession, it will act more and more aggressively; invoking it again after a pause restores the default threshold."), false);
 
+    _undo_limit.init("", "/options/undo/limit", true);
+    _page_behavior.add_line(false, _("Limit Undo Size:"), _undo_limit, "",
+                         _("Enable the undo limit and remove old changes. Disabling this option will use more memory."));
+    _undo_size.init("/options/undo/size", 1.0, 32000.0, 1.0, 1.0, 200.0, true, false);
+    _page_behavior.add_line(false, _("Maximum _Undo Size:"), _undo_size, "",
+                         _("How large the undo log will be allowed to get before being trimmed to free memory."), false );
+    _undo_limit.changed_signal.connect(sigc::mem_fun(_undo_size, &Gtk::Widget::set_sensitive));
+    _undo_size.set_sensitive(_undo_limit.get_active());
+
     _markers_color_stock.init ( _("Color stock markers the same color as object"), "/options/markers/colorStockMarkers", true);
     _markers_color_custom.init ( _("Color custom markers the same color as object"), "/options/markers/colorCustomMarkers", false);
     _markers_color_update.init ( _("Update marker color when object color changes"), "/options/markers/colorUpdateMarkers", true);

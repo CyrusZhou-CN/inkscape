@@ -329,6 +329,7 @@ translations:
   # update inkscape.pot and sync all .po files
   - rm -f inkscape.pot
   - cd ../build && make inkscape_pot && cd ../po || exit 1
+  - ../buildtools/post_translation_statistics.sh
   - ./update_po_files.sh
 
   # check if POTFILES.*.in should be updated in the repo (shall we automate this?)

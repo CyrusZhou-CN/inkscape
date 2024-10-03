@@ -143,7 +143,6 @@ SPDocument::SPDocument() :
 
     sensitive = false;
     partial = nullptr;
-    history_size = 0;
     seeking = false;
 
     // For undo/redo

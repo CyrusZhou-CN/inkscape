@@ -79,6 +79,18 @@ CompositeUndoStackObserver::notifyUndoCommitEvent(Event* log)
 }
 
 void
+CompositeUndoStackObserver::notifyUndoExpired(Event *log)
+{
+       _lock();
+       for (auto &i : _active) {
+               if (!i.to_remove) {
+                       i.issueUndoExpired(log);
+               }
+       }
+       _unlock();
+}
+
+void
 CompositeUndoStackObserver::notifyClearUndoEvent()
 {
 	this->_lock();

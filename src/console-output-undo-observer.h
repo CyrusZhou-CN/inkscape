@@ -29,6 +29,7 @@ public:
     void notifyUndoEvent(Event* log) override;
     void notifyRedoEvent(Event* log) override;
     void notifyUndoCommitEvent(Event* log) override;
+    void notifyUndoExpired(Event *log) override;
     void notifyClearUndoEvent() override;
     void notifyClearRedoEvent() override;
 

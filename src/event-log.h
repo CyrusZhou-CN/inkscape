@@ -74,6 +74,7 @@ public:
     void notifyUndoEvent(Event *log) override;
     void notifyRedoEvent(Event *log) override;
     void notifyUndoCommitEvent(Event *log) override;
+    void notifyUndoExpired(Event *log) override;
     void notifyClearUndoEvent() override;
     void notifyClearRedoEvent() override;
 
@@ -122,6 +123,7 @@ private:
 
     Glib::RefPtr<Gtk::TreeStore> _event_list_store; 
 
+    iterator _first_event;       //< first non-event in _event_list_store
     iterator _curr_event;        //< current event in _event_list_store
     iterator _last_event;        //< end position in _event_list_store
     iterator _curr_event_parent; //< parent to current event, if any

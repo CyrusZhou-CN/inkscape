@@ -61,6 +61,7 @@
 #include "debug/timestamp.h"                // for timestamp
 #include "object/sp-lpe-item.h"             // for sp_lpe_item_update_pathef...
 #include "object/sp-root.h"                 // for SPRoot
+#include "preferences.h"
 #include "xml/event-fns.h"                  // for sp_repr_begin_transaction
 
 namespace Inkscape::XML {
@@ -157,33 +158,36 @@ void Inkscape::DocumentUndo::maybeDone(SPDocument *doc,
         g_warning("Blank undo key specified.");
     }
 
+    bool limit_undo = Inkscape::Preferences::get()->getBool("/options/undo/limit");
+    auto undo_size = Inkscape::Preferences::get()->getInt("/options/undo/size", 200);
+
+    // Undo size zero will cause crashes when changing the preference during an active document
+    assert(undo_size > 0);
+
     doc->before_commit_signal.emit();
     // This is only used for output to debug log file (and not for undo).
     Inkscape::Debug::EventTracker<CommitEvent> tracker(doc, key, event_description.c_str(), icon_name.c_str());
 
-	doc->collectOrphans();
+    doc->collectOrphans();
+    doc->ensureUpToDate();
 
-	doc->ensureUpToDate();
+    DocumentUndo::clearRedo(doc);
 
-	DocumentUndo::clearRedo(doc);
+    Inkscape::XML::Event *log = sp_repr_coalesce_log (doc->partial, sp_repr_commit_undoable (doc->rdoc));
+    doc->partial = nullptr;
 
-	Inkscape::XML::Event *log = sp_repr_coalesce_log (doc->partial, sp_repr_commit_undoable (doc->rdoc));
-	doc->partial = nullptr;
+    if (!log) {
+        sp_repr_begin_transaction (doc->rdoc);
+        return;
+    }
 
-	if (!log) {
-		sp_repr_begin_transaction (doc->rdoc);
-		return;
-	}
-
-	if (key && !doc->actionkey.empty() && (doc->actionkey == key) && !doc->undo.empty()) {
-                (doc->undo.back())->event =
-                    sp_repr_coalesce_log ((doc->undo.back())->event, log);
-	} else {
+    if (key && !doc->actionkey.empty() && (doc->actionkey == key) && !doc->undo.empty()) {
+        (doc->undo.back())->event = sp_repr_coalesce_log ((doc->undo.back())->event, log);
+    } else {
         Inkscape::Event *event = new Inkscape::Event(log, event_description, icon_name);
         doc->undo.push_back(event);
-		doc->history_size++;
-		doc->undoStackObservers.notifyUndoCommitEvent(event);
-	}
+        doc->undoStackObservers.notifyUndoCommitEvent(event);
+    }
 
     if ( key ) {
         doc->actionkey = key;
@@ -191,12 +195,23 @@ void Inkscape::DocumentUndo::maybeDone(SPDocument *doc,
         doc->actionkey.clear();
     }
 
-	doc->virgin = FALSE;
+    doc->virgin = FALSE;
     doc->setModifiedSinceSave();
+    sp_repr_begin_transaction (doc->rdoc);
+    doc->commit_signal.emit();
 
-	sp_repr_begin_transaction (doc->rdoc);
-
-  doc->commit_signal.emit();
+    // Keeping the undo stack to a reasonable size is done when we're not maybeDone.
+    // Note: Redo does not need the same controls since in theory it should never be
+    // able to get larger than the undo size as it's only populated with undo items.
+    if (!key) {
+        // We remove undo items from the front of the stack
+        while (limit_undo && (int)doc->undo.size() > undo_size) {
+            Inkscape::Event *e = doc->undo.front();
+            doc->undoStackObservers.notifyUndoExpired(e);
+            doc->undo.pop_front();
+            delete e;
+        }
+    }
 }
 
 void Inkscape::DocumentUndo::cancel(SPDocument *doc)
@@ -336,7 +351,6 @@ void Inkscape::DocumentUndo::clearUndo(SPDocument *doc)
         Inkscape::Event *e = doc->undo.back();
         doc->undo.pop_back();
         delete e;
-        doc->history_size--;
     }
 }
 
@@ -349,7 +363,6 @@ void Inkscape::DocumentUndo::clearRedo(SPDocument *doc)
         Inkscape::Event *e = doc->redo.back();
         doc->redo.pop_back();
         delete e;
-        doc->history_size--;
     }
 }
 

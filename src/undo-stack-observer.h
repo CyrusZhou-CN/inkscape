@@ -55,6 +55,11 @@ public:
 	 */
 	virtual void notifyUndoCommitEvent(Event* log) = 0;
 
+        /**
+         * Triggered when undo items are removed from the back of the log (expired)
+         */
+        virtual void notifyUndoExpired(Event *log) = 0;
+
 	/**
 	 * Triggered when the undo log is cleared.
 	 */
