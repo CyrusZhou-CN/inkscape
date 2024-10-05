@@ -33,9 +33,15 @@ S<options :>
 
 =head1 DESCRIPTION
 
-B<Inkview> est une visionneuse B<SVG (Scalable Vector Graphics)> pouvant être utilisée pour des diaporamas ou des présentations. Un ou plusieurs B<FICHIERS> ou B<DOSSIERS> peuvent être ouverts s'ils sont spécifiés en ligne de commande. Tous les fichiers SVG seront affichés dans le même ordre. Les dossiers seront eux convertis en une liste de fichiers SVG.
+B<Inkview> est une visionneuse B<SVG (Scalable Vector Graphics)> pouvant
+être utilisée pour des diaporamas ou des présentations. Un ou plusieurs
+B<FICHIERS> ou B<DOSSIERS> peuvent être ouverts s'ils sont spécifiés en
+ligne de commande. Tous les fichiers SVG seront affichés dans le même
+ordre. Les dossiers seront eux convertis en une liste de fichiers SVG.
 
-Vous pouvez aussi lancer Inkview sans options en ligne de commande, ce qui fera apparaître un sélecteur de fichiers permettant de choisir des fichiers et des dossiers avec une interface graphique.
+Vous pouvez aussi lancer Inkview sans options en ligne de commande, ce qui
+fera apparaître un sélecteur de fichiers permettant de choisir des fichiers
+et des dossiers avec une interface graphique.
 
 =head1 OPTIONS
 
@@ -47,7 +53,8 @@ Affiche les options de l'aide
 
 =item B<-V>, B<--version>
 
-Affiche la version d'Inkview et la date de compilation (correspond en général à la version d'Inkscape).
+Affiche la version d'Inkview et la date de compilation (correspond en
+général à la version d'Inkscape).
 
 =item B<-f>, B<--fullscreen>
 
@@ -55,7 +62,9 @@ Démarre Inkview en mode plein écran.
 
 =item B<-r>, B<--recursive>
 
-Recherche les fichiers SVG de façon récursive dans les dossiers spécifiés en ligne de commande. Autrement dit, en partant des dossiers spécifiés, tous les fichiers SVG de tous les sous-dossiers seront ouverts.
+Recherche les fichiers SVG de façon récursive dans les dossiers spécifiés en
+ligne de commande. Autrement dit, en partant des dossiers spécifiés, tous
+les fichiers SVG de tous les sous-dossiers seront ouverts.
 
 =item B<-t>, B<--timer=N>
 
@@ -63,11 +72,16 @@ Passe à l'image suivante toutes les N secondes
 
 =item B<-s>, B<--scale=N>
 
-Affiche une image redimensionnée d'un facteur N au lieu de la taille spécifiée dans le fichier.
+Affiche une image redimensionnée d'un facteur N au lieu de la taille
+spécifiée dans le fichier.
 
 =item B<-p>, B<--preload>
 
-Précharge tous les fichiers SVG. Inkview aura toujours besoin d'effectuer le rendu des images à l'affichage, mais cette option garantit que tous les fichiers SVG sont correctement lus et chargés en mémoire. Cette option peut aussi servir à vérifier que tous les fichiers peuvent être ouverts correctement sans avoir à les parcourir manuellement.
+Précharge tous les fichiers SVG. Inkview aura toujours besoin d'effectuer le
+rendu des images à l'affichage, mais cette option garantit que tous les
+fichiers SVG sont correctement lus et chargés en mémoire. Cette option peut
+aussi servir à vérifier que tous les fichiers peuvent être ouverts
+correctement sans avoir à les parcourir manuellement.
 
 =back
 
@@ -101,11 +115,13 @@ Ouvrir deux fichiers SVG pour S<visualisation :>
 
     inkview fichier1.svg fichier2.svg
 
-Ouvrir tous les fichiers SVG dans le dossier d'exemples fourni avec Inkscape :
+Ouvrir tous les fichiers SVG dans le dossier d'exemples fourni avec Inkscape
+:
 
     inkview B<${CMAKE_INSTALL_PREFIX}/${SHARE_INSTALL}>/inkscape/examples
 
-Démarrer un diaporama en plein écran qui passe automatiquement à l'image suivante toutes les 5 secondes :
+Démarrer un diaporama en plein écran qui passe automatiquement à l'image
+suivante toutes les 5 secondes :
 
     inkview --fullscreen --timer=5 [fichiers/dossiers ...]
 
@@ -123,7 +139,8 @@ Voir L<inkscape(1)>
 
 B<Copyright (C)> 1999-2023 par les auteurs.
 
-B<Inkscape> est un logiciel S<libre ;> vous pouvez le redistribuer et/ou le modifier selon les termes de la licence GPL version 3 ou ultérieure.
+B<Inkscape> est un logiciel S<libre ;> vous pouvez le redistribuer et/ou le
+modifier selon les termes de la licence GPL version 3 ou ultérieure.
 
 
 

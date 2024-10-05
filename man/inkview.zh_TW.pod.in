@@ -33,7 +33,9 @@ C<inkview [選項] [檔名 ...]>
 
 =head1 描述
 
-B<Inkview> 是一款 B<Scalable Vector Graphics (SVG)> 檢視程式，也可用於投影片播放或簡報。可用指令開啟一個或多個B<檔案>或B<資料夾>。Inkview 依照給定的順序顯示全部 SVG 檔案。資料夾會展開為一個內含 SVG 檔案的清單。
+B<Inkview> 是一款 B<Scalable Vector Graphics (SVG)>
+檢視程式，也可用於投影片播放或簡報。可用指令開啟一個或多個B<檔案>或B<資料夾>。Inkview 依照給定的順序顯示全部 SVG
+檔案。資料夾會展開為一個內含 SVG 檔案的清單。
 
 你也可以不加任何命令參數啟動 Inkview，程式會顯示檔案選擇對話窗讓使用者從圖形介面選擇檔案和資料夾。
 
@@ -67,7 +69,8 @@ B<Inkview> 是一款 B<Scalable Vector Graphics (SVG)> 檢視程式，也可用�
 
 =item B<-p>, B<--preload>
 
-預先載入全部 SVG 檔案。Inkview 顯示時仍需要繪算圖像，但是此選項可確保全部 SVG 檔案已解析完成且載入到記憶體中。此選項也可用於驗證全部檔案是否能夠正常開啟，而不需要手動循序開啟檔案檢查。
+預先載入全部 SVG 檔案。Inkview 顯示時仍需要繪算圖像，但是此選項可確保全部 SVG
+檔案已解析完成且載入到記憶體中。此選項也可用於驗證全部檔案是否能夠正常開啟，而不需要手動循序開啟檔案檢查。
 
 =back
 

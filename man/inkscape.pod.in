@@ -52,6 +52,8 @@ options:
     -j, --export-id-only
     -l, --export-plain-svg
         --export-png-color-mode=COLORMODE
+        --export_png_compression=LEVEL
+        --export_png_antialias=LEVEL
         --export-png-use-dithering=BOOLEAN
         --export-ps-level=LEVEL
         --export-pdf-version=VERSION
@@ -324,7 +326,15 @@ to specify the filename.
 
 =item B<--export-png-color-mode>=I<COLORMODE>
 
-Sets the color mode (bit depth and color type) for exported bitmaps (Gray_1/Gray_2/Gray_4/Gray_8/Gray_16/RGB_8/RGB_16/GrayAlpha_8/GrayAlpha_16/RGBA_8/RGBA_16)
+Set the color mode (bit depth and color type) for exported bitmaps (Gray_1/Gray_2/Gray_4/Gray_8/Gray_16/RGB_8/RGB_16/GrayAlpha_8/GrayAlpha_16/RGBA_8/RGBA_16)
+
+=item B<--export_png_compression>=I<LEVEL>
+
+Set the compression level for PNG export (0 to 9); default is 6.
+
+=item B<--export_png_antialias>=I<LEVEL>
+
+Set the antialiasing level for PNG export (0 to 3); default is 2.
 
 =item B<--export-png-use-dithering>=I<false|true>
 

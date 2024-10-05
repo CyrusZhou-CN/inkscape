@@ -33,9 +33,15 @@ opções:
 
 =head1 DESCRIÇÃO
 
-B<Inkview> é um visualizador de B<Scalable Vector Graphics (SVG)> que também pode ser usado para slideshows ou apresentações. Um ou mais B<FILES> ou B<FOLDERS> podem ser especificados na linha de comando para abrir. Inkview vai mostrar todos os arquivos SVG na ordem fornecida. Pastas serão expandidas com a lista dos arquivos SVG contidos nelas.
+B<Inkview> é um visualizador de B<Scalable Vector Graphics (SVG)> que também
+pode ser usado para slideshows ou apresentações. Um ou mais B<FILES> ou
+B<FOLDERS> podem ser especificados na linha de comando para abrir. Inkview
+vai mostrar todos os arquivos SVG na ordem fornecida. Pastas serão
+expandidas com a lista dos arquivos SVG contidos nelas.
 
-Você também pode inicializar o Inkview sem argumentos na linha de comandos, que irá trazer um escolhedor de arquivos que permite selecionar arquivos e pastas pela interface gráfica do usuário.
+Você também pode inicializar o Inkview sem argumentos na linha de comandos,
+que irá trazer um escolhedor de arquivos que permite selecionar arquivos e
+pastas pela interface gráfica do usuário.
 
 =head1 OPÇÕES
 
@@ -47,7 +53,8 @@ Mostra opções de ajuda
 
 =item B<-V>, B<--version>
 
-Imprime a versão do Inkview e data do Build (isso geralmente confere com a versão do Inkscape).
+Imprime a versão do Inkview e data do Build (isso geralmente confere com a
+versão do Inkscape).
 
 =item B<-f>, B<--fullscreen>
 
@@ -55,7 +62,9 @@ Iniciar Inkview em modo tela cheia.
 
 =item B<-r>, B<--recursive>
 
-Pesquisar recursivamente por pastas especificadas na linha de comando por arquivos SVG.  Isto significa que todos os arquivos SVG em todas as subpastas da pasta especificada serão abertas.
+Pesquisar recursivamente por pastas especificadas na linha de comando por
+arquivos SVG.  Isto significa que todos os arquivos SVG em todas as
+subpastas da pasta especificada serão abertas.
 
 =item B<-t>, B<--timer=NUMBER>
 
@@ -63,11 +72,16 @@ Mudar para a próxima imagem a cada NÚMERO de segundos
 
 =item B<-s>, B<--scale=NUMBER>
 
-Mostrar imagem redimensionada por um fator de NÚMERO ao invés de usar o tamanho nativo do arquivo.
+Mostrar imagem redimensionada por um fator de NÚMERO ao invés de usar o
+tamanho nativo do arquivo.
 
 =item B<-p>, B<--preload>
 
-Pré carrega todos os arquivos SVG. Inkview ainda precisa renderizar as imagens antes de mostrá-las, entretanto esta opção garante que todos os arquivos SVG já tenham sido analisados e carregados na memória. Esta opção pode também ser usada para verificar se todos os arquivos foram abertos corretamente, sem ter que percorrer todo o arquivo manualmente.
+Pré carrega todos os arquivos SVG. Inkview ainda precisa renderizar as
+imagens antes de mostrá-las, entretanto esta opção garante que todos os
+arquivos SVG já tenham sido analisados e carregados na memória. Esta opção
+pode também ser usada para verificar se todos os arquivos foram abertos
+corretamente, sem ter que percorrer todo o arquivo manualmente.
 
 =back
 
@@ -101,11 +115,13 @@ Abrir dois arquivos SVG para serem visualizados:
 
     inkview file1.svg file2.svg
 
-Abra todos os arquivos SVG na pasta de exemplos que foram enviados junto com o Inkscape:
+Abra todos os arquivos SVG na pasta de exemplos que foram enviados junto com
+o Inkscape:
 
     inkview B<${CMAKE_INSTALL_PREFIX}/${SHARE_INSTALL}>/inkscape/examples
 
-Carregar um slideshow com tela cheia que automaticamente muda para a próxima imagem a cada 5 segundos:
+Carregar um slideshow com tela cheia que automaticamente muda para a próxima
+imagem a cada 5 segundos:
 
     inkview --fullscreen --timer=5 [files/folders ...]
 
@@ -123,7 +139,8 @@ Veja L<inkscape(1)>
 
 B<Copyright (C)> 1999-2023 by Authors.
 
-B<Inkscape> é software livre; você pode redistribuí-lo e modificações-lo sob os termos da GPL versão 3 ou mais recente.
+B<Inkscape> é software livre; você pode redistribuí-lo e modificações-lo sob
+os termos da GPL versão 3 ou mais recente.
 
 
 

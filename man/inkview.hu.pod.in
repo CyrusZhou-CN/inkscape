@@ -33,9 +33,15 @@ kapcsolók:
 
 =head1 LEÍRÁS
 
-Az B<Inkview> egy B<Scalable Vector Graphics (SVG)> megjelenítő, amely diavetítésre és bemutatókra is használható. Egy vagy több B<FÁJL> vagy B<MAPPA> adható meg parancssorban megnyitásra. Az Inkview a megadott sorban fogja megjeleníteni az SVG fájlokat. A mappák a tartalmazott SVG fájlok listájaként értendőek.
+Az B<Inkview> egy B<Scalable Vector Graphics (SVG)> megjelenítő, amely
+diavetítésre és bemutatókra is használható. Egy vagy több B<FÁJL> vagy
+B<MAPPA> adható meg parancssorban megnyitásra. Az Inkview a megadott sorban
+fogja megjeleníteni az SVG fájlokat. A mappák a tartalmazott SVG fájlok
+listájaként értendőek.
 
-Az Inkview futtatható bármilyen parancssori argumentum nélkül is, mert ilyenkor egy fájlválasztó párbeszédablak jelenik meg, amely segítségével fájlokat vagy mappákat lehet kijelölni a grafikus felhasználói felületen.
+Az Inkview futtatható bármilyen parancssori argumentum nélkül is, mert
+ilyenkor egy fájlválasztó párbeszédablak jelenik meg, amely segítségével
+fájlokat vagy mappákat lehet kijelölni a grafikus felhasználói felületen.
 
 =head1 KAPCSOLÓK
 
@@ -47,7 +53,8 @@ Megjeleníti a súgóüzeneteket.
 
 =item B<-V>, B<--version>
 
-Megjeleníti az Inkview verzióját és a build dátumát (ez általában megegyezik az Inkscape verziójával).
+Megjeleníti az Inkview verzióját és a build dátumát (ez általában megegyezik
+az Inkscape verziójával).
 
 =item B<-f>, B<--fullscreen>
 
@@ -55,7 +62,9 @@ Inkview indítása teljes képernyős módban.
 
 =item B<-r>, B<--recursive>
 
-Rekurzívan keres SVG-fájlokat a parancssorban megadott mappákban. Ez azt jelenti, hogy minden SVG-fájl meg lesz nyitva ennek a mappának bármelyik almappájából.
+Rekurzívan keres SVG-fájlokat a parancssorban megadott mappákban. Ez azt
+jelenti, hogy minden SVG-fájl meg lesz nyitva ennek a mappának bármelyik
+almappájából.
 
 =item B<-t>, B<--timer=SZÁM>
 
@@ -63,11 +72,16 @@ Lecseréli a képet a következőre minden SZÁM másodpercben.
 
 =item B<-s>, B<--scale=SZÁM>
 
-A képet a SZÁM tényezővel méretezve jeleníti meg a fájl natív mérete helyett.
+A képet a SZÁM tényezővel méretezve jeleníti meg a fájl natív mérete
+helyett.
 
 =item B<-p>, B<--preload>
 
-Előtölti az összes SVG-fájlt. Az Inkview-nak továbbra is képeket kell megjeleníteni, de ezzel a kapcsolóval az SVG-fájlok már értelmezve lesznek és be lesznek töltve a memóriába. Ez a kapcsoló annak ellenőrzésére is használható, hogy vajon a fájlok rendesen betölthetőek-e, anélkül, hogy kézzel végig kellene rajtuk lépdelni.
+Előtölti az összes SVG-fájlt. Az Inkview-nak továbbra is képeket kell
+megjeleníteni, de ezzel a kapcsolóval az SVG-fájlok már értelmezve lesznek
+és be lesznek töltve a memóriába. Ez a kapcsoló annak ellenőrzésére is
+használható, hogy vajon a fájlok rendesen betölthetőek-e, anélkül, hogy
+kézzel végig kellene rajtuk lépdelni.
 
 =back
 
@@ -105,7 +119,8 @@ Minden SVG-fájlt megnyit, melyek az Inkscape-pel érkeznek a  példamappában:
 
     inkview B<${CMAKE_INSTALL_PREFIX}/${SHARE_INSTALL}>/inkscape/examples
 
-Megnyit egy teljes képernyős diavetítést, amely automatikusan a következő képre lép minden 5. másodpercben:
+Megnyit egy teljes képernyős diavetítést, amely automatikusan a következő
+képre lép minden 5. másodpercben:
 
     inkview --fullscreen --timer=5 [fájl/mappa ...]
 
@@ -123,7 +138,8 @@ Lásd: L<inkscape(1)>
 
 B<Copyright (C)> 1999–2023 a szerzők.
 
-Az B<Inkscape> szabad szoftver és GPL 3-as verziója szerint lehet terjeszteni, ill. módosítani.
+Az B<Inkscape> szabad szoftver és GPL 3-as verziója szerint lehet
+terjeszteni, ill. módosítani.
 
 
 
