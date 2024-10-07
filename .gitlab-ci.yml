@@ -154,9 +154,6 @@ inkscape:macos:
   stage: build
   tags:
     - saas-windows-medium-amd64
-  rules:
-    - *do_not_run_for_schedules
-    - *run_otherwise
   cache:
     key: "cache-windows"
     paths:
@@ -175,28 +172,9 @@ inkscape:macos:
     - 7z x -oC:/ "$Env:IDW_NAME.7z"
 
 
-inkscape:windows:build:
+inkscape:windows:
   extends: .windows
   retry: 2
-  script:
-    - . "C:/$Env:IDW_NAME/msys2_shell.cmd" -defterm -no-start -ucrt64 -here -c "cmake -Bbuild -G Ninja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
-    # Kill the job before hitting runner's timeout. This way we can preserve the cache so the next retry
-    # will be able to advance the build further and eventually finish (after up to two retries, 3 jobs in total).
-    # Calculation is:  20 minutes for download and extraction of msys2
-    #                  80 minutes build (4800 seconds, see 'sleep' below)
-    #                  20 minutes as buffer and save cache
-    #                 --- --------------------------------
-    #                 120 minutes runner timeout
-    - Start-Job -ScriptBlock{sleep 4800; taskkill /t /F /IM "ninja.exe"}
-    - . "C:/$Env:IDW_NAME/msys2_shell.cmd" -defterm -no-start -ucrt64 -here -c "ninja -C build"
-    - 7z a build.7z build
-  artifacts:
-    paths:
-      - build.7z
-
-
-inkscape:windows:dist:
-  extends: .windows
   parallel:
     matrix:
       - DIST: [ "7z", "exe", "msi" ]
@@ -206,17 +184,20 @@ inkscape:windows:dist:
       when: manual
       allow_failure: true
     - *run_otherwise
-  dependencies:
-    - inkscape:windows:build
-  needs:
-    - inkscape:windows:build
   script:
-    - 7z x build.7z
+    - . "C:/$Env:IDW_NAME/msys2_shell.cmd" -defterm -no-start -ucrt64 -here -c "cmake -B build -G Ninja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+    # Kill the job before hitting runner's timeout. This way we can preserve the cache so the next retry
+    # will be able to advance the build further and eventually finish (after up to two retries, 3 jobs in total).
+    # Calculation is:  20 minutes for download and extraction of msys2
+    #                  80 minutes build (4800 seconds, see 'sleep' below)
+    #                  20 minutes as buffer and save cache
+    #                 --- --------------------------------
+    #                 120 minutes runner timeout
+    - Start-Job -ScriptBlock{sleep 4800; taskkill /t /F /IM "ninja.exe"}
     - . "C:/$Env:IDW_NAME/msys2_shell.cmd" -defterm -no-start -ucrt64 -here -c "ninja -C build dist-win-${DIST}"
   artifacts:
     paths:
       - build/inkscape*.${DIST}
-
 
 #tests, always run after building
 test:linux:
