@@ -90,6 +90,7 @@ AlignAndDistribute::AlignAndDistribute(Inkscape::UI::Dialog::DialogBase *dlg)
     if (auto win = InkscapeApplication::instance()->get_active_window()) {
         if (auto desktop = win->get_desktop()) {
             if (auto selection = desktop->getSelection()) {
+                single_item = selection->singleItem();
                 sel_changed = selection->connectChanged([this, filtered_store](Inkscape::Selection *selection) {
                     single_item = selection->singleItem();
                     auto active_id = single_item ? single_selection_align_to : multi_selection_align_to;
@@ -101,7 +102,8 @@ AlignAndDistribute::AlignAndDistribute(Inkscape::UI::Dialog::DialogBase *dlg)
     }
 
     align_relative_object.set_model(filtered_store);
-    align_relative_object.set_active_id(align_to);
+    auto active_id = single_item ? single_selection_align_to : multi_selection_align_to;
+    align_relative_object.set_active_id(active_id);
     align_relative_object.signal_changed().connect(sigc::mem_fun(*this, &AlignAndDistribute::on_align_relative_object_changed));
 
     bool sel_as_group = prefs->getBool("/dialogs/align/sel-as-groups");
