@@ -233,9 +233,8 @@ void Effect::effect(SPDesktop *desktop, SPDocument *document)
         set_state(Extension::STATE_LOADED);
     if (!loaded()) return;
     ExecutionEnv executionEnv(this, desktop, nullptr, _workingDialog, true);
-    execution_env = &executionEnv;
     if (document)
-        execution_env->set_document(document);
+        executionEnv.set_document(document);
     timer->lock();
     executionEnv.run();
     if (executionEnv.wait()) {

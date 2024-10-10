@@ -324,7 +324,7 @@ void Script::resize_to_template(Inkscape::Extension::Template *tmod, SPDocument 
         }
         params.push_back(param);
     }
-    _change_extension(tmod, doc, params, true);
+    _change_extension(tmod, nullptr, doc, params, true);
 }
 
 /**
@@ -503,9 +503,10 @@ void Script::export_raster(Inkscape::Extension::Output *module,
 /**
     \return    none
     \brief     This function uses an extension as an effect on a document.
-    \param     module   Extension to effect with.
-    \param     desktop  Desktop this extensions run on.
-    \param     doc      Document to run through the effect.
+    \param     module         Extension to effect with.
+    \param     executionEnv   Current execution environment.
+    \param     desktop        Desktop this extensions run on.
+    \param     doc            Document to run through the effect.
 
     This function is a little bit trickier than the previous two.  It
     needs two temporary files to get its work done.  Both of these
@@ -529,9 +530,8 @@ void Script::export_raster(Inkscape::Extension::Output *module,
     exists at the time, the other is created by that script).  At that
     point both should be full, and the second one is loaded.
 */
-void Script::effect(Inkscape::Extension::Effect *module,
-               SPDesktop *desktop,
-               ImplementationDocumentCache * docCache)
+void Script::effect(Inkscape::Extension::Effect *module, ExecutionEnv *executionEnv, SPDesktop *desktop,
+                    ImplementationDocumentCache *docCache)
 {
     if (desktop == nullptr)
     {
@@ -572,28 +572,29 @@ void Script::effect(Inkscape::Extension::Effect *module,
             selection->clear();
         }
     }
-    _change_extension(module, desktop->getDocument(), params, module->ignore_stderr);
+    _change_extension(module, executionEnv, desktop->getDocument(), params, module->ignore_stderr);
 }
 
 /**
  * Pure document version for calling an extension from the command line
  */
-void Script::effect(Inkscape::Extension::Effect *mod, SPDocument *document)
+void Script::effect(Inkscape::Extension::Effect *mod, ExecutionEnv *executionEnv, SPDocument *document)
 {
     std::list<std::string> params;
-    _change_extension(mod, document, params, mod->ignore_stderr);
+    _change_extension(mod, executionEnv, document, params, mod->ignore_stderr);
 }
 
 /**
  * Internally, any modification of an existing document, used by effect and resize_page extensions.
  */
-void Script::_change_extension(Inkscape::Extension::Extension *module, SPDocument *doc, std::list<std::string> &params, bool ignore_stderr)
+void Script::_change_extension(Inkscape::Extension::Extension *module, ExecutionEnv *executionEnv, SPDocument *doc,
+                               std::list<std::string> &params, bool ignore_stderr)
 {
     module->paramListString(params);
     module->set_environment(doc);
 
-    if (auto env = module->get_execution_env()) {
-        parent_window = env->get_working_dialog();
+    if (executionEnv) {
+        parent_window = executionEnv->get_working_dialog();
     }
 
     auto tempfile_out = Inkscape::IO::TempFilename("ink_ext_XXXXXX.svg");

@@ -118,8 +118,8 @@ ImageMagick::newDocCache(Inkscape::Extension::Extension * /*ext*/, SPDesktop *de
     return new ImageMagickDocCache(desktop);
 }
 
-void
-ImageMagick::effect (Inkscape::Extension::Effect *module, SPDesktop *desktop, Inkscape::Extension::Implementation::ImplementationDocumentCache * docCache)
+void ImageMagick::effect(Inkscape::Extension::Effect *module, ExecutionEnv * /*executionEnv*/, SPDesktop *desktop,
+                         Inkscape::Extension::Implementation::ImplementationDocumentCache *docCache)
 {
     refreshParameters(module);
     ImageMagickDocCache * dc = dynamic_cast<ImageMagickDocCache *>(docCache);

@@ -44,6 +44,7 @@ class TemplatePreset;
 class Input;
 class Output;
 class Print;
+class ExecutionEnv;
 
 typedef std::vector<std::shared_ptr<TemplatePreset>> TemplatePresets;
 
@@ -123,11 +124,10 @@ public:
                                        SPDesktop *desktop,
                                        sigc::signal<void ()> *changeSignal,
                                        ImplementationDocumentCache *docCache);
-    virtual void effect(Inkscape::Extension::Effect * /*module*/,
-                        SPDesktop * /*desktop*/,
-                        ImplementationDocumentCache * /*docCache*/);
-    virtual void effect(Inkscape::Extension::Effect * /*module*/,
-                        SPDocument *document) {}
+    virtual void effect(Inkscape::Extension::Effect * /*module*/, ExecutionEnv * /*executionEnv*/,
+                        SPDesktop * /*desktop*/, ImplementationDocumentCache * /*docCache*/);
+    virtual void effect(Inkscape::Extension::Effect * /*module*/, ExecutionEnv * /*executionEnv*/, SPDocument *document)
+    {}
 
     virtual bool apply_filter(Inkscape::Extension::Effect* module, SPItem* item) { return false; }
 

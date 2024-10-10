@@ -197,12 +197,12 @@ ExecutionEnv::run () {
         selection->setBackup();
         _desktop->setWaitingCursor();
 
-        _effect->get_imp()->effect(_effect, _desktop, _docCache);
+        _effect->get_imp()->effect(_effect, this, _desktop, _docCache);
 
         _desktop->clearWaitingCursor();
         selection->restoreBackup();
     } else {
-        _effect->get_imp()->effect(_effect, _document);
+        _effect->get_imp()->effect(_effect, this, _document);
     }
     _state = ExecutionEnv::COMPLETE;
     // _runComplete.signal();

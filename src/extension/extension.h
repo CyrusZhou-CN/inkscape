@@ -160,8 +160,6 @@ protected:
      *  and a non-owning pointer when the implementation is allocated in an external library.
      */
     ImplementationHolder imp;
-    ExecutionEnv * execution_env = nullptr;    /**< Execution environment of the extension
-                                                 *  (currently only used by Effects) */
     std::string _base_directory;               /**< Directory containing the .inx file,
                                                  *  relative paths in the extension should usually be relative to it */
     std::unique_ptr<ExpirationTimer> timer;    /**< Timeout to unload after a given time */
@@ -191,8 +189,6 @@ public:
     void          printFailure (Glib::ustring const &reason);
     std::string const &getErrorReason() { return _error_reason; };
     Implementation::Implementation *get_imp() { return imp.get(); }
-    void          set_execution_env (ExecutionEnv * env) { execution_env = env; };
-    ExecutionEnv *get_execution_env () { return execution_env; };
     auto const   &get_base_directory() const { return _base_directory; };
     void          set_base_directory(std::string const &base_directory) { _base_directory = base_directory; };
     std::string   get_dependency_location(char const *name);

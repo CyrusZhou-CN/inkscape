@@ -63,16 +63,18 @@ public:
     void save(Inkscape::Extension::Output *module, SPDocument *doc, gchar const *filename) override;
     void export_raster(Inkscape::Extension::Output *module,
             const SPDocument *doc, std::string const &png_file, gchar const *filename) override;
-    void effect(Inkscape::Extension::Effect *module, SPDesktop *desktop, ImplementationDocumentCache * docCache) override;
-    void effect(Inkscape::Extension::Effect *module, SPDocument *document) override;
-    bool cancelProcessing () override;
+    void effect(Inkscape::Extension::Effect *module, ExecutionEnv *executionEnv, SPDesktop *desktop,
+                ImplementationDocumentCache *docCache) override;
+    void effect(Inkscape::Extension::Effect *module, ExecutionEnv *executionEnv, SPDocument *document) override;
+    bool cancelProcessing() override;
 
 private:
     bool _canceled;
     Glib::Pid _pid;
     Glib::RefPtr<Glib::MainLoop> _main_loop;
 
-    void _change_extension(Inkscape::Extension::Extension *mod, SPDocument *doc, std::list<std::string> &params, bool ignore_stderr);
+    void _change_extension(Inkscape::Extension::Extension *mod, ExecutionEnv *executionEnv, SPDocument *doc,
+                           std::list<std::string> &params, bool ignore_stderr);
 
     /**
      * The command that has been derived from

@@ -51,8 +51,8 @@ BlurEdge::load (Inkscape::Extension::Extension */*module*/)
     \param  module   The effect that was called (unused)
     \param  desktop What should be edited.
 */
-void
-BlurEdge::effect (Inkscape::Extension::Effect *module, SPDesktop *desktop, Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
+void BlurEdge::effect(Inkscape::Extension::Effect *module, ExecutionEnv * /*executionEnv*/, SPDesktop *desktop,
+                      Inkscape::Extension::Implementation::ImplementationDocumentCache * /*docCache*/)
 {
     Inkscape::Selection * selection     = desktop->getSelection();
 

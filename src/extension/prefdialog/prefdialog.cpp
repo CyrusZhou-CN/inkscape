@@ -109,7 +109,6 @@ PrefDialog::~PrefDialog ( )
 {
     if (_exEnv != nullptr) {
         _exEnv->cancel();
-        _effect->set_execution_env(nullptr);
     }
 
     if (_effect != nullptr) {
@@ -132,7 +131,6 @@ PrefDialog::preview_toggle () {
             set_modal(true);
 
             _exEnv = std::make_unique<ExecutionEnv>(_effect, SP_ACTIVE_DESKTOP, nullptr, false, false);
-            _effect->set_execution_env(_exEnv.get());
             _exEnv->run();
         }
     } else {
@@ -144,7 +142,6 @@ PrefDialog::preview_toggle () {
             _exEnv->reselect();
 
             _exEnv.reset();
-            _effect->set_execution_env(nullptr);
         }
     }
 
@@ -198,7 +195,6 @@ PrefDialog::on_response (int signal) {
             }
 
             _exEnv.reset();
-            _effect->set_execution_env(nullptr);
         }
     }
 
