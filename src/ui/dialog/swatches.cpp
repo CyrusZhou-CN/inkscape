@@ -508,7 +508,7 @@ void SwatchesPanel::update_palettes(bool compact) {
  */
 void SwatchesPanel::rebuild()
 {
-    std::vector<ColorItem*> palette;
+    std::vector<std::unique_ptr<ColorItem>> palette;
 
     // The pointers in widgetmap are to widgets owned by the ColorPalette. It is assumed it will not
     // delete them unless we ask, via the call to set_colors() later in this function.
@@ -517,45 +517,45 @@ void SwatchesPanel::rebuild()
     current_stroke.clear();
 
     // Add the "remove-color" color.
-    auto const w = Gtk::make_managed<ColorItem>(this);
+    auto w = std::make_unique<ColorItem>(this);
     w->set_pinned_pref(_prefs_path);
-    palette.emplace_back(w);
-    widgetmap.emplace(std::monostate{}, w);
+    widgetmap.emplace(std::monostate{}, w.get());
+    palette.push_back(std::move(w));
+
     _palette->set_page_size(0);
     if (auto pal = get_palette(_current_palette_id)) {
         _palette->set_page_size(pal->columns);
         palette.reserve(palette.size() + pal->colors.size());
+        auto dialog = this;
         for (auto &c : pal->colors) {
-            auto dialog = this;
             auto w = std::visit(VariantVisitor {
                 [](const PaletteFileData::SpacerItem&) {
-                    return Gtk::make_managed<ColorItem>("");
+                    return std::make_unique<ColorItem>("");
                 },
                 [](const PaletteFileData::GroupStart& g) {
-                    return Gtk::make_managed<ColorItem>(g.name);
+                    return std::make_unique<ColorItem>(g.name);
                 },
                 [=, this](const Colors::Color& c) {
-                    auto w = Gtk::make_managed<ColorItem>(c, dialog);
+                    auto w = std::make_unique<ColorItem>(c, dialog);
                     w->set_pinned_pref(_prefs_path);
-                    widgetmap.emplace(c, w);
+                    widgetmap.emplace(c, w.get());
                     return w;
                 },
             }, c);
-
-            palette.emplace_back(w);
+            palette.push_back(std::move(w));
         }
     } else if (_current_palette_id == auto_id && getDocument()) {
         auto grads = getDocument()->getResourceList("gradient");
         for (auto obj : grads) {
             auto grad = cast_unsafe<SPGradient>(obj);
             if (grad->isSwatch()) {
-                auto const w = Gtk::make_managed<ColorItem>(grad, this);
-                palette.emplace_back(w);
-                widgetmap.emplace(grad, w);
+                auto w = std::make_unique<ColorItem>(grad, this);
+                widgetmap.emplace(grad, w.get());
                 // Rebuild if the gradient gets pinned or unpinned
                 w->signal_pinned().connect([this]{
                     rebuild();
                 });
+                palette.push_back(std::move(w));
             }
         }
     }
@@ -564,7 +564,7 @@ void SwatchesPanel::rebuild()
         update_fillstroke_indicators();
     }
 
-    _palette->set_colors(palette);
+    _palette->set_colors(std::move(palette));
     _palette->set_selected(_current_palette_id);
 }
 

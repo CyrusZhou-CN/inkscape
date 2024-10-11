@@ -113,6 +113,19 @@ void skip(const Glib::RefPtr<Gio::InputStream>& s, size_t bytes) {
 
 using namespace Inkscape::UI::Dialog;
 
+namespace ColorBook {
+
+// Color space codes in ACB color book palettes
+enum Colorspace : uint16_t
+{
+    RgbColorspace = 0,
+    CmykColorspace = 2,
+    LabColorspace = 7,
+    GrayscaleColorspace = 8
+};
+
+} // namespace ColorBook
+
 // Load Adobe ACB color book
 void load_acb_palette(PaletteFileData& palette, std::string const &fname) {
     auto file = Gio::File::create_for_path(fname);
@@ -168,16 +181,16 @@ void load_acb_palette(PaletteFileData& palette, std::string const &fname) {
     std::shared_ptr<Space::AnySpace> space;
 
     switch (cs) {
-        case 0: // RGB
+        case ColorBook::RgbColorspace:
             space = cm.find(Space::Type::RGB);
             break;
-        case 2: // CMYK
+        case ColorBook::CmykColorspace:
             space = cm.find(Space::Type::CMYK);
             break;
-        case 7: // LAB
+        case ColorBook::LabColorspace:
             space = cm.find(Space::Type::LAB);
             break;
-        case 8: // Grayscale
+        case ColorBook::GrayscaleColorspace:
             space = cm.find(Space::Type::Gray);
             break;
         default:
@@ -298,10 +311,9 @@ void load_gimp_palette(PaletteFileData& palette, std::string const &path)
     auto space = cm.find(Space::Type::RGB);
 
     while (std::fgets(buf, sizeof(buf), f.get())) {
-        auto line = Glib::ustring(buf); // Unnecessary copy required until using a glibmm with support for string views. TODO: Fix when possible.
         Glib::MatchInfo match;
-        if (regex_rgb->match(line, match)) { // ::regex_match(line, match, boost::regex(), boost::regex_constants::match_continuous)) {
-            // RGB color, followed by an optional name.
+        if (regex_rgb->match(buf, match)) {
+            // 8-bit RGB color, followed by an optional name.
 
             std::vector<double> data;
             for (unsigned i = 0; i < space->getComponentCount(); i++) {
@@ -316,17 +328,17 @@ void load_gimp_palette(PaletteFileData& palette, std::string const &path)
             }
 
             palette.colors.emplace_back(std::move(color));
-        } else if (regex_name->match(line, match)) {
+        } else if (regex_name->match(buf, match)) {
             // Header entry for name.
             palette.name = match.fetch(1);
-        } else if (regex_cols->match(line, match)) {
+        } else if (regex_cols->match(buf, match)) {
             // Header entry for columns.
             palette.columns = std::clamp(std::stoi(match.fetch(1)), 1, 1000);
-        } else if (regex_blank->match(line, match)) {
+        } else if (regex_blank->match(buf, match)) {
             // Comment or blank line.
         } else {
             // Unrecognised.
-            throw std::runtime_error(C_("Palette", "Invalid line ") + std::string(line));
+            throw std::runtime_error(C_("Palette", "Invalid line ") + std::string(buf));
         }
     }
 }

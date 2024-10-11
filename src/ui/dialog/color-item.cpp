@@ -55,29 +55,24 @@
 #include "ui/dialog/dialog-container.h"
 #include "ui/icon-names.h"
 #include "ui/util.h"
+#include "util/variant-visitor.h"
 
 namespace Inkscape::UI::Dialog {
 namespace {
 
-// Return the result of executing a lambda, and cache the result for future calls.
-template <typename F>
-auto &staticify(F &&f)
-{
-    static auto result = std::forward<F>(f)();
-    return result;
-}
-
-// Get the "remove-color" image.
+/// Get the "remove-color" image.
 Glib::RefPtr<Gdk::Pixbuf> get_removecolor()
 {
-    return staticify([] {
+    // Load the pixbuf only once
+    static const auto remove_color = [] {
         auto path = IO::Resource::get_path(IO::Resource::SYSTEM, IO::Resource::UIS, "resources", "remove-color.png");
         auto pixbuf = Gdk::Pixbuf::create_from_file(path.pointer());
         if (!pixbuf) {
             std::cerr << "Null pixbuf for " << Glib::filename_to_utf8(path.pointer()) << std::endl;
         }
         return pixbuf;
-    });
+    }();
+    return remove_color;
 }
 
 } // namespace
@@ -185,7 +180,8 @@ void ColorItem::set_pinned_pref(const std::string &path)
 
 void ColorItem::draw_color(Cairo::RefPtr<Cairo::Context> const &cr, int w, int h) const
 {
-    if (std::holds_alternative<Undefined>(data)) {
+    std::visit(VariantVisitor{
+    [&] (Undefined) {
         // there's no color to paint; indicate clearly that there is nothing to select:
         auto y = h / 2 + 0.5;
         auto width = w / 4;
@@ -196,8 +192,8 @@ void ColorItem::draw_color(Cairo::RefPtr<Cairo::Context> const &cr, int w, int h
         cr->set_source_rgba(fg.get_red(), fg.get_green(), fg.get_blue(), 0.5);
         cr->set_line_width(1);
         cr->stroke();
-    }
-    else if (is_paint_none()) {
+    },
+    [&] (PaintNone) {
         if (auto const pixbuf = get_removecolor()) {
             const auto device_scale = get_scale_factor();
             cr->save();
@@ -206,8 +202,9 @@ void ColorItem::draw_color(Cairo::RefPtr<Cairo::Context> const &cr, int w, int h
             cr->paint();
             cr->restore();
         }
-    } else if (auto const color = std::get_if<Colors::Color>(&data)) {
-        ink_cairo_set_source_color(cr, *color);
+    },
+    [&] (Colors::Color const &color) {
+        ink_cairo_set_source_color(cr, color);
         cr->paint();
         // there's no way to query background color to check if color item stands out,
         // so we apply faint outline to let users make out color shapes blending with background
@@ -216,9 +213,10 @@ void ColorItem::draw_color(Cairo::RefPtr<Cairo::Context> const &cr, int w, int h
         cr->set_source_rgba(fg.get_red(), fg.get_green(), fg.get_blue(), 0.07);
         cr->set_line_width(1);
         cr->stroke();
-    } else if (auto const graddata = std::get_if<GradientData>(&data)) {
+    },
+    [&] (GradientData graddata) {
         // Gradient pointer may be null if the gradient was destroyed.
-        auto grad = graddata->gradient;
+        auto grad = graddata.gradient;
         if (!grad) return;
 
         auto pat_checkerboard = Cairo::RefPtr<Cairo::Pattern>(new Cairo::Pattern(ink_cairo_pattern_create_checkerboard(), true));
@@ -228,7 +226,7 @@ void ColorItem::draw_color(Cairo::RefPtr<Cairo::Context> const &cr, int w, int h
         cr->paint();
         cr->set_source(pat_gradient);
         cr->paint();
-    }
+    }}, data);
 }
 
 void ColorItem::draw_func(Cairo::RefPtr<Cairo::Context> const &cr, int const w, int const h)
@@ -561,12 +559,20 @@ bool ColorItem::is_pinned() const
  */
 Colors::Color ColorItem::getColor() const
 {
-    if (is_paint_none()) {
+    return std::visit(VariantVisitor{
+    [] (Undefined) {
+        assert(false);
+        return Colors::Color{0xffffffff};
+    },
+    [] (PaintNone) {
         return Colors::Color(0xffffffff);
-    } else if (auto const color = std::get_if<Colors::Color>(&data)) {
-        return *color;
-    } else if (auto const graddata = std::get_if<GradientData>(&data)) {
-        auto grad = graddata->gradient;
+    },
+    [] (Colors::Color const &color) {
+        return color;
+    },
+    [] (GradientData graddata) {
+        auto grad = graddata.gradient;
+        assert(grad);
         auto pat = Cairo::RefPtr<Cairo::Pattern>(new Cairo::Pattern(grad->create_preview_pattern(1), true));
         auto img = Cairo::ImageSurface::create(Cairo::Surface::Format::ARGB32, 1, 1);
         auto cr = Cairo::Context::create(img);
@@ -575,11 +581,7 @@ Colors::Color ColorItem::getColor() const
         auto color = ink_cairo_surface_average_color(img->cobj());
         color.setName(grad->getId());
         return color;
-    }
-
-    // unreachable
-    assert(false);
-    return Colors::Color(0xffffffff);
+    }}, data);
 }
 
 bool ColorItem::is_paint_none() const {

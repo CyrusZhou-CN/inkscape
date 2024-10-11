@@ -14,6 +14,7 @@
 #include <glibmm/i18n.h>
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
+#include <gdkmm/frameclock.h>
 #include <gtkmm/adjustment.h>
 #include <gtkmm/builder.h>
 #include <gtkmm/button.h>
@@ -167,11 +168,7 @@ ColorPalette::ColorPalette():
     }
 }
 
-ColorPalette::~ColorPalette() {
-    if (_active_timeout) {
-        g_source_remove(_active_timeout);
-    }
-}
+ColorPalette::~ColorPalette() = default;
 
 Gtk::Popover& ColorPalette::get_settings_popover() {
     return get_widget<Gtk::Popover>(_builder, "config-popup");
@@ -191,9 +188,9 @@ void ColorPalette::do_scroll(int dx, int dy) {
     }
 }
 
-std::pair<double, double> get_range(Gtk::Scrollbar& sb) {
+static Geom::Interval get_range(Gtk::Scrollbar const &sb) {
     auto adj = sb.get_adjustment();
-    return std::make_pair(adj->get_lower(), adj->get_upper() - adj->get_page_size());
+    return {adj->get_lower(), adj->get_upper() - adj->get_page_size()};
 }
 
 void ColorPalette::update_scroll_arrows_sensitivity() {
@@ -209,30 +206,43 @@ void ColorPalette::update_scroll_arrows_sensitivity() {
     }
 }
 
-gboolean ColorPalette::scroll_cb(gpointer self) {
-    auto ptr = static_cast<ColorPalette*>(self);
+// Update scrolling animation when up/down arrows are clicked.
+bool ColorPalette::scroll_cb(Glib::RefPtr<Gdk::FrameClock> const &clock)
+{
+    // Get or estimate elapsed time since last animation update.
+    auto const timings = clock->get_current_timings();
+    auto const t = timings->get_frame_time();
+    if (!_scroll_cb_last_time) {
+        _scroll_cb_last_time = t;
+        return true;
+    }
+    double const dt = t - *_scroll_cb_last_time;
+    _scroll_cb_last_time = t;
+
     bool fire_again = false;
 
-    if (auto vert = ptr->_scroll.get_vscrollbar()) {
+    if (auto vert = _scroll.get_vscrollbar()) {
+        // Ensure target remains within range.
+        _scroll_final = get_range(*vert).clamp(_scroll_final);
+
+        // Compute the amount to step by.
+        constexpr double SCROLL_SPEED = 4.0; // pixels per 1/60 sec
+        double const step = SCROLL_SPEED * dt * 6e-5;
+
         auto value = vert->get_adjustment()->get_value();
         // is this the final adjustment step?
-        if (fabs(ptr->_scroll_final - value) < fabs(ptr->_scroll_step)) {
-            vert->get_adjustment()->set_value(ptr->_scroll_final);
+        if (std::abs(_scroll_final - value) <= step) {
+            vert->get_adjustment()->set_value(_scroll_final);
             fire_again = false; // cancel timer
-        }
-        else {
-            auto pos = value + ptr->_scroll_step;
+        } else {
+            auto pos = value + step * Geom::sgn(_scroll_final - value);
             vert->get_adjustment()->set_value(pos);
-            auto range = get_range(*vert);
-            if (pos > range.first && pos < range.second) {
-                // not yet done
-                fire_again = true; // fire this callback again
-            }
+            fire_again = true; // fire this callback again
         }
     }
 
     if (!fire_again) {
-        ptr->_active_timeout = 0;
+        _active_timeout = 0;
     }
 
     return fire_again;
@@ -246,17 +256,10 @@ void ColorPalette::scroll(int dx, int dy, double snap, bool smooth) {
                 // round it to whole 'dy' increments
                 _scroll_final -= fmod(_scroll_final, snap);
             }
-            auto range = get_range(*vert);
-            if (_scroll_final < range.first) {
-                _scroll_final = range.first;
-            }
-            else if (_scroll_final > range.second) {
-                _scroll_final = range.second;
-            }
-            _scroll_step = dy / 4.0;
+            _scroll_final = get_range(*vert).clamp(_scroll_final);
             if (!_active_timeout && vert->get_adjustment()->get_value() != _scroll_final) {
-                // limit refresh to 60 fps, in practice it will be slower
-                _active_timeout = g_timeout_add(1000 / 60, &ColorPalette::scroll_cb, this);
+                _active_timeout = add_tick_callback(sigc::mem_fun(*this, &ColorPalette::scroll_cb));
+                _scroll_cb_last_time = {};
             }
         }
         else {
@@ -596,7 +599,7 @@ void ColorPalette::resize() {
 
     int width = get_tile_width();
     int height = get_tile_height();
-    for (auto item : _normal_items) {
+    for (auto const &item : _normal_items) {
         item->set_size_request(width, height);
     }
 
@@ -606,23 +609,18 @@ void ColorPalette::resize() {
         double mult = _rows > 2 ? _rows / 2.0 : 2.0;
         pinned_width = pinned_height = static_cast<int>((height + _border) * mult - _border);
     }
-    for (auto item : _pinned_items) {
+    for (auto const &item : _pinned_items) {
         item->set_size_request(pinned_width, pinned_height);
     }
 }
 
-void ColorPalette::set_colors(std::vector<Dialog::ColorItem*> const &swatches)
+void ColorPalette::set_colors(std::vector<std::unique_ptr<Dialog::ColorItem>> coloritems)
 {
     _normal_items.clear();
     _pinned_items.clear();
     
-    for (auto item : swatches) {
-        if (item->is_pinned()) {
-            _pinned_items.emplace_back(item);
-        } else {
-            _normal_items.emplace_back(item);
-        }
-        item->signal_modified().connect([=] {
+    for (auto &item : coloritems) {
+        item->signal_modified().connect([item = item.get()] {
             UI::for_each_child(*item->get_parent(), [=](Gtk::Widget& w) {
                 if (auto label = dynamic_cast<Gtk::Label *>(&w)) {
                     label->set_text(item->get_description());
@@ -630,16 +628,18 @@ void ColorPalette::set_colors(std::vector<Dialog::ColorItem*> const &swatches)
                 return UI::ForEachResult::_continue;
             });
         });
+        if (item->is_pinned()) {
+            _pinned_items.push_back(std::move(item));
+        } else {
+            _normal_items.push_back(std::move(item));
+        }
     }
     rebuild_widgets();
     refresh();
 }
 
 Gtk::Widget *ColorPalette::_get_widget(Dialog::ColorItem *item) {
-    if (auto parent = item->get_parent()) {
-        auto &flowbox = dynamic_cast<Gtk::FlowBox &>(*parent);
-        flowbox.remove(*item);
-    }
+    assert(!item->get_parent());
     if (_show_labels) {
         item->set_valign(Gtk::Align::CENTER);
         auto const box = Gtk::make_managed<Gtk::Box>();
@@ -648,7 +648,7 @@ Gtk::Widget *ColorPalette::_get_widget(Dialog::ColorItem *item) {
         box->append(*label);
         return box;
     }
-    return Gtk::manage(item);
+    return item;
 }
 
 void ColorPalette::rebuild_widgets()
@@ -659,17 +659,17 @@ void ColorPalette::rebuild_widgets()
     UI::remove_all_children(_normal_box);
     UI::remove_all_children(_pinned_box);
 
-    for (auto item : _normal_items) {
+    for (auto const &item : _normal_items) {
         // in a tile mode (no labels) group headers are hidden:
         if (!_show_labels && item->is_group()) continue;
 
         // in a list mode with labels, do not show fillers:
         if (_show_labels && item->is_filler()) continue;
 
-        _normal_box.append(*_get_widget(item));
+        _normal_box.append(*_get_widget(item.get()));
     }
-    for (auto item : _pinned_items) {
-        _pinned_box.append(*_get_widget(item));
+    for (auto const &item : _pinned_items) {
+        _pinned_box.append(*_get_widget(item.get()));
     }
 
     set_up_scrolling();
