@@ -56,24 +56,20 @@
             <object class="GtkBox">
             <property name="spacing">3</property>
             <child>
-                <object class="GtkSearchEntry" id="search">
-                <property name="max-width-chars">15</property>
-                <property name="focusable">True</property>
-                <property name="placeholder-text">Search...</property>
-                </object>
-            </child>
-            <child>
                 <object class="GtkMenuButton">
                     <property name="focusable">True</property>
                     <property name="focus-on-click">False</property>
                     <property name="receives-default">True</property>
                     <property name="has-frame">False</property>
                     <property name="popover">popover-settings</property>
-                    <child>
-                        <object class="GtkImage">
-                            <property name="icon-name">gear</property>
-                        </object>
-                    </child>
+                    <property name="icon-name">gear</property>
+                </object>
+            </child>
+            <child>
+                <object class="GtkSearchEntry" id="search">
+                <property name="max-width-chars">15</property>
+                <property name="focusable">True</property>
+                <property name="placeholder-text">Search...</property>
                 </object>
             </child>
             </object>
@@ -89,11 +85,7 @@
                     <property name="valign">center</property>
                     <property name="margin-end">5</property>
                     <property name="has-frame">False</property>
-                    <child>
-                    <object class="GtkImage" id="image-toggle">
-                        <property name="icon-name">panel-left</property>
-                    </object>
-                    </child>
+                    <property name="icon-name">panel-left</property>
                 </object>
             </child>
             <child>

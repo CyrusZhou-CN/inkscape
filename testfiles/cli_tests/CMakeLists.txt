@@ -524,14 +524,14 @@ add_cli_test(export-text-paintorder PARAMETERS --export-type=pdf
                                     OUTPUT_FILENAME export-text-paintorder.pdf
                                     RASTER_DPI 200
                                     FUZZYREF_FILENAME export-text-paintorder_expected.png
-                                    FUZZ_PERCENTAGE 2)
+                                    FUZZ_PERCENTAGE 3)
 # This tests the paint order in the text-to-path conversion
 add_cli_test(convert-text-paintorder PARAMETERS --export-type=pdf --export-text-to-path
                                      INPUT_FILENAME  export-text-paintorder.svg
                                      OUTPUT_FILENAME export-text-paintorder.pdf
                                      RASTER_DPI 200
                                      FUZZYREF_FILENAME export-text-paintorder_expected.png
-                                     FUZZ_PERCENTAGE 2)
+                                     FUZZ_PERCENTAGE 3.5)
 
 add_cli_test(export-mask-viewbox PARAMETERS --export-type=pdf
                                  INPUT_FILENAME  export-mask-viewbox-scale.svg

@@ -3,13 +3,13 @@
 #include <cassert>
 #include <gtkmm/entrycompletion.h>
 #include <gtkmm/eventcontrollerkey.h>
+#include <gtkmm/eventcontrollerfocus.h>
 #include <gtkmm/menubutton.h>
-#include <gtkmm/searchentry2.h>
+#include <gtkmm/entry.h>
 #include <gtkmm/liststore.h>
 
 #include "completion-popup.h"
 #include "ui/builder-utils.h"
-#include "ui/controller.h"
 #include <locale>
 #include <codecvt>
 
@@ -24,7 +24,7 @@ enum Columns {
 
 CompletionPopup::CompletionPopup() :
     _builder(create_builder("completion-box.glade")),
-    _search(get_widget<Gtk::SearchEntry2>(_builder, "search")),
+    _search(get_widget<Gtk::Entry>(_builder, "search")),
     _button(get_widget<Gtk::MenuButton>(_builder, "menu-btn")),
     _popover_menu{Gtk::PositionType::BOTTOM},
     _completion(get_object<Gtk::EntryCompletion>(_builder, "completion"))
@@ -57,12 +57,13 @@ CompletionPopup::CompletionPopup() :
         return true;
     }, false);
 
-    _search.property_has_focus().signal_changed().connect([this]{
-        if (_search.has_focus()) {
+    auto focus = Gtk::EventControllerFocus::create();
+    focus->property_contains_focus().signal_changed().connect([this, &focus = *focus] {
+        if (focus.contains_focus()) {
             _on_focus.emit();
         }
-        clear();
     });
+    _search.add_controller(focus);
 
     _button.property_active().signal_changed().connect([this] {
         if (!_button.get_active()) {
@@ -73,12 +74,6 @@ CompletionPopup::CompletionPopup() :
         _menu_search.clear();
         _popover_menu.activate({});
     });
-
-    _search.signal_stop_search().connect([this](){
-        clear();
-    });
-
-    set_visible(true);
 }
 
 CompletionPopup::~CompletionPopup() = default;
@@ -138,7 +133,7 @@ PopoverMenu& CompletionPopup::get_menu() {
     return _popover_menu;
 }
 
-Gtk::SearchEntry2& CompletionPopup::get_entry() {
+Gtk::Entry& CompletionPopup::get_entry() {
     return _search;
 }
 

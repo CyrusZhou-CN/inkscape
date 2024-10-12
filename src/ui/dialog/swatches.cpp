@@ -103,7 +103,10 @@ SwatchesPanel::SwatchesPanel(bool compact, char const *prefsPath)
 
         _palette->set_settings_visibility(false);
 
-        get_widget<Gtk::MenuButton>(_builder, "settings").set_popover(_palette->get_settings_popover());
+        // Steal popover from colour palette and attach it to our button instead. Fixme: Bad, fragile.
+        auto &popover = _palette->get_settings_popover();
+        popover.unparent();
+        get_widget<Gtk::MenuButton>(_builder, "settings").set_popover(popover);
 
         _palette->set_filter([this](Dialog::ColorItem const &color){
             return filter_callback(color);

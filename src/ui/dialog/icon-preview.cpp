@@ -22,7 +22,7 @@
 #include <glibmm/main.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/frame.h>
-#include <gtkmm/picture.h>
+#include <gtkmm/image.h>
 #include <gtkmm/snapshot.h>
 #include <gtkmm/togglebutton.h>
 #include <sigc++/adaptors/bind.h>
@@ -35,7 +35,6 @@
 #include "display/drawing-context.h"
 #include "display/drawing.h"
 #include "object/sp-root.h"
-#include "ui/pack.h"
 #include "ui/util.h"
 #include "ui/widget/frame.h"
 
@@ -71,11 +70,8 @@ IconPreviewPanel::IconPreviewPanel()
     , renderTimer(nullptr)
     , pending(false)
     , minDelay(0.1)
-    , targetId()
     , hot(1)
     , selectionButton(nullptr)
-    , docModConn()
-    , iconBox(Gtk::Orientation::VERTICAL)
 {
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
 
@@ -93,12 +89,7 @@ IconPreviewPanel::IconPreviewPanel()
     }
 
     if (sizes.empty()) {
-        sizes.resize(5);
-        sizes[0] = 16;
-        sizes[1] = 24;
-        sizes[2] = 32;
-        sizes[3] = 48;
-        sizes[4] = 128;
+        sizes = {16, 24, 32, 48, 128};
     }
     images .resize(sizes.size());
     labels .resize(sizes.size());
@@ -113,11 +104,17 @@ IconPreviewPanel::IconPreviewPanel()
 
     auto const magBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
 
-    auto const magFrame = Gtk::make_managed<UI::Widget::Frame>(_("Magnified:"));
-    magFrame->add( magnified );
+    magnified.set_size_request(128, 128);
+    magnified.set_halign(Gtk::Align::CENTER);
+    magnified.set_valign(Gtk::Align::CENTER);
 
-    UI::pack_start(*magBox, *magFrame, UI::PackOptions::expand_widget);
-    UI::pack_start(*magBox,  magLabel, UI::PackOptions::shrink       );
+    auto const magFrame = Gtk::make_managed<UI::Widget::Frame>(_("Magnified:"));
+    magFrame->add(magnified);
+    magFrame->add_css_class("icon-preview");
+    magFrame->set_vexpand();
+
+    magBox->append(*magFrame);
+    magBox->append(magLabel);
 
     auto const verts = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
 
@@ -125,7 +122,7 @@ IconPreviewPanel::IconPreviewPanel()
     int previous = 0;
     int avail = 0;
     for (auto i = sizes.size(); i-- > 0;) {
-        images[i] = Gtk::make_managed<Gtk::Picture>();
+        images[i] = Gtk::make_managed<Gtk::Image>();
         images[i]->set_size_request(sizes[i], sizes[i]);
 
         auto const &label = labels[i];
@@ -133,9 +130,9 @@ IconPreviewPanel::IconPreviewPanel()
         buttons[i] = Gtk::make_managed<Gtk::ToggleButton>();
         buttons[i]->add_css_class("icon-preview");
         buttons[i]->set_has_frame(false);
-        buttons[i]->set_active( i == hot );
+        buttons[i]->set_active(i == hot);
 
-        if ( prefs->getBool("/iconpreview/showFrames", true) ) {
+        if (prefs->getBool("/iconpreview/showFrames", true)) {
             auto const frame = Gtk::make_managed<Gtk::Frame>();
             frame->set_child(*images[i]);
             frame->add_css_class("icon-preview");
@@ -145,23 +142,22 @@ IconPreviewPanel::IconPreviewPanel()
         }
 
         buttons[i]->set_tooltip_text(label);
-        buttons[i]->signal_clicked().connect(
-            sigc::bind(sigc::mem_fun(*this, &IconPreviewPanel::on_button_clicked), i));
+        buttons[i]->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &IconPreviewPanel::on_button_clicked), i));
         buttons[i]->set_halign(Gtk::Align::CENTER);
         buttons[i]->set_valign(Gtk::Align::CENTER);
 
-        if ( !pack || ( (avail == 0) && (previous == 0) ) ) {
-            UI::pack_end(*verts, *(buttons[i]), UI::PackOptions::shrink);
+        if (!pack || (avail == 0 && previous == 0)) {
+            verts->prepend(*buttons[i]);
             previous = sizes[i];
             avail = sizes[i];
         } else {
             static constexpr int pad = 12;
 
-            if ((avail < pad) || ((sizes[i] > avail) && (sizes[i] < previous))) {
+            if (avail < pad || (sizes[i] > avail && sizes[i] < previous)) {
                 horiz = nullptr;
             }
 
-            if ((horiz == nullptr) && (sizes[i] <= previous)) {
+            if (!horiz && sizes[i] <= previous) {
                 avail = previous;
             }
 
@@ -170,40 +166,37 @@ IconPreviewPanel::IconPreviewPanel()
                     horiz = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
                     horiz->set_halign(Gtk::Align::CENTER);
                     avail = previous;
-                    UI::pack_end(*verts, *horiz, UI::PackOptions::shrink);
+                    verts->prepend(*horiz);
                 }
 
-                UI::pack_end(*horiz, *buttons[i], UI::PackOptions::expand_widget);
+                horiz->prepend(*buttons[i]);
 
                 avail -= sizes[i];
                 avail -= pad; // a little extra for padding
             } else {
                 horiz = nullptr;
-                UI::pack_end(*verts, *(buttons[i]), UI::PackOptions::shrink);
+                verts->prepend(*buttons[i]);
             }
         }
     }
 
-    UI::pack_start(iconBox, splitter);
+    append(splitter);
+    splitter.set_valign(Gtk::Align::START);
     splitter.set_start_child(*magBox);
-    splitter.set_resize_start_child();
     splitter.set_shrink_start_child(false);
     auto const actuals = Gtk::make_managed<UI::Widget::Frame>(_("Actual Size:"));
-    actuals->set_margin(4);
     actuals->add(*verts);
     splitter.set_end_child(*actuals);
-    splitter.set_resize_start_child(false);
-    splitter.set_shrink_start_child(false);
+    splitter.set_resize_end_child(false);
+    splitter.set_shrink_end_child(false);
 
     selectionButton = Gtk::make_managed<Gtk::CheckButton>(C_("Icon preview window", "Sele_ction"), true);
-    UI::pack_start(*magBox,  *selectionButton, UI::PackOptions::shrink );
+    magBox->append(*selectionButton);
     selectionButton->set_tooltip_text(_("Selection only or whole document"));
-    selectionButton->signal_toggled().connect( sigc::mem_fun(*this, &IconPreviewPanel::modeToggled) );
+    selectionButton->signal_toggled().connect(sigc::mem_fun(*this, &IconPreviewPanel::modeToggled));
 
-    int const val = prefs->getBool("/iconpreview/selectionOnly");
-    selectionButton->set_active( val != 0 );
-
-    UI::pack_start(*this, iconBox, UI::PackOptions::shrink);
+    bool const val = prefs->getBool("/iconpreview/selectionOnly");
+    selectionButton->set_active(val);
 
     refreshPreview();
 }
@@ -556,7 +549,7 @@ void IconPreviewPanel::renderPreview( SPObject* obj )
 
     for (std::size_t i = 0; i < sizes.size(); ++i) {
         textures[i] = to_texture(sp_icon_doc_icon(doc, *drawing, id, sizes[i]));
-        images[i]->set_paintable(textures[i]);
+        images[i]->set(textures[i]);
     }
     updateMagnify();
 

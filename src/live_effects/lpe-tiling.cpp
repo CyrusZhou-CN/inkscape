@@ -740,7 +740,6 @@ Gtk::Widget * LPETiling::newWidget()
 
             auto const destroy_child = widgcombo->get_first_child();
             widgcombo->remove(*destroy_child);
-            delete destroy_child;
 
             combo = widgcombo;
 
@@ -783,7 +782,6 @@ Gtk::Widget * LPETiling::newWidget()
 
             auto const destroy_child = widgrand->get_first_child();
             widgrand->remove(*destroy_child);
-            delete destroy_child;
 
             auto const first = widgrand->get_first_child();
             first->set_visible(false);

@@ -15,6 +15,7 @@
 #include "svg/svg.h"
 #include <2geom/affine.h>
 
+namespace {
 
 struct test_t
 {
@@ -22,7 +23,7 @@ struct test_t
     Geom::Affine matrix;
 };
 
-static double const DEGREE = M_PI / 180.;
+constexpr double DEGREE = M_PI / 180.0;
 
 test_t const read_matrix_tests[5] = {{"matrix(0,0,0,0,0,0)", Geom::Affine(0, 0, 0, 0, 0, 0)},
                                      {" matrix(1,2,3,4,5,6)", Geom::Affine(1, 2, 3, 4, 5, 6)},
@@ -100,6 +101,8 @@ bool approx_equal_pred(Geom::Affine const &ref, Geom::Affine const &cm)
     }
     return maxabsdiff < 1e-14;
 }
+
+} // namespace
 
 TEST(SvgAffineTest, testReadIdentity)
 {

@@ -13,7 +13,7 @@
     <property name="model">list</property>
     <property name="text-column">1</property>
     <property name="inline-completion">True</property>
-    <property name="popup-set-width">False</property>
+    <property name="popup-set-width">True</property>
     <child>
       <object class="GtkCellRendererPixbuf" id="icon-cell">
         <property name="icon-size">large</property>
@@ -35,11 +35,15 @@
     <property name="name">CompletionPopup</property>
     <property name="valign">center</property>
     <child>
-      <object class="GtkSearchEntry" id="search">
+      <object class="GtkEntry" id="search">
         <property name="focusable">True</property>
         <property name="hexpand">True</property>
         <property name="activates-default">True</property>
         <property name="width-chars">1</property>
+        <property name="primary-icon-name">edit-find-symbolic</property>
+        <property name="primary-icon-activatable">False</property>
+        <property name="primary-icon-sensitive">False</property>
+        <property name="completion">completion</property>
       </object>
     </child>
     <child>

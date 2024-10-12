@@ -112,7 +112,7 @@ Inkscape::XML::Node *ColorProfile::write(Inkscape::XML::Document *xml_doc, Inksc
 
     if ((flags & SP_OBJECT_WRITE_ALL) || _uri) {
         auto fn = document->getDocumentFilename();
-        Inkscape::setHrefAttribute(*repr, fn ? _uri->str(("file://" + std::string(fn)).c_str()) : nullptr);
+        Inkscape::setHrefAttribute(*repr, fn ? _uri->str(("file://" + std::string(fn)).c_str()).c_str() : nullptr);
     }
 
     repr->setAttributeOrRemoveIfEmpty("local", _local);

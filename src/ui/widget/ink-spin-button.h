@@ -54,8 +54,6 @@ private:
     Gtk::Entry _entry;
 
     // ------------- CONTROLLERS -------------
-    // Only Gestures are available in GTK3 (and not GestureClick).
-    // We'll rely on signals for GTK3.
 
     Glib::RefPtr<Gtk::EventControllerMotion> _motion;
     void on_motion_enter(double x, double y);
@@ -102,7 +100,6 @@ private:
     void change_value(double inc, Gdk::ModifierType state);
     void set_value(double new_value);
     std::string format(double value, bool with_prefix_suffix, bool with_markup, bool trim_zeros) const;
-    void unparent_widgets();
     void start_spinning(double steps, Gdk::ModifierType state, Glib::RefPtr<Gtk::GestureClick>& gesture);
     void stop_spinning();
 
@@ -118,7 +115,6 @@ private:
     int _buttons_width = 0;     // width of increment/decrement button
     int _entry_height = 0;      // natural height of Gtk::Entry
     int _baseline = 0;
-    bool _unparented = false;
     auto_connection _spinning;
     Gtk::Widget* _defocus_widget = nullptr;
     bool _dont_evaluate = false; // turn off expression evaluator?
@@ -129,6 +125,6 @@ private:
     int prop_digits = 0;
 };
 
-}
+} // namespace Inkscape::UI::Widget
 
 #endif // INK_SPIN_BUTTON_H

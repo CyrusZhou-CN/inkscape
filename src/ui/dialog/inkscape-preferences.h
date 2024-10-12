@@ -132,7 +132,7 @@ protected:
     Gtk::Widget *_highlighted_widget = nullptr;
     Glib::RefPtr<Gtk::TreeModelFilter> _page_list_model_filter;
     Glib::RefPtr<Gtk::TreeModelSort> _page_list_model_sort;
-    std::vector<Gtk::Widget *> _search_results;
+    std::vector<Gtk::Label *> _search_results;
     Glib::RefPtr<Glib::Regex> _rx;
     int _num_results = 0;
     bool _show_all = false;

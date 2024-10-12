@@ -87,14 +87,10 @@
 #include "colors/cms/profile.h"
 #include "colors/manager.h"
 #include "colors/spaces/base.h"
-#include "display/control/canvas-item-grid.h"
 #include "display/nr-filter-gaussian.h"
-#include "extension/internal/gdkpixbuf-input.h"
 #include "helper/auto-connection.h"
 #include "io/resource.h"
 #include "ui/builder-utils.h"
-#include "ui/controller.h"
-#include "ui/desktop/menubar.h"
 #include "ui/dialog-run.h"
 #include "ui/interface.h"
 #include "ui/modifiers.h"
@@ -434,7 +430,7 @@ void InkscapePreferences::get_widgets_in_grid(Glib::ustring const &key, Gtk::Wid
 
     if (auto const label = dynamic_cast<Gtk::Label *>(widget)) {
         if (fuzzy_search(key, label->get_text())) {
-            _search_results.push_back(widget);
+            _search_results.push_back(label);
         }
     }
 
@@ -479,7 +475,7 @@ void InkscapePreferences::on_search_changed()
     _num_results = 0;
     if (_search_results.size() > 0) {
         for (auto *result : _search_results) {
-            remove_highlight(static_cast<Gtk::Label *>(result));
+            remove_highlight(result);
         }
         _search_results.clear();
     }
@@ -2107,7 +2103,6 @@ void InkscapePreferences::initPageUI()
 
     // default colors in RGBA
     static auto GRID_DEFAULT_MAJOR_COLOR = "#0099e54d";
-    static auto GRID_DEFAULT_MINOR_COLOR = "#0099e526";
     static auto GRID_DEFAULT_BLOCK_COLOR = "#0047cb4d";
 
     // Color pickers

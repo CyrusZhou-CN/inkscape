@@ -7,6 +7,7 @@
 #include "ink-spin-button.h"
 #include <iomanip>
 
+#include "ui/containerize.h"
 #include "ui/util.h"
 #include "util/expression-evaluator.h"
 
@@ -59,6 +60,7 @@ void InkSpinButton::construct() {
     _minus.set_icon_name("go-previous-symbolic");
     _plus.set_icon_name("go-next-symbolic");
 
+    containerize(*this);
     _minus.insert_at_end(*this);
     _value.insert_at_end(*this);
     _entry.insert_at_end(*this);
@@ -164,8 +166,6 @@ void InkSpinButton::construct() {
     show_arrows(false);
     _entry.hide();
 
-    signal_destroy().connect([this](){ unparent_widgets(); });
-
     _connection = _adjustment->signal_value_changed().connect([this](){ update(); });
     update();
 }
@@ -185,20 +185,7 @@ InkSpinButton::InkSpinButton(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Bu
     construct();
 }
 
-void InkSpinButton::unparent_widgets() {
-    if (_unparented) return;
-
-    // unparent components to make gtk finalization happy
-    _minus.unparent();
-    _plus.unparent();
-    _entry.unparent();
-    _value.unparent();
-    _unparented = true;
-}
-
-InkSpinButton::~InkSpinButton() {
-    unparent_widgets();
-}
+InkSpinButton::~InkSpinButton() = default;
 
 Gtk::SizeRequestMode InkSpinButton::get_request_mode_vfunc() const {
     return Gtk::Widget::get_request_mode_vfunc();
@@ -663,4 +650,4 @@ void InkSpinButton::set_drag_sensitivity(double distance) {
     _drag_full_travel = distance;
 }
 
-} // Namespace
+} // namespace Inkscape::UI::Widget

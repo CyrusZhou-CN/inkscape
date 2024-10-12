@@ -384,10 +384,7 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
             x = tex->get_intrinsic_width() / 2;
             y = tex->get_intrinsic_height() / 2;
         }
-        //TODO: use x AND y; right now setting Y cancels d&d, b/c icon gets in the way of d&d, so target cannot be found!
-        source.set_icon(tex, x, 0);
-
-        // drag->set_hotspot(x, y); what's that do?
+        source.set_icon(tex, x, y);
     };
     source->signal_prepare().connect(std::move(drag_prepare), false); // before
     source->signal_drag_begin().connect(std::move(drag_begin));

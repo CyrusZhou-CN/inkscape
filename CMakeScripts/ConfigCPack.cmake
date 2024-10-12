@@ -119,7 +119,7 @@ set(CPACK_DEBIAN_INKSCAPE_PACKAGE_RECOMMENDS "aspell, imagemagick, libwmf-bin, i
 set(CPACK_DEB_COMPONENT_INSTALL ON)
 set(CPACK_COMPONENTS_GROUPING IGNORE)
 
-set(CPACK_DEBIAN_INKSCAPE-EXTENSIONS_PACKAGE_DEPENDS "python3-numpy, python3-lxml, python3-scour, python3-packaging, python3-cssselect, python3-bs4, python3-requests")
+set(CPACK_DEBIAN_INKSCAPE-EXTENSIONS_PACKAGE_DEPENDS "python3-numpy, python3-lxml, python3-scour, python3-packaging, python3-cssselect, python3-webencodings, python3-tinycss2, python3-bs4, python3-requests")
 set(CPACK_DEBIAN_INKSCAPE-EXTENSIONS_PACKAGE_RECOMMENDS "inkscape-extension-manager")
 set(CPACK_DEBIAN_INKSCAPE-EXTENSION-MANAGER_PACKAGE_DEPENDS "inkscape-extensions, python3-filecache")
 set(CPACK_DEBIAN_LIB2GEOM-DEV_PACKAGE_RECOMMENDS "lib2geom${2GEOM_VERSION}")

@@ -39,7 +39,7 @@ class Texture;
 
 namespace Gtk {
 class CheckButton;
-class Picture;
+class Image;
 class ToggleButton;
 } // namespace Gtk
 
@@ -93,7 +93,6 @@ private:
     bool pending;
     gdouble minDelay;
 
-    Gtk::Box        iconBox;
     Gtk::Paned      splitter;
     Glib::ustring targetId;
     int hot;
@@ -105,7 +104,7 @@ private:
     Gtk::CheckButton     *selectionButton;
 
     std::vector<Glib::RefPtr<Gdk::Texture>> textures;
-    std::vector<Gtk::Picture *> images;
+    std::vector<Gtk::Image *> images;
     std::vector<Glib::ustring> labels;
     std::vector<Gtk::ToggleButton *> buttons;
     auto_connection docModConn;

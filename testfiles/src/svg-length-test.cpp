@@ -12,7 +12,8 @@
 
 #include <glib.h>
 #include <gtest/gtest.h>
-#include <utility>
+
+namespace {
 
 struct test_t
 {
@@ -34,12 +35,17 @@ test_t absolute_tests[12] = {
     {"3pc",          SVGLength::PC  ,   3        ,  48},
     {"-3.5pc",       SVGLength::PC  ,  -3.5      ,  -3.5*16.0},
     {"1.2345678mm",  SVGLength::MM  ,   1.2345678,   1.2345678f*96.0/25.4}, // TODO: More precise constants? (a 7 digit constant when the default precision is 8 digits?)
-    {"123.45678cm", SVGLength::CM   , 123.45678  , 123.45678f*96.0/2.54},   // Note that svg_length_read is casting the result from g_ascii_strtod to float.
-    {"73.162987in",  SVGLength::INCH,  73.162987 ,  73.162987f*96.0/1.00}};
+    {"123.45678cm",  SVGLength::CM  , 123.45678  , 123.45678f*96.0/2.54},   // Note that svg_length_read is casting the result from g_ascii_strtod to float.
+    {"73.162987in",  SVGLength::INCH,  73.162987 ,  73.162987f*96.0/1.00}
+};
+
 test_t relative_tests[3] = {
     {"123em", SVGLength::EM,      123, 123. *  7.},
     {"123ex", SVGLength::EX,      123, 123. * 13.},
-    {"123%",  SVGLength::PERCENT, 1.23, 1.23 * 19.}};
+    {"123%",  SVGLength::PERCENT, 1.23, 1.23 * 19.}
+    // clang-format on
+};
+
 const char* fail_tests[8] = {
     "123 px",
     "123e",
@@ -48,8 +54,24 @@ const char* fail_tests[8] = {
     "123pxt",
     "--123",
     "",
-    "px"};
-// clang-format on
+    "px"
+};
+
+struct eq_test_t
+{
+    char const *a;
+    char const *b;
+    bool equal;
+};
+
+eq_test_t eq_tests[4] = {
+    {"", "", true},
+    {"1", "1", true},
+    {"10mm", "10mm", true},
+    {"20mm", "10mm", false},
+};
+
+} // namespace
 
 TEST(SvgLengthTest, testRead)
 {
@@ -129,19 +151,6 @@ TEST(SvgLengthTest, testToFromString)
     ASSERT_EQ(len.toString("in", 3.7795277), "0.3937008in");
     ASSERT_EQ(len.toString("", 3.7795277), "37.795277");
 }
-
-struct eq_test_t
-{
-    char const *a;
-    char const *b;
-    bool equal;
-};
-eq_test_t eq_tests[4] = {
-    {"", "", true},
-    {"1", "1", true},
-    {"10mm", "10mm", true},
-    {"20mm", "10mm", false},
-};
 
 TEST(SvgLengthTest, testEquality)
 {

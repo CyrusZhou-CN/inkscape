@@ -15,22 +15,22 @@ namespace Gtk {
 class EntryCompletion;
 class ListStore;
 class MenuButton;
-class SearchEntry2;
+class Entry;
 } // namespace Gtk
 
 namespace Inkscape::UI::Widget {
 
-class CompletionPopup final : public Gtk::Box {
+class CompletionPopup : public Gtk::Box
+{
 public:
     CompletionPopup();
-    ~CompletionPopup() final;
+    ~CompletionPopup() override;
 
     PopoverMenu& get_menu();
-    Gtk::SearchEntry2& get_entry();
-    Glib::RefPtr<Gtk::ListStore> get_list();
+    Gtk::Entry& get_entry();
 
     void clear_completion_list();
-    void add_to_completion_list(int id, Glib::ustring name, Glib::ustring icon_name, Glib::ustring search_text = Glib::ustring());
+    void add_to_completion_list(int id, Glib::ustring name, Glib::ustring icon_name, Glib::ustring search_text = {});
 
     sigc::signal<void (int)>& on_match_selected();
     sigc::signal<void ()>& on_button_press();
@@ -40,7 +40,7 @@ private:
     bool onPopoverKeyPressed(unsigned keyval, unsigned keycode, Gdk::ModifierType state);
     Glib::RefPtr<Gtk::Builder> _builder;
     Glib::RefPtr<Gtk::ListStore> _list;
-    Gtk::SearchEntry2& _search;
+    Gtk::Entry& _search;
     Gtk::MenuButton& _button;
     PopoverMenu _popover_menu;
     Glib::RefPtr<Gtk::EntryCompletion> _completion;
