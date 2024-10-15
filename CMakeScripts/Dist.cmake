@@ -70,7 +70,7 @@ if(WIN32)
     add_dependencies(dist-win-exe install/strip) # TODO: we'd only need to depend on the "all" target
 
     # -----------------------------------------------------------------------------
-    # 'dist-win-msi' - generate .exe installer (NSIS) for Windows
+    # 'dist-win-msi' - generate .msi installer (WiX) for Windows
     # -----------------------------------------------------------------------------
     add_custom_target(dist-win-msi COMMAND ${CMAKE_CPACK_COMMAND} -G WIX)
     add_dependencies(dist-win-msi install/strip) # TODO: we'd only need to depend on the "all" target

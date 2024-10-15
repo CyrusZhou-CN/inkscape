@@ -70,9 +70,20 @@ set(CPACK_NSIS_MODIFY_PATH "ON") # while the name does not suggest it, this also
 set(CPACK_NSIS_MUI_FINISHPAGE_RUN "inkscape") # TODO: this results in instance with administrative privileges!
 set(CPACK_NSIS_MANIFEST_DPI_AWARE ON) # Make the text not blurry in installer
 
+# Additional commands placed very early in the NSIS file.
+# ( Unfortunately the CPack NSIS template contains not enough usable variables to place these commands.
+# As a workaround, we put them into CPACK_NSIS_COMPRESSOR.
+# https://github.com/Kitware/CMake/blob/8fe9454bcca64a327fb3e0ccf5aff7477eb036cc/Modules/Internal/CPack/NSIS.template.in )
 set(CPACK_NSIS_COMPRESSOR "${CPACK_NSIS_COMPRESSOR}\n  SetCompressorDictSize 64") # hack (improve compression)
-set(CPACK_NSIS_COMPRESSOR "${CPACK_NSIS_COMPRESSOR}\n  BrandingText '${CPACK_PACKAGE_DESCRIPTION_SUMMARY}'") # hack (overwrite BrandingText)
-set(CPACK_NSIS_COMPRESSOR "${CPACK_NSIS_COMPRESSOR}\n  !define MUI_COMPONENTSPAGE_SMALLDESC") # hack (better components page layout)
+# overwrite BrandingText
+set(CPACK_NSIS_COMPRESSOR "${CPACK_NSIS_COMPRESSOR}\n  BrandingText '${CPACK_PACKAGE_DESCRIPTION_SUMMARY}'")
+# better components page layout
+set(CPACK_NSIS_COMPRESSOR "${CPACK_NSIS_COMPRESSOR}\n  !define MUI_COMPONENTSPAGE_SMALLDESC")
+# remove previous version(s) before installation starts
+# (could be placed later in the NSIS file but there is no appropriate variable)
+file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/packaging/nsis/uninstall-old-versions.nsh" native_path)
+string(REPLACE "\\" "\\\\" native_path "${native_path}")
+set(CPACK_NSIS_COMPRESSOR "${CPACK_NSIS_COMPRESSOR}\n  !include '${native_path}'")
 
 file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/packaging/nsis/fileassoc.nsh" native_path)
 string(REPLACE "\\" "\\\\" native_path "${native_path}")
