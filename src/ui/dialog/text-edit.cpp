@@ -191,8 +191,8 @@ TextEdit::TextEdit()
 
     fontFeaturesChangedConn = font_features.connectChanged(sigc::mem_fun(*this, &TextEdit::onChange));
     notebook->signal_switch_page().connect(sigc::mem_fun(*this, &TextEdit::on_page_changed));
-    _font_changed = font_list->signal_changed().connect([=](){ apply_changes(true); });
-    _apply_font = font_list->signal_apply().connect([=](){ onChange(); onSetDefault(); });
+    _font_changed = font_list->signal_changed().connect([this](){ apply_changes(true); });
+    _apply_font = font_list->signal_apply().connect([this](){ onChange(); onSetDefault(); });
 
     on_page_changed(nullptr, 0);
 }

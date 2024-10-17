@@ -72,13 +72,13 @@ FillNStroke::FillNStroke(FillOrStroke k)
     _psel->signal_mode_changed().connect(sigc::mem_fun(*this, &FillNStroke::paintModeChangeCB));
     _psel->signal_dragged().connect(sigc::mem_fun(*this, &FillNStroke::dragFromPaint));
     _psel->signal_changed().connect(sigc::mem_fun(*this, &FillNStroke::paintChangedCB));
-    _psel->signal_stop_selected().connect([=](SPStop *stop) {
+    _psel->signal_stop_selected().connect([this](SPStop *stop) {
        if (_desktop) {
             auto guard = _blocker.block();
             _desktop->emit_gradient_stop_selected(stop);
        }
     });
-    _psel->signal_edit_pattern().connect([=](){
+    _psel->signal_edit_pattern().connect([this](){
         if (_desktop) set_active_tool(_desktop, "Node");
     });
 

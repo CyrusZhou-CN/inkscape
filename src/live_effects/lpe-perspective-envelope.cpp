@@ -302,13 +302,17 @@ LPEPerspectiveEnvelope::newWidget()
             } else {
                 UI::pack_start(*hbox_down_handles, *widg, true, true, 2);
             }
+        }
+        else
+        {
+            UI::pack_start(*vbox, *widg, true, true, 2);
+        }
 
-            if (auto const tip = param->param_getTooltip()) {
-                widg->set_tooltip_markup(*tip);
-            } else {
-                widg->set_tooltip_text({});
-                widg->set_has_tooltip(false);
-            }
+        if (auto const tip = param->param_getTooltip()) {
+            widg->set_tooltip_markup(*tip);
+        } else {
+            widg->set_tooltip_text({});
+            widg->set_has_tooltip(false);
         }
     }
 

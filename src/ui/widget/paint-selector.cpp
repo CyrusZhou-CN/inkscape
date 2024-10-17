@@ -563,7 +563,7 @@ void PaintSelector::set_mode_gradient(PaintSelector::Mode mode)
                 _selector_gradient->signal_dragged().connect(sigc::mem_fun(*this, &PaintSelector::gradient_dragged));
                 _selector_gradient->signal_released().connect(sigc::mem_fun(*this, &PaintSelector::gradient_released));
                 _selector_gradient->signal_changed().connect(sigc::mem_fun(*this, &PaintSelector::gradient_changed));
-                _selector_gradient->signal_stop_selected().connect([=](SPStop* stop) { _signal_stop_selected.emit(stop); });
+                _selector_gradient->signal_stop_selected().connect([this](SPStop* stop) { _signal_stop_selected.emit(stop); });
                 /* Pack everything to frame */
                 _frame->append(*_selector_gradient);
             }
@@ -948,9 +948,9 @@ void PaintSelector::set_mode_pattern(PaintSelector::Mode mode)
 
         if (!_selector_pattern) {
             _selector_pattern = Gtk::make_managed<PatternEditor>("/pattern-edit", PatternManager::get());
-            _selector_pattern->signal_changed().connect([=](){ _signal_changed.emit(); });
-            _selector_pattern->signal_color_changed().connect([=](Colors::Color const &){ _signal_changed.emit(); });
-            _selector_pattern->signal_edit().connect([=](){ _signal_edit_pattern.emit(); });
+            _selector_pattern->signal_changed().connect([this](){ _signal_changed.emit(); });
+            _selector_pattern->signal_color_changed().connect([this](Colors::Color const &){ _signal_changed.emit(); });
+            _selector_pattern->signal_edit().connect([this](){ _signal_edit_pattern.emit(); });
             _frame->append(*_selector_pattern);
         }
 

@@ -345,7 +345,7 @@ void LivePathEffectEditor::add_lpes(Inkscape::UI::Widget::CompletionPopup &popup
         int const id = static_cast<int>(type);
         auto const menuitem = builder.add_item(lpe.label, lpe.category, lpe.tooltip, lpe.icon_name,
                                                lpe.sensitive, true, [=, this]{ onAdd(type); });
-        menuitem->signal_query_tooltip().connect([=](int x, int y, bool kbd, const Glib::RefPtr<Gtk::Tooltip>& tooltipw){
+        menuitem->signal_query_tooltip().connect([lpe, id, this](int x, int y, bool kbd, const Glib::RefPtr<Gtk::Tooltip>& tooltipw){
             return sp_query_custom_tooltip(this, x, y, kbd, tooltipw, id, lpe.tooltip, lpe.icon_name);
         }, false); // before
         if (builder.new_section()) {
@@ -788,7 +788,7 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
 
         LPEDrag->set_name(Glib::ustring::compose("drag_%1", counter));
 
-        LPEExpanderBox->signal_query_tooltip().connect([=](int x, int y, bool kbd, const Glib::RefPtr<Gtk::Tooltip>& tooltipw){
+        LPEExpanderBox->signal_query_tooltip().connect([=, this](int x, int y, bool kbd, const Glib::RefPtr<Gtk::Tooltip>& tooltipw){
             return sp_query_custom_tooltip(this, x, y, kbd, tooltipw, id, tooltip, icon);
         }, false); // before
 

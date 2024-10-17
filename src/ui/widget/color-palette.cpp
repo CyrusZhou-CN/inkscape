@@ -85,28 +85,28 @@ ColorPalette::ColorPalette():
     });
 
     auto& size = get_widget<Gtk::Scale>(_builder, "size-slider");
-    size.signal_change_value().connect([=,&size](Gtk::ScrollType, double val) {
+    size.signal_change_value().connect([&size, this](Gtk::ScrollType, double val) {
         _set_tile_size(static_cast<int>(size.get_value()));
         _signal_settings_changed.emit();
         return true;
     }, true);
 
     auto& aspect = get_widget<Gtk::Scale>(_builder, "aspect-slider");
-    aspect.signal_change_value().connect([=,&aspect](Gtk::ScrollType, double val) {
+    aspect.signal_change_value().connect([&aspect, this](Gtk::ScrollType, double val) {
         _set_aspect(aspect.get_value());
         _signal_settings_changed.emit();
         return true;
     }, true);
 
     auto& border = get_widget<Gtk::Scale>(_builder, "border-slider");
-    border.signal_change_value().connect([=,&border](Gtk::ScrollType, double val) {
+    border.signal_change_value().connect([&border, this](Gtk::ScrollType, double val) {
         _set_tile_border(static_cast<int>(border.get_value()));
         _signal_settings_changed.emit();
         return true;
     }, true);
 
     auto& rows = get_widget<Gtk::Scale>(_builder, "row-slider");
-    rows.signal_change_value().connect([=,&rows](Gtk::ScrollType, double val) {
+    rows.signal_change_value().connect([&rows, this](Gtk::ScrollType, double val) {
         _set_rows(static_cast<int>(rows.get_value()));
         _signal_settings_changed.emit();
         return true;
@@ -114,14 +114,14 @@ ColorPalette::ColorPalette():
 
     auto& sb = get_widget<Gtk::CheckButton>(_builder, "use-sb");
     sb.set_active(_force_scrollbar);
-    sb.signal_toggled().connect([=,&sb](){
+    sb.signal_toggled().connect([&sb, this](){
         _enable_scrollbar(sb.get_active());
         _signal_settings_changed.emit();
     });
 
     auto& stretch = get_widget<Gtk::CheckButton>(_builder, "stretch");
     stretch.set_active(_force_scrollbar);
-    stretch.signal_toggled().connect([=,&stretch](){
+    stretch.signal_toggled().connect([&stretch, this](){
         _enable_stretch(stretch.get_active());
         _signal_settings_changed.emit();
     });
@@ -129,7 +129,7 @@ ColorPalette::ColorPalette():
 
     auto& large = get_widget<Gtk::CheckButton>(_builder, "enlarge");
     large.set_active(_large_pinned_panel);
-    large.signal_toggled().connect([=,&large](){
+    large.signal_toggled().connect([&large, this](){
         _set_large_pinned_panel(large.get_active());
         _signal_settings_changed.emit();
     });
@@ -138,7 +138,7 @@ ColorPalette::ColorPalette():
     auto& sl = get_widget<Gtk::CheckButton>(_builder, "show-labels");
     sl.set_visible(false);
     sl.set_active(_show_labels);
-    sl.signal_toggled().connect([=,&sl](){
+    sl.signal_toggled().connect([&sl, this](){
         _show_labels = sl.get_active();
         _signal_settings_changed.emit();
         rebuild_widgets();
@@ -146,10 +146,10 @@ ColorPalette::ColorPalette():
 
     _scroll.set_min_content_height(1);
 
-    _scroll_down.signal_clicked().connect([=](){ scroll(0, get_palette_height(), get_tile_height() + _border, true); });
-    _scroll_up.signal_clicked().connect([=](){ scroll(0, -get_palette_height(), get_tile_height() + _border, true); });
-    _scroll_left.signal_clicked().connect([=](){ scroll(-10 * (get_tile_width() + _border), 0, 0.0, false); });
-    _scroll_right.signal_clicked().connect([=](){ scroll(10 * (get_tile_width() + _border), 0, 0.0, false); });
+    _scroll_down.signal_clicked().connect([this](){ scroll(0, get_palette_height(), get_tile_height() + _border, true); });
+    _scroll_up.signal_clicked().connect([this](){ scroll(0, -get_palette_height(), get_tile_height() + _border, true); });
+    _scroll_left.signal_clicked().connect([this](){ scroll(-10 * (get_tile_width() + _border), 0, 0.0, false); });
+    _scroll_right.signal_clicked().connect([this](){ scroll(10 * (get_tile_width() + _border), 0, 0.0, false); });
 
     set_vexpand_set(true);
     set_up_scrolling();
@@ -725,7 +725,7 @@ void ColorPalette::set_palettes(std::vector<palette_t> const &palettes)
         auto& name = it->name;
         auto& id = it->id;
         auto item = std::make_unique<ColorPaletteMenuItem>(group, name, id, it->colors);
-        item->signal_activate().connect([=](){
+        item->signal_activate().connect([id, this](){
             if (!_in_update) {
                 _in_update = true;
                 _signal_palette_selected.emit(id);

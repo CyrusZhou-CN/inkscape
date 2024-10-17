@@ -8,6 +8,22 @@
 
 namespace Inkscape {
 
+class scoped_block {
+public:
+    scoped_block(sigc::connection& connection)
+        : _c(connection)
+    {
+        _c.block();
+    }
+
+    ~scoped_block() {
+        _c.unblock();
+    }
+
+private:
+    sigc::connection& _c;
+};
+
 // Class to simplify re-subscribing to connections; automates disconnecting
 // TODO: GTK4: Migrate to sigc++ 3.6ʼs scoped_connection, which I wrote! —dboles
 
@@ -80,20 +96,6 @@ public:
         _connection = sigc::connection{};
         return con;
     }
-
-    class scoped_block {
-    public:
-        scoped_block(sigc::connection& connection): _c(connection) {
-            _c.block();
-        }
-
-        ~scoped_block() {
-            _c.unblock();
-        }
-
-    private:
-        sigc::connection& _c;
-    };
 
     scoped_block block_here() {
         return scoped_block{_connection};

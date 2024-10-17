@@ -61,7 +61,7 @@ ArrangeDialog::ArrangeDialog()
     // TRANSLATORS: "Circular" refers to circular/radial arrangement
     _notebook->append_page(*_polarArrangeTab, create_tab_label(C_("Arrange dialog", "Circular"), INKSCAPE_ICON("arrange-circular")));
     UI::pack_start(*_arrangeBox, *_notebook);
-    _notebook->signal_switch_page().connect([=](Widget*, guint page){
+    _notebook->signal_switch_page().connect([this](Widget*, guint page){
         update_arrange_btn();
     });
     UI::pack_start(*this, *_arrangeBox);

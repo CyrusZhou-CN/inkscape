@@ -53,8 +53,8 @@ public:
     void updateSelection();
 
     // Callbacks from spinbuttons
-    void on_row_spinbutton_changed();
     void on_col_spinbutton_changed();
+    void on_row_spinbutton_changed();
     void on_xpad_spinbutton_changed();
     void on_ypad_spinbutton_changed();
     void on_RowSize_checkbutton_changed();
@@ -124,6 +124,8 @@ private:
     Inkscape::UI::Widget::SpinButton ColumnWidthSpinner;
 
     sigc::connection _selection_changed_connection;
+    sigc::connection _rows_changed_connection;
+    sigc::connection _cols_changed_connection;
 
   public:
     void setDesktop(SPDesktop *);

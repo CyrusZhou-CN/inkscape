@@ -334,7 +334,7 @@ ExtensionsGallery::ExtensionsGallery(ExtensionsGallery::Type type) :
         paned->get_start_child()->set_visible(show);
     };
     paned->set_position(position);
-    paned->property_position().signal_changed().connect([=](){
+    paned->property_position().signal_changed().connect([paned, prefs, this](){
         if (auto const w = paned->get_start_child()) {
             if (w->is_visible()) prefs->setInt(_prefs_path + "/position", paned->get_position());
         }
@@ -346,7 +346,7 @@ ExtensionsGallery::ExtensionsGallery(ExtensionsGallery::Type type) :
         _("Toggle list of effect categories") :
         _("Toggle list of filter categories"));
     toggle->set_active(show_list);
-    toggle->signal_toggled().connect([=](){
+    toggle->signal_toggled().connect([=, this](){
         auto visible = toggle->get_active();
         show_categories_list(visible);
         if (!visible) show_category("all"); // don't leave hidden category selection filter active
@@ -375,7 +375,7 @@ ExtensionsGallery::ExtensionsGallery(ExtensionsGallery::Type type) :
     _selector.set_model(_categories);
 
     _page_selection = _selector.get_selection();
-    _selection_change = _page_selection->signal_changed().connect([=](){
+    _selection_change = _page_selection->signal_changed().connect([this](){
         if (auto it = _page_selection->get_selected()) {
             Glib::ustring id;
             it->get_value(g_categories_columns.id.index(), id);
@@ -385,7 +385,7 @@ ExtensionsGallery::ExtensionsGallery(ExtensionsGallery::Type type) :
 
     _selection_model = Gtk::SingleSelection::create(_filtered_model);
 
-    _factory = IconViewItemFactory::create([=](auto& ptr) -> IconViewItemFactory::ItemData {
+    _factory = IconViewItemFactory::create([this](auto& ptr) -> IconViewItemFactory::ItemData {
         auto effect = std::dynamic_pointer_cast<EffectItem>(ptr);
         if (!effect) return {};
 
@@ -407,7 +407,7 @@ ExtensionsGallery::ExtensionsGallery(ExtensionsGallery::Type type) :
     });
     _gridview.set_single_click_activate(false);
 
-    _search.signal_search_changed().connect([=](){
+    _search.signal_search_changed().connect([this](){
         refilter();
     });
 
@@ -416,7 +416,7 @@ ExtensionsGallery::ExtensionsGallery(ExtensionsGallery::Type type) :
     });
 
     // restore last selected category
-    _categories->foreach([=](const auto& path, const auto&it) {
+    _categories->foreach([this](const auto& path, const auto&it) {
         Glib::ustring id;
         it->get_value(g_categories_columns.id.index(), id);
 
@@ -459,7 +459,7 @@ ExtensionsGallery::ExtensionsGallery(ExtensionsGallery::Type type) :
 
     update_name();
 
-    scale->signal_value_changed().connect([=](){
+    scale->signal_value_changed().connect([scale, prefs, this](){
         _thumb_size_index = scale->get_value();
         rebuild();
         prefs->setInt(_prefs_path + "/tile-size", _thumb_size_index);

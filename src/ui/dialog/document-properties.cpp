@@ -1796,7 +1796,7 @@ GridWidget::GridWidget(SPGrid *grid)
         }
     });
     angle_popover->set_child(*subgrid);
-    angle_popover->signal_show().connect([=](){
+    angle_popover->signal_show().connect([this](){
         if (!_grid) return;
 
         auto ax = _grid->getAngleX();

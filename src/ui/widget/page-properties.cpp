@@ -164,7 +164,7 @@ public:
       // clang-format-on
     {
         for (auto element : {Color::Background, Color::Border, Color::Desk}) {
-            get_color_picker(element).connectChanged([=](Colors::Color const &color) {
+            get_color_picker(element).connectChanged([element, this](Colors::Color const &color) {
                 update_preview_color(element, color);
                 if (_update.pending()) return;
                 _signal_color_changed.emit(color, element);
@@ -172,12 +172,12 @@ public:
         }
 
         _display_units.setUnitType(UNIT_TYPE_LINEAR, false);
-        _display_units.signal_changed().connect([=](){ set_display_unit(); });
+        _display_units.signal_changed().connect([this](){ set_display_unit(); });
 
         // Page units can ONLY be in SVGLength units, any customisations must be ignored.
         _page_units.setUnitType(UNIT_TYPE_LINEAR, true);
         _current_page_unit = _page_units.getUnit();
-        _page_units.signal_changed().connect([=](){ set_page_unit(); });
+        _page_units.signal_changed().connect([this](){ set_page_unit(); });
 
         create_template_menu();
 
@@ -186,25 +186,25 @@ public:
 
         for (auto check : {Check::Border, Check::Shadow, Check::Checkerboard, Check::BorderOnTop, Check::AntiAlias, Check::ClipToPage, Check::PageLabelStyle}) {
             auto checkbutton = &get_checkbutton(check);
-            checkbutton->signal_toggled().connect([=](){ fire_checkbox_toggled(*checkbutton, check); });
+            checkbutton->signal_toggled().connect([=, this](){ fire_checkbox_toggled(*checkbutton, check); });
         }
-        _border.signal_toggled().connect([=](){
+        _border.signal_toggled().connect([this](){
             _preview->draw_border(_border.get_active());
         });
-        _shadow.signal_toggled().connect([=](){
+        _shadow.signal_toggled().connect([this](){
             _preview->enable_drop_shadow(_shadow.get_active());
         });
-        _checkerboard.signal_toggled().connect([=](){
+        _checkerboard.signal_toggled().connect([this](){
             _preview->enable_checkerboard(_checkerboard.get_active());
         });
 
-        _viewbox_expander.property_expanded().signal_changed().connect([=](){
+        _viewbox_expander.property_expanded().signal_changed().connect([this](){
             // hide/show viewbox controls
             show_viewbox(_viewbox_expander.get_expanded());
         });
         show_viewbox(_viewbox_expander.get_expanded());
 
-        _link_width_height.signal_clicked().connect([=](){
+        _link_width_height.signal_clicked().connect([this](){
             // toggle size link
             _locked_size_ratio = !_locked_size_ratio;
             // set image
@@ -212,7 +212,7 @@ public:
         });
         _link_width_height.set_image_from_icon_name(g_unlinked, Gtk::IconSize::NORMAL);
 
-        _link_scale_content.signal_clicked().connect([=](){
+        _link_scale_content.signal_clicked().connect([this](){
             _locked_content_scale = !_locked_content_scale;
             _link_scale_content.set_image_from_icon_name(_locked_content_scale ? s_linked : s_unlinked, Gtk::IconSize::NORMAL);
         });
@@ -222,14 +222,14 @@ public:
         _linked_viewbox_scale.set_from_icon_name(s_linked);
 
         // report page size changes
-        _page_width .signal_value_changed().connect([=](){ set_page_size_linked(true); });
-        _page_height.signal_value_changed().connect([=](){ set_page_size_linked(false); });
+        _page_width .signal_value_changed().connect([this](){ set_page_size_linked(true); });
+        _page_height.signal_value_changed().connect([this](){ set_page_size_linked(false); });
         // enforce uniform scale thru viewbox
-        _viewbox_width. signal_value_changed().connect([=](){ set_viewbox_size_linked(true); });
-        _viewbox_height.signal_value_changed().connect([=](){ set_viewbox_size_linked(false); });
+        _viewbox_width. signal_value_changed().connect([this](){ set_viewbox_size_linked(true); });
+        _viewbox_height.signal_value_changed().connect([this](){ set_viewbox_size_linked(false); });
 
-        _landscape.signal_toggled().connect([=](){ if (_landscape.get_active()) swap_width_height(); });
-        _portrait .signal_toggled().connect([=](){ if (_portrait .get_active()) swap_width_height(); });
+        _landscape.signal_toggled().connect([this](){ if (_landscape.get_active()) swap_width_height(); });
+        _portrait .signal_toggled().connect([this](){ if (_portrait .get_active()) swap_width_height(); });
 
         for (auto dim : {Dimension::Scale, Dimension::ViewboxPosition}) {
             auto pair = get_dimension(dim);
@@ -237,19 +237,19 @@ public:
             auto b2 = &pair.second;
             if (dim == Dimension::Scale) {
                 // uniform scale: report the same x and y
-                b1->signal_value_changed().connect([=](){
+                b1->signal_value_changed().connect([=, this](){
                     // Report the dimention differently if locked
                     fire_value_changed(*b1, *b1, nullptr, _locked_content_scale ? Dimension::ScaleContent : Dimension::Scale);
                 });
             }
             else {
-                b1->signal_value_changed().connect([=](){ fire_value_changed(*b1, *b2, nullptr, dim); });
-                b2->signal_value_changed().connect([=](){ fire_value_changed(*b1, *b2, nullptr, dim); });
+                b1->signal_value_changed().connect([=, this](){ fire_value_changed(*b1, *b2, nullptr, dim); });
+                b2->signal_value_changed().connect([=, this](){ fire_value_changed(*b1, *b2, nullptr, dim); });
             }
         }
 
         auto& page_resize = get_widget<Gtk::Button>(_builder, "page-resize");
-        page_resize.signal_clicked().connect([=](){ _signal_resize_to_fit.emit(); });
+        page_resize.signal_clicked().connect([this](){ _signal_resize_to_fit.emit(); });
 
         append(_main_grid);
         set_visible(true);

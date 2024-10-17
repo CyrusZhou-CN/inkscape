@@ -45,8 +45,8 @@ InteractiveBooleansTool::InteractiveBooleansTool(SPDesktop *desktop)
         desktop->clearWaitingCursor();
 
         // Any changes to the selection cancel the shape building process
-        _sel_modified = selection->connectModified([=](Selection *sel, int) { shape_cancel(); });
-        _sel_changed = selection->connectChanged([=](Selection *sel) { shape_cancel(); });
+        _sel_modified = selection->connectModified([this](Selection *sel, int) { shape_cancel(); });
+        _sel_changed = selection->connectChanged([this](Selection *sel) { shape_cancel(); });
     }
     _desktop->doc()->get_event_log()->updateUndoVerbs();
 

@@ -19,7 +19,7 @@ namespace Inkscape::UI::Tools {
 static const auto fontsize = 12;
 
 ObjectPickerTool::ObjectPickerTool(SPDesktop* desktop): ToolBase(desktop, "/tools/picker", "object-pick.svg", false) {
-    _zoom = desktop->signal_zoom_changed.connect([=](double){
+    _zoom = desktop->signal_zoom_changed.connect([this](double){
         // erase text; it doesn't scale well
         show_text(Geom::Point(), nullptr);
     });

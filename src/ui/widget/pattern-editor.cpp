@@ -106,13 +106,13 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
     _color_picker(get_derived_widget<ColorPicker>(_builder, "color-btn", _("Pattern color"), false)),
     _prefs(prefs)
 {
-    _color_picker.connectChanged([=](Colors::Color const &color){
+    _color_picker.connectChanged([this](Colors::Color const &color){
         if (_update.pending()) return;
         _signal_color_changed.emit(color);
     });
 
     // there's enough space for one set of controls only:
-    auto set_gap_control = [=](){
+    auto set_gap_control = [this](){
         if (_precise_gap_control) {
             _gap_x_slider.set_visible(false);
             _gap_y_slider.set_visible(false);
@@ -129,7 +129,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
 
     _tile_size = Inkscape::Preferences::get()->getIntLimited(_prefs + "/tileSize", ITEM_WIDTH, 30, 1000);
     _tile_slider.set_value(tile_to_slider(_tile_size));
-    _tile_slider.signal_change_value().connect([=](Gtk::ScrollType st, double value){
+    _tile_slider.signal_change_value().connect([this](Gtk::ScrollType st, double value){
         if (_update.pending()) return true;
         auto scoped(_update.block());
         auto size = slider_to_tile(value);
@@ -158,7 +158,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
 
     auto show_labels = Inkscape::Preferences::get()->getBool(_prefs + "/showLabels", false);
     _show_names.set_active(show_labels);
-    _show_names.signal_toggled().connect([=](){
+    _show_names.signal_toggled().connect([this](){
         // toggle pattern labels
         _stock_pattern_store.store.refresh();
         _doc_pattern_store.store.refresh();
@@ -170,7 +170,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
     _orient_slider.set_increments(1, 1);
     _orient_slider.set_digits(0);
     _orient_slider.set_value(0);
-    _orient_slider.signal_change_value().connect([=](Gtk::ScrollType st, double value){
+    _orient_slider.signal_change_value().connect([=, this](Gtk::ScrollType st, double value){
         if (_update.pending()) return false;
         auto scoped(_update.block());
         // slider works with 15deg discrete steps
@@ -180,7 +180,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
     }, true);
 
     for (auto spin : {&_gap_x_spin, &_gap_y_spin}) {
-        spin->signal_value_changed().connect([=](){
+        spin->signal_value_changed().connect([spin, this](){
             if (_update.pending() || !spin->is_sensitive()) return;
             _signal_changed.emit();
         });
@@ -194,7 +194,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
             auto upper = slider->get_adjustment()->get_upper();
             return Inkscape::ustring::format_classic(std::fixed, std::setprecision(0), slider_to_gap(val, upper)) + "%";
         });
-        slider->signal_change_value().connect([=](Gtk::ScrollType st, double value){
+        slider->signal_change_value().connect([this](Gtk::ScrollType st, double value){
             if (_update.pending()) return false;
             _signal_changed.emit();
             return true;
@@ -203,7 +203,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
 
     set_gap_control();
 
-    _angle_btn.signal_value_changed().connect([=]() {
+    _angle_btn.signal_value_changed().connect([this]() {
         if (_update.pending() || !_angle_btn.is_sensitive()) return;
         auto scoped(_update.block());
         auto angle = _angle_btn.get_value();
@@ -211,7 +211,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
         _signal_changed.emit();
     });
 
-    _link_scale.signal_clicked().connect([=](){
+    _link_scale.signal_clicked().connect([this](){
         if (_update.pending()) return;
         auto scoped(_update.block());
         _scale_linked = !_scale_linked;
@@ -224,7 +224,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
     });
 
     for (auto el : {&_scale_x, &_scale_y, &_offset_x, &_offset_y}) {
-        el->signal_value_changed().connect([=]() {
+        el->signal_value_changed().connect([el, this]() {
             if (_update.pending()) return;
             if (_scale_linked && (el == &_scale_x || el == &_scale_y)) {
                 auto scoped(_update.block());
@@ -235,13 +235,13 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
         });
     }
 
-    _name_box.signal_changed().connect([=](){
+    _name_box.signal_changed().connect([this](){
         if (_update.pending()) return;
 
         _signal_changed.emit();
     });
 
-    _search_box.signal_search_changed().connect([=](){
+    _search_box.signal_search_changed().connect([this](){
         if (_update.pending()) return;
 
         // filter patterns
@@ -258,15 +258,15 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
         _combo_set.append(name);
     }
 
-    get_widget<Gtk::Button>(_builder, "previous").signal_clicked().connect([=](){
+    get_widget<Gtk::Button>(_builder, "previous").signal_clicked().connect([this](){
         int previous = _combo_set.get_active_row_number() - 1;
         if (previous >= 0) _combo_set.set_active(previous);
     });
-    get_widget<Gtk::Button>(_builder, "next").signal_clicked().connect([=](){
+    get_widget<Gtk::Button>(_builder, "next").signal_clicked().connect([cat_count, this](){
         auto next = _combo_set.get_active_row_number() + 1;
         if (next < cat_count) _combo_set.set_active(next);
     });
-    _combo_set.signal_changed().connect([=](){
+    _combo_set.signal_changed().connect([this](){
         // select pattern category to show
         auto index = _combo_set.get_active_row_number();
         select_pattern_set(index);
@@ -276,7 +276,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
     bind_store(_doc_gallery, _doc_pattern_store);
     bind_store(_stock_gallery, _stock_pattern_store);
 
-    _stock_gallery.signal_child_activated().connect([=](Gtk::FlowBoxChild* box){
+    _stock_gallery.signal_child_activated().connect([this](Gtk::FlowBoxChild* box){
         if (_update.pending()) return;
         auto scoped(_update.block());
         auto pat = _stock_pattern_store.widgets_to_pattern[box];
@@ -285,7 +285,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
         _signal_changed.emit();
     });
 
-    _doc_gallery.signal_child_activated().connect([=](Gtk::FlowBoxChild* box){
+    _doc_gallery.signal_child_activated().connect([this](Gtk::FlowBoxChild* box){
         if (_update.pending()) return;
         auto scoped(_update.block());
         auto pat = _doc_pattern_store.widgets_to_pattern[box];
@@ -294,12 +294,12 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
         _signal_changed.emit();
     });
 
-    _edit_btn.signal_clicked().connect([=](){
+    _edit_btn.signal_clicked().connect([this](){
         _signal_edit.emit();
     });
 
     _paned.set_position(Inkscape::Preferences::get()->getIntLimited(_prefs + "/handlePos", 50, 10, 9999));
-    _paned.property_position().signal_changed().connect([=](){
+    _paned.property_position().signal_changed().connect([this](){
         Inkscape::Preferences::get()->setInt(_prefs + "/handlePos", _paned.get_position());
     });
 
@@ -311,7 +311,7 @@ PatternEditor::PatternEditor(const char* prefs, Inkscape::PatternManager& manage
 }
 
 void PatternEditor::bind_store(Gtk::FlowBox& list, PatternStore& pat) {
-    pat.store.set_filter([=](const Glib::RefPtr<PatternItem>& p){
+    pat.store.set_filter([this](const Glib::RefPtr<PatternItem>& p){
         if (!p) return false;
         if (_filter_text.empty()) return true;
 
@@ -321,7 +321,7 @@ void PatternEditor::bind_store(Gtk::FlowBox& list, PatternStore& pat) {
         return pos != Glib::ustring::npos;
     });
 
-    list.bind_list_store(pat.store.get_store(), [=, &pat](const Glib::RefPtr<PatternItem>& item){
+    list.bind_list_store(pat.store.get_store(), [&pat, this](const Glib::RefPtr<PatternItem>& item){
         auto const box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
         auto const image = Gtk::make_managed<Gtk::Image>(to_texture(item->pix));
         image->set_size_request(_tile_size, _tile_size);

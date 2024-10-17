@@ -184,11 +184,11 @@ GradientEditor::GradientEditor(const char* prefs):
 
     auto& reverse = get_widget<Gtk::Button>(_builder, "reverseBtn");
     set_icon(reverse, INKSCAPE_ICON("object-flip-horizontal"));
-    reverse.signal_clicked().connect([=](){ reverse_gradient(); });
+    reverse.signal_clicked().connect([this](){ reverse_gradient(); });
 
     set_icon(_turn_gradient, INKSCAPE_ICON("object-rotate-right"));
-    _turn_gradient.signal_clicked().connect([=](){ turn_gradient(90, true); });
-    _angle_adj->signal_value_changed().connect([=](){
+    _turn_gradient.signal_clicked().connect([this](){ turn_gradient(90, true); });
+    _angle_adj->signal_value_changed().connect([this](){
         turn_gradient(_angle_adj->get_value(), false);
     });
 
@@ -198,17 +198,17 @@ GradientEditor::GradientEditor(const char* prefs):
     _gradient_image.set_margin_start(dot_size / 2);
     _gradient_image.set_margin_end(dot_size / 2);
     // gradient stop selected in a gradient widget; sync list selection
-    _gradient_image.signal_stop_selected().connect([=](size_t index) {
+    _gradient_image.signal_stop_selected().connect([this](size_t index) {
         select_stop(index);
         fire_stop_selected(get_current_stop());
     });
-    _gradient_image.signal_stop_offset_changed().connect([=](size_t index, double offset) {
+    _gradient_image.signal_stop_offset_changed().connect([this](size_t index, double offset) {
         set_stop_offset(index, offset);
     });
-    _gradient_image.signal_add_stop_at().connect([=](double offset) {
+    _gradient_image.signal_add_stop_at().connect([this](double offset) {
         insert_stop_at(offset);
     });
-    _gradient_image.signal_delete_stop().connect([=](size_t index) {
+    _gradient_image.signal_delete_stop().connect([this](size_t index) {
         delete_stop(index);
     });
     gradBox.append(_gradient_image);
@@ -232,7 +232,7 @@ GradientEditor::GradientEditor(const char* prefs):
     _selector->set_gradient_size(160, 20);
     _selector->set_name_col_size(120);
     // gradient changed is currently the only signal that GradientSelector can emit:
-    _selector->signal_changed().connect([=](SPGradient* gradient) {
+    _selector->signal_changed().connect([this](SPGradient* gradient) {
         // new gradient selected from the library
         _signal_changed.emit(gradient);
     });
@@ -249,7 +249,7 @@ GradientEditor::GradientEditor(const char* prefs):
     _stop_tree.append_column("c", _stop_color); // and its color
 
     auto selection = _stop_tree.get_selection();
-    selection->signal_changed().connect([=]() {
+    selection->signal_changed().connect([this]() {
         if (!_update.pending()) {
             stop_selected();
             fire_stop_selected(get_current_stop());
@@ -261,7 +261,7 @@ GradientEditor::GradientEditor(const char* prefs):
     );
 
     set_icon(_add_stop, "list-add");
-    _add_stop.signal_clicked().connect([=](){
+    _add_stop.signal_clicked().connect([this](){
         if (auto row = current_stop()) {
             auto index = row->get_value(_stopIdx);
             add_stop(static_cast<int>(index));
@@ -269,7 +269,7 @@ GradientEditor::GradientEditor(const char* prefs):
     });
 
     set_icon(_delete_stop, "list-remove");
-    _delete_stop.signal_clicked().connect([=]() {
+    _delete_stop.signal_clicked().connect([this]() {
         if (auto row = current_stop()) {
             auto index = row->get_value(_stopIdx);
             delete_stop(static_cast<int>(index));
@@ -292,11 +292,11 @@ GradientEditor::GradientEditor(const char* prefs):
     get_widget<Gtk::MenuButton>(_builder, "repeatMode").set_popover(*_repeat_popover);
     set_repeat_icon(SP_GRADIENT_SPREAD_PAD);
     
-    _colors->signal_changed.connect([=]() {
+    _colors->signal_changed.connect([this]() {
         set_stop_color(_colors->getAverage());
     });
 
-    _offset_btn.signal_changed().connect([=]() {
+    _offset_btn.signal_changed().connect([this]() {
         if (auto row = current_stop()) {
             auto index = row->get_value(_stopIdx);
             double offset = _offset_btn.get_value();
@@ -552,7 +552,7 @@ void GradientEditor::selectStop(SPStop* selected) {
     auto scoped(_notification.block());
     // request from the outside to sync stop selection
     const auto& items = _stop_tree.get_model()->children();
-    auto it = std::find_if(items.begin(), items.end(), [=](const auto& row) {
+    auto it = std::find_if(items.begin(), items.end(), [selected, this](const auto& row) {
         SPStop* stop = row.get_value(_stopObj);
         return stop == selected; 
     });

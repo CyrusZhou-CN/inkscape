@@ -46,19 +46,19 @@ SnapToolbar::SnapToolbar()
 
     // Watch snap bar preferences;
     Inkscape::Preferences* prefs = Inkscape::Preferences::get();
-    _observer = prefs->createObserver(snap_bar_simple_path, [=](const Preferences::Entry& entry) {
+    _observer = prefs->createObserver(snap_bar_simple_path, [=, this](const Preferences::Entry& entry) {
         mode_update();
     });
 
     // switch to simple mode
-    link_simple.signal_activate_link().connect([=](){
+    link_simple.signal_activate_link().connect([this](){
         g_timeout_add(250, &SnapToolbar::show_popover, &btn_simple);
         Inkscape::Preferences::get()->setInt(snap_bar_simple_path, SIMPLE);
         return true;
     }, false);
 
     // switch to advanced mode
-    link_advanced.signal_activate_link().connect([=](){
+    link_advanced.signal_activate_link().connect([this](){
         g_timeout_add(250, &SnapToolbar::show_popover, &btn_advanced);
         Inkscape::Preferences::get()->setInt(snap_bar_simple_path, ADVANCED);
         return true;

@@ -401,7 +401,7 @@ public:
                 auto button = Gtk::make_managed<Gtk::Button>();
                 button->set_margin_start(4);
                 button->set_image_from_icon_name("object-pick");
-                button->signal_clicked().connect([=](){
+                button->signal_clicked().connect([grid, this](){
                     if (!_desktop) return;
 
                     auto active_tool = get_active_tool(_desktop);
@@ -410,7 +410,7 @@ public:
                         set_active_tool(_desktop, "Picker");
                     }
                     if (auto tool = dynamic_cast<Inkscape::UI::Tools::ObjectPickerTool*>(_desktop->getTool())) {
-                        _picker = tool->signal_object_picked.connect([=](SPObject* item){
+                        _picker = tool->signal_object_picked.connect([grid, this](SPObject* item){
                             // set anchor href
                             auto edit = dynamic_cast<Gtk::Entry*>(grid->get_child_at(1, 0));
                             if (edit && item) {
@@ -453,26 +453,26 @@ public:
         _title = _("Rectangle");
         _widget = &_main;
 
-        _width.get_adjustment()->signal_value_changed().connect([=](){
-            change_value_px(_rect, _width.get_adjustment(), "width", [=](double w){ _rect->setVisibleWidth(w); });
+        _width.get_adjustment()->signal_value_changed().connect([this](){
+            change_value_px(_rect, _width.get_adjustment(), "width", [this](double w){ _rect->setVisibleWidth(w); });
         });
-        _height.get_adjustment()->signal_value_changed().connect([=](){
-            change_value_px(_rect, _height.get_adjustment(), "height", [=](double h){ _rect->setVisibleHeight(h); });
+        _height.get_adjustment()->signal_value_changed().connect([this](){
+            change_value_px(_rect, _height.get_adjustment(), "height", [this](double h){ _rect->setVisibleHeight(h); });
         });
-        _rx.get_adjustment()->signal_value_changed().connect([=](){
-            change_value_px(_rect, _rx.get_adjustment(), "rx", [=](double rx){ _rect->setVisibleRx(rx); });
+        _rx.get_adjustment()->signal_value_changed().connect([this](){
+            change_value_px(_rect, _rx.get_adjustment(), "rx", [this](double rx){ _rect->setVisibleRx(rx); });
         });
-        _ry.get_adjustment()->signal_value_changed().connect([=](){
-            change_value_px(_rect, _ry.get_adjustment(), "ry", [=](double ry){ _rect->setVisibleRy(ry); });
+        _ry.get_adjustment()->signal_value_changed().connect([this](){
+            change_value_px(_rect, _ry.get_adjustment(), "ry", [this](double ry){ _rect->setVisibleRy(ry); });
         });
-        get_widget<Gtk::Button>(builder, "rect-round").signal_clicked().connect([=](){
+        get_widget<Gtk::Button>(builder, "rect-round").signal_clicked().connect([this](){
             auto [changed, x, y] = round_values(_width, _height);
             if (changed) {
                 _width.get_adjustment()->set_value(x);
                 _height.get_adjustment()->set_value(y);
             }
         });
-        _sharp.signal_clicked().connect([=](){
+        _sharp.signal_clicked().connect([this](){
             if (!_rect) return;
 
             // remove rounded corners if LPE is there (first one found)
@@ -480,7 +480,7 @@ public:
             _rx.get_adjustment()->set_value(0);
             _ry.get_adjustment()->set_value(0);
         });
-        _round.signal_clicked().connect([=](){
+        _round.signal_clicked().connect([this](){
             if (!_rect || !_desktop) return;
 
             // switch to node tool to show handles
@@ -547,35 +547,35 @@ public:
 
         int type = 0;
         for (auto btn : _type) {
-            btn->signal_toggled().connect([=](){ set_type(type); });
+            btn->signal_toggled().connect([type, this](){ set_type(type); });
             type++;
         }
 
-        _whole.signal_clicked().connect([=](){
+        _whole.signal_clicked().connect([this](){
             _start.get_adjustment()->set_value(0);
             _end.get_adjustment()->set_value(0);
         });
 
-        auto normalize = [=](){
+        auto normalize = [this](){
             _ellipse->normalize();
             _ellipse->updateRepr();
             _ellipse->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
         };
 
-        _rx.get_adjustment()->signal_value_changed().connect([=](){
-            change_value_px(_ellipse, _rx.get_adjustment(), nullptr, [=](double rx){ _ellipse->setVisibleRx(rx); normalize(); });
+        _rx.get_adjustment()->signal_value_changed().connect([=, this](){
+            change_value_px(_ellipse, _rx.get_adjustment(), nullptr, [=, this](double rx){ _ellipse->setVisibleRx(rx); normalize(); });
         });
-        _ry.get_adjustment()->signal_value_changed().connect([=](){
-            change_value_px(_ellipse, _ry.get_adjustment(), nullptr, [=](double ry){ _ellipse->setVisibleRy(ry); normalize(); });
+        _ry.get_adjustment()->signal_value_changed().connect([=, this](){
+            change_value_px(_ellipse, _ry.get_adjustment(), nullptr, [=, this](double ry){ _ellipse->setVisibleRy(ry); normalize(); });
         });
-        _start.get_adjustment()->signal_value_changed().connect([=](){
-            change_angle(_ellipse, _start.get_adjustment(), [=](double s){ _ellipse->start = s; normalize(); });
+        _start.get_adjustment()->signal_value_changed().connect([=, this](){
+            change_angle(_ellipse, _start.get_adjustment(), [=, this](double s){ _ellipse->start = s; normalize(); });
         });
-        _end.get_adjustment()->signal_value_changed().connect([=](){
-            change_angle(_ellipse, _end.get_adjustment(), [=](double e){ _ellipse->end = e; normalize(); });
+        _end.get_adjustment()->signal_value_changed().connect([=, this](){
+            change_angle(_ellipse, _end.get_adjustment(), [=, this](double e){ _ellipse->end = e; normalize(); });
         });
 
-        get_widget<Gtk::Button>(builder, "el-round").signal_clicked().connect([=](){
+        get_widget<Gtk::Button>(builder, "el-round").signal_clicked().connect([this](){
             auto [changed, x, y] = round_values(_rx, _ry);
             if (changed && x > 0 && y > 0) {
                 _rx.get_adjustment()->set_value(x);
@@ -671,22 +671,22 @@ public:
         _title = _("Star");
         _widget = &_main;
 
-        _corners.get_adjustment()->signal_value_changed().connect([=](){
-            change_value(_path, _corners.get_adjustment(), [=](double sides) {
+        _corners.get_adjustment()->signal_value_changed().connect([this](){
+            change_value(_path, _corners.get_adjustment(), [this](double sides) {
                 _path->setAttributeDouble("sodipodi:sides", (int)sides);
                 auto arg1 = get_number(_path, "sodipodi:arg1").value_or(0.5);
                 _path->setAttributeDouble("sodipodi:arg2", arg1 + M_PI / sides);
                 _path->updateRepr();
             });
         });
-        _rounded.get_adjustment()->signal_value_changed().connect([=](){
-            change_value(_path, _rounded.get_adjustment(), [=](double rounded) {
+        _rounded.get_adjustment()->signal_value_changed().connect([this](){
+            change_value(_path, _rounded.get_adjustment(), [this](double rounded) {
                 _path->setAttributeDouble("inkscape:rounded", rounded);
                 _path->updateRepr();
             });
         });
-        _ratio.get_adjustment()->signal_value_changed().connect([=](){
-            change_value(_path, _ratio.get_adjustment(), [=](double ratio){
+        _ratio.get_adjustment()->signal_value_changed().connect([this](){
+            change_value(_path, _ratio.get_adjustment(), [this](double ratio){
                 auto r1 = get_number(_path, "sodipodi:r1").value_or(1.0);
                 auto r2 = get_number(_path, "sodipodi:r2").value_or(1.0);
                 if (r2 < r1) {
@@ -697,21 +697,21 @@ public:
                 _path->updateRepr();
             });
         });
-        _rand.get_adjustment()->signal_value_changed().connect([=](){
-            change_value(_path, _rand.get_adjustment(), [=](double rnd){
+        _rand.get_adjustment()->signal_value_changed().connect([this](){
+            change_value(_path, _rand.get_adjustment(), [this](double rnd){
                 _path->setAttributeDouble("inkscape:randomized", rnd);
                 _path->updateRepr();
             });
         });
-        _clear_rnd.signal_clicked().connect([=](){ _rand.get_adjustment()->set_value(0); });
-        _clear_round.signal_clicked().connect([=](){ _rounded.get_adjustment()->set_value(0); });
-        _clear_ratio.signal_clicked().connect([=](){ _ratio.get_adjustment()->set_value(0.5); });
+        _clear_rnd.signal_clicked().connect([this](){ _rand.get_adjustment()->set_value(0); });
+        _clear_round.signal_clicked().connect([this](){ _rounded.get_adjustment()->set_value(0); });
+        _clear_ratio.signal_clicked().connect([this](){ _ratio.get_adjustment()->set_value(0.5); });
 
-        _poly.signal_toggled().connect([=](){ set_flat(true); });
-        _star.signal_toggled().connect([=](){ set_flat(false); });
+        _poly.signal_toggled().connect([this](){ set_flat(true); });
+        _star.signal_toggled().connect([this](){ set_flat(false); });
 
-        _align.signal_clicked().connect([=](){
-            change_value(_path, {}, [=](double) { align_star_shape(_path); });
+        _align.signal_clicked().connect([this](){
+            change_value(_path, {}, [this](double) { align_star_shape(_path); });
         });
     }
 
@@ -741,7 +741,7 @@ public:
     }
 
     void set_flat(bool flat) {
-        change_value(_path, {}, [=](double){
+        change_value(_path, {}, [flat, this](double){
             _path->setAttribute("inkscape:flatsided", flat ? "true" : "false");
             _path->updateRepr();
         });
@@ -822,7 +822,7 @@ public:
         auto& wnd = get_widget<Gtk::ScrolledWindow>(builder, "path-data-wnd");
         wnd.set_child(_data);
 
-        auto set_precision = [=](int const n) {
+        auto set_precision = [=, this](int const n) {
             _precision = n;
             auto& menu_button = get_widget<Gtk::MenuButton>(builder, "path-menu");
             auto const menu = menu_button.get_menu_model();
@@ -848,7 +848,7 @@ public:
             truncate_digits(_data.get_buffer(), _precision);
             commit_d();
         });
-        get_widget<Gtk::Button>(builder, "path-enter").signal_clicked().connect([=](){ commit_d(); });
+        get_widget<Gtk::Button>(builder, "path-enter").signal_clicked().connect([this](){ commit_d(); });
     }
 
     ~PathPanel() override = default;

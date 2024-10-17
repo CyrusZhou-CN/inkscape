@@ -279,7 +279,7 @@ FontList::FontList(Glib::ustring preferences_path) :
     get_widget<Gtk::Box>(_builder, "variants").append(_font_variations);
     _font_variations.get_size_group(0)->add_widget(get_widget<Gtk::Label>(_builder, "font-size-label"));
     _font_variations.get_size_group(1)->add_widget(_font_size);
-    _font_variations.connectChanged([=](){
+    _font_variations.connectChanged([this](){
         if (_update.pending()) return;
         _signal_changed.emit();
     });
@@ -315,7 +315,7 @@ FontList::FontList(Glib::ustring preferences_path) :
         sort_menu->append(*item);
     }
     get_widget<Gtk::MenuButton>(_builder, "btn-sort").set_popover(*sort_menu);
-    get_widget<Gtk::Button>(_builder, "id-reset-filter").signal_clicked().connect([=](){
+    get_widget<Gtk::Button>(_builder, "id-reset-filter").signal_clicked().connect([this](){
         bool modified = false;
         if (_font_tags.deselect_all()) {
             modified = true;
@@ -332,9 +332,9 @@ FontList::FontList(Glib::ustring preferences_path) :
     });
 
     auto search = &get_widget<Gtk::SearchEntry2>(_builder, "font-search");
-    search->signal_changed().connect([=](){ filter(); });
+    search->signal_changed().connect([this](){ filter(); });
 
-    auto set_row_height = [=](int font_size_percent) {
+    auto set_row_height = [font_renderer, this](int font_size_percent) {
         font_renderer->_font_size = font_size_percent;
         // TODO: use pango layout to calc sizes
         int hh = (font_renderer->_show_font_name ? 10 : 0) + 18 * font_renderer->_font_size / 100;
@@ -356,7 +356,7 @@ FontList::FontList(Glib::ustring preferences_path) :
         return Glib::ustring::format(std::fixed, std::setprecision(0), val) + "%";
     });
     size->set_value(font_renderer->_font_size);
-    size->signal_value_changed().connect([=](){
+    size->signal_value_changed().connect([=, this](){
         auto font_size = size->get_value();
         set_row_height(font_size);
         set_grid_size(font_size);
@@ -366,7 +366,7 @@ FontList::FontList(Glib::ustring preferences_path) :
     });
 
     auto show_names = &get_widget<Gtk::CheckButton>(_builder, "show-font-name");
-    auto set_show_names = [=](bool show) {
+    auto set_show_names = [=, this](bool show) {
         font_renderer->_show_font_name = show;
         prefs->setBool(_prefs + "/show-font-names", show);
         set_row_height(font_renderer->_font_size);
@@ -387,7 +387,7 @@ FontList::FontList(Glib::ustring preferences_path) :
     auto sample_text = prefs->getString(_prefs + "/sample-text");
     sample->set_text(sample_text);
     font_renderer->_sample_text = sample_text;
-    sample->signal_changed().connect([=](){
+    sample->signal_changed().connect([=, this](){
         auto text = sample->get_text();
         font_renderer->_sample_text = text;
         prefs->setString(_prefs + "/sample-text", text);
@@ -398,7 +398,7 @@ FontList::FontList(Glib::ustring preferences_path) :
     auto sample_grid_text = prefs->getString(_prefs + "/grid-text", "Aa");
     grid_sample->set_text(sample_grid_text);
     grid_renderer->_sample_text = sample_grid_text;
-    grid_sample->signal_changed().connect([=](){
+    grid_sample->signal_changed().connect([=, this](){
         auto text = grid_sample->get_text();
         grid_renderer->_sample_text = text.empty() ? "?" : text;
         prefs->setString(_prefs + "/grid-text", text);
@@ -470,7 +470,7 @@ FontList::FontList(Glib::ustring preferences_path) :
         get_cell_data_func(grid_renderer, row);
     });
     // show font name in a grid tooltip
-    _font_grid.signal_query_tooltip().connect([=](int x, int y, bool kbd, const Glib::RefPtr<Gtk::Tooltip>& tt){
+    _font_grid.signal_query_tooltip().connect([this](int x, int y, bool kbd, const Glib::RefPtr<Gtk::Tooltip>& tt){
         Gtk::TreeModel::iterator iter;
         Glib::ustring name;
         if (_font_grid.get_tooltip_context_iter(x, y, kbd, iter)) {
@@ -482,7 +482,7 @@ FontList::FontList(Glib::ustring preferences_path) :
     }, true);
     _font_grid.property_has_tooltip() = true;
 
-    auto font_selected = [=](const FontInfo& font) {
+    auto font_selected = [this](const FontInfo& font) {
         if (_update.pending()) return;
 
         auto scoped = _update.block();
@@ -494,7 +494,7 @@ FontList::FontList(Glib::ustring preferences_path) :
         _signal_changed.emit();
     };
 
-    _font_grid.signal_selection_changed().connect([=](){
+    _font_grid.signal_selection_changed().connect([font_selected, this](){
         auto sel = _font_grid.get_selected_items();
         if (sel.size() == 1) {
             auto it = _font_list_store->get_iter(sel.front());
@@ -505,7 +505,7 @@ FontList::FontList(Glib::ustring preferences_path) :
 
     auto show_grid = &get_widget<Gtk::ToggleButton>(_builder, "view-grid");
     auto show_list = &get_widget<Gtk::ToggleButton>(_builder, "view-list");
-    auto set_list_view_mode = [=](bool show_list) {
+    auto set_list_view_mode = [prefs, this](bool show_list) {
         auto& list = get_widget<Gtk::ScrolledWindow>(_builder, "list");
         auto& grid = get_widget<Gtk::ScrolledWindow>(_builder, "grid");
         // TODO: sync selection between font widgets
@@ -533,7 +533,7 @@ FontList::FontList(Glib::ustring preferences_path) :
     _info_box.set_visible(false);
     _progress_box.show();
 
-    auto prepare_tags = [=](){
+    auto prepare_tags = [this](){
         // prepare dynamic tags
         for (auto&& f : _fonts) {
             auto kind = f.family_kind >> 8;
@@ -562,7 +562,7 @@ FontList::FontList(Glib::ustring preferences_path) :
         }
     };
 
-    _font_stream = FontDiscovery::get().connect_to_fonts([=](const FontDiscovery::MessageType& msg){
+    _font_stream = FontDiscovery::get().connect_to_fonts([=, this](const FontDiscovery::MessageType& msg){
         if (auto r = Async::Msg::get_result(msg)) {
             _fonts = **r;
             sort_fonts(_order);
@@ -595,7 +595,7 @@ FontList::FontList(Glib::ustring preferences_path) :
 
     _font_size_scale.get_adjustment()->set_lower(0);
     _font_size_scale.get_adjustment()->set_upper(g_font_sizes.size() - 1);
-    _font_size_scale.signal_value_changed().connect([=](){
+    _font_size_scale.signal_value_changed().connect([this](){
         if (_update.pending()) return;
 
         auto scoped = _update.block();
@@ -604,7 +604,7 @@ FontList::FontList(Glib::ustring preferences_path) :
         _signal_changed.emit();
     });
 
-    _font_size.signal_changed().connect([=](){
+    _font_size.signal_changed().connect([this](){
         if (_update.pending()) return;
 
         auto scoped = _update.block();
@@ -622,7 +622,7 @@ FontList::FontList(Glib::ustring preferences_path) :
 
     sort_fonts(Inkscape::FontOrder::by_name);
 
-    _font_list.get_selection()->signal_changed().connect([=](){
+    _font_list.get_selection()->signal_changed().connect([=, this](){
         if (auto iter = _font_list.get_selection()->get_selected()) {
             const Inkscape::FontInfo& font = (*iter)[g_column_model.font];
             font_selected(font);
@@ -630,19 +630,19 @@ FontList::FontList(Glib::ustring preferences_path) :
     }, false);
 
     // double-click:
-    _font_list.signal_row_activated().connect([=](const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn*){
+    _font_list.signal_row_activated().connect([this](const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn*){
         if (!_update.pending()) {
             auto scoped = _update.block();
             _signal_apply.emit();
         }
     });
 
-    _font_tags.get_signal_tag_changed().connect([=](const FontTag* ftag, bool selected){
+    _font_tags.get_signal_tag_changed().connect([this](const FontTag* ftag, bool selected){
         sync_font_tag(ftag, selected);
     });
 
     auto& filter_popover = get_widget<Gtk::Popover>(_builder, "filter-popover");
-    filter_popover.signal_show().connect([=](){
+    filter_popover.signal_show().connect([this](){
         // update tag checkboxes
         add_categories();
         update_filterbar();
@@ -988,7 +988,7 @@ Gtk::Box* FontList::create_pill_box(const Glib::ustring& display_name, const Gli
     close->set_image_from_icon_name("close-button-symbolic");
     close->set_valign(Gtk::Align::CENTER);
     if (tags) {
-        close->signal_clicked().connect([=](){
+        close->signal_clicked().connect([=, this](){
             // remove category from current filter
             update_categories(tag, false);
         });
@@ -1043,7 +1043,7 @@ void FontList::add_categories() {
         if (row) _tag_list.remove(*row);
     }
 
-    auto add_row = [=](Gtk::Widget* w){
+    auto add_row = [this](Gtk::Widget* w){
         auto row = Gtk::make_managed<Gtk::ListBoxRow>();
         row->set_can_focus(false);
         row->set_child(*w);
@@ -1058,7 +1058,7 @@ void FontList::add_categories() {
         label.set_markup("<i>" + tag.display_name + "</i>");
         btn->set_child(label);
         btn->set_active(_font_tags.is_tag_selected(tag.tag));
-        btn->signal_toggled().connect([=](){
+        btn->signal_toggled().connect([=, this](){
             // toggle font category
             update_categories(tag.tag, btn->get_active());
         });
@@ -1099,7 +1099,7 @@ void FontList::scroll_to_row(Gtk::TreePath path) {
     if (_view_mode_list) {
         // delay scroll request to let widget layout complete (due to hiding or showing variable font widgets);
         // keep track of connection so we can disconnect in a destructor if it is still pending at that point
-        _scroll = Glib::signal_timeout().connect([=](){
+        _scroll = Glib::signal_timeout().connect([=, this](){
             _font_list.scroll_to_row(path);
             return false; // <- false means disconnect
         }, 50, Glib::PRIORITY_LOW);

@@ -1672,7 +1672,7 @@ void InkscapePreferences::initPageUI()
         });
 
         box->append(*cb);
-        _handle_size = Preferences::PreferencesObserver::create("/options/grabsize/value", [=](const Preferences::Entry&){
+        _handle_size = Preferences::PreferencesObserver::create("/options/grabsize/value", [img, this](const Preferences::Entry&){
             img->set_paintable(to_texture(draw_handles_preview(get_scale_factor())));
         });
         _page_ui.add_line(true, _("Handle colors"), *box, "", "Select handle color scheme.");

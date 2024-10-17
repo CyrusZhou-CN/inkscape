@@ -289,7 +289,7 @@ void FontVariations::build_ui(const std::map<Glib::ustring, OTVarAxis>& ot_axes)
         _size_group->add_widget(*(axis->get_label())); // Keep labels the same width
         _size_group_edit->add_widget(*axis->get_editbox());
         axis->get_editbox()->get_adjustment()->signal_value_changed().connect(
-            [=](){ if (!_update.pending()) {_signal_changed.emit();} }
+            [this](){ if (!_update.pending()) {_signal_changed.emit();} }
         );
     }
 }

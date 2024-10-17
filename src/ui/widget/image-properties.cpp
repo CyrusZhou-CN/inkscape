@@ -136,20 +136,20 @@ ImageProperties::ImageProperties() :
     });
 
     auto& change = get_widget<Gtk::Button>(_builder, "change-img");
-    change.signal_clicked().connect([=](){
+    change.signal_clicked().connect([this](){
         if (_update.pending()) return;
         auto window = dynamic_cast<Gtk::Window*>(get_root());
         link_image(window, _image);
     });
 
     auto& extract = get_widget<Gtk::Button>(_builder, "export");
-    extract.signal_clicked().connect([=](){
+    extract.signal_clicked().connect([this](){
         if (_update.pending()) return;
         auto window = dynamic_cast<Gtk::Window*>(get_root());
         extract_image(window, _image);
     });
 
-    _embed.signal_clicked().connect([=](){
+    _embed.signal_clicked().connect([this](){
         if (_update.pending() || !_image) return;
         // embed image in the current document
         Inkscape::Pixbuf copy(*_image->pixbuf);
@@ -157,17 +157,17 @@ ImageProperties::ImageProperties() :
         DocumentUndo::done(_image->document, _("Embed image"), INKSCAPE_ICON("selection-make-bitmap-copy"));
     });
 
-    _rendering.signal_changed().connect([=](){
+    _rendering.signal_changed().connect([this](){
         if (_update.pending()) return;
         auto index = _rendering.get_active_row_number();
         set_rendering_mode(_image, index);
     });
 
-    _aspect.signal_toggled().connect([=](){
+    _aspect.signal_toggled().connect([this](){
         if (_update.pending()) return;
         set_aspect_ratio(_image, _aspect.get_active());
     });
-    _stretch.signal_toggled().connect([=](){
+    _stretch.signal_toggled().connect([this](){
         if (_update.pending()) return;
         set_aspect_ratio(_image, !_stretch.get_active());
     });

@@ -163,7 +163,7 @@ AlignAndDistribute::AlignAndDistribute(Inkscape::UI::Dialog::DialogBase *dlg)
         desktop_changed(desktop);
     }
 
-    auto set_icon_size_prefs = [=]() {
+    auto set_icon_size_prefs = [prefs, this]() {
         int size = prefs->getIntLimited("/toolbox/tools/iconsize", -1, 16, 48);
         Inkscape::UI::set_icon_sizes(this, size);
     };

@@ -46,9 +46,9 @@ NewFromTemplate::NewFromTemplate()
     sigc::mem_fun(*this, &NewFromTemplate::_createFromTemplate));
     _create_template_button.set_sensitive(false);
 
-    templates->connectItemSelected([=]() { _create_template_button.set_sensitive(true); });
+    templates->connectItemSelected([this]() { _create_template_button.set_sensitive(true); });
     templates->connectItemActivated(sigc::mem_fun(*this, &NewFromTemplate::_createFromTemplate));
-    templates->signal_switch_page().connect([=](Gtk::Widget *const widget, int num) {
+    templates->signal_switch_page().connect([this](Gtk::Widget *const widget, int num) {
         _create_template_button.set_sensitive(templates->has_selected_preset());
     });
 

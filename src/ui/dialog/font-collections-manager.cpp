@@ -62,12 +62,12 @@ FontCollectionsManager::FontCollectionsManager()
 
     // Setup the signals.
     _font_count_changed_connection = Inkscape::FontLister::get_instance()->connectUpdate(sigc::mem_fun(*this, &FontCollectionsManager::change_font_count_label));
-    _search_entry.signal_search_changed().connect([=](){ on_search_entry_changed(); });
-    _user_font_collections.connect_signal_changed([=](int s){ on_selection_changed(s); });
-    _create_button.signal_clicked().connect([=](){ on_create_button_pressed(); });
-    _edit_button.signal_clicked().connect([=](){ on_edit_button_pressed(); });
-    _delete_button.signal_clicked().connect([=](){ on_delete_button_pressed(); });
-    _reset_button.signal_clicked().connect([=](){ on_reset_button_pressed(); });
+    _search_entry.signal_search_changed().connect([this](){ on_search_entry_changed(); });
+    _user_font_collections.connect_signal_changed([this](int s){ on_selection_changed(s); });
+    _create_button.signal_clicked().connect([this](){ on_create_button_pressed(); });
+    _edit_button.signal_clicked().connect([this](){ on_edit_button_pressed(); });
+    _delete_button.signal_clicked().connect([this](){ on_delete_button_pressed(); });
+    _reset_button.signal_clicked().connect([this](){ on_reset_button_pressed(); });
 
     // Edit and delete are initially insensitive because nothing is selected.
     _edit_button.set_sensitive(false);

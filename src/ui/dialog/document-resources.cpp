@@ -559,7 +559,7 @@ DocumentResources::DocumentResources()
         }
     });
 
-    _search.signal_search_changed().connect([=](){
+    _search.signal_search_changed().connect([=, this](){
         refilter_info();
         _item_filter->refilter(_search.get_text());
     });

@@ -176,7 +176,7 @@ RegisteredSwitchButton::RegisteredSwitchButton(Glib::ustring const &label, Glib:
     set_halign(right ? Gtk::Align::END : Gtk::Align::START);
     set_valign(Gtk::Align::CENTER);
 
-    property_state().signal_changed().connect([=](){
+    property_state().signal_changed().connect([this](){
         if (setProgrammatically) {
             setProgrammatically = false;
             return;

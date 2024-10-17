@@ -86,8 +86,8 @@ void GradientWithStops::set_gradient(SPGradient* gradient) {
     _gradient = gradient;
 
     // listen to release & changes
-    _release  = gradient ? gradient->connectRelease([=](SPObject*){ set_gradient(nullptr); }) : sigc::connection();
-    _modified = gradient ? gradient->connectModified([=](SPObject*, guint){ modified(); }) : sigc::connection();
+    _release  = gradient ? gradient->connectRelease([this](SPObject*){ set_gradient(nullptr); }) : sigc::connection();
+    _modified = gradient ? gradient->connectModified([this](SPObject*, guint){ modified(); }) : sigc::connection();
 
     // TODO: check selected/focused stop index
 

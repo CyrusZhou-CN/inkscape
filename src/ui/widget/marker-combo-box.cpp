@@ -146,7 +146,7 @@ MarkerComboBox::MarkerComboBox(Glib::ustring id, int l) :
     });
 
     _marker_store = Gio::ListStore<MarkerItem>::create();
-    _marker_list.bind_list_store(_marker_store, [=](const Glib::RefPtr<MarkerItem>& item){
+    _marker_list.bind_list_store(_marker_store, [this](const Glib::RefPtr<MarkerItem>& item){
         auto const image = Gtk::make_managed<Gtk::Picture>(to_texture(item->pix));
         image->set_content_fit(Gtk::ContentFit::SCALE_DOWN);
         image->set_layout_manager(Gtk::BinLayout::create());
@@ -177,33 +177,33 @@ MarkerComboBox::MarkerComboBox(Glib::ustring id, int l) :
 
     set_sensitive(true);
 
-    _marker_list.signal_selected_children_changed().connect([=](){
+    _marker_list.signal_selected_children_changed().connect([this](){
         auto item = get_active();
         if (!item && !_marker_list.get_selected_children().empty()) {
             _marker_list.unselect_all();
         }
     });
 
-    _marker_list.signal_child_activated().connect([=](Gtk::FlowBoxChild* box){
+    _marker_list.signal_child_activated().connect([this](Gtk::FlowBoxChild* box){
         if (box->get_sensitive()) _signal_changed.emit();
     });
 
-    auto set_orient = [=](bool enable_angle, const char* value) {
+    auto set_orient = [this](bool enable_angle, const char* value) {
         if (_update.pending()) return;
         _angle_btn.set_sensitive(enable_angle);
         sp_marker_set_orient(get_current(), value);
     };
     _orient_auto_rev.signal_toggled().connect([=](){ set_orient(false, "auto-start-reverse"); });
     _orient_auto.signal_toggled().connect([=]()    { set_orient(false, "auto"); });
-    _orient_angle.signal_toggled().connect([=]()   { set_orient(true, _angle_btn.get_text().c_str()); });
-    _orient_flip_horz.signal_clicked().connect([=]() { sp_marker_flip_horizontally(get_current()); });
+    _orient_angle.signal_toggled().connect([=, this]()   { set_orient(true, _angle_btn.get_text().c_str()); });
+    _orient_flip_horz.signal_clicked().connect([this]()  { sp_marker_flip_horizontally(get_current()); });
 
-    _angle_btn.signal_value_changed().connect([=]() {
+    _angle_btn.signal_value_changed().connect([this]() {
         if (_update.pending() || !_angle_btn.is_sensitive()) return;
         sp_marker_set_orient(get_current(), _angle_btn.get_text().c_str());
     });
 
-    auto set_scale = [=](bool changeWidth) {
+    auto set_scale = [this](bool changeWidth) {
         if (_update.pending()) return;
 
         if (auto marker = get_current()) {
@@ -230,11 +230,11 @@ MarkerComboBox::MarkerComboBox(Glib::ustring id, int l) :
 
     // delay setting scale to idle time; if invoked by focus change due to new marker selection
     // it leads to marker list rebuild and apparent flowbox content corruption
-    auto idle_set_scale = [=](bool changeWidth) {
+    auto idle_set_scale = [=, this](bool changeWidth) {
         if (_update.pending()) return;
 
         if (auto orig_marker = get_current()) {
-            _idle = Glib::signal_idle().connect([=](){
+            _idle = Glib::signal_idle().connect([=, this](){
                 if (auto marker = get_current()) {
                     if (marker == orig_marker) {
                         set_scale(changeWidth);
@@ -245,7 +245,7 @@ MarkerComboBox::MarkerComboBox(Glib::ustring id, int l) :
         }
     };
 
-    _link_scale.signal_clicked().connect([=](){
+    _link_scale.signal_clicked().connect([this](){
         if (_update.pending()) return;
         _scale_linked = !_scale_linked;
         sp_marker_set_uniform_scale(get_current(), _scale_linked);
@@ -255,12 +255,12 @@ MarkerComboBox::MarkerComboBox(Glib::ustring id, int l) :
     _scale_x.signal_value_changed().connect([=]() { idle_set_scale(true); });
     _scale_y.signal_value_changed().connect([=]() { idle_set_scale(false); });
 
-    _scale_with_stroke.signal_toggled().connect([=](){
+    _scale_with_stroke.signal_toggled().connect([this](){
         if (_update.pending()) return;
         sp_marker_scale_with_stroke(get_current(), _scale_with_stroke.get_active());
     });
 
-    auto set_offset = [=](){
+    auto set_offset = [this](){
         if (_update.pending()) return;
         sp_marker_set_offset(get_current(), _offset_x.get_value(), _offset_y.get_value());
     };
@@ -271,7 +271,7 @@ MarkerComboBox::MarkerComboBox(Glib::ustring id, int l) :
     _edit_marker.signal_clicked().connect([this]{ _menu_btn.get_popover()->popdown(); _signal_edit(); });
 
     // before showing popover refresh marker attributes
-    _menu_btn.get_popover()->signal_show().connect([=](){ update_ui(get_current(), false); }, false);
+    _menu_btn.get_popover()->signal_show().connect([this](){ update_ui(get_current(), false); }, false);
 
     update_scale_link();
     _current_img.set_paintable(to_texture(g_image_none));
@@ -396,7 +396,7 @@ SPMarker* MarkerComboBox::get_current() const {
 void MarkerComboBox::set_active(Glib::RefPtr<MarkerItem> item) {
     bool selected = false;
     if (item) {
-        UI::for_each_child(_marker_list, [=, &selected] (Gtk::Widget &widget) {
+        UI::for_each_child(_marker_list, [item, &selected, this] (Gtk::Widget &widget) {
             if (auto box = dynamic_cast<Gtk::FlowBoxChild*>(&widget)) {
                 if (auto marker = _widgets_to_markers[box->get_child()]) {
                     if (*marker == *item) {
@@ -461,7 +461,7 @@ void MarkerComboBox::setDocument(SPDocument *document)
         _document = document;
 
         if (_document) {
-            modified_connection = _document->getDefs()->connectModified([=](SPObject*, unsigned int){
+            modified_connection = _document->getDefs()->connectModified([this](SPObject*, unsigned int){
                 refresh_after_markers_modified();
             });
         }

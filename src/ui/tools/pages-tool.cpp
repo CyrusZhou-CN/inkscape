@@ -87,12 +87,12 @@ PagesTool::PagesTool(SPDesktop *desktop)
         drag_group->set_name("CanvasItemGroup:PagesDragShapes");
     }
 
-    _doc_replaced_connection = desktop->connectDocumentReplaced([=](SPDesktop *desktop, SPDocument *doc) {
+    _doc_replaced_connection = desktop->connectDocumentReplaced([this](SPDesktop *desktop, SPDocument *doc) {
         connectDocument(desktop->getDocument());
     });
     connectDocument(desktop->getDocument());
 
-    _zoom_connection = desktop->signal_zoom_changed.connect([=](double) {
+    _zoom_connection = desktop->signal_zoom_changed.connect([desktop, this](double) {
         // This readjusts the knot on zoom because the viewbox position
         // becomes detached on zoom, likely a precision problem.
         if (!desktop->getDocument()->getPageManager().hasPages()) {
@@ -569,7 +569,7 @@ void PagesTool::connectDocument(SPDocument *doc)
     if (doc) {
         auto &page_manager = doc->getPageManager();
         _selector_changed_connection =
-            page_manager.connectPageSelected([=](SPPage *page) {
+            page_manager.connectPageSelected([doc, this](SPPage *page) {
                 selectionChanged(doc, page);
             });
         selectionChanged(doc, page_manager.getSelected());
@@ -605,7 +605,7 @@ void PagesTool::selectionChanged(SPDocument *doc, SPPage *page)
             pageModified(page, 0);
         } else {
             // This is for viewBox editng directly. A special extra feature
-            _page_modified_connection = doc->connectModified([=](guint){
+            _page_modified_connection = doc->connectModified([doc, this](guint){
                 resizeKnotSet(*(doc->preferredBounds()));
                 marginKnotSet(*(doc->preferredBounds()));
             });

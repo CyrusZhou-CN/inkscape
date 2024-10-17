@@ -221,7 +221,7 @@ void PencilToolbar::hide_extra_widgets()
     for (auto child : pen_only_items) {
         child->set_visible(false);
         child->signal_show().connect(
-            [=]() {
+            [child, this]() {
                 if (_tool_is_pencil) {
                     child->set_visible(false);
                 }
@@ -232,7 +232,7 @@ void PencilToolbar::hide_extra_widgets()
     for (auto child : pencil_only_items) {
         child->set_visible(false);
         child->signal_show().connect(
-            [=]() {
+            [child, this]() {
                 if (!_tool_is_pencil) {
                     child->set_visible(false);
                 }

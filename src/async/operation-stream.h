@@ -78,13 +78,13 @@ public:
     void start(std::function<R (Progress<T...>&)> work, duration throttle_interval = duration::zero()) {
         _task.reset(new BackgroundTask<R, T...>({
             .work = std::move(work),
-            .on_started    = [=]() { emit(Msg::OperationStarted {}); },
-            .on_progress   = [=](T... p) { emit(Msg::OperationProgress<T...> {std::tuple<T...>(p...)}); },
+            .on_started    = [this]() { emit(Msg::OperationStarted {}); },
+            .on_progress   = [this](T... p) { emit(Msg::OperationProgress<T...> {std::tuple<T...>(p...)}); },
             .throttle_time = throttle_interval,
-            .on_complete   = [=](R result) { emit(Msg::OperationResult<R> {result = std::move(result)}); },
-            .on_cancelled  = [=]() { emit(Msg::OperationCancelled {}); },
-            .on_exception  = [=](std::exception_ptr ex) { emit(Msg::OperationException {ex}); },
-            .on_finished   = [=]() { emit(Msg::OperationFinished {}); },
+            .on_complete   = [this](R result) { emit(Msg::OperationResult<R> {result = std::move(result)}); },
+            .on_cancelled  = [this]() { emit(Msg::OperationCancelled {}); },
+            .on_exception  = [this](std::exception_ptr ex) { emit(Msg::OperationException {ex}); },
+            .on_finished   = [this]() { emit(Msg::OperationFinished {}); },
         }));
     }
 

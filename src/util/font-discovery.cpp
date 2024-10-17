@@ -421,12 +421,12 @@ Glib::ustring get_fontspec_without_variants(const Glib::ustring& fontspec) {
 
 FontDiscovery::FontDiscovery() {
     if (auto i = InkscapeApplication::instance()) {
-        i->gio_app()->signal_shutdown().connect([=](){
+        i->gio_app()->signal_shutdown().connect([this](){
             _loading.cancel();
         });
     }
 
-    _connection = _loading.subscribe([=](const MessageType& msg) {
+    _connection = _loading.subscribe([this](const MessageType& msg) {
         if (auto result = Async::Msg::get_result(msg)) {
             // cache results
             _fonts = *result;

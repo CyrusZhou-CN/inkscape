@@ -105,7 +105,7 @@ void ObjectProperties::_init()
         auto exp_path = _prefs_path + "expand-props";
         auto expanded = Inkscape::Preferences::get()->getBool(exp_path, false);
         _exp_properties.set_expanded(expanded);
-        _exp_properties.property_expanded().signal_changed().connect([=]{
+        _exp_properties.property_expanded().signal_changed().connect([exp_path, this]{
             Inkscape::Preferences::get()->setBool(exp_path, _exp_properties.get_expanded());
         });
     }
@@ -113,7 +113,7 @@ void ObjectProperties::_init()
         auto exp_path = _prefs_path + "expand-interactive";
         auto expanded = Inkscape::Preferences::get()->getBool(exp_path, false);
         _exp_interactivity.set_expanded(expanded);
-        _exp_interactivity.property_expanded().signal_changed().connect([=]{
+        _exp_interactivity.property_expanded().signal_changed().connect([exp_path, this]{
             Inkscape::Preferences::get()->setBool(exp_path, _exp_interactivity.get_expanded());
         });
     }
