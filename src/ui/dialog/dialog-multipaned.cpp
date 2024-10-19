@@ -37,7 +37,7 @@
 
 static constexpr int DROPZONE_SIZE      =  5;
 static constexpr int DROPZONE_EXPANSION = 15;
-static constexpr int HANDLE_SIZE        = 12;
+static constexpr int HANDLE_SIZE        = 10; // note: match size of handle icon to avoid stretching
 static constexpr int HANDLE_CROSS_SIZE  = 25;
 
 namespace Inkscape::UI::Dialog {
@@ -233,10 +233,12 @@ MyHandle::MyHandle(Gtk::Orientation orientation, int size = get_handle_size())
 
     auto const image = Gtk::make_managed<Gtk::Image>();
     if (get_orientation() == Gtk::Orientation::HORIZONTAL) {
-        image->set_from_icon_name("view-more-symbolic");
+        // vertical splitter resizing content horizontally
+        image->set_from_icon_name("resizing-handle-vertical-symbolic");
         set_size_request(size, -1);
     } else {
-        image->set_from_icon_name("view-more-horizontal-symbolic");
+        // horizontal splitter resizing content vertically
+        image->set_from_icon_name("resizing-handle-horizontal-symbolic");
         set_size_request(-1, size);
     }
     image->set_pixel_size(size);
@@ -288,7 +290,7 @@ void MyHandle::draw_func(Cairo::RefPtr<Cairo::Context> const &cr, int /*width*/,
         if (rect.width > 4 && rect.height > 0) {
             auto const fg = get_color();
             rounded_rectangle(cr, rect.x + 2, rect.y, rect.width - 4, rect.height, 3);
-            cr->set_source_rgba(fg.get_red(), fg.get_green(), fg.get_blue(), 0.26);
+            cr->set_source_rgba(fg.get_red(), fg.get_green(), fg.get_blue(), 0.18);
             cr->fill();
         }
     }
@@ -981,16 +983,15 @@ Gtk::EventSequenceState DialogMultipaned::on_drag_begin(double start_x, double s
     // We clicked on handle.
     bool found = false;
     int child_number = 0;
-    Gtk::Allocation allocation = get_allocation();
     for (auto const &child : children) {
         if (auto const my_handle = dynamic_cast<MyHandle *>(child.get())) {
             Gtk::Allocation child_allocation = my_handle->get_allocation();
 
             // Did drag start in handle?
-            int x = child_allocation.get_x() - allocation.get_x();
-            int y = child_allocation.get_y() - allocation.get_y();
-            if (x < start_x && start_x < x + child_allocation.get_width() && y < start_y &&
-                start_y < y + child_allocation.get_height()) {
+            int x = child_allocation.get_x();
+            int y = child_allocation.get_y();
+            if (x < start_x && start_x < x + child_allocation.get_width() &&
+                y < start_y && start_y < y + child_allocation.get_height()) {
                 found = true;
                 my_handle->set_dragging(true);
                 break;
@@ -1159,6 +1160,9 @@ Gtk::EventSequenceState DialogMultipaned::on_drag_update(double offset_x, double
     if (_handle < 0) {
         return Gtk::EventSequenceState::NONE;
     }
+    // Hack: drag update sends some fractional garbage x, y right after first click, leading to handle movement;
+    // ignore them. The only downside is that we won't be able to return to the exact original location, once we move.
+    if (abs(offset_y) < 1 || abs(offset_x) < 1) return Gtk::EventSequenceState::NONE;
 
     auto child1 = children[_handle - 1].get();
     auto child2 = children[_handle + 1].get();

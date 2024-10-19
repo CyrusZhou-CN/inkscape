@@ -239,10 +239,15 @@ Application::Application(bool use_gui) :
 
         auto display = Gdk::Display::get_default();
         auto icon_theme = Gtk::IconTheme::get_for_display(display);
-        // Fixme: Previously prepend_search_path() in the reverse order.
-        icon_theme->add_search_path(get_path_string(USER, ICONS));
-        icon_theme->add_search_path(get_path_string(SHARED, ICONS));
-        icon_theme->add_search_path(get_path_string(SYSTEM, ICONS));
+        auto search_paths = icon_theme->get_search_path();
+        // prepend search paths or else hicolor icons fallback will fail
+        for (auto type : {USER, SHARED, SYSTEM}) {
+            auto path = get_path_string(type, ICONS);
+            if (!path.empty()) {
+                search_paths.insert(search_paths.begin(), path);
+            }
+        }
+        icon_theme->set_search_path(search_paths);
 
         themecontext = new Inkscape::UI::ThemeContext();
         themecontext->add_gtk_css(false);

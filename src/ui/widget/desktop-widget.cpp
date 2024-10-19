@@ -177,6 +177,10 @@ SPDesktopWidget::SPDesktopWidget(InkscapeWindow *inkscape_window, SPDocument *do
     _tbbox->set_resize_end_child(true);
     _tbbox->set_shrink_end_child(true);
 
+    // separator widget in tbox
+    auto& tbox_separator = *_tbbox->get_children().at(1);
+    tbox_separator.set_name("TBoxCanvasSeparator");
+
     _canvas_grid->set_hexpand(true);
     _canvas_grid->set_vexpand(true);
     _columns->append(std::move(cg));

@@ -34,7 +34,6 @@
 #include <poppler/glib/poppler-page.h>
 #endif
 
-#include <utility>
 #include <gdkmm/general.h>
 #include <glibmm/convert.h>
 #include <glibmm/i18n.h>
@@ -51,15 +50,17 @@
 #include <gtkmm/liststore.h>
 #include <gtkmm/notebook.h>
 #include <gtkmm/scale.h>
+#include <utility>
 
 #include "async/async.h"
-#include "document.h"
 #include "document-undo.h"
+#include "document.h"
 #include "extension/input.h"
 #include "extension/system.h"
 #include "inkscape.h"
-#include "pdf-parser.h"
 #include "object/sp-root.h"
+#include "pdf-parser.h"
+#include "preferences.h"
 #include "ui/builder-utils.h"
 #include "ui/dialog-events.h"
 #include "ui/dialog-run.h"
@@ -206,6 +207,7 @@ PdfImportDialog::PdfImportDialog(std::shared_ptr<PDFDoc> doc, const gchar * /*ur
     });
 
     auto &font_render = UI::get_widget<Gtk::ComboBox>(_builder, "font-rendering");
+    font_render.set_active_id(Inkscape::Preferences::get()->getString("/import/pdf-import/font-render").c_str());
     font_render.signal_changed().connect(sigc::mem_fun(*this, &PdfImportDialog::_fontRenderChanged));
     _fontRenderChanged();
 }
@@ -331,7 +333,9 @@ void PdfImportDialog::_setFonts(const FontList &fonts)
 void PdfImportDialog::_fontRenderChanged()
 {
     auto &font_render = UI::get_widget<Gtk::ComboBox>(_builder, "font-rendering");
-    FontStrategy choice = (FontStrategy)std::stoi(font_render.get_active_id().c_str());
+    auto active_id = font_render.get_active_id();
+    Inkscape::Preferences::get()->setString("/import/pdf-import/font-render", active_id);
+    FontStrategy choice = (FontStrategy)std::stoi(active_id.c_str());
     setFontStrategies(SvgBuilder::autoFontStrategies(choice, _font_list));
 }
 

@@ -81,19 +81,19 @@
         <col id="1" translatable="yes">Draw missing fonts</col>
       </row>
       <row>
-        <col id="0">2</col>
+        <col id="0">1</col>
         <col id="1" translatable="yes">Substitute missing fonts</col>
       </row>
       <row>
-        <col id="0">3</col>
+        <col id="0">2</col>
         <col id="1" translatable="yes">Keep missing fonts' names</col>
       </row>
       <row>
-        <col id="0">4</col>
+        <col id="0">3</col>
         <col id="1" translatable="yes">Delete missing font text</col>
       </row>
       <row>
-        <col id="0">1</col>
+        <col id="0">4</col>
         <col id="1" translatable="yes">Draw all text</col>
       </row>
       <row>
@@ -348,7 +348,7 @@
                     <property name="model">font-options</property>
                     <property name="active">0</property>
                     <property name="id-column">0</property>
-                    <property name="active-id">0</property>
+                    <property name="active-id">1</property>
                     <child>
                       <object class="GtkCellRendererText"/>
                       <attributes>

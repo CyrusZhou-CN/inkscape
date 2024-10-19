@@ -81,6 +81,9 @@ IGNORE_ICONS = [
     'feSpecularLighting-icon.svg',
     'feTile-icon.svg',
     'feTurbulence-icon.svg',
+    # Those are UI elements in form of icons; themes may define them, but they shouldn't have to
+    'resizing-handle-horizontal-symbolic.svg',
+    'resizing-handle-vertical-symbolic.svg',
 ]
 
 NO_PROBLEM,\
