@@ -18,6 +18,7 @@ public:
     ~ObjectPickerTool() override;
 
     sigc::signal<bool (SPObject*)> signal_object_picked;
+    sigc::signal<void()> signal_tool_switched;
 
 private:
     bool root_handler(const CanvasEvent& event) override;

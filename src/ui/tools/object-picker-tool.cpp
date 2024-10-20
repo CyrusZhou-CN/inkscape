@@ -43,6 +43,7 @@ ObjectPickerTool::ObjectPickerTool(SPDesktop* desktop): ToolBase(desktop, "/tool
 
 ObjectPickerTool::~ObjectPickerTool() {
     ungrabCanvasEvents();
+    signal_tool_switched.emit();
 }
 
 SPObject* get_item_at(SPDesktop* desktop, const Geom::Point& point) {
@@ -68,6 +69,8 @@ bool ObjectPickerTool::root_handler(const CanvasEvent& event) {
         auto cursor = event.pos;
         auto item = get_item_at(desktop, cursor);
         show_text(cursor, item ? item->getId() : nullptr);
+        auto msg = item ? Glib::ustring("Pick object <b>") + item->getId() + Glib::ustring("</b>") : "Pick objects.";
+        _desktop->messageStack()->flash(INFORMATION_MESSAGE, msg);
     },
 
     [&] (ButtonPressEvent const &event) {

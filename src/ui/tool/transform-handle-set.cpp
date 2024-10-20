@@ -766,7 +766,7 @@ void TransformHandleSet::_updateVisibility(bool v)
         int handle_index = prefs->getIntLimited("/options/grabsize/value", 3, 1, 15);
         int handle_size = handle_index * 2 + 1; // Handle pixmaps are actually larger but that's to allow space when handle is rotated.
 
-        Geom::Point bp = b.dimensions();
+        Geom::Point bp = b.dimensions() * Geom::Scale(_desktop->current_zoom());
 
         // do not scale when the bounding rectangle has zero width or height
         bool show_scale = (_mode == MODE_SCALE) && !Geom::are_near(b.minExtent(), 0);

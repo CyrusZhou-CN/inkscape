@@ -79,6 +79,36 @@ ArcToolbar::ArcToolbar(SPDesktop *desktop)
     setup_startend_button(_start_item, "start");
     setup_startend_button(_end_item, "end");
 
+    _rx_item.set_custom_numeric_menu_data({
+        {1, ""},
+        {2, ""},
+        {3, ""},
+        {5, ""},
+        {10, ""},
+        {20, ""},
+        {50, ""},
+        {100, ""},
+        {200, ""},
+        {500, ""}
+    });
+
+    _ry_item.set_custom_numeric_menu_data({
+        {1, ""},
+        {2, ""},
+        {3, ""},
+        {5, ""},
+        {10, ""},
+        {20, ""},
+        {50, ""},
+        {100, ""},
+        {200, ""},
+        {500, ""}
+    });
+
+    // Values auto-calculated.
+    _start_item.set_custom_numeric_menu_data({});
+    _end_item.set_custom_numeric_menu_data({});
+
     _type_buttons.push_back(&get_widget<Gtk::ToggleButton>(_builder, "slice_btn"));
     _type_buttons.push_back(&get_widget<Gtk::ToggleButton>(_builder, "arc_btn"));
     _type_buttons.push_back(&get_widget<Gtk::ToggleButton>(_builder, "chord_btn"));

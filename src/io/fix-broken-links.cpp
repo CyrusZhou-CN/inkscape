@@ -7,8 +7,6 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#include <string>
-#include <vector>
 #include <set>
 #include <algorithm>
 
@@ -33,7 +31,7 @@
 
 namespace Inkscape {
 
-static std::vector<std::string> splitPath( std::string const &path )
+std::vector<std::string> splitPath( std::string const &path )
 {
     std::vector<std::string> parts;
 

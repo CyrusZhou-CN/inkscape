@@ -446,7 +446,7 @@ sp_marker_show_dimension (SPMarker *marker, unsigned int key, unsigned int size)
  */
 Inkscape::DrawingItem *
 sp_marker_show_instance ( SPMarker *marker, Inkscape::DrawingItem *parent,
-                          unsigned int key, unsigned int pos,
+                          unsigned int loc, unsigned int pos, unsigned int z_order,
                           Geom::Affine const &base, float linewidth)
 {
     // Do not show marker if linewidth == 0 and markerUnits == strokeWidth
@@ -456,6 +456,7 @@ sp_marker_show_instance ( SPMarker *marker, Inkscape::DrawingItem *parent,
         return nullptr;
     }
 
+    auto key = parent->key() + ITEM_KEY_MARKERS + loc;
     auto it = marker->views_map.find(key);
     if (it == marker->views_map.end()) {
         // Key not found
@@ -475,8 +476,7 @@ sp_marker_show_instance ( SPMarker *marker, Inkscape::DrawingItem *parent,
         view->items[pos].reset(marker->private_show(parent->drawing(), key, SP_ITEM_REFERENCE_FLAGS));
 
         if (view->items[pos]) {
-            /* fixme: Position (Lauris) */
-            parent->prependChild(view->items[pos].get());
+            parent->appendChild(view->items[pos].get());
             if (auto g = cast<Inkscape::DrawingGroup>(view->items[pos].get())) {
                 g->setChildTransform(marker->c2p);
             }
@@ -487,6 +487,7 @@ sp_marker_show_instance ( SPMarker *marker, Inkscape::DrawingItem *parent,
         // Rotating for reversed-marker option is done at rendering time if necessary
         // so always pass in start_marker is false.
         view->items[pos]->setTransform(marker->get_marker_transform(base, linewidth, false));
+        view->items[pos]->setZOrder(z_order);
     }
 
     return view->items[pos].get();

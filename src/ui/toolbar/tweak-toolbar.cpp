@@ -61,6 +61,40 @@ TweakToolbar::TweakToolbar(SPDesktop *desktop)
     setup_derived_spin_button(_force_item, "force", 20, &TweakToolbar::force_value_changed);
     setup_derived_spin_button(_fidelity_item, "fidelity", 50, &TweakToolbar::fidelity_value_changed);
 
+    _width_item.set_custom_numeric_menu_data({
+        {1, _("(pinch tweak)")},
+        {2, ""},
+        {3, ""},
+        {5, ""},
+        {10, ""},
+        {15, _("(default)")},
+        {30, ""},
+        {50, ""},
+        {75, ""},
+        {100, _("(broad tweak)")}
+    });
+
+    _force_item.set_custom_numeric_menu_data({
+        {1, _("(minimum force)")},
+        {5, ""},
+        {10, ""},
+        {20, _("(default)")},
+        {30, ""},
+        {50, ""},
+        {70, ""},
+        {100, _("(maximum force)")}
+    });
+
+    _fidelity_item.set_custom_numeric_menu_data({
+        {10, _("(rough, simplified)")},
+        {25, ""},
+        {35, ""},
+        {50, _("(default)")},
+        {60, ""},
+        {80, ""},
+        {100, _("(fine, but many nodes)")}
+    });
+
     // Configure mode buttons
     int btn_index = 0;
     for_each_child(get_widget<Gtk::Box>(_builder, "mode_buttons_box"), [&](Gtk::Widget &item){

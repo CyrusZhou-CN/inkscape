@@ -338,6 +338,9 @@ sp_shape_update_marker_view(SPShape *shape, Inkscape::DrawingItem *ai)
     // the first vertex should get a start marker, the last an end marker, and all the others a mid marker
     // see bug 456148
 
+    // Record an absolute position for each rendered marker
+    unsigned int z_order = 0;
+
     // START marker
     {
         Geom::Affine const m (sp_shape_marker_get_transform_at_start(pathv.begin()->front()));
@@ -348,10 +351,10 @@ sp_shape_update_marker_view(SPShape *shape, Inkscape::DrawingItem *ai)
                 if (shape->_marker[i]->orient_mode == MARKER_ORIENT_AUTO_START_REVERSE) {
                     m_auto = Geom::Rotate::from_degrees( 180.0 ) * m;
                 }
-                sp_marker_show_instance(shape->_marker[i], ai,
-                                        ai->key() + ITEM_KEY_MARKERS + i, counter[i], m_auto,
+                sp_marker_show_instance(shape->_marker[i], ai, i, counter[i], z_order, m_auto,
                                         shape->style->stroke_width.computed);
-                 counter[i]++;
+                counter[i]++;
+                z_order++;
             }
         }
     }
@@ -366,10 +369,10 @@ sp_shape_update_marker_view(SPShape *shape, Inkscape::DrawingItem *ai)
                 Geom::Affine const m (sp_shape_marker_get_transform_at_start(path_it->front()));
                 for (int i = 0; i < 3; i += 2) {  // SP_MARKER_LOC and SP_MARKER_LOC_MID
                     if ( shape->_marker[i] ) {
-                        sp_marker_show_instance(shape->_marker[i], ai,
-                                                ai->key() + ITEM_KEY_MARKERS + i, counter[i], m,
+                        sp_marker_show_instance(shape->_marker[i], ai, i, counter[i], z_order, m,
                                                 shape->style->stroke_width.computed);
-                         counter[i]++;
+                        counter[i]++;
+                        z_order++;
                     }
                 }
             }
@@ -386,10 +389,10 @@ sp_shape_update_marker_view(SPShape *shape, Inkscape::DrawingItem *ai)
                     Geom::Affine const m (sp_shape_marker_get_transform(*curve_it1, *curve_it2));
                     for (int i = 0; i < 3; i += 2) {  // SP_MARKER_LOC and SP_MARKER_LOC_MID
                         if (shape->_marker[i]) {
-                            sp_marker_show_instance(shape->_marker[i], ai,
-                                                    ai->key() + ITEM_KEY_MARKERS + i, counter[i], m,
+                            sp_marker_show_instance(shape->_marker[i], ai, i, counter[i], z_order, m,
                                                     shape->style->stroke_width.computed);
                             counter[i]++;
+                            z_order++;
                         }
                     }
 
@@ -403,10 +406,10 @@ sp_shape_update_marker_view(SPShape *shape, Inkscape::DrawingItem *ai)
                 Geom::Affine const m = sp_shape_marker_get_transform_at_end(lastcurve);
                 for (int i = 0; i < 3; i += 2) {  // SP_MARKER_LOC and SP_MARKER_LOC_MID
                     if (shape->_marker[i]) {
-                        sp_marker_show_instance(shape->_marker[i], ai,
-                                                ai->key() + ITEM_KEY_MARKERS + i, counter[i], m,
+                        sp_marker_show_instance(shape->_marker[i], ai, i, counter[i], z_order, m,
                                                 shape->style->stroke_width.computed);
                         counter[i]++;
+                        z_order++;
                     }
                 }
             }
@@ -427,8 +430,7 @@ sp_shape_update_marker_view(SPShape *shape, Inkscape::DrawingItem *ai)
 
         for (int i = 0; i < 4; i += 3) {  // SP_MARKER_LOC and SP_MARKER_LOC_END
             if (shape->_marker[i]) {
-                sp_marker_show_instance(shape->_marker[i], ai,
-                                        ai->key() + ITEM_KEY_MARKERS + i, counter[i], m,
+                sp_marker_show_instance(shape->_marker[i], ai, i, counter[i], z_order, m,
                                         shape->style->stroke_width.computed);
                 counter[i]++;
             }

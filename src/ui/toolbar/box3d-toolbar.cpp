@@ -84,6 +84,30 @@ Box3DToolbar::Box3DToolbar(SPDesktop *desktop)
     setup_derived_spin_button(_angle_y_item, "box3d_angle_y", Proj::Y);
     setup_derived_spin_button(_angle_z_item, "box3d_angle_z", Proj::Z);
 
+    _angle_x_item.set_custom_numeric_menu_data({
+        {135, ""},
+        {150, ""},
+        {165, ""},
+        {180, ""},
+        {195, ""},
+        {210, ""},
+        {235, ""}
+    });
+
+    _angle_y_item.set_custom_numeric_menu_data({
+        {270, ""},
+    });
+
+    _angle_z_item.set_custom_numeric_menu_data({
+        {-45, ""},
+        {-30, ""},
+        {-15, ""},
+        {0, ""},
+        {15, ""},
+        {30, ""},
+        {45, ""}
+    });
+
     desktop->connectEventContextChanged(sigc::mem_fun(*this, &Box3DToolbar::check_ec));
 
     set_child(*_toolbar);

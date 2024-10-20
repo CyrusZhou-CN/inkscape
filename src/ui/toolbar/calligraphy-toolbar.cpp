@@ -94,6 +94,86 @@ CalligraphyToolbar::CalligraphyToolbar(SPDesktop *desktop)
     setup_derived_spin_button(_tremor_item, "tremor", 0.0, &CalligraphyToolbar::tremor_value_changed);
     setup_derived_spin_button(_wiggle_item, "wiggle", 0.0, &CalligraphyToolbar::wiggle_value_changed);
 
+    _width_item.set_custom_numeric_menu_data({
+        { 1, _("(hairline)")},
+        { 3, ""},
+        { 5, ""},
+        {10, ""},
+        {15, _("(default)")},
+        {20, ""},
+        {30, ""},
+        {50, ""},
+        {75, ""},
+        {100, _("(broad stroke)")}
+    });
+
+    _thinning_item.set_custom_numeric_menu_data({
+        {-100, _("(speed blows up stroke)")},
+        { -40, ""},
+        { -20, ""},
+        { -10, _("(slight widening)")},
+        {   0, _("(constant width)")},
+        {  10, _("(slight thinning, default)")},
+        {  20, ""},
+        {  40, ""},
+        { 100, _("(speed deflates stroke)")}
+    });
+
+    _mass_item.set_custom_numeric_menu_data({
+        {  0, _("(no inertia)")},
+        {  2, _("(slight smoothing, default)")},
+        { 10, _("(noticeable lagging)")},
+        { 20, ""},
+        { 50, ""},
+        {100, _("(maximum inertia)")}
+    });
+
+    _angle_item.set_custom_numeric_menu_data({
+        {-90, _("(left edge up)")},
+        {-60, ""},
+        {-30, ""},
+        {  0, _("(horizontal)")},
+        { 30, _("(default)")},
+        { 60, ""},
+        { 90, _("(right edge up)")}
+    });
+
+    // Fixation
+    _flatness_item.set_custom_numeric_menu_data({
+        {  0, _("(perpendicular to stroke, \"brush\")")},
+        { 20, ""},
+        { 40, ""},
+        { 60, ""},
+        { 90, _("(almost fixed, default)")},
+        {100, _("(fixed by Angle, \"pen\")")}
+    });
+
+    _cap_rounding_item.set_custom_numeric_menu_data({
+        {  0, _("(blunt caps, default)")},
+        {0.3, _("(slightly bulging)")},
+        {0.5, ""},
+        {1.0, ""},
+        {1.4, _("(approximately round)")},
+        {5.0, _("(long protruding caps)")}
+    });
+
+    _tremor_item.set_custom_numeric_menu_data({
+        {  0, _("(smooth line)")},
+        { 10, _("(slight tremor)")},
+        { 20, _("(noticeable tremor)")},
+        { 40, ""},
+        { 60, ""},
+        {100, _("(maximum tremor)")}
+    });
+
+    _wiggle_item.set_custom_numeric_menu_data({
+        {  0, _("(no wiggle)")},
+        { 20, _("(slight deviation)")},
+        { 40, ""},
+        { 60, ""},
+        {100, _("(wild waves and curls)")}
+    });
+
     // Configure the calligraphic profile combo box text.
     build_presets_list();
     _profile_selector_combo.signal_changed().connect(sigc::mem_fun(*this, &CalligraphyToolbar::change_profile));

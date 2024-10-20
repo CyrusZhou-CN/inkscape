@@ -398,17 +398,31 @@ public:
             _table->change_object(anchor);
 
             if (auto grid = dynamic_cast<Gtk::Grid*>(_table->get_first_child())) {
-                auto button = Gtk::make_managed<Gtk::Button>();
-                button->set_margin_start(4);
-                button->set_image_from_icon_name("object-pick");
-                button->signal_clicked().connect([grid, this](){
-                    if (!_desktop) return;
+                auto op_button = Gtk::make_managed<Gtk::ToggleButton>();
+                op_button->set_active(false);
+                op_button->set_tooltip_markup("<b>Picker Tool</b>\nSelect objects on canvas");
+                op_button->set_margin_start(4);
+                op_button->set_image_from_icon_name("object-pick");
 
-                    auto active_tool = get_active_tool(_desktop);
-                    if (active_tool != "Picker") {
-                        // activate object picker tool 
-                        set_active_tool(_desktop, "Picker");
+                op_button->signal_toggled().connect([=, this] {
+                    // Use operation blocker to block the toggle signal
+                    // emitted when the object has been picked and the
+                    // button is toggled.
+                    if (!_desktop || _update.pending()) {
+                        return;
                     }
+
+                    // Disconnect the picker signal if the button state is
+                    // toggled to inactive.
+                    if (!op_button->get_active()) {
+                        _picker.disconnect();
+                        set_active_tool(_desktop, _desktop->getTool()->get_last_active_tool());
+                        return;
+                    }
+
+                    // activate object picker tool
+                    set_active_tool(_desktop, "Picker");
+
                     if (auto tool = dynamic_cast<Inkscape::UI::Tools::ObjectPickerTool*>(_desktop->getTool())) {
                         _picker = tool->signal_object_picked.connect([grid, this](SPObject* item){
                             // set anchor href
@@ -420,9 +434,17 @@ public:
                             _picker.disconnect();
                             return false; // no more object picking
                         });
+
+                        _tool_switched = tool->signal_tool_switched.connect([=, this] {
+                            if (op_button->get_active()) {
+                                auto scoped(_update.block());
+                                op_button->set_active(false);
+                            }
+                            _tool_switched.disconnect();
+                        });
                     }
                 });
-                grid->attach(*button, 2, 0);
+                grid->attach(*op_button, 2, 0);
             }
         }
         else {
@@ -434,6 +456,7 @@ private:
     std::unique_ptr<SPAttributeTable> _table;
     SPAnchor* _anchor = nullptr;
     auto_connection _picker;
+    auto_connection _tool_switched;
     bool _first_time_update = true;
 };
 

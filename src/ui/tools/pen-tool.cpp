@@ -551,6 +551,9 @@ bool PenTool::_handleMotionNotify(MotionEvent const &event) {
                         if (!anchor) {   // Snap node only if not hitting anchor
                             _endpointSnap(p, event.modifiers);
                             _setSubsequentPoint(p, true, event.modifiers);
+                        } else if (green_anchor && green_anchor->active && green_curve && !green_curve->is_unset()) {
+                            // The green anchor is the end point, use the initial point explicitly.
+                            _setSubsequentPoint(green_curve->first_path()->initialPoint(), false, event.modifiers);
                         } else {
                             _setSubsequentPoint(anchor->dp, false, event.modifiers);
                         }

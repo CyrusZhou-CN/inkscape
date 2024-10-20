@@ -494,7 +494,7 @@ FontList::FontList(Glib::ustring preferences_path) :
         _signal_changed.emit();
     };
 
-    _font_grid.signal_selection_changed().connect([font_selected, this](){
+    _selection_changed = _font_grid.signal_selection_changed().connect([font_selected, this](){
         auto sel = _font_grid.get_selected_items();
         if (sel.size() == 1) {
             auto it = _font_list_store->get_iter(sel.front());

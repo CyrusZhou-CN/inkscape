@@ -846,7 +846,7 @@
     <property name="spacing">4</property>
     <property name="margin-end">4</property>
     <style>
-        <class name="toolbar"/>
+      <class name="inkscape-toolbar"/>
     </style>
     <child>
       <object class="GtkToggleButton">

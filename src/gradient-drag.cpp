@@ -120,7 +120,7 @@ static int gr_drag_style_query(SPStyle *style, int property, gpointer data)
 {
     GrDrag *drag = (GrDrag *) data;
 
-    if (property != QUERY_STYLE_PROPERTY_FILL && property != QUERY_STYLE_PROPERTY_STROKE && property != QUERY_STYLE_PROPERTY_MASTEROPACITY) {
+    if (property != QUERY_STYLE_PROPERTY_FILL && property != QUERY_STYLE_PROPERTY_MASTEROPACITY) {
         return QUERY_STYLE_NOTHING;
     }
 
@@ -207,10 +207,12 @@ Glib::ustring GrDrag::makeStopSafeColor( gchar const *str, bool &isNull )
 bool GrDrag::styleSet(SPCSSAttr const *css, bool switch_style)
 {
     if (selected.empty()) {
-        if (draggers.empty()) {
-            return false;
-        }
-        setSelected(*draggers.begin(), true);
+        return false;
+    }
+
+    // Do not allow the stroke setter to be confused by the gradient selector
+    if (css->attribute("stroke") && !css->attribute("color") && !css->attribute("fill")) {
+        return false;
     }
 
     SPCSSAttr *stop = sp_repr_css_attr_new();
@@ -229,10 +231,6 @@ bool GrDrag::styleSet(SPCSSAttr const *css, bool switch_style)
 
     if (css->attribute("color")) {
         sp_repr_css_set_property (stop, "stop-color", css->attribute("color"));
-    }
-
-    if (css->attribute("stroke") && strcmp(css->attribute("stroke"), "none")) {
-        sp_repr_css_set_property (stop, "stop-color", css->attribute("stroke"));
     }
 
     if (css->attribute("fill") && strcmp(css->attribute("fill"), "none")) {

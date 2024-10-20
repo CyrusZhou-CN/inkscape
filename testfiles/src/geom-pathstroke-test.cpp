@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 
 #include "object/sp-path.h"
-#include "pathvector.h"
+#include <2geom/pathvector.h>
 #include "svg/svg.h"
 #include "test-with-svg-object-pairs.h"
 

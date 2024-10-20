@@ -84,6 +84,56 @@ RectToolbar::RectToolbar(SPDesktop *desktop)
     setup_derived_spin_button(_rx_item, "rx", &SPRect::setVisibleRx);
     setup_derived_spin_button(_ry_item, "ry", &SPRect::setVisibleRy);
 
+    _width_item.set_custom_numeric_menu_data({
+        {1, ""},
+        {2, ""},
+        {3, ""},
+        {5, ""},
+        {10, ""},
+        {20, ""},
+        {50, ""},
+        {100, ""},
+        {200, ""},
+        {500, ""}
+    });
+
+    _height_item.set_custom_numeric_menu_data({
+        {1, ""},
+        {2, ""},
+        {3, ""},
+        {5, ""},
+        {10, ""},
+        {20, ""},
+        {50, ""},
+        {100, ""},
+        {200, ""},
+        {500, ""}
+    });
+
+    _rx_item.set_custom_numeric_menu_data({
+        {0.5, _("not rounded")},
+        {1, ""},
+        {2, ""},
+        {3, ""},
+        {5, ""},
+        {10, ""},
+        {20, ""},
+        {50, ""},
+        {100, ""}
+    });
+
+    _ry_item.set_custom_numeric_menu_data({
+        {0.5, _("not rounded")},
+        {1, ""},
+        {2, ""},
+        {3, ""},
+        {5, ""},
+        {10, ""},
+        {20, ""},
+        {50, ""},
+        {100, ""}
+    });
+
     _not_rounded.signal_clicked().connect(sigc::mem_fun(*this, &RectToolbar::defaults));
     _desktop->connectEventContextChanged(sigc::mem_fun(*this, &RectToolbar::watch_ec));
 

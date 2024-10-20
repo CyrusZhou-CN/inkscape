@@ -100,6 +100,20 @@ PencilToolbar::PencilToolbar(SPDesktop *desktop, bool pencil_mode)
         setup_derived_spin_button(_maxpressure_item, "maxpressure", 30, &PencilToolbar::maxpressure_value_changed);
         setup_derived_spin_button(_tolerance_item, "tolerance", 3.0, &PencilToolbar::tolerance_value_changed);
 
+        _minpressure_item.set_custom_numeric_menu_data({});
+        _maxpressure_item.set_custom_numeric_menu_data({});
+
+        // Smoothing
+        _tolerance_item.set_custom_numeric_menu_data({
+            {1, _("(many nodes, rough)")},
+            {10, _("(default)")},
+            {20, ""},
+            {30, ""},
+            {50, ""},
+            {75, ""},
+            {100, _("(few nodes, smooth)")}
+        });
+
         // Configure usepressure button.
         bool pressure = prefs->getBool("/tools/freehand/pencil/pressure", false);
         _usepressure_btn.set_active(pressure);
@@ -121,6 +135,9 @@ PencilToolbar::PencilToolbar(SPDesktop *desktop, bool pencil_mode)
 
     // Setup the spin buttons.
     setup_derived_spin_button(_shapescale_item, "shapescale", 2.0, &PencilToolbar::shapewidth_value_changed);
+
+    // Values auto-calculated.
+    _shapescale_item.set_custom_numeric_menu_data({});
 
     set_child(*_toolbar);
     init_menu_btns();

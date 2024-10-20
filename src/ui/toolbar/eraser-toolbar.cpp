@@ -68,6 +68,59 @@ EraserToolbar::EraserToolbar(SPDesktop *desktop)
     setup_derived_spin_button(_tremor_item, "tremor", 0.0, &EraserToolbar::tremor_value_changed);
     setup_derived_spin_button(_mass_item, "mass", 10, &EraserToolbar::mass_value_changed);
 
+     _width_item.set_custom_numeric_menu_data({
+        {  0, _("(no width)")},
+        {  1, _("(hairline)")},
+        {  3, ""},
+        {  5, ""},
+        { 10, ""},
+        { 15, _("(default)")},
+        { 20, ""},
+        { 30, ""},
+        { 50, ""},
+        { 75, ""},
+        {100, _("(broad stroke)")}
+    });
+
+     _thinning_item.set_custom_numeric_menu_data({
+        {-100, _("(speed blows up stroke)")},
+        { -40, ""},
+        { -20, ""},
+        { -10, _("(slight widening)")},
+        {   0, _("(constant width)")},
+        {  10, _("(slight thinning, default)")},
+        {  20, ""},
+        {  40, ""},
+        { 100, _("(speed deflates stroke)")}
+    });
+
+    _cap_rounding_item.set_custom_numeric_menu_data({
+        {  0, _("(blunt caps, default)")},
+        {0.3, _("(slightly bulging)")},
+        {0.5, ""},
+        {1.0, ""},
+        {1.4, _("(approximately round)")},
+        {5.0, _("(long protruding caps)")}
+    });
+
+     _tremor_item.set_custom_numeric_menu_data({
+        {  0, _("(smooth line)")},
+        { 10, _("(slight tremor)")},
+        { 20, _("(noticeable tremor)")},
+        { 40, ""},
+        { 60, ""},
+        {100, _("(maximum tremor)")}
+    });
+
+     _mass_item.set_custom_numeric_menu_data({
+        {  0, _("(no inertia)")},
+        {  2, _("(slight smoothing, default)")},
+        { 10, _("(noticeable lagging)")},
+        { 20, ""},
+        { 50, ""},
+        {100, _("(maximum inertia)")}
+    });
+
     // Configure mode buttons
     int btn_index = 0;
     for_each_child(get_widget<Gtk::Box>(_builder, "mode_buttons_box"), [&](Gtk::Widget &item){

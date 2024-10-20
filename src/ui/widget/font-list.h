@@ -87,6 +87,7 @@ private:
     Gtk::TreeView& _font_list;
     Gtk::TreeViewColumn _text_column;
     Gtk::IconView& _font_grid;
+    auto_connection _selection_changed;
     Glib::RefPtr<Gtk::ListStore> _font_list_store;
     Gtk::Box& _tag_box;
     Gtk::Box& _info_box;

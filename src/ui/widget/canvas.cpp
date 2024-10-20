@@ -44,6 +44,7 @@
 #include "colors/cms/transform.h"
 #include "colors/cms/system.h"
 #include "desktop.h"
+#include "desktop-events.h"
 #include "display/control/canvas-item-drawing.h"
 #include "display/control/canvas-item-group.h"
 #include "display/control/snap-indicator.h"
@@ -1492,6 +1493,9 @@ bool CanvasPrivate::emit_event(CanvasEvent &event)
             if (item->handle_event(event)) return true;
             item = item->get_parent();
         }
+    } else if (q->_desktop && (event.type() == EventType::KEY_PRESS || event.type() == EventType::KEY_RELEASE)) {
+        // Pass keyboard events back to the desktop root handler so TextTool can work
+        return sp_desktop_root_handler(event, q->_desktop);
     }
 
     return false;

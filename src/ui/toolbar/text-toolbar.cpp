@@ -272,6 +272,28 @@ TextToolbar::TextToolbar(SPDesktop *desktop)
     setup_derived_spin_button(_dy_item, "dy", 0.0, &TextToolbar::dy_value_changed);
     setup_derived_spin_button(_rotation_item, "rotation", 0.0, &TextToolbar::rotation_value_changed);
 
+    _line_height_item.set_custom_numeric_menu_data({
+        {1, _("Single spaced")},
+        {1.25, _("Default")},
+        {1.5, ""},{
+        2, _("Double spaced")}
+    });
+    _letter_spacing_item.set_custom_numeric_menu_data({{0, C_("Text tool", "Normal")}});
+    _word_spacing_item.set_custom_numeric_menu_data({{0, C_("Text tool", "Normal")}});
+    _dx_item.set_custom_numeric_menu_data({{0, ""}});
+    _dy_item.set_custom_numeric_menu_data({{0, ""}});
+    _rotation_item.set_custom_numeric_menu_data({
+        {-90, ""},
+        {-45, ""},
+        {-30, ""},
+        {-15, ""},
+        {  0, ""},
+        { 15, ""},
+        { 30, ""},
+        { 45, ""},
+        { 90, ""}
+    });
+
     // Configure alignment mode buttons
     configure_mode_buttons(_alignment_buttons, get_widget<Gtk::Box>(_builder, "alignment_buttons_box"), "align_mode",
                            &TextToolbar::align_mode_changed);

@@ -293,6 +293,8 @@ void StarTool::drag(Geom::Point p, unsigned state)
             return;
         }
 
+        _tr = currentLayer()->i2doc_affine().inverse();
+
         // Create object
         Inkscape::XML::Document *xml_doc = _desktop->doc()->getReprDoc();
         Inkscape::XML::Node *repr = xml_doc->createElement("svg:path");
@@ -302,10 +304,11 @@ void StarTool::drag(Geom::Point p, unsigned state)
         sp_desktop_apply_style_tool(_desktop, repr, "/tools/shapes/star", false);
 
         this->star = cast<SPStar>(currentLayer()->appendChildRepr(repr));
-
         Inkscape::GC::release(repr);
-        this->star->transform = currentLayer()->i2doc_affine().inverse();
         this->star->updateRepr();
+
+        // Adjust stroke width to cope with parent's transform
+        this->star->adjust_stroke_width_recursive(_tr.descrim());
     }
 
     /* Snap corner point with no constraints */
@@ -316,8 +319,8 @@ void StarTool::drag(Geom::Point p, unsigned state)
     m.freeSnapReturnByRef(pt2g, Inkscape::SNAPSOURCE_NODE_HANDLE);
     m.unSetup();
 
-    Geom::Point const p0 = _desktop->dt2doc(this->center);
-    Geom::Point const p1 = _desktop->dt2doc(pt2g);
+    Geom::Point const p0 = _desktop->dt2doc(this->center) * _tr;
+    Geom::Point const p1 = _desktop->dt2doc(pt2g) * _tr;
 
     double const sides = (gdouble) this->magnitude;
     Geom::Point const d = p1 - p0;
@@ -354,15 +357,12 @@ void StarTool::finishItem() {
             return;
         }
 
-        // Set transform center, so that odd stars rotate correctly
-        // LP #462157
+        // Set the *transform* center, so select tool rotations work from the star's
+        // center instead of the bbox center for odd spoked stars.
         this->star->setCenter(this->center);
         this->star->set_shape();
         this->star->updateRepr(SP_OBJECT_WRITE_EXT);
-        // compensate stroke scaling couldn't be done in doWriteTransform
-        double const expansion = this->star->transform.descrim();
-        this->star->doWriteTransform(this->star->transform, nullptr, true);
-        this->star->adjust_stroke_width_recursive(expansion);
+
         // update while creating inside a LPE group
         sp_lpe_item_update_patheffect(this->star.get(), true, true);
         _desktop->getSelection()->set(star.get());

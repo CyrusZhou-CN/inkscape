@@ -176,6 +176,32 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
     setup_derived_spin_button(_row_item, "mesh_rows", 1, &MeshToolbar::row_changed);
     setup_derived_spin_button(_col_item, "mesh_cols", 1, &MeshToolbar::col_changed);
 
+    _row_item.set_custom_numeric_menu_data({
+        {1, ""},
+        {2, ""},
+        {3, ""},
+        {4, ""},
+        {5, ""},
+        {6, ""},
+        {7, ""},
+        {8, ""},
+        {9, ""},
+        {10, ""},
+    });
+
+    _col_item.set_custom_numeric_menu_data({
+        {1, ""},
+        {2, ""},
+        {3, ""},
+        {4, ""},
+        {5, ""},
+        {6, ""},
+        {7, ""},
+        {8, ""},
+        {9, ""},
+        {10, ""},
+    });
+
     // Configure mode buttons
     int mode = prefs->getInt("/tools/mesh/mesh_geometry", SP_MESH_GEOMETRY_NORMAL);
 

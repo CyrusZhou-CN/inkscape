@@ -64,6 +64,34 @@ SpiralToolbar::SpiralToolbar(SPDesktop *desktop)
     setup_derived_spin_button(_expansion_item, "expansion", 1.0);
     setup_derived_spin_button(_t0_item, "t0", 0.0);
 
+    _revolution_item.set_custom_numeric_menu_data({
+        {0.01, _("just a curve")},
+        {0.5, ""},
+        {1, _("one full revolution")},
+        {2, ""},
+        {3, ""},
+        {5, ""},
+        {10, ""},
+        {50, ""},
+        {100, ""}
+    });
+
+    _expansion_item.set_custom_numeric_menu_data({
+        {0, _("circle")},
+        {0.1, _("edge is much denser")},
+        {0.5, _("edge is denser")},
+        {1, _("even")},
+        {1.5, _("center is denser")},
+        {5, _("center is much denser")},
+        {20, ""}
+    });
+
+    _t0_item.set_custom_numeric_menu_data({
+        {0, _("starts from center")},
+        {0.5, _("starts mid-way")},
+        {0.9, _("starts near edge")},
+    });
+
     set_child(*_toolbar);
     init_menu_btns();
 

@@ -68,6 +68,11 @@ ConnectorToolbar::ConnectorToolbar(SPDesktop *desktop)
     setup_derived_spin_button(_spacing_item, "spacing", defaultConnSpacing, &ConnectorToolbar::spacing_changed);
     setup_derived_spin_button(_length_item, "length", 100, &ConnectorToolbar::length_changed);
 
+    // Values auto-calculated.
+    _curvature_item.set_custom_numeric_menu_data({});
+    _spacing_item.set_custom_numeric_menu_data({});
+    _length_item.set_custom_numeric_menu_data({});
+
     _toolbar = &get_widget<Gtk::Box>(_builder, "connector-toolbar");
     set_child(*_toolbar);
     init_menu_btns();

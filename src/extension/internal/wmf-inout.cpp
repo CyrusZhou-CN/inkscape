@@ -1679,8 +1679,10 @@ int Wmf::myMetaFileProc(const char *contents, unsigned int length, PWMF_CALLBACK
         }
         TR_layout_2_svg(d->tri);
         SVGOStringStream ts;
-        ts << d->tri->out;
-        d->outsvg += ts.str().c_str();
+        if (d->tri->out) {
+            ts << d->tri->out;
+            d->outsvg += ts.str().c_str();
+        }
         d->tri = trinfo_clear(d->tri);
         if (d->dc[d->level].clip_id){
            d->outsvg += "\n</g>\n";

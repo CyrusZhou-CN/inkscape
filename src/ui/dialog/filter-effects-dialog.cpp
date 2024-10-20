@@ -513,15 +513,11 @@ public:
           _matrix(SPAttr::VALUES, _("This matrix determines a linear transform on color space. Each line affects one of the color components. Each column determines how much of each color component from the input is passed to the output. The last column does not depend on input colors, so can be used to adjust a constant component value.")),
           _saturation("", 1, 0, 1, 0.1, 0.01, 2, SPAttr::VALUES),
           _angle("", 0, 0, 360, 0.1, 0.01, 1, SPAttr::VALUES),
-          _label(C_("Label", "None"), Gtk::Align::START),
-          _use_stored(false),
-          _saturation_store(1.0),
-          _angle_store(0)
+          _label(C_("Label", "None"), Gtk::Align::START)
     {
         _matrix.signal_attr_changed().connect(signal_attr_changed().make_slot());
         _saturation.signal_attr_changed().connect(signal_attr_changed().make_slot());
         _angle.signal_attr_changed().connect(signal_attr_changed().make_slot());
-        signal_attr_changed().connect(sigc::mem_fun(*this, &ColorMatrixValues::update_store));
 
         _label.set_sensitive(false);
 
@@ -530,7 +526,6 @@ public:
 
     void set_from_attribute(SPObject* o) override
     {
-        std::string values_string;
         if(is<SPFeColorMatrix>(o)) {
             auto col = cast<SPFeColorMatrix>(o);
             unset_child();
@@ -538,20 +533,12 @@ public:
             switch(col->get_type()) {
                 case COLORMATRIX_SATURATE:
                     set_child(_saturation);
-                    if(_use_stored)
-                        _saturation.set_value(_saturation_store);
-                    else
-                        _saturation.set_from_attribute(o);
-                    values_string = Glib::Ascii::dtostr(_saturation.get_value());
+                    _saturation.set_from_attribute(o);
                     break;
 
                 case COLORMATRIX_HUEROTATE:
                     set_child(_angle);
-                    if(_use_stored)
-                        _angle.set_value(_angle_store);
-                    else
-                        _angle.set_from_attribute(o);
-                    values_string = Glib::Ascii::dtostr(_angle.get_value());
+                    _angle.set_from_attribute(o);
                     break;
 
                 case COLORMATRIX_LUMINANCETOALPHA:
@@ -561,27 +548,9 @@ public:
                 case COLORMATRIX_MATRIX:
                 default:
                     set_child(_matrix);
-                    if(_use_stored)
-                        _matrix.set_values(_matrix_store);
-                    else
-                        _matrix.set_from_attribute(o);
-                    for (auto v : _matrix.get_values()) {
-                        values_string += Glib::Ascii::dtostr(v) + " ";
-                    }
-                    values_string.pop_back();
+                    _matrix.set_from_attribute(o);
+                    break;
             }
-
-            // The filter effects widgets derived from AttrWidget automatically update the
-            // attribute on use. In this case, however, we must also update "values" whenever
-            // "type" is changed.
-            auto repr = o->getRepr();
-            if (values_string.empty()) {
-                repr->removeAttribute("values");
-            } else {
-                repr->setAttribute("values", values_string);
-            }
-
-            _use_stored = true;
         }
     }
 
@@ -596,32 +565,11 @@ public:
         return "";
     }
 
-    void clear_store()
-    {
-        _use_stored = false;
-    }
 private:
-    void update_store()
-    {
-        const Widget* w = get_child();
-        if(w == &_matrix)
-            _matrix_store = _matrix.get_values();
-        else if(w == &_saturation)
-            _saturation_store = _saturation.get_value();
-        else if(w == &_angle)
-            _angle_store = _angle.get_value();
-    }
-
     MatrixAttr _matrix;
     SpinScale _saturation;
     SpinScale _angle;
     Gtk::Label _label;
-
-    // Store separate values for the different color modes
-    bool _use_stored;
-    std::vector<double> _matrix_store;
-    double _saturation_store;
-    double _angle_store;
 };
 
 static Inkscape::UI::Dialog::FileOpenDialog * selectFeImageFileInstance = nullptr;
@@ -1840,7 +1788,6 @@ void FilterEffectsDialog::PrimitiveList::on_primitive_selection_changed()
 {
     _observer->set(get_selected());
     signal_primitive_changed()();
-    _dialog._color_matrix_values->clear_store();
 }
 
 /* Add all filter primitives in the current to the list.

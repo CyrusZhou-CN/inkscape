@@ -57,6 +57,7 @@ set(ui_SRC
 	toolbar/measure-toolbar.cpp
 	toolbar/mesh-toolbar.cpp
 	toolbar/node-toolbar.cpp
+	toolbar/objectpicker-toolbar.cpp
 	toolbar/page-toolbar.cpp
 	toolbar/paintbucket-toolbar.cpp
 	toolbar/pencil-toolbar.cpp
@@ -409,6 +410,7 @@ set(ui_SRC
 	toolbar/measure-toolbar.h
 	toolbar/mesh-toolbar.h
 	toolbar/node-toolbar.h
+	toolbar/objectpicker-toolbar.h
 	toolbar/page-toolbar.h
 	toolbar/paintbucket-toolbar.h
 	toolbar/pencil-toolbar.h

@@ -303,8 +303,8 @@ void add_actions_path(InkscapeWindow *win)
     auto const Double = Glib::VariantType(Glib::VARIANT_TYPE_DOUBLE);
 
     auto prefs = Inkscape::Preferences::get();
-    int current_mode = prefs->getInt("/tool/booleans/mode", 0);
-    bool replace = prefs->getBool("/tool/booleans/replace", true);
+    int current_mode = prefs->getInt("/tools/booleans/mode", 0);
+    bool replace = prefs->getBool("/tools/booleans/replace", true);
 
     // clang-format off
     win->add_action(                "path-inset",                   sigc::bind(sigc::ptr_fun(&select_path_inset),          win));

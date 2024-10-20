@@ -342,6 +342,9 @@ GradientToolbar::GradientToolbar(SPDesktop *desktop)
     _offset_adj_changed = false;
     setup_derived_spin_button(_offset_item, "stopoffset", 0);
 
+    // Values auto-calculated.
+    _offset_item.set_custom_numeric_menu_data({});
+
     // Configure mode buttons
     int btn_index = 0;
     for_each_child(get_widget<Gtk::Box>(_builder, "new_type_buttons_box"), [&](Gtk::Widget &item){

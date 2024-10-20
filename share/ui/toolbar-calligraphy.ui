@@ -200,7 +200,7 @@
             <property name="name">calligraphy-angle</property>
             <property name="focusable">True</property>
             <property name="width-chars">1</property>
-            <property name="text" translatable="yes">0</property>
+            <property name="text">0</property>
             <property name="adjustment">_angle_adj</property>
             <property name="climb-rate">1</property>
             <property name="value">0.001</property>
@@ -242,7 +242,7 @@
           <object class="GtkSpinButton" id="_flatness_item">
             <property name="focusable">True</property>
             <property name="width-chars">1</property>
-            <property name="text" translatable="yes">0</property>
+            <property name="text">0</property>
             <property name="adjustment">_flatness_adj</property>
             <property name="climb-rate">1</property>
           </object>
@@ -259,7 +259,7 @@
     </child>
     <child>
       <object class="GtkBox" id="cap_rounding_box">
-        <property name="tooltip-text" translatable="yes">Increase to make caps at the ends of strokes protrude more (0 = no caps, 1 = round caps</property>
+        <property name="tooltip-text" translatable="yes">Increase to make caps at the ends of strokes protrude more (0 = no caps, 1 = round caps)</property>
         <property name="margin-end">3</property>
         <style>
             <class name="priority1"/>
@@ -274,7 +274,7 @@
           <object class="GtkSpinButton" id="_cap_rounding_item">
             <property name="focusable">True</property>
             <property name="width-chars">1</property>
-            <property name="text" translatable="yes">0</property>
+            <property name="text">0</property>
             <property name="adjustment">_cap_rounding_adj</property>
             <property name="climb-rate">1</property>
             <property name="digits">2</property>
@@ -308,7 +308,7 @@
           <object class="GtkSpinButton" id="_tremor_item">
             <property name="focusable">True</property>
             <property name="width-chars">1</property>
-            <property name="text" translatable="yes">0</property>
+            <property name="text">0</property>
             <property name="adjustment">_tremor_adj</property>
             <property name="climb-rate">1</property>
             <property name="value">0.001</property>
@@ -331,7 +331,7 @@
           <object class="GtkSpinButton" id="_wiggle_item">
             <property name="focusable">True</property>
             <property name="width-chars">1</property>
-            <property name="text" translatable="yes">0</property>
+            <property name="text">0</property>
             <property name="adjustment">_wiggle_adj</property>
             <property name="climb-rate">1</property>
             <property name="value">0.001</property>

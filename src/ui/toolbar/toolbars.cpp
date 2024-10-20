@@ -25,6 +25,7 @@
 
 // For creating toolbars
 #include "ui/toolbar/arc-toolbar.h"
+#include "ui/toolbar/booleans-toolbar.h"
 #include "ui/toolbar/box3d-toolbar.h"
 #include "ui/toolbar/calligraphy-toolbar.h"
 #include "ui/toolbar/connector-toolbar.h"
@@ -32,25 +33,25 @@
 #include "ui/toolbar/eraser-toolbar.h"
 #include "ui/toolbar/gradient-toolbar.h"
 #include "ui/toolbar/lpe-toolbar.h"
-#include "ui/toolbar/mesh-toolbar.h"
-#include "ui/toolbar/measure-toolbar.h"
-#include "ui/toolbar/node-toolbar.h"
-#include "ui/toolbar/booleans-toolbar.h"
-#include "ui/toolbar/rect-toolbar.h"
 #include "ui/toolbar/marker-toolbar.h"
+#include "ui/toolbar/measure-toolbar.h"
+#include "ui/toolbar/mesh-toolbar.h"
+#include "ui/toolbar/node-toolbar.h"
+#include "ui/toolbar/objectpicker-toolbar.h"
 #include "ui/toolbar/page-toolbar.h"
 #include "ui/toolbar/paintbucket-toolbar.h"
 #include "ui/toolbar/pencil-toolbar.h"
+#include "ui/toolbar/rect-toolbar.h"
 #include "ui/toolbar/select-toolbar.h"
-#include "ui/toolbar/spray-toolbar.h"
 #include "ui/toolbar/spiral-toolbar.h"
+#include "ui/toolbar/spray-toolbar.h"
 #include "ui/toolbar/star-toolbar.h"
-#include "ui/toolbar/tweak-toolbar.h"
 #include "ui/toolbar/text-toolbar.h"
+#include "ui/toolbar/tweak-toolbar.h"
 #include "ui/toolbar/zoom-toolbar.h"
 #include "ui/tools/tool-base.h"
-#include "ui/widget/style-swatch.h"
 #include "ui/util.h"
+#include "ui/widget/style-swatch.h"
 
 namespace Inkscape::UI::Toolbar {
 namespace {
@@ -94,6 +95,7 @@ ToolBoxData const aux_toolboxes[] = {
     { "/tools/paintbucket",     "Paintbucket",  create<PaintbucketToolbar>},
     { "/tools/eraser",          "Eraser",       create<EraserToolbar>},
     { "/tools/lpetool",         "LPETool",      create<LPEToolbar>},
+    { "/tools/picker",          "ObjectPicker", create<ObjectPickerToolbar>},
     { nullptr,                  "",             nullptr}
     // clang-format on
 };

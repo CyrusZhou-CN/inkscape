@@ -62,6 +62,10 @@ PaintbucketToolbar::PaintbucketToolbar(SPDesktop *desktop)
     setup_derived_spin_button(_threshold_item, "threshold", 5, &PaintbucketToolbar::threshold_changed);
     setup_derived_spin_button(_offset_item, "offset", 0, &PaintbucketToolbar::offset_changed);
 
+    // Values auto-calculated.
+    _threshold_item.set_custom_numeric_menu_data({});
+    _offset_item.set_custom_numeric_menu_data({});
+
     // Channel
     {
         UI::Widget::ComboToolItemColumns columns;

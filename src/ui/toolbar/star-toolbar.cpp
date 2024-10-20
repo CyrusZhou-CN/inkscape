@@ -79,6 +79,38 @@ StarToolbar::StarToolbar(SPDesktop *desktop)
         {20, ""}
     });
 
+    _spoke_item.set_custom_numeric_menu_data({
+        {0.010, _("thin-ray star")},
+        {0.200, ""},
+        {0.382, _("pentagram")},
+        {0.577, _("hexagram")},
+        {0.692, _("heptagram")},
+        {0.765, _("octagram")},
+        {1.000, _("regular polygon")}
+    });
+
+    _roundedness_item.set_custom_numeric_menu_data({
+        {-1.0 , _("stretched")},
+        {-0.2 , _("twisted")},
+        {-0.03, _("slightly pinched")},
+        { 0.0 , _("NOT rounded")},
+        { 0.05, _("slightly rounded")},
+        { 0.1 , _("visibly rounded")},
+        { 0.2 , _("well rounded")},
+        { 0.3 , _("amply rounded")},
+        { 0.5 , ""},
+        { 1.0 , _("stretched")},
+        {10.0 , _("blown up")}
+    });
+
+    _randomization_item.set_custom_numeric_menu_data({
+        { 0.00, _("NOT randomized")},
+        { 0.01, _("slightly irregular")},
+        { 0.10, _("visibly randomized")},
+        { 0.50, _("strongly randomized")},
+        {10.00, _("blown up")}
+    });
+
     setup_derived_spin_button(_spoke_item, "proportion", 0.5, &StarToolbar::proportion_value_changed);
     setup_derived_spin_button(_roundedness_item, "rounded", 0.0, &StarToolbar::rounded_value_changed);
     setup_derived_spin_button(_randomization_item, "randomized", 0.0, &StarToolbar::randomized_value_changed);

@@ -98,6 +98,85 @@ SprayToolbar::SprayToolbar(SPDesktop *desktop)
     setup_derived_spin_button(_mean_item, "mean", 0, &SprayToolbar::mean_value_changed);
     setup_derived_spin_button(_offset_item, "offset", 100, &SprayToolbar::offset_value_changed);
 
+    _width_item.set_custom_numeric_menu_data({
+        {  1, _("(narrow spray)")},
+        {  3, ""},
+        {  5, ""},
+        { 10, ""},
+        { 15, _("(default)")},
+        { 20, ""},
+        { 30, ""},
+        { 50, ""},
+        { 75, ""},
+        {100, _("(broad spray)")}
+    });
+
+    _population_item.set_custom_numeric_menu_data({
+        {  5, _("(low population)")},
+        { 10, ""},
+        { 35, ""},
+        { 50, ""},
+        { 70, _("(default)")},
+        { 85, ""},
+        {100, _("(high population)")}
+    });
+
+    _rotation_item.set_custom_numeric_menu_data({
+        {  0, _("(default)")},
+        { 10, ""},
+        { 20, ""},
+        { 35, ""},
+        { 50, ""},
+        { 60, ""},
+        { 80, ""},
+        {100, _("(high rotation variation)")}
+    });
+
+    _scale_item.set_custom_numeric_menu_data({
+        {  0, _("(default)")},
+        { 10, ""},
+        { 20, ""},
+        { 35, ""},
+        { 50, ""},
+        { 60, ""},
+        { 80, ""},
+        {100, _("(high scale variation)")}
+    });
+
+    // Scatter
+    _sd_item.set_custom_numeric_menu_data({
+        {  1, _("(minimum scatter)")},
+        {  5, ""},
+        { 10, ""},
+        { 20, ""},
+        { 30, ""},
+        { 50, ""},
+        { 70, _("(default)")},
+        {100, _("(maximum scatter)")}
+    });
+
+    _mean_item.set_custom_numeric_menu_data({
+        {  0, _("(default)")},
+        {  5, ""},
+        { 10, ""},
+        { 20, ""},
+        { 30, ""},
+        { 50, ""},
+        { 70, ""},
+        {100, _("(maximum mean)")}
+    });
+
+    _offset_item.set_custom_numeric_menu_data({
+        {  0, _("(minimum offset)")},
+        { 25, ""},
+        { 50, ""},
+        { 75, ""},
+        {100, _("(default)")},
+        {150, ""},
+        {200, ""},
+        {1000, _("(maximum offset)")}
+    });
+
     // Configure mode buttons
     int btn_index = 0;
     for_each_child(get_widget<Gtk::Box>(_builder, "mode_buttons_box"), [&](Gtk::Widget &item){

@@ -57,7 +57,7 @@
             <property name="hexpand">True</property>
             <property name="child">
               <object class="GtkExpander" id="LPEExpander">
-                <property name="focusable">True</property>
+                <property name="focusable">False</property>
                 <child type="label">
                   <object class="GtkBox">
                     <property name="name">LPEExpanderBox</property>

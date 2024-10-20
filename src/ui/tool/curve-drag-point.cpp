@@ -162,11 +162,6 @@ bool CurveDragPoint::clicked(ButtonReleaseEvent const &event)
         _pm._selection.clear();
         _pm._selection.insert(first.ptr(), false, false);
         _pm._selection.insert(second.ptr());
-        if (held_ctrl(event)) {
-            _pm.setSegmentType(Inkscape::UI::SEGMENT_STRAIGHT);
-            _pm.update(true);
-            _pm._commit(_("Straighten segments"));
-        }
     }
     return true;
 }
@@ -178,6 +173,10 @@ bool CurveDragPoint::doubleclicked(ButtonReleaseEvent const &event)
         _pm.deleteSegments();
         _pm.update(true);
         _pm._commit(_("Remove segment"));
+    } else if (held_alt(event)) {
+        _pm.setSegmentType(Inkscape::UI::SEGMENT_STRAIGHT);
+        _pm.update(true);
+        _pm._commit(_("Straighten segments"));
     } else {
         _pm._updateDragPoint(_desktop->d2w(position()));
         _insertNode(true);
@@ -212,23 +211,19 @@ Glib::ustring CurveDragPoint::_getTip(unsigned state) const
         return C_("Path segment tip",
             "<b>Ctrl+Alt</b>: click to insert a node");
     }
-    if (state_held_ctrl(state)) {
-        return C_("Path segment tip",
-            "<b>Ctrl</b>: click to change line type");
+    if (state_held_alt(state)) {
+        return C_("Path segment tip", "<b>Alt</b>: double click to change line type");
     }
     if (_pm._isBSpline()) {
-        return C_("Path segment tip",
-            "<b>BSpline segment</b>: drag to shape the segment, doubleclick to insert node, "
-            "click to select (more: Shift, Ctrl+Alt)");
+        return C_("Path segment tip", "<b>BSpline segment</b>: drag to shape the segment, doubleclick to insert node, "
+                                      "click to select (more: Alt, Shift, Ctrl+Alt)");
     }
     if (linear) {
-        return C_("Path segment tip",
-            "<b>Linear segment</b>: drag to convert to a Bezier segment, "
-            "doubleclick to insert node, click to select (more: Shift, Ctrl+Alt)");
+        return C_("Path segment tip", "<b>Linear segment</b>: drag to convert to a Bezier segment, "
+                                      "doubleclick to insert node, click to select (more: Alt, Shift, Ctrl+Alt)");
     } else {
-        return C_("Path segment tip",
-            "<b>Bezier segment</b>: drag to shape the segment, doubleclick to insert node, "
-            "click to select (more: Shift, Ctrl+Alt)");
+        return C_("Path segment tip", "<b>Bezier segment</b>: drag to shape the segment, doubleclick to insert node, "
+                                      "click to select (more: Alt, Shift, Ctrl+Alt)");
     }
 }
 

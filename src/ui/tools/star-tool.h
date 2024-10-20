@@ -21,6 +21,8 @@
 #include "ui/tools/tool-base.h"
 #include "object/weakptr.h"
 
+#include "2geom/affine.h"
+
 class SPStar;
 
 namespace Inkscape { class Selection; }
@@ -55,6 +57,9 @@ private:
 
     // randomization
     double randomized = 0.0;
+
+    // Scale of the new object
+    Geom::Affine _tr = Geom::identity();
 
     sigc::connection sel_changed_connection;
 
