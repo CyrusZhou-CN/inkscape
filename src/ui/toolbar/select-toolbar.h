@@ -22,7 +22,7 @@
 #include <glibmm/refptr.h>
 
 #include "toolbar.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Gtk {
 class Adjustment;
@@ -71,7 +71,7 @@ private:
     Gtk::ToggleButton &_lock_btn;
 
     std::vector<Gtk::Widget *> _context_items;
-    std::vector<auto_connection> _connections;
+    std::vector<sigc::scoped_connection> _connections;
 
     bool _update;
     std::string _action_key;

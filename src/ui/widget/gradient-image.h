@@ -18,7 +18,7 @@
 #include <glibmm/refptr.h>
 #include <gtkmm/drawingarea.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 class SPGradient;
 class SPObject;
@@ -37,8 +37,8 @@ public:
 
 private:
     SPGradient *_gradient = nullptr;
-    auto_connection _release_connection;
-    auto_connection _modified_connection;
+    sigc::scoped_connection _release_connection;
+    sigc::scoped_connection _modified_connection;
 
     void draw_func(Cairo::RefPtr<Cairo::Context> const &cr, int width, int height);
     void gradient_release (SPObject const *obj);

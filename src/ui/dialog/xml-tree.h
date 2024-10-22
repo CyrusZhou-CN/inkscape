@@ -104,7 +104,7 @@ private:
      * `gtk_tree_store_remove` makes an undesired selection that we will
      * immediately revert and don't want to an early response for.
      */
-    Inkscape::auto_connection _tree_select_idle;
+    sigc::scoped_connection _tree_select_idle;
     bool deferred_on_tree_select_row();
 
     /**

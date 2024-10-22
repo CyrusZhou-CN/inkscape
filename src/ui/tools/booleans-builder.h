@@ -13,10 +13,10 @@
 
 #include <vector>
 #include <optional>
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 #include "booleans-subitems.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "display/control/canvas-item-ptr.h"
 
 class SPDesktop;
@@ -82,7 +82,7 @@ private:
     std::vector<std::vector<WorkItem>> _undo;
     std::vector<std::vector<WorkItem>> _redo;
 
-    auto_connection desk_modified_connection;
+    sigc::scoped_connection desk_modified_connection;
 
     void redraw_item(CanvasItemBpath &bpath, bool selected, TaskType task, bool image);
     void redraw_items();

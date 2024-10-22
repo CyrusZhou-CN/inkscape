@@ -14,7 +14,7 @@
 #ifndef INKSCAPE_UI_DIALOG_FONT_COLLECTIONS_MANAGER_H
 #define INKSCAPE_UI_DIALOG_FONT_COLLECTIONS_MANAGER_H
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/dialog/dialog-base.h"
 #include "ui/widget/font-selector.h"
 #include "ui/widget/font-collection-selector.h"
@@ -76,7 +76,7 @@ private:
     Inkscape::UI::Widget::FontCollectionSelector _user_font_collections;
 
     // Signals
-    auto_connection _font_count_changed_connection;
+    sigc::scoped_connection _font_count_changed_connection;
 };
 
 } // namespace Inkscape::UI::Dialog

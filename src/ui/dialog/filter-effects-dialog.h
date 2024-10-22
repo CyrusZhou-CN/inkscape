@@ -39,7 +39,7 @@
 
 #include "attributes.h"
 #include "display/nr-filter-types.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/dialog/dialog-base.h"
 #include "ui/widget/bin.h"
 #include "ui/widget/combo-enums.h"
@@ -96,7 +96,7 @@ private:
     void selectionChanged(Inkscape::Selection *selection) override;
     void selectionModified(Inkscape::Selection *selection, guint flags) override;
 
-    Inkscape::auto_connection _resource_changed;
+    sigc::scoped_connection _resource_changed;
 
     friend class FileOrElementChooser;
 

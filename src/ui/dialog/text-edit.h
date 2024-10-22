@@ -22,7 +22,7 @@
 #include <glibmm/refptr.h>              // for RefPtr
 #include <gtk/gtk.h>                    // for GtkEventControllerKey
 
-#include "helper/auto-connection.h"     // for auto_connection
+#include <sigc++/scoped_connection.h>     // for sigc::scoped_connection
 #include "ui/dialog/dialog-base.h"      // for DialogBase
 #include "ui/widget/font-selector.h"    // for FontSelector
 #include "ui/widget/font-variants.h"    // for FontVariants
@@ -195,15 +195,15 @@ private:
     bool _use_browser = false;
 
     // Signals
-    auto_connection selectChangedConn;
-    auto_connection subselChangedConn;
-    auto_connection selectModifiedConn;
-    auto_connection fontChangedConn;
-    auto_connection fontFeaturesChangedConn;
-    auto_connection fontCollectionsChangedSelection;
-    auto_connection fontCollectionsUpdate;
-    auto_connection _apply_font;
-    auto_connection _font_changed;
+    sigc::scoped_connection selectChangedConn;
+    sigc::scoped_connection subselChangedConn;
+    sigc::scoped_connection selectModifiedConn;
+    sigc::scoped_connection fontChangedConn;
+    sigc::scoped_connection fontFeaturesChangedConn;
+    sigc::scoped_connection fontCollectionsChangedSelection;
+    sigc::scoped_connection fontCollectionsUpdate;
+    sigc::scoped_connection _apply_font;
+    sigc::scoped_connection _font_changed;
 
     // Other
     double selected_fontsize = 12;

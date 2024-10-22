@@ -24,7 +24,7 @@
 #include <gtkmm/label.h>
 #include <gtkmm/paned.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/dialog/dialog-base.h"
 
 class SPObject;
@@ -107,8 +107,8 @@ private:
     std::vector<Gtk::Image *> images;
     std::vector<Glib::ustring> labels;
     std::vector<Gtk::ToggleButton *> buttons;
-    auto_connection docModConn;
-    auto_connection docDesConn;
+    sigc::scoped_connection docModConn;
+    sigc::scoped_connection docDesConn;
 
     void setDocument( SPDocument *document );
     void removeDrawing();

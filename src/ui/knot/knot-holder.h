@@ -19,7 +19,7 @@
 #include <2geom/affine.h>
 #include <list>
 #include <sigc++/connection.h>
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 #ifndef SEEN_SP_KNOTHOLDER_H
 #define SEEN_SP_KNOTHOLDER_H
@@ -99,8 +99,8 @@ protected:
     bool dragging = false;
 
     Geom::Affine _edit_transform;
-    Inkscape::auto_connection _watch_fill;
-    Inkscape::auto_connection _watch_stroke;
+    sigc::scoped_connection _watch_fill;
+    sigc::scoped_connection _watch_stroke;
 };
 
 #endif // SEEN_SP_KNOTHOLDER_H

@@ -25,7 +25,7 @@
 #include "display/control/canvas-item-quad.h"
 #include "display/control/canvas-item-curve.h"
 #include "display/control/canvas-item-ptr.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 class SPHatch;
 class SPItem;
@@ -74,10 +74,10 @@ public:
     KnotHolder *parent_holder = nullptr;
 
 private:
-    Inkscape::auto_connection _mousedown_connection;
-    Inkscape::auto_connection _moved_connection;
-    Inkscape::auto_connection _click_connection;
-    Inkscape::auto_connection _ungrabbed_connection;
+    sigc::scoped_connection _mousedown_connection;
+    sigc::scoped_connection _moved_connection;
+    sigc::scoped_connection _click_connection;
+    sigc::scoped_connection _ungrabbed_connection;
 };
 
 // LPEs
@@ -225,8 +225,8 @@ private:
 
     int _dir;
     CanvasItemPtr<Inkscape::CanvasItemCurve> _line;
-    Inkscape::auto_connection _watch_filter;
-    Inkscape::auto_connection _watch_blur;
+    sigc::scoped_connection _watch_filter;
+    sigc::scoped_connection _watch_blur;
 };
 
 #endif // SEEN_KNOT_HOLDER_ENTITY_H

@@ -45,7 +45,6 @@
 #include "selection.h"
 #include "actions/actions-tools.h"
 #include "display/cairo-utils.h"
-#include "helper/sigc-track-obj.h"
 #include "io/resource.h"
 #include "object/sp-gradient.h"
 #include "object/tags.h"
@@ -104,11 +103,11 @@ ColorItem::ColorItem(SPGradient *gradient, DialogBase *dialog)
     description = gradient->defaultLabel();
     color_id = gradient->getId();
 
-    gradient->connectRelease(SIGC_TRACKING_ADAPTOR([this] (SPObject*) {
+    gradient->connectRelease(sigc::track_object([this] (SPObject*) {
         std::get<GradientData>(data).gradient = nullptr;
     }, *this));
 
-    gradient->connectModified(SIGC_TRACKING_ADAPTOR([this] (SPObject *obj, unsigned flags) {
+    gradient->connectModified(sigc::track_object([this] (SPObject *obj, unsigned flags) {
         if (flags & SP_OBJECT_STYLE_MODIFIED_FLAG) {
             cache_dirty = true;
             queue_draw();

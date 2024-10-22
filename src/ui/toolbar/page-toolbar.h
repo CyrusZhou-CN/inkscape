@@ -18,7 +18,7 @@
 #include <glibmm/refptr.h>
 #include <string>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "toolbar.h"
 #include "ui/widget/spinbutton.h"
 
@@ -78,13 +78,13 @@ private:
     void selectionChanged(SPPage *page);
     void populate_sizes();
 
-    Inkscape::auto_connection _ec_connection;
-    Inkscape::auto_connection _doc_connection;
-    Inkscape::auto_connection _pages_changed;
-    Inkscape::auto_connection _page_selected;
-    Inkscape::auto_connection _page_modified;
-    Inkscape::auto_connection _label_edited;
-    Inkscape::auto_connection _size_edited;
+    sigc::scoped_connection _ec_connection;
+    sigc::scoped_connection _doc_connection;
+    sigc::scoped_connection _pages_changed;
+    sigc::scoped_connection _page_selected;
+    sigc::scoped_connection _page_modified;
+    sigc::scoped_connection _label_edited;
+    sigc::scoped_connection _size_edited;
 
     Glib::RefPtr<Gtk::Builder> _builder;
     Gtk::ComboBoxText &_combo_page_sizes;

@@ -59,8 +59,8 @@ private:
 
     std::unique_ptr<BooleanBuilder> boolean_builder;
 
-    auto_connection _sel_modified;
-    auto_connection _sel_changed;
+    sigc::scoped_connection _sel_modified;
+    sigc::scoped_connection _sel_changed;
 
     bool to_commit = false;
 };

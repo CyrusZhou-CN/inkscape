@@ -39,7 +39,7 @@
 
 #include "desktop.h"
 #include "display/cairo-utils.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "inkscape-version-info.h"
 #include "inkscape.h"
 #include "inkscape-window.h"
@@ -101,7 +101,7 @@ private:
     Glib::RefPtr<Glib::TimeoutSource> _timer;
     Gtk::Picture *_viewer1;
     Gtk::Picture *_viewer2;
-    auto_connection _refresh;
+    sigc::scoped_connection _refresh;
     Gtk::AspectFrame* _frame = nullptr;
 
     void find_about_screens() {

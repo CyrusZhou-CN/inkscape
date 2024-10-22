@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "colors/color.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Inkscape::Colors {
 class Color;

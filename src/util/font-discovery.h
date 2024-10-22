@@ -8,7 +8,7 @@
 #include <vector>
 #include <pangomm.h>
 #include "async/operation-stream.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "libnrtype/font-factory.h"
 #include "statics.h"
 
@@ -35,14 +35,14 @@ public:
     using FontsPayload = std::shared_ptr<const std::vector<FontInfo>>;
     using MessageType = Async::Msg::Message<FontsPayload, double, Glib::ustring, std::vector<FontInfo>>;
 
-    auto_connection connect_to_fonts(std::function<void (const MessageType&)> fn);
+    sigc::scoped_connection connect_to_fonts(std::function<void (const MessageType&)> fn);
 
 protected:
     FontDiscovery();
 
 private:
     FontsPayload _fonts;
-    auto_connection _connection;
+    sigc::scoped_connection _connection;
     Inkscape::Async::OperationStream<FontsPayload, double, Glib::ustring, std::vector<FontInfo>> _loading;
     sigc::signal<void (const MessageType&)>_events;
 };

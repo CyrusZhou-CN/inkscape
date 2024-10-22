@@ -16,7 +16,7 @@
 #include <glibmm/ustring.h>
 #include <gtkmm/treemodel.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "live_effects/lpeobject.h"
 #include "live_effects/parameter/array.h"
 #include "live_effects/parameter/parameter.h"
@@ -78,7 +78,7 @@ private:
     void initui();
 
     bool _visible{};
-    std::vector<auto_connection> linked_connections;
+    std::vector<sigc::scoped_connection> linked_connections;
     std::vector<SPObject *> param_get_satellites() override;
 };
 

@@ -23,7 +23,7 @@
 #include <gtkmm/accelkey.h>
 #include <sigc++/signal.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Gtk {
 class EventControllerKey;
@@ -78,7 +78,7 @@ class ActionAccel
 {
 private:
     sigc::signal<void ()> _we_changed; ///< Emitted when the keybindings for the action are changed
-    auto_connection _prefs_changed;    ///< To listen to changes to the keyboard shortcuts
+    sigc::scoped_connection _prefs_changed;    ///< To listen to changes to the keyboard shortcuts
     Glib::ustring _action;             ///< Name of the action
     std::set<AcceleratorKey> _accels;  ///< Stores the accelerator keys for the action
 

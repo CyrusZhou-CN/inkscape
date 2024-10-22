@@ -31,7 +31,7 @@
 #include "document-undo.h"
 #include "registry.h"
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "object/sp-namedview.h"
 #include "ui/widget/color-picker.h"
 #include "ui/widget/font-button.h"
@@ -216,7 +216,7 @@ public:
     UnitMenu       * getUnitMenu()       { return static_cast<UnitMenu       *>(getWidget()); };
 
 private:
-    auto_connection _changed_connection;
+    sigc::scoped_connection _changed_connection;
 
     void on_changed();
 };
@@ -244,7 +244,7 @@ protected:
     void on_value_changed();
 
 private:
-    auto_connection  _value_changed_connection;
+    sigc::scoped_connection  _value_changed_connection;
     UnitMenu const  *_um;
     RSU_UserUnits    _user_units;
 };
@@ -262,7 +262,7 @@ protected:
     void on_value_changed();
 
 private:
-    auto_connection _value_changed_connection;
+    sigc::scoped_connection _value_changed_connection;
 };
 
 class RegisteredText : public RegisteredWidget<Text> {
@@ -278,7 +278,7 @@ protected:
     void on_activate();
 
 private:
-    auto_connection _activate_connection;
+    sigc::scoped_connection _activate_connection;
 };
 
 class RegisteredColorPicker : public RegisteredWidget<LabelledColorPicker> {
@@ -298,7 +298,7 @@ public:
 
 private:
     Glib::ustring _ckey, _akey;
-    auto_connection _changed_connection;
+    sigc::scoped_connection _changed_connection;
     std::function<void (Inkscape::XML::Node*, Colors::Color)> _setter;
     void on_changed(Colors::Color const &);
 };
@@ -319,7 +319,7 @@ protected:
     void on_value_changed();
 
 private:
-    auto_connection _changed_connection;
+    sigc::scoped_connection _changed_connection;
 };
 
 
@@ -341,8 +341,8 @@ protected:
     void on_value_changed();
 
 private:
-    auto_connection _value_x_changed_connection;
-    auto_connection _value_y_changed_connection;
+    sigc::scoped_connection _value_x_changed_connection;
+    sigc::scoped_connection _value_y_changed_connection;
     Geom::Affine to_svg;
 };
 
@@ -371,8 +371,8 @@ protected:
     void on_value_changed();
 
 private:
-    auto_connection _value_x_changed_connection;
-    auto_connection _value_y_changed_connection;
+    sigc::scoped_connection _value_x_changed_connection;
+    sigc::scoped_connection _value_y_changed_connection;
     Geom::Point _origin;
     bool _polar_coords;
 };
@@ -393,8 +393,8 @@ protected:
     void on_value_changed();
 
 private:
-    auto_connection _value_changed_connection;
-    auto_connection _reseeded_connection;
+    sigc::scoped_connection _value_changed_connection;
+    sigc::scoped_connection _reseeded_connection;
 };
 
 class RegisteredFontButton : public RegisteredWidget<FontButton> {
@@ -412,7 +412,7 @@ protected:
     void on_value_changed();
 
 private:
-    auto_connection _signal_font_set;
+    sigc::scoped_connection _signal_font_set;
 };
 
 } // namespace Inkscape::UI::Widget

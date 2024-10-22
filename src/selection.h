@@ -25,7 +25,7 @@
 #include <sigc++/signal.h>
 #include <sigc++/slot.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "object/object-set.h"
 
 namespace Inkscape {
@@ -237,8 +237,8 @@ private:
     bool _change_page = true;
     std::vector<std::pair<std::string, std::pair<int, int> > > _seldata;
     std::vector<std::string> _selected_ids;
-    std::unordered_map<SPObject *, auto_connection> _modified_connections;
-    auto_connection _context_release_connection;
+    std::unordered_map<SPObject *, sigc::scoped_connection> _modified_connections;
+    sigc::scoped_connection _context_release_connection;
 
     std::list<sigc::signal<void (Selection *)>> _changed_signals;
     std::list<sigc::signal<void (Selection *, unsigned int)>> _modified_signals;

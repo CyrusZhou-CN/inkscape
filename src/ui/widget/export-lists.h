@@ -17,7 +17,7 @@
 #include <gtkmm/comboboxtext.h>
 #include <gtkmm/grid.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "preferences.h"
 
 namespace Gtk {
@@ -71,7 +71,7 @@ private:
     PrefObserver _watch_pref;
     std::map<std::string, Inkscape::Extension::Output *> ext_to_mod;
 
-    auto_connection _popover_signal;
+    sigc::scoped_connection _popover_signal;
     Glib::RefPtr<Gtk::Builder> _builder;
     Gtk::MenuButton *_pref_button = nullptr;
     Gtk::Popover *_pref_popover = nullptr;

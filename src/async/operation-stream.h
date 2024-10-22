@@ -14,7 +14,7 @@
 #include <variant>
 #include "async/background-task.h"
 #include "async/progress.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Inkscape {
 namespace Async {

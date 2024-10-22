@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "sp-item.h"
 
 class LivePathEffectObject;
@@ -47,7 +47,7 @@ using PathEffectList = std::list<PathEffectSharedPtr>;
 
 class SPLPEItem : public SPItem {
     // this list contains the connections for listening to lpeobject parameter changes
-    std::list<Inkscape::auto_connection> lpe_modified_connection_list;
+    std::list<sigc::scoped_connection> lpe_modified_connection_list;
 
 public:
     SPLPEItem();

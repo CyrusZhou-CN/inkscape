@@ -23,7 +23,7 @@
 #include "display/control/canvas-item-enums.h"
 #include "display/control/canvas-item-ptr.h"
 #include "enums.h" // TEMP TEMP
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 class SPDesktop;
 
@@ -295,7 +295,7 @@ private:
 
     Geom::Point _position; ///< Current position in desktop coordinates
 
-    auto_connection _event_handler_connection;
+    sigc::scoped_connection _event_handler_connection;
 
     /** Stores the window point over which the cursor was during the last mouse button press. */
     static Geom::Point _drag_event_origin;

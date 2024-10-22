@@ -24,7 +24,7 @@
 #include <gtkmm/treemodel.h>
 
 #include "display/drawing.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/dialog/dialog-base.h"
 
 namespace Gtk {
@@ -137,8 +137,8 @@ private:
     PaintServersColumns const columns;
     MaybeString _common_stroke, _common_fill; ///< Common fill/stroke to all selected elements
 
-    auto_connection _defs_changed, _document_closed;
-    auto_connection _item_activated;
+    sigc::scoped_connection _defs_changed, _document_closed;
+    sigc::scoped_connection _item_activated;
 };
 
 } // namespace Inkscape::UI::Dialog

@@ -13,7 +13,7 @@
 #include <glibmm/refptr.h>
 #include <gtkmm/treemodel.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/dialog/dialog-base.h"
 
 namespace Gtk {
@@ -67,7 +67,7 @@ private:
     Gtk::ComboBoxText                  *rangeCombo   = nullptr;
     Inkscape::UI::Widget::FontSelector *fontSelector = nullptr;
 
-    std::vector<auto_connection> instanceConns;
+    std::vector<sigc::scoped_connection> instanceConns;
 };
 
 } // namespace Dialog

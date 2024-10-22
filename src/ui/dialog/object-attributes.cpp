@@ -455,8 +455,8 @@ public:
 private:
     std::unique_ptr<SPAttributeTable> _table;
     SPAnchor* _anchor = nullptr;
-    auto_connection _picker;
-    auto_connection _tool_switched;
+    sigc::scoped_connection _picker;
+    sigc::scoped_connection _tool_switched;
     bool _first_time_update = true;
 };
 

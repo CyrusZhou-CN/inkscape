@@ -4,7 +4,7 @@
 #define INK_SPIN_BUTTON_H
 
 #include <gtkmm.h>
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Inkscape::UI::Widget {
 
@@ -115,7 +115,7 @@ private:
     int _buttons_width = 0;     // width of increment/decrement button
     int _entry_height = 0;      // natural height of Gtk::Entry
     int _baseline = 0;
-    auto_connection _spinning;
+    sigc::scoped_connection _spinning;
     Gtk::Widget* _defocus_widget = nullptr;
     bool _dont_evaluate = false; // turn off expression evaluator?
     Glib::RefPtr<Gdk::Cursor> _old_cursor;

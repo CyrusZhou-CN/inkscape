@@ -17,7 +17,7 @@
 #include <string>
 #include <optional>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 #include "sp-object.h"          // for SPObject
 #include "util/cast.h"          // for tag_of
@@ -57,7 +57,7 @@ public:
 
     // the reference to the original object
     std::unique_ptr<SPTagUseReference> ref;
-    Inkscape::auto_connection _changed_connection;
+    sigc::scoped_connection _changed_connection;
 };
 
 #endif // SEEN_SP_TAG_USE_H

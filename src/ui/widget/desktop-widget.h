@@ -41,7 +41,7 @@
 #include <glibmm/refptr.h>
 #include <gtkmm/box.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "message.h"
 #include "preferences.h"
 
@@ -113,7 +113,7 @@ public:
     void on_unrealize() override;
 
 private:
-    Inkscape::auto_connection modified_connection;
+    sigc::scoped_connection modified_connection;
 
     std::unique_ptr<SPDesktop> _desktop;
     InkscapeWindow *_window = nullptr;

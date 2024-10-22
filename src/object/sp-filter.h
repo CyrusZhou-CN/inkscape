@@ -16,7 +16,7 @@
 #include <memory>
 #include <glibmm/ustring.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "number-opt-number.h"
 #include "sp-dimensions.h"
 #include "sp-filter-units.h"
@@ -69,7 +69,7 @@ public:
     std::unique_ptr<SPFilterReference> href;
     bool auto_region;
 
-    Inkscape::auto_connection modified_connection;
+    sigc::scoped_connection modified_connection;
 
     unsigned getRefCount();
     unsigned _refcount = 0;

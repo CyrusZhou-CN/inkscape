@@ -127,7 +127,7 @@ private:
     Gtk::Stack &stack;
     Gtk::ProgressBar &progressbar;
     Gtk::Box &boxchild1, &boxchild2;
-    auto_connection _page_switched;
+    sigc::scoped_connection _page_switched;
 };
 
 enum class Page

@@ -15,7 +15,7 @@
 #include <2geom/pathvector.h>
 #include <glibmm/ustring.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "live_effects/lpeobject.h"
 #include "ui/widget/registered-widget.h"
 
@@ -91,7 +91,7 @@ public:
     virtual void param_transform_multiply(Geom::Affine const & /*postmul*/, bool set){};
     virtual std::vector<SPObject *> param_get_satellites();
     void param_higlight(bool highlight);
-    auto_connection selection_changed_connection;
+    sigc::scoped_connection selection_changed_connection;
     void change_selection(Inkscape::Selection *selection);
     void update_satellites();
     Glib::ustring param_key;

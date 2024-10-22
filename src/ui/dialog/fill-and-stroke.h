@@ -79,7 +79,7 @@ private:
     UI::Widget::FillNStroke *strokeWdgt      = nullptr;
     UI::Widget::StrokeStyle *strokeStyleWdgt = nullptr;
 
-    auto_connection _switch_page_conn;
+    sigc::scoped_connection _switch_page_conn;
 };
 
 } // namespace Dialog

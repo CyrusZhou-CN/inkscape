@@ -23,7 +23,7 @@
 #include <2geom/point.h>
 
 #include "display/control/canvas-item-ptr.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "libnrtype/Layout-TNG.h"
 #include "ui/tools/tool-base.h"
 
@@ -94,13 +94,13 @@ private:
     bool creating = false;  // dragging rubberband to create flowtext
     Geom::Point p0;         // initial point if the flowtext rect
 
-    auto_connection sel_changed_connection;
-    auto_connection sel_modified_connection;
-    auto_connection style_set_connection;
-    auto_connection style_query_connection;
-    auto_connection focus_in_conn;
-    auto_connection focus_out_conn;
-    auto_connection blink_conn;
+    sigc::scoped_connection sel_changed_connection;
+    sigc::scoped_connection sel_modified_connection;
+    sigc::scoped_connection style_set_connection;
+    sigc::scoped_connection style_query_connection;
+    sigc::scoped_connection focus_in_conn;
+    sigc::scoped_connection focus_out_conn;
+    sigc::scoped_connection blink_conn;
 
     void _updateCursor(bool scroll_to_see = true);
     void _updateTextSelection();

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Base RAII blocker for sgic++ signals.
+ * RAII blocker for sigc++ signals.
  *
  * Authors:
  *   Jon A. Cruz <jon@joncruz.org>
@@ -13,12 +13,10 @@
 #ifndef SEEN_INKSCAPE_UTIL_SIGNAL_BLOCKER_H
 #define SEEN_INKSCAPE_UTIL_SIGNAL_BLOCKER_H
 
-#include <string>
-#include <sigc++/connection.h>
-
 /**
- * Base RAII blocker for sgic++ signals.
+ * RAII blocker for sigc++ signals.
  */
+template <typename T>
 class SignalBlocker
 {
 public:
@@ -26,13 +24,12 @@ public:
      * Creates a new instance that if the signal is currently unblocked will block
      * it until this instance is destructed and then will unblock it.
      */
-    SignalBlocker( sigc::connection *connection ) :
-        _connection(connection),
-        _wasBlocked(_connection->blocked())
+    [[nodiscard]] explicit SignalBlocker(T &connection)
+        : _connection{connection}
+        , _was_blocked{_connection.blocked()}
     {
-        if (!_wasBlocked)
-        {
-            _connection->block();
+        if (!_was_blocked) {
+            _connection.block();
         }
     }
 
@@ -42,19 +39,17 @@ public:
      */
     ~SignalBlocker()
     {
-        if (!_wasBlocked)
-        {
-            _connection->block(false);
+        if (!_was_blocked) {
+            _connection.unblock();
         }
     }
 
+    SignalBlocker(SignalBlocker const &) = delete;
+    SignalBlocker &operator=(SignalBlocker const &) = delete;
+
 private:
-    // noncopyable, nonassignable
-    SignalBlocker(SignalBlocker const &other) = delete;
-    SignalBlocker& operator=(SignalBlocker const &other) = delete;
-    
-    sigc::connection *_connection;
-    bool _wasBlocked;
+    T &_connection;
+    bool const _was_blocked;
 };
 
 #endif // SEEN_INKSCAPE_UTIL_SIGNAL_BLOCKER_H

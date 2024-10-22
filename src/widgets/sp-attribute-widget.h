@@ -23,7 +23,7 @@
 #include <glibmm/ustring.h>
 #include <gtkmm/box.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/syntax.h"
 
 namespace Gtk {
@@ -137,12 +137,12 @@ private:
     /**
      * Sets the callback for a modification of the selection.
      */
-    Inkscape::auto_connection modified_connection;
+    sigc::scoped_connection modified_connection;
 
     /**
      * Sets the callback for the deletion of the selected object.
      */
-    Inkscape::auto_connection release_connection;
+    sigc::scoped_connection release_connection;
 
     Inkscape::UI::Syntax::SyntaxMode _syntax;
 

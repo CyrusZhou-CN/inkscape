@@ -44,7 +44,7 @@
 #include <memory>
 #include <sigc++/signal.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/widget/font-selector-interface.h"
 #include "ui/widget/font-variations.h"
 
@@ -129,7 +129,7 @@ private:
     void changed_emit();
     bool signal_block;
 
-    auto_connection _idle_connection;
+    sigc::scoped_connection _idle_connection;
 
     // Variables
     double font_size;

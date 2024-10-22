@@ -22,7 +22,7 @@
 #include <gtkmm/label.h>
 
 #include "colors/color.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "rotateable.h"
 #include "ui/popup-menu.h"
 #include "ui/widget/spinbutton.h"
@@ -157,8 +157,8 @@ protected:
     Glib::ustring _paintserver_id[2];
 
     // Signals
-    auto_connection selection_changed_connection;
-    auto_connection selection_modified_connection;
+    sigc::scoped_connection selection_changed_connection;
+    sigc::scoped_connection selection_modified_connection;
 
     Gtk::EventSequenceState on_fill_click   (Gtk::GestureClick const &click,
                                              int n_press, double x, double y);

@@ -30,7 +30,7 @@
 
 #include "display/drawing.h"
 #include "document.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/operation-blocker.h"
 #include "ui/widget/widget-vfuncs-class-init.h"
 
@@ -177,8 +177,8 @@ private:
     Cairo::RefPtr<Cairo::Surface> create_marker_image(Geom::IntPoint pixel_size, gchar const *mname,
         SPDocument *source, Inkscape::Drawing &drawing, unsigned /*visionkey*/, bool checkerboard, bool no_clip, double scale);
     void refresh_after_markers_modified();
-    auto_connection modified_connection;
-    auto_connection _idle;
+    sigc::scoped_connection modified_connection;
+    sigc::scoped_connection _idle;
 };
 
 } // namespace Inkscape::UI::Widget

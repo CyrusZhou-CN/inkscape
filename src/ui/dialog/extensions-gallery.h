@@ -30,7 +30,7 @@
 #include <boost/compute/detail/lru_cache.hpp>
 #include <memory>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/dialog/dialog-base.h"
 #include "ui/iconview-item-factory.h"
 
@@ -66,7 +66,7 @@ private:
     Glib::ustring _run_label;
     Glib::RefPtr<Gtk::BoolFilter> _filter;
     Glib::RefPtr<Gtk::ListStore> _categories;
-    auto_connection _selection_change;
+    sigc::scoped_connection _selection_change;
     Glib::RefPtr<Gtk::TreeSelection> _page_selection;
     Glib::ustring _current_category;
     int _thumb_size_index = 0;

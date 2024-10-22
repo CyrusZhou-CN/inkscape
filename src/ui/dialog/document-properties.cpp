@@ -62,7 +62,7 @@
 
 #include "colors/cms/profile.h"
 #include "colors/document-cms.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "object/color-profile.h"
 #include "object/sp-grid.h"
 #include "object/sp-guide.h"
@@ -135,7 +135,7 @@ private:
     Gtk::MenuButton* _angle_popup = Gtk::make_managed<Gtk::MenuButton>();
     Gtk::Entry* _aspect_ratio = nullptr;
 
-    Inkscape::auto_connection _modified_signal;
+    sigc::scoped_connection _modified_signal;
 };
 
 } // namespace Widget

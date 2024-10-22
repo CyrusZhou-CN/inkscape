@@ -14,7 +14,7 @@
 #include <sigc++/signal.h>
 #include <sigc++/connection.h>
 #include "display/control/canvas-item-ptr.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Inkscape {
 
@@ -39,7 +39,7 @@ protected:
     friend class TemporaryItemList;
 
     CanvasItemPtr<CanvasItem> canvasitem; ///< The item we are holding on to.
-    auto_connection timeout_conn;
+    sigc::scoped_connection timeout_conn;
 };
 
 } //namespace Display

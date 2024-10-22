@@ -38,7 +38,7 @@
 #include "selection.h"
 
 #include "extension/output.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "io/fix-broken-links.h"
 #include "object/sp-namedview.h"
 #include "object/sp-page.h"

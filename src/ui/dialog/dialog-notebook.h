@@ -23,7 +23,7 @@
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/widget.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/widget/popover-menu.h"
 #include "ui/widget/popover-bin.h"
 
@@ -101,9 +101,9 @@ private:
     TabsStatus tabstatus = TabsStatus::NONE;
     TabsStatus prev_tabstatus = TabsStatus::NONE;
     Gtk::Widget *_selected_page;
-    std::vector<auto_connection> _conn;
-    std::vector<auto_connection> _connmenu;
-    std::multimap<Gtk::Widget *, auto_connection> _tab_connections;
+    std::vector<sigc::scoped_connection> _conn;
+    std::vector<sigc::scoped_connection> _connmenu;
+    std::multimap<Gtk::Widget *, sigc::scoped_connection> _tab_connections;
 
     static std::list<DialogNotebook *> _instances;
     void add_highlight_header();

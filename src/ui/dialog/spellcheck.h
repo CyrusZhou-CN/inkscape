@@ -22,7 +22,7 @@
 #include "ui/dialog/dialog-base.h"
 #include "display/control/canvas-item-ptr.h"
 #include "util/gobjectptr.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Gtk {
 class Builder;
@@ -208,8 +208,8 @@ private:
     /**
      *  connect to the object being checked in case it is modified or deleted by user
      */
-    auto_connection _modified_connection;
-    auto_connection _release_connection;
+    sigc::scoped_connection _modified_connection;
+    sigc::scoped_connection _release_connection;
 
     /**
      *  true if the spell checker dialog has changed text, to suppress modified callback

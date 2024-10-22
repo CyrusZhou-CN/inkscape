@@ -27,7 +27,7 @@
 #include "inkscape-application.h"
 #include "preferences.h"
 #include "extension/output.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "io/sys.h"
 #include "xml/repr.h"
 
@@ -50,7 +50,7 @@ void
 AutoSave::start()
 {
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-    static auto_connection autosave_connection;
+    static sigc::scoped_connection autosave_connection;
 
     // Turn off any previous timeout.
     autosave_connection.disconnect();

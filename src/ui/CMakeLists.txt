@@ -332,6 +332,7 @@ set(ui_SRC
 	dialog/dialog-notebook.h
 	dialog/dialog-window.h
 	dialog/document-properties.h
+	dialog/document-resources.h
 	dialog/export.h
 	dialog/export-batch.h
 	dialog/export-single.h
@@ -515,6 +516,7 @@ set(ui_SRC
 	widget/filter-effect-chooser.h
 	widget/font-button.h
 	widget/font-collection-selector.h
+	widget/font-list.h
 	widget/font-selector.h
 	widget/font-variants.h
 	widget/font-variations.h

@@ -10,7 +10,7 @@
 
 #include "font-discovery.h"
 #include "async/progress.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "inkscape-application.h"
 #include "io/resource.h"
 
@@ -439,9 +439,9 @@ FontDiscovery::FontDiscovery() {
     });
 }
 
-auto_connection FontDiscovery::connect_to_fonts(std::function<void (const MessageType&)> fn) {
+sigc::scoped_connection FontDiscovery::connect_to_fonts(std::function<void (const MessageType&)> fn) {
 
-    auto_connection con = static_cast<sigc::connection>(_events.connect(fn));
+    sigc::scoped_connection con = static_cast<sigc::connection>(_events.connect(fn));
 
     if (!_fonts && !_loading.is_running()) {
         // load fonts async

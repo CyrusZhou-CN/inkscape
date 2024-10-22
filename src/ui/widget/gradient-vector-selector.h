@@ -19,7 +19,7 @@
 #include "ui/widget/gradient-selector.h"
 
 #include <gtkmm/liststore.h>
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 class SPDocument;
 class SPObject;
@@ -41,10 +41,10 @@ class GradientVectorSelector : public Gtk::Box {
     Glib::RefPtr<Gtk::ListStore> _store;
     Inkscape::UI::Widget::GradientSelector::ModelColumns *_columns;
 
-    auto_connection _gradient_release_connection;
-    auto_connection _defs_release_connection;
-    auto_connection _defs_modified_connection;
-    auto_connection _tree_select_connection;
+    sigc::scoped_connection _gradient_release_connection;
+    sigc::scoped_connection _defs_release_connection;
+    sigc::scoped_connection _defs_modified_connection;
+    sigc::scoped_connection _tree_select_connection;
 
     sigc::signal<void (SPGradient *)> _signal_vector_set;
 

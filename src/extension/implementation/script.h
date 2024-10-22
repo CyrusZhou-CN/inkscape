@@ -24,7 +24,7 @@
 #include <glibmm/ustring.h>
 #include <gtkmm/enums.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "implementation.h"
 #include "xml/node.h"
 
@@ -101,7 +101,7 @@ private:
 
     class file_listener {
         Glib::ustring _string;
-        auto_connection _conn;
+        sigc::scoped_connection _conn;
         Glib::RefPtr<Glib::IOChannel> _channel;
         Glib::RefPtr<Glib::MainLoop> _main_loop;
         bool _dead = false;

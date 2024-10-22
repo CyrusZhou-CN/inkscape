@@ -29,14 +29,14 @@
 #include <unordered_map>
 #include <gtkmm/box.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/util.h"
 
 namespace Inkscape::UI {
 
 enum class PackType {start, end};
 
-using BoxChildren = std::unordered_map<Gtk::Widget *, auto_connection>;
+using BoxChildren = std::unordered_map<Gtk::Widget *, sigc::scoped_connection>;
 static auto s_box_children = std::unordered_map<Gtk::Box *, BoxChildren>{};
 
 static void set_expand(Gtk::Widget &widget, Gtk::Orientation const orientation,

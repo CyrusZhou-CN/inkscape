@@ -16,7 +16,6 @@
 
 #include <gtkmm/cellrendererpixbuf.h>
 
-#include "actions/actions-tools.h"
 #include "document-undo.h"
 #include "document.h"
 #include "inkscape.h"
@@ -94,7 +93,7 @@ void UndoHistory::documentReplaced()
     disconnectEventLog();
     if (auto document = getDocument()) {
         g_assert (document->get_event_log() != nullptr);
-        SignalBlocker blocker(&_callback_connections[EventLog::CALLB_SELECTION_CHANGE]);
+        auto blocker = SignalBlocker{_callback_connections[EventLog::CALLB_SELECTION_CHANGE]};
         _event_list_view.unset_model();
         connectEventLog();
     }
@@ -132,7 +131,7 @@ void UndoHistory::_handleEventLogDestroyCB(sigc::notifiable * const data)
 void UndoHistory::_handleEventLogDestroy()
 {
     if (_event_log) {
-        SignalBlocker blocker(&_callback_connections[EventLog::CALLB_SELECTION_CHANGE]);
+        auto blocker = SignalBlocker{_callback_connections[EventLog::CALLB_SELECTION_CHANGE]};
 
         _event_list_view.unset_model();
         _event_list_store.reset();

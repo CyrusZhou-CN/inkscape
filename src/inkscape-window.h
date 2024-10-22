@@ -21,7 +21,7 @@
 #include <gdkmm/toplevel.h>
 #include <gtkmm/applicationwindow.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Gtk { class Box; }
 
@@ -52,7 +52,7 @@ private:
     void setup_view();
     void add_document_actions();
 
-    Inkscape::auto_connection _toplevel_state_connection;
+    sigc::scoped_connection _toplevel_state_connection;
     Gdk::Toplevel::State _old_toplevel_state{};
 
     void on_realize() override;

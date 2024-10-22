@@ -29,7 +29,7 @@
 #include <gtkmm/treerowreference.h>
 #include <gtkmm/treeview.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "preferences.h"
 #include "selection.h"
 #include "style-enums.h"
@@ -129,7 +129,7 @@ private:
     bool _start_new_range = true;
     std::vector<SPObject *> _prev_range;
 
-    Inkscape::auto_connection layer_changed;
+    sigc::scoped_connection layer_changed;
     SPObject *_layer;
     Gtk::TreeModel::RowReference _hovered_row_ref;
 
@@ -157,7 +157,7 @@ private:
     Gtk::SearchEntry2& _searchBox;
     Gtk::ScrolledWindow _scroller;
     Gtk::Box _page;
-    Inkscape::auto_connection _tree_style;
+    sigc::scoped_connection _tree_style;
     Inkscape::UI::Widget::ColorPicker _color_picker;
     Gtk::TreeRow _clicked_item_row;
     UI::Widget::PopoverBin _popoverbin;
@@ -224,7 +224,7 @@ private:
     bool _drag_flip;
 
     bool _selectionChanged();
-    auto_connection _idle_connection;
+    sigc::scoped_connection _idle_connection;
 };
 
 } //namespace Dialog

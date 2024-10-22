@@ -20,7 +20,7 @@
 #include <gtkmm/label.h>
 #include <gtkmm/togglebutton.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "xml/helper-observer.h"
 
 namespace Glib {
@@ -59,9 +59,9 @@ private:
     AlternateIcons *_eye_label  = nullptr;
     AlternateIcons *_lock_label = nullptr;
 
-    auto_connection _layer_changed;
-    auto_connection _hide_layer_connection;
-    auto_connection _lock_layer_connection;
+    sigc::scoped_connection _layer_changed;
+    sigc::scoped_connection _hide_layer_connection;
+    sigc::scoped_connection _lock_layer_connection;
     std::unique_ptr<Inkscape::XML::SignalObserver> _observer;
 
     void _layerChanged(SPGroup *layer);

@@ -25,7 +25,7 @@
 #include <vector>
 
 #include "display/curve.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "livarot/Shape.h"
 #include "style-enums.h"
 
@@ -700,7 +700,7 @@ private:
         Glib::ustring::const_iterator text_begin, text_end;
         int text_length;    /// in characters, from text_start to text_end only
         SPStyle *style;
-        Inkscape::auto_connection style_conn;
+        sigc::scoped_connection style_conn;
         /** These vectors can (often will) be shorter than the text
         in this source, but never longer. */
         std::vector<SVGLength> x;

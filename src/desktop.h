@@ -42,7 +42,7 @@
 #include <2geom/transforms.h>
 #include <2geom/parallelogram.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "message-stack.h"
 #include "object/sp-gradient.h" // TODO refactor enums out to their own .h file
 
@@ -165,9 +165,9 @@ private:
     std::unique_ptr<Inkscape::MessageContext> _tips_message_context;
     std::unique_ptr<Inkscape::MessageContext> _guides_message_context;
 
-    Inkscape::auto_connection _message_changed_connection;
-    Inkscape::auto_connection _message_idle_connection;
-    Inkscape::auto_connection _document_uri_set_connection;
+    sigc::scoped_connection _message_changed_connection;
+    sigc::scoped_connection _message_idle_connection;
+    sigc::scoped_connection _document_uri_set_connection;
 
     std::unique_ptr<Inkscape::UI::Tools::ToolBase> _tool;
     std::unique_ptr<Inkscape::Display::TemporaryItemList> _temporary_item_list;
@@ -539,9 +539,9 @@ private:
     sigc::signal<void (Inkscape::UI::ControlPointSelection *)> _control_point_selected;
     sigc::signal<void (Inkscape::UI::Tools::TextTool *)> _text_cursor_moved;
 
-    Inkscape::auto_connection _reconstruction_start_connection;
-    Inkscape::auto_connection _reconstruction_finish_connection;
-    Inkscape::auto_connection _schedule_zoom_from_document_connection;
+    sigc::scoped_connection _reconstruction_start_connection;
+    sigc::scoped_connection _reconstruction_finish_connection;
+    sigc::scoped_connection _schedule_zoom_from_document_connection;
 
     bool drawing_handler(Inkscape::CanvasEvent const &event, Inkscape::DrawingItem *item);
     void reconstruction_start();

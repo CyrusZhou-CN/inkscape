@@ -21,7 +21,7 @@
 #include <gtkmm/orientable.h>
 #include <gtkmm/widget.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Glib {
 class ValueBase;
@@ -121,7 +121,7 @@ private:
     void insert(int pos, std::unique_ptr<Gtk::Widget> child);
     void add_empty_widget();
     void remove_empty_widget();
-    std::vector<auto_connection> _connections;
+    std::vector<sigc::scoped_connection> _connections;
     int _natural_width = 0;
 };
 

@@ -17,7 +17,7 @@
 #include <gtk/gtk.h> // GtkEventControllerKey
 #include <gtkmm/treemodel.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/dialog/dialog-base.h"
 #include "ui/syntax.h"
 #include "xml/node-observer.h"
@@ -119,7 +119,7 @@ private:
     /**
      * Signal handlers
      */
-    auto_connection _message_changed_connection;
+    sigc::scoped_connection _message_changed_connection;
     void onCreateClicked();
     void onAttrDelete(Glib::ustring const &path);
     bool onTreeViewKeyPressed (unsigned keyval, unsigned keycode, Gdk::ModifierType state);
@@ -149,8 +149,8 @@ private:
     std::unique_ptr<Syntax::TextEditView> _points_edit; // points in a <polygon> or <polyline>
     std::unique_ptr<Syntax::TextEditView> _attr_edit;   // all other attributes (plain text)
     Syntax::TextEditView* _current_text_edit = nullptr; // current text edit for attribute value editing
-    auto_connection _adjust_size;
-    auto_connection _close_popup;
+    sigc::scoped_connection _adjust_size;
+    sigc::scoped_connection _close_popup;
     int _rounding_precision = 0;
 
     bool onPopoverKeyPressed(unsigned keyval, unsigned keycode, Gdk::ModifierType state);

@@ -27,7 +27,7 @@
 #include "display/control/canvas-item-enums.h"
 #include "display/control/canvas-item-ptr.h"
 #include "enums.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 class SPDesktop;
 class SPItem;
@@ -84,7 +84,7 @@ public:
     unsigned char *image[SP_KNOT_VISIBLE_STATES];
     Glib::RefPtr<Gdk::Cursor> _cursors[SP_KNOT_VISIBLE_STATES];
 
-    Inkscape::auto_connection _event_connection;
+    sigc::scoped_connection _event_connection;
 
     double pressure         = 0.0;    /**< The tablet pen pressure when the knot is being dragged. */
 

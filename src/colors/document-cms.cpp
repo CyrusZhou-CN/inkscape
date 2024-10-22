@@ -33,7 +33,7 @@ public:
     std::shared_ptr<Space::CMS> space;
 
 private:
-    Inkscape::auto_connection _modified_connection;
+    sigc::scoped_connection _modified_connection;
 
     bool generateSpace();
     bool updateSpace();

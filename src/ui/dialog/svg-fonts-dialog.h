@@ -35,7 +35,7 @@
 #include <sigc++/signal.h>
 
 #include "attributes.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/operation-blocker.h"
 #include "ui/dialog/dialog-base.h"
 #include "ui/widget/spinbutton.h"
@@ -256,7 +256,7 @@ private:
 
     Inkscape::XML::SignalObserver _defs_observer; //in order to update fonts
     Inkscape::XML::SignalObserver _glyphs_observer;
-    Inkscape::auto_connection _defs_observer_connection;
+    sigc::scoped_connection _defs_observer_connection;
 
     Gtk::Box* AttrCombo(gchar* lbl, const SPAttr attr);
     Gtk::Box* global_settings_tab();

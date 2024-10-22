@@ -20,7 +20,7 @@
 
 #include <glibmm/refptr.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/dialog/dialog-base.h"
 
 namespace Gtk {
@@ -76,7 +76,7 @@ private:
     void setDefaultNotebookPage();
     std::map<notebook_page, int> pages;
 
-    auto_connection notebook_signal;
+    sigc::scoped_connection notebook_signal;
 
     // signals callback
     void onNotebookPageSwitch(Widget *page, unsigned page_number);

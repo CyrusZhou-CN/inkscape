@@ -25,7 +25,7 @@
 #include <gtkmm/togglebutton.h>
 
 #include "display/control/canvas-item-ptr.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/widget/popover-bin.h"
 
 namespace Gtk {
@@ -138,11 +138,11 @@ private:
     int _width{}, _height{};
 
     // Connections for page and selection tracking
-    auto_connection _page_selected_connection;
-    auto_connection _page_modified_connection;
-    auto_connection _sel_changed_connection;
-    auto_connection _sel_modified_connection;
-    auto_connection _blink_lock_button_timeout;
+    sigc::scoped_connection _page_selected_connection;
+    sigc::scoped_connection _page_modified_connection;
+    sigc::scoped_connection _sel_changed_connection;
+    sigc::scoped_connection _sel_modified_connection;
+    sigc::scoped_connection _blink_lock_button_timeout;
 
     // Ruler event handling.
     bool _ruler_clicked = false; ///< True if the ruler has been clicked

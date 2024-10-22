@@ -19,7 +19,7 @@
 
 #include "async/channel.h"
 #include "display/drawing.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Gtk {
 class Builder;
@@ -56,7 +56,7 @@ private:
     bool _to_destruct = false;
 
     std::vector<SPItem const *> _shown_items;
-    Inkscape::auto_connection _construct_idle;
+    sigc::scoped_connection _construct_idle;
 };
 
 class ExportPreview final : public Gtk::Picture
@@ -89,7 +89,7 @@ private:
     std::shared_ptr<PreviewDrawing> _drawing;
     std::uint32_t _bg_color = 0;
 
-    Inkscape::auto_connection _render_idle;
+    sigc::scoped_connection _render_idle;
 };
 
 } // namespace UI::Dialog

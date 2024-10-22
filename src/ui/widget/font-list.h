@@ -24,7 +24,7 @@
 #include <gtkmm/listbox.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/scale.h>
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/widget/font-variations.h"
 #include "ui/operation-blocker.h"
 #include "util/font-discovery.h"
@@ -87,7 +87,7 @@ private:
     Gtk::TreeView& _font_list;
     Gtk::TreeViewColumn _text_column;
     Gtk::IconView& _font_grid;
-    auto_connection _selection_changed;
+    sigc::scoped_connection _selection_changed;
     Glib::RefPtr<Gtk::ListStore> _font_list_store;
     Gtk::Box& _tag_box;
     Gtk::Box& _info_box;
@@ -107,13 +107,13 @@ private:
     Gtk::ListBox& _tag_list;
     Inkscape::FontTags& _font_tags;
     FontVariations _font_variations;
-    auto_connection _scroll;
+    sigc::scoped_connection _scroll;
     Glib::ustring _prefs;
     bool _view_mode_list = true;
-    auto_connection _font_stream;
+    sigc::scoped_connection _font_stream;
     std::size_t _initializing = 0;
-    auto_connection _font_collections_update;
-    auto_connection _font_collections_selection;
+    sigc::scoped_connection _font_collections_update;
+    sigc::scoped_connection _font_collections_selection;
 };
 
 } // namespaces

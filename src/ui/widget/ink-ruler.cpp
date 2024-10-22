@@ -27,7 +27,6 @@
 
 #include "ink-ruler.h"
 #include "inkscape.h"
-#include "helper/sigc-track-obj.h"
 #include "ui/containerize.h"
 #include "ui/controller.h"
 #include "ui/popup-menu.h"
@@ -93,7 +92,7 @@ Ruler::Ruler(Gtk::Orientation orientation)
     _watch_prefs = prefs->createObserver("/options/ruler/show_bbox", sigc::mem_fun(*this, &Ruler::on_prefs_changed));
     on_prefs_changed();
 
-    INKSCAPE.themecontext->getChangeThemeSignal().connect(SIGC_TRACKING_ADAPTOR([this] { css_changed(nullptr); }, *this));
+    INKSCAPE.themecontext->getChangeThemeSignal().connect(sigc::track_object([this] { css_changed(nullptr); }, *this));
 }
 
 Ruler::~Ruler() = default;

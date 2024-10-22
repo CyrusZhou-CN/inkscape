@@ -13,7 +13,7 @@
 #ifndef INKSCAPE_SELECTION_DESCRIBER_H
 #define INKSCAPE_SELECTION_DESCRIBER_H
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "message-context.h"
 
 namespace Inkscape {
@@ -30,7 +30,7 @@ public:
     void updateMessage(Inkscape::Selection *selection);
 
 private:
-    auto_connection _selection_changed_connection;
+    sigc::scoped_connection _selection_changed_connection;
 
     MessageContext _context;
 

@@ -7,7 +7,7 @@
 #include <glibmm/refptr.h>
 #include <gtkmm/box.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "object/sp-image.h"
 #include "ui/operation-blocker.h"
 #include "ui/widget/widget-vfuncs-class-init.h"

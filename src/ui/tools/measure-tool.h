@@ -20,7 +20,7 @@
 #include "display/control/canvas-temporary-item.h"
 #include "display/control/canvas-item-enums.h"
 #include "display/control/canvas-item-ptr.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/tools/tool-base.h"
 
 class SPKnot;
@@ -94,12 +94,12 @@ private:
     double item_y;
     double item_length;
     SPItem *over;
-    auto_connection _knot_start_moved_connection;
-    auto_connection _knot_start_ungrabbed_connection;
-    auto_connection _knot_start_click_connection;
-    auto_connection _knot_end_moved_connection;
-    auto_connection _knot_end_click_connection;
-    auto_connection _knot_end_ungrabbed_connection;
+    sigc::scoped_connection _knot_start_moved_connection;
+    sigc::scoped_connection _knot_start_ungrabbed_connection;
+    sigc::scoped_connection _knot_start_click_connection;
+    sigc::scoped_connection _knot_end_moved_connection;
+    sigc::scoped_connection _knot_end_click_connection;
+    sigc::scoped_connection _knot_end_ungrabbed_connection;
 };
 
 } // namespace Inkscape::UI::Tools

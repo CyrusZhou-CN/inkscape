@@ -108,7 +108,7 @@ public:
     double rand_picked = 0.0;
     Geom::PathVector shapes;
 
-    Inkscape::auto_connection release_connection;
+    sigc::scoped_connection release_connection;
 
     void set(Preferences::Entry const &val) override;
     virtual void setCloneTilerPrefs();

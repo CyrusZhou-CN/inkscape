@@ -17,7 +17,7 @@
 #include <gtkmm/notebook.h>
 #include <gtkmm/togglebutton.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/dialog/dialog-base.h"
 #include "ui/widget/notebook-page.h"
 #include "ui/widget/scalar-unit.h"
@@ -200,7 +200,7 @@ private:
     Gtk::Button *applyButton;
     Gtk::Button *resetButton;
 
-    auto_connection _tabSwitchConn;
+    sigc::scoped_connection _tabSwitchConn;
 };
 
 } // namespace Inkscape::UI::Dialog

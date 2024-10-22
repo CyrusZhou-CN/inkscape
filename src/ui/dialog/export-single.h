@@ -21,7 +21,7 @@
 #include <gtkmm/box.h>
 #include <gtkmm/entry.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/dialog/export-batch.h"
 
 namespace Gtk {
@@ -202,17 +202,17 @@ private:
     bool interrupted;
 
     // Gtk Signals
-    std::vector<auto_connection> spinButtonConns;
-    auto_connection filenameConn;
-    auto_connection extensionConn;
-    auto_connection exportConn;
-    auto_connection cancelConn;
-    auto_connection browseConn;
-    auto_connection _pages_list_changed;
+    std::vector<sigc::scoped_connection> spinButtonConns;
+    sigc::scoped_connection filenameConn;
+    sigc::scoped_connection extensionConn;
+    sigc::scoped_connection exportConn;
+    sigc::scoped_connection cancelConn;
+    sigc::scoped_connection browseConn;
+    sigc::scoped_connection _pages_list_changed;
     // Document Signals
-    auto_connection _page_selected_connection;
-    auto_connection _page_modified_connection;
-    auto_connection _page_changed_connection;
+    sigc::scoped_connection _page_selected_connection;
+    sigc::scoped_connection _page_modified_connection;
+    sigc::scoped_connection _page_changed_connection;
 };
 
 } // namespace Dialog

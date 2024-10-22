@@ -26,7 +26,7 @@
 #include <gtk/gtk.h> // GtkEventControllerKey
 #include <gdkmm/cursor.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "preferences.h"
 #include "ui/widget/events/enums.h"
 #include "util/action-accel.h"
@@ -231,7 +231,7 @@ private:
 
     std::optional<DelayedSnapEvent> _dse;
     void _schedule_delayed_snap_event();
-    auto_connection _dse_timeout_conn;
+    sigc::scoped_connection _dse_timeout_conn;
     bool _dse_callback_in_process = false;
     Glib::ustring _last_active_tool;
 };

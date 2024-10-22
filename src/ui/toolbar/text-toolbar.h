@@ -114,9 +114,9 @@ private:
     SPStyle _query_cursor;
     double selection_fontsize;
 
-    auto_connection fc_changed_selection;
-    auto_connection fc_update;
-    auto_connection font_count_changed_connection;
+    sigc::scoped_connection fc_changed_selection;
+    sigc::scoped_connection fc_update;
+    sigc::scoped_connection font_count_changed_connection;
     sigc::connection c_selection_changed;
     sigc::connection c_selection_modified;
     sigc::connection c_selection_modified_select_tool;
@@ -158,7 +158,7 @@ private:
     Inkscape::XML::Node *unindent_node(Inkscape::XML::Node *repr, Inkscape::XML::Node *before);
     bool mergeDefaultStyle(SPCSSAttr *css);
 
-    Inkscape::auto_connection _fonts_updated_signal;
+    sigc::scoped_connection _fonts_updated_signal;
 };
 }
 }

@@ -9,7 +9,7 @@
 
 #include "ctrl-handle-styling.h"
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "io/resource.h"
 #include "preferences.h"
 
@@ -27,7 +27,7 @@ private:
 
     // For file system monitoring.
     Glib::RefPtr<Gio::FileMonitor> monitor;
-    auto_connection timeout;
+    sigc::scoped_connection timeout;
 
     // Emitted when the css changes.
     sigc::signal<void()> signal_css_updated;

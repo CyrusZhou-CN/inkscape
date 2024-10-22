@@ -17,7 +17,6 @@
 #include "document.h"
 #include "actions/actions-undo-document.h"
 #include "util/signal-blocker.h"
-#include "preferences.h"
 
 namespace
 {
@@ -59,9 +58,9 @@ public:
     Inkscape::EventLog::CallbackMap *_callbacks;
 };
 
-void addBlocker(std::vector<std::unique_ptr<SignalBlocker> > &blockers, sigc::connection *connection)
+void addBlocker(std::vector<std::unique_ptr<SignalBlocker<sigc::connection>>> &blockers, sigc::connection *connection)
 {
-    blockers.emplace_back(new SignalBlocker(connection));
+    blockers.emplace_back(new SignalBlocker(*connection));
 }
 
 
@@ -97,7 +96,7 @@ public:
             dlg._event_list_selection->set_mode(Gtk::SelectionMode::SINGLE);
 
             {
-                std::vector<std::unique_ptr<SignalBlocker> > blockers;
+                std::vector<std::unique_ptr<SignalBlocker<sigc::connection>>> blockers;
                 addBlocker(blockers, &(*dlg._callback_connections)[Inkscape::EventLog::CALLB_SELECTION_CHANGE]);
                 addBlocker(blockers, &(*dlg._callback_connections)[Inkscape::EventLog::CALLB_EXPAND]);
 
@@ -118,7 +117,7 @@ public:
 
     void collapseRow(Gtk::TreeModel::Path const &path)
     {
-        std::vector<std::unique_ptr<SignalBlocker> > blockers;
+        std::vector<std::unique_ptr<SignalBlocker<sigc::connection>>> blockers;
         for (auto & _connection : _connections)
         {
             addBlocker(blockers, &(*_connection._callback_connections)[Inkscape::EventLog::CALLB_SELECTION_CHANGE]);
@@ -133,7 +132,7 @@ public:
 
     void selectRow(Gtk::TreeModel::Path const &path)
     {
-        std::vector<std::unique_ptr<SignalBlocker> > blockers;
+        std::vector<std::unique_ptr<SignalBlocker<sigc::connection>>> blockers;
         for (auto & _connection : _connections)
         {
             addBlocker(blockers, &(*_connection._callback_connections)[Inkscape::EventLog::CALLB_SELECTION_CHANGE]);
@@ -151,7 +150,7 @@ public:
     void clearEventList(Glib::RefPtr<Gtk::TreeStore> eventListStore)
     {
         if (eventListStore) {
-            std::vector<std::unique_ptr<SignalBlocker> > blockers;
+            std::vector<std::unique_ptr<SignalBlocker<sigc::connection>>> blockers;
             for (auto & _connection : _connections)
             {
                 addBlocker(blockers, &(*_connection._callback_connections)[Inkscape::EventLog::CALLB_SELECTION_CHANGE]);

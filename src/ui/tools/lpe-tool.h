@@ -70,7 +70,7 @@ private:
 
     std::unordered_map<SPPath*, CanvasItemPtr<CanvasItemText>> measuring_items;
 
-    auto_connection sel_changed_connection;
+    sigc::scoped_connection sel_changed_connection;
 };
 
 int lpetool_mode_to_index(LivePathEffect::EffectType type);

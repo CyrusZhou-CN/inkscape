@@ -6,7 +6,7 @@
 #include <glibmm/refptr.h>
 #include <gtkmm/revealer.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Gtk {
 class Builder;
@@ -32,7 +32,7 @@ private:
     Gtk::Image &_icon;
     Gtk::Label &_label;
 
-    Inkscape::auto_connection _timeout;
+    sigc::scoped_connection _timeout;
 };
 
 } // namespace Inkscape::UI::Widget

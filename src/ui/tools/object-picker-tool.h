@@ -6,7 +6,7 @@
 #include "display/control/canvas-item-ptr.h"
 #include "display/control/canvas-item-rect.h"
 #include "display/control/canvas-item-text.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "object/sp-object.h"
 #include "ui/tools/tool-base.h"
 
@@ -25,7 +25,7 @@ private:
     void show_text(const Geom::Point& cursor, const char* text);
     CanvasItemPtr<CanvasItemText> _label;
     CanvasItemPtr<CanvasItemRect> _frame;
-    auto_connection _zoom;
+    sigc::scoped_connection _zoom;
 };
 
 } // namespaces

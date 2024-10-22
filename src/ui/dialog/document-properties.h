@@ -41,7 +41,7 @@
 #include <gtkmm/treemodel.h>
 #include <gtkmm/textview.h>
 #include <gtkmm/treeview.h>
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "object/sp-grid.h"
 #include "ui/dialog/dialog-base.h"
 #include "ui/widget/popover-bin.h"
@@ -223,7 +223,7 @@ private:
     Gtk::Label _no_grids;
     Gtk::Box   _grids_hbox_crea;
     Gtk::Label _grids_label_def;
-    auto_connection _on_idle_scroll;
+    sigc::scoped_connection _on_idle_scroll;
     Inkscape::UI::Widget::IconComboBox _grid_type;
     //---------------------------------------------------------------
 
@@ -266,7 +266,7 @@ private:
     WatchConnection _namedview_connection;
     WatchConnection _root_connection;
 
-    auto_connection _cms_connection;
+    sigc::scoped_connection _cms_connection;
 };
 
 } // namespace Dialog

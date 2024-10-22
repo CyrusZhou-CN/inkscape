@@ -22,7 +22,7 @@
 #include <sigc++/signal.h>
 
 #include "colors/color.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/svg-renderer.h"
 #include "ui/widget/widget-vfuncs-class-init.h"
 
@@ -125,8 +125,8 @@ private:
     // selected handle indicator
     svg_renderer _tip_template;
 
-    auto_connection _release;
-    auto_connection _modified;
+    sigc::scoped_connection _release;
+    sigc::scoped_connection _modified;
     Gdk::RGBA _background_color;
     sigc::signal<void (size_t)> _signal_stop_selected;
     sigc::signal<void (size_t, double)> _signal_stop_offset_changed;

@@ -15,7 +15,6 @@
  */
 
 #include "inkscape-preferences.h"
-#include "helper/sigc-track-obj.h"
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"  // only include where actually required!
@@ -88,7 +87,7 @@
 #include "colors/manager.h"
 #include "colors/spaces/base.h"
 #include "display/nr-filter-gaussian.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "io/resource.h"
 #include "ui/builder-utils.h"
 #include "ui/dialog-run.h"
@@ -1319,7 +1318,7 @@ void InkscapePreferences::changeIconsColors()
             g_critical("CSSProviderError::load_from_data(): failed to load '%s'\n(%s)",
                        css_str.c_str(), error.what());
         };
-        auto_connection _ = colorize_provider->signal_parsing_error().connect(on_error);
+        sigc::scoped_connection _ = colorize_provider->signal_parsing_error().connect(on_error);
         colorize_provider->load_from_data(css_str);
     }
 
@@ -1665,7 +1664,7 @@ void InkscapePreferences::initPageUI()
         cb->set_active_by_id(mgr.get_selected_theme());
 
         // Update on auto-reload or theme change
-        mgr.connectCssUpdated(SIGC_TRACKING_ADAPTOR(
+        mgr.connectCssUpdated(sigc::track_object(
             [=, this]() { img->set_paintable(to_texture(draw_handles_preview(get_scale_factor()))); }, *this));
         cb->signal_changed().connect([=, this](int id) {
             Handles::Manager::get().select_theme(id);

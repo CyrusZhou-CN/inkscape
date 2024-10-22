@@ -26,7 +26,7 @@
 
 #include "dialog-manager.h"
 #include "desktop.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Glib {
 class ValueBase;
@@ -104,7 +104,7 @@ private:
     DialogWindow *create_new_floating_dialog(Glib::ustring const &dialog_type, bool blink);
 
     // Signal connections
-    std::vector<auto_connection> connections;
+    std::vector<sigc::scoped_connection> connections;
 
     // Handlers
     void on_unrealize() override;

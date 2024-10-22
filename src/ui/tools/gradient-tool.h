@@ -41,8 +41,8 @@ private:
     Geom::Point origin;
     bool cursor_addnode = false;
 
-    auto_connection selcon;
-    auto_connection subselcon;
+    sigc::scoped_connection selcon;
+    sigc::scoped_connection subselcon;
 
     void select_next();
     void select_prev();

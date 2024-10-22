@@ -23,7 +23,7 @@
 #include <set>
 #include <sigc++/connection.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "preferences.h"
 
 namespace Gtk {
@@ -94,7 +94,7 @@ private:
     void on_align_node_clicked    (std::string const &align_to);
 
     sigc::connection tool_connection;
-    auto_connection sel_changed;
+    sigc::scoped_connection sel_changed;
     Inkscape::PrefObserver _icon_sizes_changed;
 };
 

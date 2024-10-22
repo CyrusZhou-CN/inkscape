@@ -41,7 +41,7 @@
 #include <gtkmm/treepath.h>                    // for TreePath
 
 #include "display/drawing.h"
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/dialog/dialog-base.h"
 #include "ui/iconview-item-factory.h"
 #include "ui/operation-blocker.h"
@@ -133,7 +133,7 @@ private:
     void get_cell_data_func(Gtk::CellRenderer* cell_renderer, Gtk::TreeModel::Row row, bool visible);
     void refresh_on_idle(int delay = 100);
 
-    auto_connection _idle_search;
+    sigc::scoped_connection _idle_search;
     Glib::RefPtr<Gtk::Builder> _builder;
     Gtk::Scale& _zoom;
     // Index into sizes which is selected
@@ -191,10 +191,10 @@ private:
     /* For rendering the template drawing */
     unsigned key;
     Inkscape::Drawing renderDrawing;
-    auto_connection _defs_modified;
-    auto_connection _doc_resource_changed;
-    auto_connection _idle_refresh;
-    auto_connection _selection_changed;
+    sigc::scoped_connection _defs_modified;
+    sigc::scoped_connection _doc_resource_changed;
+    sigc::scoped_connection _idle_refresh;
+    sigc::scoped_connection _selection_changed;
     boost::compute::detail::lru_cache<std::string, Glib::RefPtr<Gdk::Texture>> _image_cache;
     Glib::RefPtr<Gtk::BoolFilter> _filter;
     Glib::RefPtr<Gtk::FilterListModel> _filtered_model;

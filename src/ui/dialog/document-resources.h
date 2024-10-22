@@ -24,7 +24,7 @@
 #include <gtkmm/treemodel.h>
 #include <gtkmm/treeview.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/dialog/dialog-base.h"
 #include "ui/iconview-item-factory.h"
 #include "ui/text_filter.h"
@@ -103,7 +103,7 @@ private:
     Glib::RefPtr<Gio::ListStoreBase> _info_store;
     Gtk::CellRendererPixbuf _image_renderer;
     SPDocument* _document = nullptr;
-    auto_connection _selection_change;
+    sigc::scoped_connection _selection_change;
     details::Statistics _stats;
     std::string _cur_page_id; // the last category that user selected
     int _showing_resource = -1; // ID of the resource that's currently presented
@@ -120,8 +120,8 @@ private:
     boost::ptr_vector<Inkscape::UI::Widget::EntityEntry> _rdf_list;
     UI::Widget::Registry _wr;
     Gtk::CellRendererText* _label_renderer;
-    auto_connection _document_modified;
-    auto_connection _idle_refresh;
+    sigc::scoped_connection _document_modified;
+    sigc::scoped_connection _idle_refresh;
     Glib::RefPtr<Gtk::BoolFilter> _filter;
     Glib::RefPtr<Gtk::SingleSelection> _selection_model;
 };

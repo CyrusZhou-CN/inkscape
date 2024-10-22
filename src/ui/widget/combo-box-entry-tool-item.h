@@ -28,7 +28,7 @@
 #include <gtkmm/combobox.h>
 #include <gtkmm/cellrenderertext.h>
 #include <sigc++/signal.h>
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 
 namespace Gtk {
 class TreeModel;
@@ -100,14 +100,14 @@ private:
     Glib::ustring       _text; // Text of active menu item or entry box.
     Glib::ustring       _info;       // Text for tooltip info about entry.
     InfoCallback        _info_cb; // Callback for clicking info icon.
-    auto_connection     _info_cb_id;
+    sigc::scoped_connection     _info_cb_id;
     bool                _info_cb_blocked = false;
     Glib::ustring       _warning; // Text for tooltip warning that entry isn't in list.
     InfoCallback        _warning_cb; // Callback for clicking warning icon.
-    auto_connection     _warning_cb_id;
+    sigc::scoped_connection     _warning_cb_id;
     bool                _warning_cb_blocked = false;
 
-    auto_connection idle_conn;
+    sigc::scoped_connection idle_conn;
 
     sigc::signal<void ()> _signal_changed;
 

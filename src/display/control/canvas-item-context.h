@@ -7,7 +7,7 @@
 #define SEEN_CANVAS_ITEM_CONTEXT_H
 
 #include <2geom/affine.h>
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "util/funclog.h"
 
 namespace Inkscape {
@@ -54,7 +54,7 @@ private:
 
     // Control handle styling
     std::shared_ptr<Handles::Css const> _handles_css;
-    auto_connection _css_updated_conn;
+    sigc::scoped_connection _css_updated_conn;
 
     // Snapshotting
     char _cacheline_separator[127];

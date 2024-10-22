@@ -29,7 +29,7 @@
 #include <gtkmm/togglebutton.h>
 #include <gtkmm/checkbutton.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "ui/widget/export-preview.h"
 
 namespace Gtk {
@@ -101,8 +101,8 @@ private:
     bool _isolate_item = false;
     bool is_hide = false;
 
-    auto_connection _selection_widget_changed_conn;
-    auto_connection _object_modified_conn;
+    sigc::scoped_connection _selection_widget_changed_conn;
+    sigc::scoped_connection _object_modified_conn;
 };
 
 class BatchExport final : public Gtk::Box
@@ -183,14 +183,14 @@ private:
     bool interrupted;
 
     // Gtk Signals
-    auto_connection filename_conn;
-    auto_connection export_conn;
-    auto_connection cancel_conn;
-    auto_connection browse_conn;
-    auto_connection refresh_conn;
-    auto_connection refresh_items_conn;
+    sigc::scoped_connection filename_conn;
+    sigc::scoped_connection export_conn;
+    sigc::scoped_connection cancel_conn;
+    sigc::scoped_connection browse_conn;
+    sigc::scoped_connection refresh_conn;
+    sigc::scoped_connection refresh_items_conn;
     // SVG Signals
-    auto_connection _pages_changed_connection;
+    sigc::scoped_connection _pages_changed_connection;
 };
 
 

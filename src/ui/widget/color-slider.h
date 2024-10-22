@@ -17,7 +17,7 @@
 #include <gtkmm/gesture.h> // Gtk::EventSequenceState
 #include <sigc++/signal.h>
 
-#include "helper/auto-connection.h"
+#include <sigc++/scoped_connection.h>
 #include "colors/spaces/components.h"
 
 namespace Gtk {
@@ -58,7 +58,7 @@ private:
     void on_motion(Gtk::EventControllerMotion const &motion, double x, double y);
     void update_component(double x, double y, Gdk::ModifierType const state);
 
-    Inkscape::auto_connection _changed_connection;
+    sigc::scoped_connection _changed_connection;
     sigc::signal<void ()> signal_value_changed;
 
     int _arrow_x, _arrow_y = 0;
