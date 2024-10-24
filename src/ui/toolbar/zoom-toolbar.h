@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_ZOOM_TOOLBAR_H
-#define SEEN_ZOOM_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_ZOOM_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_ZOOM_TOOLBAR_H
 
 /**
- * @file
- * Zoom aux toolbar
+ * @file Zoom toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -31,10 +30,6 @@
 
 #include "toolbar.h"
 
-namespace Gtk {
-class Builder;
-}
-
 namespace Inkscape::UI::Toolbar {
 
 /**
@@ -43,16 +38,13 @@ namespace Inkscape::UI::Toolbar {
 class ZoomToolbar : public Toolbar
 {
 public:
-    ZoomToolbar(SPDesktop *desktop);
+    ZoomToolbar();
     ~ZoomToolbar() override;
-
-private:
-    Glib::RefPtr<Gtk::Builder> _builder;
 };
 
 } // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_ZOOM_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_ZOOM_TOOLBAR_H
 
 /*
   Local Variables:

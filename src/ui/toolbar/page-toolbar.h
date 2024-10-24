@@ -12,10 +12,9 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_PAGE_TOOLBAR_H
-#define SEEN_PAGE_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_PAGE_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_PAGE_TOOLBAR_H
 
-#include <glibmm/refptr.h>
 #include <string>
 
 #include <sigc++/scoped_connection.h>
@@ -34,7 +33,6 @@ class Builder;
 class Separator;
 } // namespace Gtk
 
-class SPDesktop;
 class SPDocument;
 class SPPage;
 
@@ -50,13 +48,17 @@ class ToolBase;
 
 namespace Toolbar {
 
-class PageToolbar final : public Toolbar
+class PageToolbar : public Toolbar
 {
 public:
-    PageToolbar(SPDesktop *desktop);
-    ~PageToolbar() final;
+    PageToolbar();
+    ~PageToolbar() override;
 
-protected:
+    void setDesktop(SPDesktop *desktop) override;
+
+private:
+    PageToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     void labelEdited();
     void bleedsEdited();
     void marginsEdited();
@@ -70,15 +72,13 @@ protected:
     void setSizeText(SPPage *page = nullptr, bool display_only = true);
     void setMarginText(SPPage *page = nullptr);
 
-private:
-    SPDocument *_document;
+    SPDocument *_document = nullptr;
 
     void toolChanged(SPDesktop *desktop, Inkscape::UI::Tools::ToolBase *tool);
     void pagesChanged();
     void selectionChanged(SPPage *page);
     void populate_sizes();
 
-    sigc::scoped_connection _ec_connection;
     sigc::scoped_connection _doc_connection;
     sigc::scoped_connection _pages_changed;
     sigc::scoped_connection _page_selected;
@@ -115,7 +115,7 @@ private:
 } // namespace UI
 } // namespace Inkscape
 
-#endif /* !SEEN_PAGE_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_PAGE_TOOLBAR_H
 
 /*
   Local Variables:

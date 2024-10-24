@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file
- * Node aux toolbar
+ * @file Node toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -50,7 +49,6 @@
 #include "ui/tool/multi-path-manipulator.h"
 #include "ui/tools/node-tool.h"
 #include "ui/util.h"
-#include "ui/widget/canvas.h"
 #include "ui/widget/combo-tool-item.h"
 #include "ui/widget/spinbutton.h"
 #include "ui/widget/unit-tracker.h"
@@ -62,39 +60,26 @@ using Inkscape::Util::Quantity;
 using Inkscape::DocumentUndo;
 using Inkscape::UI::Tools::NodeTool;
 
-/** Temporary hack: Returns the node tool in the active desktop.
- * Will go away during tool refactoring. */
-static NodeTool *get_node_tool()
-{
-    if (SP_ACTIVE_DESKTOP) {
-        return dynamic_cast<NodeTool *>(SP_ACTIVE_DESKTOP->getTool());
-    }
-    return nullptr;
-}
-
 namespace Inkscape::UI::Toolbar {
 
-NodeToolbar::NodeToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    , _tracker{std::make_unique<UnitTracker>(Inkscape::Util::UNIT_TYPE_LINEAR)}
-    , _freeze(false)
-    , _builder(create_builder("toolbar-node.ui"))
-    , _nodes_lpeedit_btn(get_widget<Gtk::Button>(_builder, "_nodes_lpeedit_btn"))
-    , _show_helper_path_btn(&get_widget<Gtk::ToggleButton>(_builder, "_show_helper_path_btn"))
-    , _show_handles_btn(&get_widget<Gtk::ToggleButton>(_builder, "_show_handles_btn"))
-    , _show_transform_handles_btn(&get_widget<Gtk::ToggleButton>(_builder, "_show_transform_handles_btn"))
-    , _object_edit_mask_path_btn(&get_widget<Gtk::ToggleButton>(_builder, "_object_edit_mask_path_btn"))
-    , _object_edit_clip_path_btn(&get_widget<Gtk::ToggleButton>(_builder, "_object_edit_clip_path_btn"))
-    , _nodes_x_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_nodes_x_item"))
-    , _nodes_y_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_nodes_y_item"))
-    , _nodes_d_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_nodes_d_item"))
-    , _nodes_d_box(get_widget<Gtk::Box>(_builder, "_nodes_d_box"))
+NodeToolbar::NodeToolbar()
+    : NodeToolbar{create_builder("toolbar-node.ui")}
+{}
+
+NodeToolbar::NodeToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
+    : Toolbar{get_widget<Gtk::Box>(builder, "node-toolbar")}
+    , _tracker{std::make_unique<UnitTracker>(Util::UNIT_TYPE_LINEAR)}
+    , _nodes_lpeedit_btn{get_widget<Gtk::Button>(builder, "_nodes_lpeedit_btn")}
+    , _show_helper_path_btn{&get_widget<Gtk::ToggleButton>(builder, "_show_helper_path_btn")}
+    , _show_handles_btn{&get_widget<Gtk::ToggleButton>(builder, "_show_handles_btn")}
+    , _show_transform_handles_btn{&get_widget<Gtk::ToggleButton>(builder, "_show_transform_handles_btn")}
+    , _object_edit_mask_path_btn{&get_widget<Gtk::ToggleButton>(builder, "_object_edit_mask_path_btn")}
+    , _object_edit_clip_path_btn{&get_widget<Gtk::ToggleButton>(builder, "_object_edit_clip_path_btn")}
+    , _nodes_x_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_nodes_x_item")}
+    , _nodes_y_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_nodes_y_item")}
+    , _nodes_d_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_nodes_d_item")}
+    , _nodes_d_box{get_widget<Gtk::Box>(builder, "_nodes_d_box")}
 {
-    Unit doc_units = *desktop->getNamedView()->display_units;
-    _tracker->setActiveUnit(&doc_units);
-
-    _toolbar = &get_widget<Gtk::Box>(_builder, "node-toolbar");
-
     // Setup the derived spin buttons.
     setup_derived_spin_button(_nodes_x_item, "x");
     setup_derived_spin_button(_nodes_y_item, "y");
@@ -103,88 +88,111 @@ NodeToolbar::NodeToolbar(SPDesktop *desktop)
     _nodes_y_item.set_sensitive(false);
 
     auto unit_menu = _tracker->create_tool_item(_("Units"), (""));
-    get_widget<Gtk::Box>(_builder, "unit_menu_box").append(*unit_menu);
-
-    set_child(*_toolbar);
-    init_menu_btns();
+    get_widget<Gtk::Box>(builder, "unit_menu_box").append(*unit_menu);
 
     // Attach the signals.
 
-    get_widget<Gtk::Button>(_builder, "insert_node_btn")
+    get_widget<Gtk::Button>(builder, "insert_node_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &NodeToolbar::edit_add));
 
     setup_insert_node_menu();
 
-    get_widget<Gtk::Button>(_builder, "delete_btn")
+    get_widget<Gtk::Button>(builder, "delete_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &NodeToolbar::edit_delete));
 
-    get_widget<Gtk::Button>(_builder, "join_btn")
+    get_widget<Gtk::Button>(builder, "join_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &NodeToolbar::edit_join));
-    get_widget<Gtk::Button>(_builder, "break_btn")
+    get_widget<Gtk::Button>(builder, "break_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &NodeToolbar::edit_break));
 
-    get_widget<Gtk::Button>(_builder, "join_segment_btn")
+    get_widget<Gtk::Button>(builder, "join_segment_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &NodeToolbar::edit_join_segment));
-    get_widget<Gtk::Button>(_builder, "delete_segment_btn")
+    get_widget<Gtk::Button>(builder, "delete_segment_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &NodeToolbar::edit_delete_segment));
 
-    get_widget<Gtk::Button>(_builder, "cusp_btn")
+    get_widget<Gtk::Button>(builder, "cusp_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &NodeToolbar::edit_cusp));
-    get_widget<Gtk::Button>(_builder, "smooth_btn")
+    get_widget<Gtk::Button>(builder, "smooth_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &NodeToolbar::edit_smooth));
-    get_widget<Gtk::Button>(_builder, "symmetric_btn")
+    get_widget<Gtk::Button>(builder, "symmetric_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &NodeToolbar::edit_symmetrical));
-    get_widget<Gtk::Button>(_builder, "auto_btn")
+    get_widget<Gtk::Button>(builder, "auto_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &NodeToolbar::edit_auto));
 
-    get_widget<Gtk::Button>(_builder, "line_btn")
+    get_widget<Gtk::Button>(builder, "line_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &NodeToolbar::edit_toline));
-    get_widget<Gtk::Button>(_builder, "curve_btn")
+    get_widget<Gtk::Button>(builder, "curve_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &NodeToolbar::edit_tocurve));
 
-    _pusher_show_outline.reset(new UI::SimplePrefPusher(_show_helper_path_btn, "/tools/nodes/show_outline"));
+    _pusher_show_outline = std::make_unique<SimplePrefPusher>(_show_helper_path_btn, "/tools/nodes/show_outline");
     _show_helper_path_btn->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &NodeToolbar::on_pref_toggled),
                                                                _show_helper_path_btn, "/tools/nodes/show_outline"));
 
-    _pusher_show_handles.reset(new UI::SimplePrefPusher(_show_handles_btn, "/tools/nodes/show_handles"));
+    _pusher_show_handles = std::make_unique<SimplePrefPusher>(_show_handles_btn, "/tools/nodes/show_handles");
     _show_handles_btn->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &NodeToolbar::on_pref_toggled),
                                                            _show_handles_btn, "/tools/nodes/show_handles"));
 
-    _pusher_show_transform_handles.reset(
-        new UI::SimplePrefPusher(_show_transform_handles_btn, "/tools/nodes/show_transform_handles"));
+    _pusher_show_transform_handles =
+        std::make_unique<SimplePrefPusher>(_show_transform_handles_btn, "/tools/nodes/show_transform_handles");
     _show_transform_handles_btn->signal_toggled().connect(
         sigc::bind(sigc::mem_fun(*this, &NodeToolbar::on_pref_toggled), _show_transform_handles_btn,
                    "/tools/nodes/show_transform_handles"));
 
-    _pusher_edit_masks.reset(new SimplePrefPusher(_object_edit_mask_path_btn, "/tools/nodes/edit_masks"));
+    _pusher_edit_masks = std::make_unique<SimplePrefPusher>(_object_edit_mask_path_btn, "/tools/nodes/edit_masks");
     _object_edit_mask_path_btn->signal_toggled().connect(sigc::bind(
         sigc::mem_fun(*this, &NodeToolbar::on_pref_toggled), _object_edit_mask_path_btn, "/tools/nodes/edit_masks"));
 
-    _pusher_edit_clipping_paths.reset(
-        new SimplePrefPusher(_object_edit_clip_path_btn, "/tools/nodes/edit_clipping_paths"));
+    _pusher_edit_clipping_paths =
+        std::make_unique<SimplePrefPusher>(_object_edit_clip_path_btn, "/tools/nodes/edit_clipping_paths");
     _object_edit_clip_path_btn->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &NodeToolbar::on_pref_toggled),
                                                                     _object_edit_clip_path_btn,
                                                                     "/tools/nodes/edit_clipping_paths"));
 
-    sel_changed(desktop->getSelection());
-    desktop->connectEventContextChanged(sigc::mem_fun(*this, &NodeToolbar::watch_ec));
+    _initMenuBtns();
 }
 
 NodeToolbar::~NodeToolbar() = default;
 
-void NodeToolbar::setup_derived_spin_button(Inkscape::UI::Widget::SpinButton &btn, Glib::ustring const &name)
+void NodeToolbar::setDesktop(SPDesktop *desktop)
+{
+    if (_desktop) {
+        c_selection_changed.disconnect();
+        c_selection_modified.disconnect();
+        c_subselection_changed.disconnect();
+    }
+
+    Toolbar::setDesktop(desktop);
+
+    if (_desktop) {
+        // watch selection
+        c_selection_changed = desktop->getSelection()->connectChanged(sigc::mem_fun(*this, &NodeToolbar::sel_changed));
+        c_selection_modified = desktop->getSelection()->connectModified(sigc::mem_fun(*this, &NodeToolbar::sel_modified));
+        c_subselection_changed = desktop->connect_control_point_selected([this] (ControlPointSelection *selection) {
+            coord_changed(selection);
+        });
+
+        sel_changed(desktop->getSelection());
+    }
+}
+
+void NodeToolbar::setActiveUnit(Util::Unit const *unit)
+{
+    _tracker->setActiveUnit(unit);
+}
+
+void NodeToolbar::setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name)
 {
     auto adj = btn.get_adjustment();
     adj->set_value(0);
@@ -192,7 +200,8 @@ void NodeToolbar::setup_derived_spin_button(Inkscape::UI::Widget::SpinButton &bt
 
     _tracker->addAdjustment(adj->gobj());
     btn.addUnitTracker(_tracker.get());
-    btn.set_defocus_widget(_desktop->getCanvas());
+
+    btn.setDefocusTarget(this);
 }
 
 void NodeToolbar::setup_insert_node_menu()
@@ -206,25 +215,21 @@ void NodeToolbar::setup_insert_node_menu()
     insert_action_group("node-toolbar", actions);
 }
 
-void NodeToolbar::value_changed(Glib::ustring const &name, Glib::RefPtr<Gtk::Adjustment> &adj)
+void NodeToolbar::value_changed(Glib::ustring const &name, Glib::RefPtr<Gtk::Adjustment> const &adj)
 {
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-
-    if (!_tracker) {
+    // quit if run by the XML listener or a unit change
+    if (_blocker.pending() || _tracker->isUpdating()) {
         return;
     }
 
-    Unit const *unit = _tracker->getActiveUnit();
+    // in turn, prevent XML listener from responding
+    auto guard = _blocker.block();
 
-    // quit if run by the attr_changed listener
-    if (_freeze || _tracker->isUpdating()) {
-        return;
-    }
+    auto prefs = Preferences::get();
 
-    // in turn, prevent listener from responding
-    _freeze = true;
+    auto const unit = _tracker->getActiveUnit();
 
-    NodeTool *nt = get_node_tool();
+    auto nt = get_node_tool();
     double val = Quantity::convert(adj->get_value(), unit, "px");
     auto pwb = nt->_selected_nodes->pointwiseBounds();
     auto fsp = nt->_selected_nodes->firstSelectedPoint();
@@ -250,70 +255,41 @@ void NodeToolbar::value_changed(Glib::ustring const &name, Glib::RefPtr<Gtk::Adj
             oldval -= page.corner(0)[d];
         }
 
-        Geom::Point delta(0,0);
+        Geom::Point delta;
         delta[d] = val - oldval;
         nt->_multipath->move(delta);
     }
-
-    _freeze = false;
 }
 
-void NodeToolbar::sel_changed(Inkscape::Selection *selection)
+void NodeToolbar::sel_changed(Selection *selection)
 {
-    SPItem *item = selection->singleItem();
-    if (item && is<SPLPEItem>(item)) {
-        if (cast_unsafe<SPLPEItem>(item)->hasPathEffect()) {
-            _nodes_lpeedit_btn.set_sensitive(true);
-        } else {
-            _nodes_lpeedit_btn.set_sensitive(false);
-        }
+    if (auto lpeitem = cast<SPLPEItem>(selection->singleItem())) {
+        _nodes_lpeedit_btn.set_sensitive(lpeitem->hasPathEffect());
     } else {
         _nodes_lpeedit_btn.set_sensitive(false);
     }
 }
 
-void NodeToolbar::watch_ec(SPDesktop *desktop, Inkscape::UI::Tools::ToolBase *tool)
-{
-    if (INK_IS_NODE_TOOL(tool)) {
-        // watch selection
-        c_selection_changed = desktop->getSelection()->connectChanged(sigc::mem_fun(*this, &NodeToolbar::sel_changed));
-        c_selection_modified = desktop->getSelection()->connectModified(sigc::mem_fun(*this, &NodeToolbar::sel_modified));
-        c_subselection_changed = desktop->connect_control_point_selected([this] (Inkscape::UI::ControlPointSelection *selection) {
-            coord_changed(selection);
-        });
-
-        sel_changed(desktop->getSelection());
-    } else {
-        if (c_selection_changed)
-            c_selection_changed.disconnect();
-        if (c_selection_modified)
-            c_selection_modified.disconnect();
-        if (c_subselection_changed)
-            c_subselection_changed.disconnect();
-    }
-}
-
-void NodeToolbar::sel_modified(Inkscape::Selection *selection, guint /*flags*/)
+void NodeToolbar::sel_modified(Selection *selection, guint /*flags*/)
 {
     sel_changed(selection);
 }
 
-/* is called when the node selection is modified */
-void NodeToolbar::coord_changed(Inkscape::UI::ControlPointSelection *selected_nodes) // gpointer /*shape_editor*/)
+// is called when the node selection is modified
+void NodeToolbar::coord_changed(ControlPointSelection *selected_nodes)
 {
     // quit if run by the attr_changed listener
-    if (_freeze) {
+    if (_blocker.pending()) {
         return;
     }
 
     // in turn, prevent listener from responding
-    _freeze = true;
+    auto guard = _blocker.block();
 
     if (!_tracker) {
         return;
     }
-    Unit const *unit = _tracker->getActiveUnit();
-    g_return_if_fail(unit != nullptr);
+    auto const unit = _tracker->getActiveUnit();
 
     if (!selected_nodes || selected_nodes->empty()) {
         // no path selected
@@ -334,11 +310,11 @@ void NodeToolbar::coord_changed(Inkscape::UI::ControlPointSelection *selected_no
             mid *= pm.getSelectedPageAffine().inverse();
         }
 
-        if (oldx != mid[Geom::X]) {
-            adj_x->set_value(Quantity::convert(mid[Geom::X], "px", unit));
+        if (oldx != mid.x()) {
+            adj_x->set_value(Quantity::convert(mid.x(), "px", unit));
         }
-        if (oldy != mid[Geom::Y]) {
-            adj_y->set_value(Quantity::convert(mid[Geom::Y], "px", unit));
+        if (oldy != mid.y()) {
+            adj_y->set_value(Quantity::convert(mid.y(), "px", unit));
         }
     }
 
@@ -355,141 +331,129 @@ void NodeToolbar::coord_changed(Inkscape::UI::ControlPointSelection *selected_no
     } else {
         _nodes_d_box.set_visible(false);
     }
-
-    _freeze = false;
 }
 
 void NodeToolbar::edit_add()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
+    if (auto nt = get_node_tool()) {
         nt->_multipath->insertNodes();
     }
 }
 
 void NodeToolbar::edit_add_min_x()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
-        nt->_multipath->insertNodesAtExtrema(Inkscape::UI::PointManipulator::EXTR_MIN_X);
+    if (auto nt = get_node_tool()) {
+        nt->_multipath->insertNodesAtExtrema(PointManipulator::EXTR_MIN_X);
     }
 }
 
 void NodeToolbar::edit_add_max_x()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
-        nt->_multipath->insertNodesAtExtrema(Inkscape::UI::PointManipulator::EXTR_MAX_X);
+    if (auto nt = get_node_tool()) {
+        nt->_multipath->insertNodesAtExtrema(PointManipulator::EXTR_MAX_X);
     }
 }
 
 void NodeToolbar::edit_add_min_y()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
-        nt->_multipath->insertNodesAtExtrema(Inkscape::UI::PointManipulator::EXTR_MIN_Y);
+    if (auto nt = get_node_tool()) {
+        nt->_multipath->insertNodesAtExtrema(PointManipulator::EXTR_MIN_Y);
     }
 }
 
 void NodeToolbar::edit_add_max_y()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
-        nt->_multipath->insertNodesAtExtrema(Inkscape::UI::PointManipulator::EXTR_MAX_Y);
+    if (auto nt = get_node_tool()) {
+        nt->_multipath->insertNodesAtExtrema(PointManipulator::EXTR_MAX_Y);
     }
 }
 
 void NodeToolbar::edit_delete()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
+    if (auto nt = get_node_tool()) {
         nt->_multipath->deleteNodes(Preferences::get()->getBool("/tools/nodes/delete_preserves_shape", true));
     }
 }
 
 void NodeToolbar::edit_join()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
+    if (auto nt = get_node_tool()) {
         nt->_multipath->joinNodes();
     }
 }
 
 void NodeToolbar::edit_break()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
+    if (auto nt = get_node_tool()) {
         nt->_multipath->breakNodes();
     }
 }
 
 void NodeToolbar::edit_delete_segment()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
+    if (auto nt = get_node_tool()) {
         nt->_multipath->deleteSegments();
     }
 }
 
 void NodeToolbar::edit_join_segment()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
+
+    if (auto nt = get_node_tool()) {
         nt->_multipath->joinSegments();
     }
 }
 
 void NodeToolbar::edit_cusp()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
-        nt->_multipath->setNodeType(Inkscape::UI::NODE_CUSP);
+    if (auto nt = get_node_tool()) {
+        nt->_multipath->setNodeType(NODE_CUSP);
     }
 }
 
 void NodeToolbar::edit_smooth()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
-        nt->_multipath->setNodeType(Inkscape::UI::NODE_SMOOTH);
+    if (auto nt = get_node_tool()) {
+        nt->_multipath->setNodeType(NODE_SMOOTH);
     }
 }
 
 void NodeToolbar::edit_symmetrical()
-{
-    NodeTool *nt = get_node_tool();
-    if (nt) {
-        nt->_multipath->setNodeType(Inkscape::UI::NODE_SYMMETRIC);
+{   
+    if (auto nt = get_node_tool()) {
+        nt->_multipath->setNodeType(NODE_SYMMETRIC);
     }
 }
 
 void NodeToolbar::edit_auto()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
-        nt->_multipath->setNodeType(Inkscape::UI::NODE_AUTO);
+    if (auto nt = get_node_tool()) {
+        nt->_multipath->setNodeType(NODE_AUTO);
     }
 }
 
 void NodeToolbar::edit_toline()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
-        nt->_multipath->setSegmentType(Inkscape::UI::SEGMENT_STRAIGHT);
+    if (auto nt = get_node_tool()) {
+        nt->_multipath->setSegmentType(SEGMENT_STRAIGHT);
     }
 }
 
 void NodeToolbar::edit_tocurve()
 {
-    NodeTool *nt = get_node_tool();
-    if (nt) {
-        nt->_multipath->setSegmentType(Inkscape::UI::SEGMENT_CUBIC_BEZIER);
+    if (auto nt = get_node_tool()) {
+        nt->_multipath->setSegmentType(SEGMENT_CUBIC_BEZIER);
     }
 }
 
-void NodeToolbar::on_pref_toggled(Gtk::ToggleButton *item, const Glib::ustring &path)
+void NodeToolbar::on_pref_toggled(Gtk::ToggleButton *item, Glib::ustring const &path)
 {
     Preferences::get()->setBool(path, item->get_active());
+}
+
+NodeTool *NodeToolbar::get_node_tool() const
+{
+    return dynamic_cast<NodeTool *>(_desktop->getTool());
 }
 
 } // namespace Inkscape::UI::Toolbar

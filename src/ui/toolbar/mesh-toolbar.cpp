@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+/**
+ * @file Mesh toolbar
+ */
 /*
- * Gradient aux toolbar
- *
  * Authors:
  *   bulia byak <bulia@dr.com>
  *   Johan Engelen <j.b.c.engelen@ewi.utwente.nl>
@@ -39,58 +40,56 @@
 #include "ui/simple-pref-pusher.h"
 #include "ui/tools/mesh-tool.h"
 #include "ui/util.h"
-#include "ui/widget/canvas.h"
 #include "ui/widget/combo-tool-item.h"
 #include "ui/widget/spinbutton.h"
 
 using Inkscape::DocumentUndo;
 using Inkscape::UI::Tools::MeshTool;
 
-static bool blocked = false;
+namespace Inkscape::UI::Toolbar {
+namespace {
 
 // Get a list of selected meshes taking into account fill/stroke toggles
-std::vector<SPMeshGradient *>  ms_get_dt_selected_gradients(Inkscape::Selection *selection)
+std::vector<SPMeshGradient *> ms_get_dt_selected_gradients(Selection *selection)
 {
     std::vector<SPMeshGradient *> ms_selected;
 
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    auto prefs = Preferences::get();
     bool edit_fill   = prefs->getBool("/tools/mesh/edit_fill",   true);
     bool edit_stroke = prefs->getBool("/tools/mesh/edit_stroke", true);
 
-    auto itemlist= selection->items();
-    for(auto i=itemlist.begin();i!=itemlist.end();++i){
-        SPItem *item = *i;// get the items gradient, not the getVector() version
-        SPStyle *style = item->style;
+    for (auto item : selection->items()) {
+        auto style = item->style;
+        if (!style) {
+            continue;
+        }
 
-        if (style) {
-            if (edit_fill   && style->fill.isPaintserver()) {
-                SPPaintServer *server = item->style->getFillPaintServer();
-                auto mesh = cast<SPMeshGradient>(server);
-                if (mesh) {
-                    ms_selected.push_back(mesh);
-                }
+        if (edit_fill && style->fill.isPaintserver()) {
+            auto server = item->style->getFillPaintServer();
+            if (auto mesh = cast<SPMeshGradient>(server)) {
+                ms_selected.push_back(mesh);
             }
+        }
 
-            if (edit_stroke && style->stroke.isPaintserver()) {
-                SPPaintServer *server = item->style->getStrokePaintServer();
-                auto mesh = cast<SPMeshGradient>(server);
-                if (mesh) {
-                    ms_selected.push_back(mesh);
-                }
+        if (edit_stroke && style->stroke.isPaintserver()) {
+            auto server = item->style->getStrokePaintServer();
+            if (auto mesh = cast<SPMeshGradient>(server)) {
+                ms_selected.push_back(mesh);
             }
         }
     }
+
     return ms_selected;
 }
 
 /*
  * Get the current selection status from the desktop
  */
-void ms_read_selection( Inkscape::Selection *selection,
-                        SPMeshGradient *&ms_selected,
-                        bool &ms_selected_multi,
-                        SPMeshType &ms_type,
-                        bool &ms_type_multi )
+void ms_read_selection(Selection *selection,
+                       SPMeshGradient *&ms_selected,
+                       bool &ms_selected_multi,
+                       SPMeshType &ms_type,
+                       bool &ms_type_multi)
 {
     ms_selected = nullptr;
     ms_selected_multi = false;
@@ -100,65 +99,49 @@ void ms_read_selection( Inkscape::Selection *selection,
     bool first = true;
 
     // Read desktop selection, taking into account fill/stroke toggles
-    std::vector<SPMeshGradient *> meshes = ms_get_dt_selected_gradients( selection );
-    for (auto & meshe : meshes) {
+    for (auto const &mesh : ms_get_dt_selected_gradients(selection)) {
         if (first) {
-            ms_selected = meshe;
-            ms_type = meshe->type;
+            ms_selected = mesh;
+            ms_type = mesh->type;
             first = false;
         } else {
-            if (ms_selected != meshe) {
+            if (ms_selected != mesh) {
                 ms_selected_multi = true;
             }
-            if (ms_type != meshe->type) {
+            if (ms_type != mesh->type) {
                 ms_type_multi = true;
             }
         }
     }
 }
 
-/*
- * Callback functions for user actions
- */
-/** Temporary hack: Returns the mesh tool in the active desktop.
- * Will go away during tool refactoring. */
-static MeshTool *get_mesh_tool()
-{
-    MeshTool *mesh_tool = nullptr;
-    if (SP_ACTIVE_DESKTOP ) {
-        auto const tool = SP_ACTIVE_DESKTOP->getTool();
-        mesh_tool = dynamic_cast<MeshTool *>(tool);
-    }
-    return mesh_tool;
-}
+} // namespace
 
-namespace Inkscape::UI::Toolbar {
+MeshToolbar::MeshToolbar()
+    : MeshToolbar{create_builder("toolbar-mesh.ui")}
+{}
 
-MeshToolbar::MeshToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    // , _edit_fill_pusher(nullptr)
-    , _builder(create_builder("toolbar-mesh.ui"))
-    , _row_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_row_item"))
-    , _col_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_col_item"))
-    , _edit_fill_btn(&get_widget<Gtk::ToggleButton>(_builder, "_edit_fill_btn"))
-    , _edit_stroke_btn(&get_widget<Gtk::ToggleButton>(_builder, "_edit_stroke_btn"))
+MeshToolbar::MeshToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
+    : Toolbar{get_widget<Gtk::Box>(builder, "mesh-toolbar")}
+    , _row_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_row_item")}
+    , _col_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_col_item")}
+    , _edit_fill_btn{&get_widget<Gtk::ToggleButton>(builder, "_edit_fill_btn")}
+    , _edit_stroke_btn{&get_widget<Gtk::ToggleButton>(builder, "_edit_stroke_btn")}
 {
     auto prefs = Preferences::get();
 
-    _toolbar = &get_widget<Gtk::Box>(_builder, "mesh-toolbar");
-
-    auto show_handles_btn = &get_widget<Gtk::ToggleButton>(_builder, "show_handles_btn");
+    auto show_handles_btn = &get_widget<Gtk::ToggleButton>(builder, "show_handles_btn");
 
     // Configure the types combo box.
     UI::Widget::ComboToolItemColumns columns;
-    Glib::RefPtr<Gtk::ListStore> store = Gtk::ListStore::create(columns);
+    auto store = Gtk::ListStore::create(columns);
     Gtk::TreeModel::Row row;
 
-    row = *(store->append());
+    row = *store->append();
     row[columns.col_label] = C_("Type", "Coons");
     row[columns.col_sensitive] = true;
 
-    row = *(store->append());
+    row = *store->append();
     row[columns.col_label] = _("Bicubic");
     row[columns.col_sensitive] = true;
 
@@ -170,7 +153,7 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
     _select_type_item->set_active(0);
 
     _select_type_item->signal_changed().connect(sigc::mem_fun(*this, &MeshToolbar::type_changed));
-    get_widget<Gtk::Box>(_builder, "select_type_box").append(*_select_type_item);
+    get_widget<Gtk::Box>(builder, "select_type_box").append(*_select_type_item);
 
     // Setup the spin buttons.
     setup_derived_spin_button(_row_item, "mesh_rows", 1, &MeshToolbar::row_changed);
@@ -206,7 +189,7 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
     int mode = prefs->getInt("/tools/mesh/mesh_geometry", SP_MESH_GEOMETRY_NORMAL);
 
     int btn_index = 0;
-    for_each_child(get_widget<Gtk::Box>(_builder, "new_type_buttons_box"), [&](Gtk::Widget &item){
+    for_each_child(get_widget<Gtk::Box>(builder, "new_type_buttons_box"), [&](Gtk::Widget &item){
         auto &btn = dynamic_cast<Gtk::ToggleButton &>(item);
         btn.set_active(btn_index == mode);
         btn.signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &MeshToolbar::new_geometry_changed), btn_index++));
@@ -216,7 +199,7 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
     mode = prefs->getInt("/tools/mesh/newfillorstroke");
 
     btn_index = 0;
-    for_each_child(get_widget<Gtk::Box>(_builder, "new_fillstroke_buttons_box"), [&](Gtk::Widget &item){
+    for_each_child(get_widget<Gtk::Box>(builder, "new_fillstroke_buttons_box"), [&](Gtk::Widget &item){
         auto &btn = dynamic_cast<Gtk::ToggleButton &>(item);
         btn.set_active(btn_index == mode);
         btn.signal_clicked().connect(
@@ -233,44 +216,67 @@ MeshToolbar::MeshToolbar(SPDesktop *desktop)
     // Show/hide side and tensor handles.
     _show_handles_pusher.reset(new UI::SimplePrefPusher(show_handles_btn, "/tools/mesh/show_handles"));
 
-    set_child(*_toolbar);
-    init_menu_btns();
+    _initMenuBtns();
 
     // Signals.
     _edit_fill_btn->signal_toggled().connect(sigc::mem_fun(*this, &MeshToolbar::toggle_fill_stroke));
     _edit_stroke_btn->signal_toggled().connect(sigc::mem_fun(*this, &MeshToolbar::toggle_fill_stroke));
     show_handles_btn->signal_toggled().connect(sigc::mem_fun(*this, &MeshToolbar::toggle_handles));
-    get_widget<Gtk::Button>(_builder, "toggle_sides_btn")
+    get_widget<Gtk::Button>(builder, "toggle_sides_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &MeshToolbar::toggle_sides));
-    get_widget<Gtk::Button>(_builder, "make_elliptical_btn")
+    get_widget<Gtk::Button>(builder, "make_elliptical_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &MeshToolbar::make_elliptical));
-    get_widget<Gtk::Button>(_builder, "pick_colors_btn")
+    get_widget<Gtk::Button>(builder, "pick_colors_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &MeshToolbar::pick_colors));
-    get_widget<Gtk::Button>(_builder, "scale_mesh_btn")
+    get_widget<Gtk::Button>(builder, "scale_mesh_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &MeshToolbar::fit_mesh));
 
-    get_widget<Gtk::Button>(_builder, "warning_btn").signal_clicked().connect([this] { warning_popup(); });
-
-    desktop->connectEventContextChanged(sigc::mem_fun(*this, &MeshToolbar::watch_ec));
+    get_widget<Gtk::Button>(builder, "warning_btn").signal_clicked().connect([this] { warning_popup(); });
 }
 
 MeshToolbar::~MeshToolbar() = default;
 
-void MeshToolbar::setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name,
-                                            double default_value, ValueChangedMemFun const value_changed_mem_fun)
+void MeshToolbar::setDesktop(SPDesktop *desktop)
 {
-    const Glib::ustring path = "/tools/mesh/" + name;
+    if (_desktop) {
+        c_selection_changed.disconnect();
+        c_selection_modified.disconnect();
+        c_subselection_changed.disconnect();
+        c_defs_release.disconnect();
+        c_defs_modified.disconnect();
+    }
+
+    Toolbar::setDesktop(desktop);
+
+    if (_desktop) {
+        // connect to selection modified and changed signals
+        auto sel = desktop->getSelection();
+        auto document = desktop->getDocument();
+
+        c_selection_changed = sel->connectChanged([this] (auto) { selection_changed(); });
+        c_selection_modified = sel->connectModified([this] (auto, auto) { selection_changed(); });
+
+        c_defs_release = document->getDefs()->connectRelease([this] (auto) { selection_changed(); });
+        c_defs_modified = document->getDefs()->connectModified([this] (auto, auto) { selection_changed(); });
+        selection_changed();
+    }
+}
+
+void MeshToolbar::setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name,
+                                            double default_value, ValueChangedMemFun value_changed_mem_fun)
+{
+    auto const path = "/tools/mesh/" + name;
     auto const val = Preferences::get()->getDouble(path, default_value);
 
     auto adj = btn.get_adjustment();
     adj->set_value(val);
     adj->signal_value_changed().connect(sigc::mem_fun(*this, value_changed_mem_fun));
 
-    btn.set_defocus_widget(_desktop->getCanvas());
+    btn.setDefocusTarget(this);
 }
 
 void MeshToolbar::new_geometry_changed(int mode)
@@ -285,141 +291,77 @@ void MeshToolbar::new_fillstroke_changed(int mode)
 
 void MeshToolbar::row_changed()
 {
-    if (blocked) {
+    if (_blocker.pending()) {
         return;
     }
 
-    blocked = TRUE;
+    auto guard = _blocker.block();
 
     int rows = _row_item.get_adjustment()->get_value();
 
     Preferences::get()->setInt("/tools/mesh/mesh_rows", rows);
-
-    blocked = FALSE;
 }
 
 void MeshToolbar::col_changed()
 {
-    if (blocked) {
+    if (_blocker.pending()) {
         return;
     }
 
-    blocked = TRUE;
+    auto guard = _blocker.block();
 
     int cols = _col_item.get_adjustment()->get_value();
 
     Preferences::get()->setInt("/tools/mesh/mesh_cols", cols);
-
-    blocked = FALSE;
 }
 
 void MeshToolbar::toggle_fill_stroke()
 {
-    auto prefs = Inkscape::Preferences::get();
+    auto prefs = Preferences::get();
     prefs->setBool("/tools/mesh/edit_fill", _edit_fill_btn->get_active());
     prefs->setBool("/tools/mesh/edit_stroke", _edit_stroke_btn->get_active());
 
-    MeshTool *mt = get_mesh_tool();
-    if (mt) {
-        GrDrag *drag = mt->get_drag();
+    if (auto mt = get_mesh_tool()) {
+        auto drag = mt->get_drag();
         drag->updateDraggers();
         drag->updateLines();
         drag->updateLevels();
-        selection_changed(nullptr); // Need to update Type widget
+        selection_changed(); // Need to update Type widget
     }
 }
 
 void MeshToolbar::toggle_handles()
 {
-    MeshTool *mt = get_mesh_tool();
-    if (mt) {
-        GrDrag *drag = mt->get_drag();
-        drag->refreshDraggers();
+    if (auto mt = get_mesh_tool()) {
+        mt->get_drag()->refreshDraggers();
     }
-}
-
-void MeshToolbar::watch_ec(SPDesktop *desktop, Inkscape::UI::Tools::ToolBase *tool)
-{
-    if (dynamic_cast<MeshTool*>(tool)) {
-        // connect to selection modified and changed signals
-        Inkscape::Selection *selection = desktop->getSelection();
-        SPDocument *document = desktop->getDocument();
-
-        c_selection_changed = selection->connectChanged(sigc::mem_fun(*this, &MeshToolbar::selection_changed));
-        c_selection_modified = selection->connectModified(sigc::mem_fun(*this, &MeshToolbar::selection_modified));
-
-        c_defs_release = document->getDefs()->connectRelease(sigc::mem_fun(*this, &MeshToolbar::defs_release));
-        c_defs_modified = document->getDefs()->connectModified(sigc::mem_fun(*this, &MeshToolbar::defs_modified));
-        selection_changed(selection);
-    } else {
-        if (c_selection_changed)
-            c_selection_changed.disconnect();
-        if (c_selection_modified)
-            c_selection_modified.disconnect();
-        if (c_subselection_changed)
-            c_subselection_changed.disconnect();
-        if (c_defs_release)
-            c_defs_release.disconnect();
-        if (c_defs_modified)
-            c_defs_modified.disconnect();
-    }
-}
-
-void MeshToolbar::selection_modified(Inkscape::Selection *selection, guint /*flags*/)
-{
-    selection_changed(selection);
-}
-
-void MeshToolbar::drag_selection_changed(gpointer /*dragger*/)
-{
-    selection_changed(nullptr);
-}
-
-void MeshToolbar::defs_release(SPObject * /*defs*/)
-{
-    selection_changed(nullptr);
-}
-
-void MeshToolbar::defs_modified(SPObject * /*defs*/, guint /*flags*/)
-{
-    selection_changed(nullptr);
 }
 
 /*
  * Core function, setup all the widgets whenever something changes on the desktop
  */
-void MeshToolbar::selection_changed(Inkscape::Selection * /* selection */)
+void MeshToolbar::selection_changed()
 {
-    // std::cout << "ms_tb_selection_changed" << std::endl;
-
-    if (blocked)
+    if (_blocker.pending()) {
         return;
+    }
 
     if (!_desktop) {
         return;
     }
 
-    Inkscape::Selection *selection = _desktop->getSelection(); // take from desktop, not from args
+    auto selection = _desktop->getSelection();
     if (selection) {
-        // ToolBase *ev = sp_desktop_event_context(desktop);
-        // GrDrag *drag = NULL;
-        // if (ev) {
-        //     drag = ev->get_drag();
-        //     // Hide/show handles?
-        // }
-
         SPMeshGradient *ms_selected = nullptr;
         SPMeshType ms_type = SP_MESH_TYPE_COONS;
         bool ms_selected_multi = false;
         bool ms_type_multi = false;
-        ms_read_selection( selection, ms_selected, ms_selected_multi, ms_type, ms_type_multi );
-        // std::cout << "   type: " << ms_type << std::endl;
+        ms_read_selection(selection, ms_selected, ms_selected_multi, ms_type, ms_type_multi);
 
         if (_select_type_item) {
             _select_type_item->set_sensitive(!ms_type_multi);
-            blocked = TRUE;
+            auto guard = _blocker.block();
             _select_type_item->set_active(ms_type);
-            blocked = FALSE;
         }
     }
 }
@@ -441,50 +383,59 @@ void MeshToolbar::warning_popup()
  */
 void MeshToolbar::type_changed(int mode)
 {
-    if (blocked) {
+    if (_blocker.pending()) {
         return;
     }
 
-    Inkscape::Selection *selection = _desktop->getSelection();
-    std::vector<SPMeshGradient *> meshes = ms_get_dt_selected_gradients(selection);
+    auto selection = _desktop->getSelection();
+    auto meshes = ms_get_dt_selected_gradients(selection);
 
-    SPMeshType type = (SPMeshType) mode;
-    for (auto & meshe : meshes) {
-        meshe->type = type;
-        meshe->type_set = true;
-        meshe->updateRepr();
+    auto type = static_cast<SPMeshType>(mode);
+    for (auto &mesh : meshes) {
+        mesh->type = type;
+        mesh->type_set = true;
+        mesh->updateRepr();
     }
-    if (!meshes.empty() ) {
+
+    if (!meshes.empty()) {
         DocumentUndo::done(_desktop->getDocument(), _("Set mesh type"), INKSCAPE_ICON("mesh-gradient"));
     }
 }
 
 void MeshToolbar::toggle_sides()
 {
-    if (MeshTool *mt = get_mesh_tool()) {
+    if (auto mt = get_mesh_tool()) {
         mt->corner_operation(MG_CORNER_SIDE_TOGGLE);
     }
 }
 
 void MeshToolbar::make_elliptical()
 {
-    if (MeshTool *mt = get_mesh_tool()) {
+    if (auto mt = get_mesh_tool()) {
         mt->corner_operation(MG_CORNER_SIDE_ARC);
     }
 }
 
 void MeshToolbar::pick_colors()
 {
-    if (MeshTool *mt = get_mesh_tool()) {
+    if (auto mt = get_mesh_tool()) {
         mt->corner_operation(MG_CORNER_COLOR_PICK);
     }
 }
 
 void MeshToolbar::fit_mesh()
 {
-    if (MeshTool *mt = get_mesh_tool()) {
+    if (auto mt = get_mesh_tool()) {
         mt->fit_mesh_in_bbox();
     }
+}
+
+Tools::MeshTool *MeshToolbar::get_mesh_tool() const
+{
+    if (!_desktop) {
+        return nullptr;
+    }
+    return dynamic_cast<Tools::MeshTool *>(_desktop->getTool());
 }
 
 } // namespace Inkscape::UI::Toolbar

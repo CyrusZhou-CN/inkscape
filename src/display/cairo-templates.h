@@ -31,6 +31,106 @@ static const int OPENMP_THRESHOLD = 2048;
 #include "display/nr-3dutils.h"
 #include "display/cairo-utils.h"
 
+template <typename T>
+struct surface_accessor {
+    int stride;
+    T *data;
+
+    explicit surface_accessor(cairo_surface_t *surface)
+    {
+        stride = cairo_image_surface_get_stride(surface) / sizeof(T);
+        data = reinterpret_cast<T *>(cairo_image_surface_get_data(surface));
+    }
+
+    guint32 get(int x, int y) const
+    {
+        if constexpr (sizeof(T) == 1) {
+            return data[y * stride + x] << 24;
+        } else {
+            return data[y * stride + x];
+        }
+    }
+
+    void set(int x, int y, guint32 value)
+    {
+        if constexpr (sizeof(T) == 1) {
+            data[y * stride + x] = value >> 24;
+        } else {
+            data[y * stride + x] = value;
+        }
+    }
+};
+
+template <typename AccOut, typename Acc1, typename Acc2, typename Blend>
+void ink_cairo_surface_blend_internal(cairo_surface_t *out, cairo_surface_t *in1, cairo_surface_t *in2, int w, int h, Blend &blend)
+{
+    surface_accessor<AccOut> acc_out(out);
+    surface_accessor<Acc1> acc_in1(in1);
+    surface_accessor<Acc2> acc_in2(in2);
+
+    // NOTE
+    // OpenMP probably doesn't help much here.
+    // It would be better to render more than 1 tile at a time.
+    #if HAVE_OPENMP
+    int const num_threads = get_num_filter_threads();
+    #endif
+
+    #if HAVE_OPENMP
+    #pragma omp parallel for if((w * h) > OPENMP_THRESHOLD) num_threads(num_threads)
+    #endif
+    for (int i = 0; i < h; ++i) {
+        for (int j = 0; j < w; ++j) {
+            acc_out.set(j, i, blend(acc_in1.get(j, i), acc_in2.get(j, i)));
+        }
+    }
+}
+
+template <typename AccOut, typename AccIn, typename Filter>
+void ink_cairo_surface_filter_internal(cairo_surface_t *out, cairo_surface_t *in, int w, int h, Filter &filter)
+{
+    surface_accessor<AccOut> acc_out(out);
+    surface_accessor<AccIn> acc_in(in);
+
+    // NOTE
+    // OpenMP probably doesn't help much here.
+    // It would be better to render more than 1 tile at a time.
+    #if HAVE_OPENMP
+    int const num_threads = get_num_filter_threads();
+    #endif
+
+    #if HAVE_OPENMP
+    #pragma omp parallel for if((w * h) > OPENMP_THRESHOLD) num_threads(num_threads)
+    #endif
+    for (int i = 0; i < h; ++i) {
+        for (int j = 0; j < w; ++j) {
+            acc_out.set(j, i, filter(acc_in.get(j, i)));
+        }
+    }
+}
+
+template <typename AccOut, typename Synth>
+void ink_cairo_surface_synthesize_internal(cairo_surface_t *out, int x0, int y0, int x1, int y1, Synth &synth)
+{
+    surface_accessor<AccOut> acc_out(out);
+
+    // NOTE
+    // OpenMP probably doesn't help much here.
+    // It would be better to render more than 1 tile at a time.
+    #if HAVE_OPENMP
+    int const num_threads = get_num_filter_threads();
+    #endif
+
+    #if HAVE_OPENMP
+    int const limit = (x1 - x0) * (y1 - y0);
+    #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(num_threads)
+    #endif
+    for (int i = y0; i < y1; ++i) {
+        for (int j = x0; j < x1; ++j) {
+            acc_out.set(j, i, synth(j, i));
+        }
+    }
+}
+
 /**
  * Blend two surfaces using the supplied functor.
  * This template blends two Cairo image surfaces using a blending functor that takes
@@ -39,7 +139,7 @@ static const int OPENMP_THRESHOLD = 2048;
  * will also handle software fallback for GL surfaces.
  */
 template <typename Blend>
-void ink_cairo_surface_blend(cairo_surface_t *in1, cairo_surface_t *in2, cairo_surface_t *out, Blend blend)
+void ink_cairo_surface_blend(cairo_surface_t *in1, cairo_surface_t *in2, cairo_surface_t *out, Blend &&blend)
 {
     cairo_surface_flush(in1);
     cairo_surface_flush(in2);
@@ -52,130 +152,24 @@ void ink_cairo_surface_blend(cairo_surface_t *in1, cairo_surface_t *in2, cairo_s
 
     int w = cairo_image_surface_get_width(in2);
     int h = cairo_image_surface_get_height(in2);
-    int stride1   = cairo_image_surface_get_stride(in1);
-    int stride2   = cairo_image_surface_get_stride(in2);
-    int strideout = cairo_image_surface_get_stride(out);
-    int bpp1   = cairo_image_surface_get_format(in1) == CAIRO_FORMAT_A8 ? 1 : 4;
-    int bpp2   = cairo_image_surface_get_format(in2) == CAIRO_FORMAT_A8 ? 1 : 4;
-    int bppout = std::max(bpp1, bpp2);
+    int bpp1 = cairo_image_surface_get_format(in1) == CAIRO_FORMAT_A8 ? 1 : 4;
+    int bpp2 = cairo_image_surface_get_format(in2) == CAIRO_FORMAT_A8 ? 1 : 4;
 
-    // Check whether we can loop over pixels without taking stride into account.
-    bool fast_path = true;
-    fast_path &= (stride1 == w * bpp1);
-    fast_path &= (stride2 == w * bpp2);
-    fast_path &= (strideout == w * bppout);
-
-    int limit = w * h;
-
-    guint32 *const in1_data = reinterpret_cast<guint32*>(cairo_image_surface_get_data(in1));
-    guint32 *const in2_data = reinterpret_cast<guint32*>(cairo_image_surface_get_data(in2));
-    guint32 *const out_data = reinterpret_cast<guint32*>(cairo_image_surface_get_data(out));
-
-    // NOTE
-    // OpenMP probably doesn't help much here.
-    // It would be better to render more than 1 tile at a time.
-    #if HAVE_OPENMP
-    int numOfThreads = get_num_filter_threads();
-    #endif
-
-    // The number of code paths here is evil.
-    if (bpp1 == 4) {
-        if (bpp2 == 4) {
-            if (fast_path) {
-                #if HAVE_OPENMP
-                #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-                #endif
-                for (int i = 0; i < limit; ++i) {
-                    *(out_data + i) = blend(*(in1_data + i), *(in2_data + i));
-                }
-            } else {
-                #if HAVE_OPENMP
-                #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-                #endif
-                for (int i = 0; i < h; ++i) {
-                    guint32 *in1_p = in1_data + i * stride1/4;
-                    guint32 *in2_p = in2_data + i * stride2/4;
-                    guint32 *out_p = out_data + i * strideout/4;
-                    for (int j = 0; j < w; ++j) {
-                        *out_p = blend(*in1_p, *in2_p);
-                        ++in1_p; ++in2_p; ++out_p;
-                    }
-                }
-            }
-        } else {
-            // bpp2 == 1
-            #if HAVE_OPENMP
-            #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-            #endif
-            for (int i = 0; i < h; ++i) {
-                guint32 *in1_p = in1_data + i * stride1/4;
-                guint8  *in2_p = reinterpret_cast<guint8*>(in2_data) + i * stride2;
-                guint32 *out_p = out_data + i * strideout/4;
-                for (int j = 0; j < w; ++j) {
-                    guint32 in2_px = *in2_p;
-                    in2_px <<= 24;
-                    *out_p = blend(*in1_p, in2_px);
-                    ++in1_p; ++in2_p; ++out_p;
-                }
-            }
-        }
-    } else {
-        if (bpp2 == 4) {
-            // bpp1 == 1
-            #if HAVE_OPENMP
-            #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-            #endif
-            for (int i = 0; i < h; ++i) {
-                guint8  *in1_p = reinterpret_cast<guint8*>(in1_data) + i * stride1;
-                guint32 *in2_p = in2_data + i * stride2/4;
-                guint32 *out_p = out_data + i * strideout/4;
-                for (int j = 0; j < w; ++j) {
-                    guint32 in1_px = *in1_p;
-                    in1_px <<= 24;
-                    *out_p = blend(in1_px, *in2_p);
-                    ++in1_p; ++in2_p; ++out_p;
-                }
-            }
-        } else {
-            // bpp1 == 1 && bpp2 == 1
-            if (fast_path) {
-                #if HAVE_OPENMP
-                #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-                #endif
-                for (int i = 0; i < limit; ++i) {
-                    guint8 *in1_p = reinterpret_cast<guint8*>(in1_data) + i;
-                    guint8 *in2_p = reinterpret_cast<guint8*>(in2_data) + i;
-                    guint8 *out_p = reinterpret_cast<guint8*>(out_data) + i;
-                    guint32 in1_px = *in1_p; in1_px <<= 24;
-                    guint32 in2_px = *in2_p; in2_px <<= 24;
-                    guint32 out_px = blend(in1_px, in2_px);
-                    *out_p = out_px >> 24;
-                }
-            } else {
-                #if HAVE_OPENMP
-                #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-                #endif
-                for (int i = 0; i < h; ++i) {
-                    guint8 *in1_p = reinterpret_cast<guint8*>(in1_data) + i * stride1;
-                    guint8 *in2_p = reinterpret_cast<guint8*>(in2_data) + i * stride2;
-                    guint8 *out_p = reinterpret_cast<guint8*>(out_data) + i * strideout;
-                    for (int j = 0; j < w; ++j) {
-                        guint32 in1_px = *in1_p; in1_px <<= 24;
-                        guint32 in2_px = *in2_p; in2_px <<= 24;
-                        guint32 out_px = blend(in1_px, in2_px);
-                        *out_p = out_px >> 24;
-                        ++in1_p; ++in2_p; ++out_p;
-                    }
-                }
-            }
-        }
+    if (bpp1 == 4 && bpp2 == 4) {
+        ink_cairo_surface_blend_internal<guint32, guint32, guint32>(out, in1, in2, w, h, blend);
+    } else if (bpp1 == 4 && bpp2 == 1) {
+        ink_cairo_surface_blend_internal<guint32, guint32, guint8>(out, in1, in2, w, h, blend);
+    } else if (bpp1 == 1 && bpp2 == 4) {
+        ink_cairo_surface_blend_internal<guint32, guint8, guint32>(out, in1, in2, w, h, blend);
+    } else /* if (bpp1 == 1 && bpp2 == 1) */ {
+        ink_cairo_surface_blend_internal<guint8, guint8, guint8>(out, in1, in2, w, h, blend);
     }
 
     cairo_surface_mark_dirty(out);
 }
 
 template <typename Filter>
-void ink_cairo_surface_filter(cairo_surface_t *in, cairo_surface_t *out, Filter filter)
+void ink_cairo_surface_filter(cairo_surface_t *in, cairo_surface_t *out, Filter &&filter)
 {
     cairo_surface_flush(in);
 
@@ -186,142 +180,23 @@ void ink_cairo_surface_filter(cairo_surface_t *in, cairo_surface_t *out, Filter 
 
     int w = cairo_image_surface_get_width(in);
     int h = cairo_image_surface_get_height(in);
-    int stridein   = cairo_image_surface_get_stride(in);
-    int strideout = cairo_image_surface_get_stride(out);
     int bppin = cairo_image_surface_get_format(in) == CAIRO_FORMAT_A8 ? 1 : 4;
     int bppout = cairo_image_surface_get_format(out) == CAIRO_FORMAT_A8 ? 1 : 4;
-    int limit = w * h;
 
-    // Check whether we can loop over pixels without taking stride into account.
-    bool fast_path = true;
-    fast_path &= (stridein == w * bppin);
-    fast_path &= (strideout == w * bppout);
-
-    guint32 *const in_data  = reinterpret_cast<guint32*>(cairo_image_surface_get_data(in));
-    guint32 *const out_data = reinterpret_cast<guint32*>(cairo_image_surface_get_data(out));
-
-    #if HAVE_OPENMP
-    int numOfThreads = get_num_filter_threads();
-    #endif
-
-    // this is provided just in case, to avoid problems with strict aliasing rules
-    if (in == out) {
-        if (bppin == 4) {
-            #if HAVE_OPENMP
-            #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-            #endif
-            for (int i = 0; i < limit; ++i) {
-                *(in_data + i) = filter(*(in_data + i));
-            }
-        } else {
-            #if HAVE_OPENMP
-            #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-            #endif
-            for (int i = 0; i < limit; ++i) {
-                guint8 *in_p = reinterpret_cast<guint8*>(in_data) + i;
-                guint32 in_px = *in_p; in_px <<= 24;
-                guint32 out_px = filter(in_px);
-                *in_p = out_px >> 24;
-            }
-        }
-        cairo_surface_mark_dirty(out);
-        return;
-    }
-
-    if (bppin == 4) {
-        if (bppout == 4) {
-            // bppin == 4, bppout == 4
-            if (fast_path) {
-                #if HAVE_OPENMP
-                #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-                #endif
-                for (int i = 0; i < limit; ++i) {
-                    *(out_data + i) = filter(*(in_data + i));
-                }
-            } else {
-                #if HAVE_OPENMP
-                #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-                #endif
-                for (int i = 0; i < h; ++i) {
-                    guint32 *in_p = in_data + i * stridein/4;
-                    guint32 *out_p = out_data + i * strideout/4;
-                    for (int j = 0; j < w; ++j) {
-                        *out_p = filter(*in_p);
-                        ++in_p; ++out_p;
-                    }
-                }
-            }
-        } else {
-            // bppin == 4, bppout == 1
-            // we use this path with COLORMATRIX_LUMINANCETOALPHA
-            #if HAVE_OPENMP
-            #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-            #endif
-            for (int i = 0; i < h; ++i) {
-                guint32 *in_p = in_data + i * stridein/4;
-                guint8 *out_p = reinterpret_cast<guint8*>(out_data) + i * strideout;
-                for (int j = 0; j < w; ++j) {
-                    guint32 out_px = filter(*in_p);
-                    *out_p = out_px >> 24;
-                    ++in_p; ++out_p;
-                }
-            }
-        }
-    } else if (bppout == 1) {
-        // bppin == 1, bppout == 1
-        if (fast_path) {
-            #if HAVE_OPENMP
-            #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-            #endif
-            for (int i = 0; i < limit; ++i) {
-                guint8 *in_p = reinterpret_cast<guint8*>(in_data) + i;
-                guint8 *out_p = reinterpret_cast<guint8*>(out_data) + i;
-                guint32 in_px = *in_p; in_px <<= 24;
-                guint32 out_px = filter(in_px);
-                *out_p = out_px >> 24;
-            }
-        } else {
-            #if HAVE_OPENMP
-            #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-            #endif
-            for (int i = 0; i < h; ++i) {
-                guint8 *in_p = reinterpret_cast<guint8*>(in_data) + i * stridein;
-                guint8 *out_p = reinterpret_cast<guint8*>(out_data) + i * strideout;
-                for (int j = 0; j < w; ++j) {
-                    guint32 in_px = *in_p; in_px <<= 24;
-                    guint32 out_px = filter(in_px);
-                    *out_p = out_px >> 24;
-                    ++in_p; ++out_p;
-                }
-            }
-        }
-    } else {
-        // bppin == 1, bppout == 4
+    if (bppin == 4 && bppout == 4) {
+        ink_cairo_surface_filter_internal<guint32, guint32>(out, in, w, h, filter);
+    } else if (bppin == 4 && bppout == 1) {
+        // we use this path with COLORMATRIX_LUMINANCETOALPHA
+        ink_cairo_surface_filter_internal<guint8, guint32>(out, in, w, h, filter);
+    } else if (bppin == 1 && bppout == 4) {
         // used in COLORMATRIX_MATRIX when in is NR_FILTER_SOURCEALPHA
-        if (fast_path) {
-            #if HAVE_OPENMP
-            #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-            #endif
-            for (int i = 0; i < limit; ++i) {
-                guint8 in_p = reinterpret_cast<guint8*>(in_data)[i];
-                out_data[i] = filter(guint32(in_p) << 24);
-            }
-        } else {
-            #if HAVE_OPENMP
-            #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-            #endif
-            for (int i = 0; i < h; ++i) {
-                guint8 *in_p = reinterpret_cast<guint8*>(in_data) + i * stridein;
-                guint32 *out_p = out_data + i * strideout/4;
-                for (int j = 0; j < w; ++j) {
-                    out_p[j] = filter(guint32(in_p[j]) << 24);
-                }
-            }
-        }
+        ink_cairo_surface_filter_internal<guint32, guint8>(out, in, w, h, filter);
+    } else /* if (bppin == 1 && bppout == 1) */ {
+        ink_cairo_surface_filter_internal<guint8, guint8>(out, in, w, h, filter);
     }
+
     cairo_surface_mark_dirty(out);
 }
-
 
 /**
  * Synthesize surface pixels based on their position.
@@ -332,50 +207,22 @@ void ink_cairo_surface_filter(cairo_surface_t *in, cairo_surface_t *out, Filter 
  * @param synth     Synthesis functor
  */
 template <typename Synth>
-void ink_cairo_surface_synthesize(cairo_surface_t *out, cairo_rectangle_t const &out_area, Synth synth)
+void ink_cairo_surface_synthesize(cairo_surface_t *out, cairo_rectangle_t const &out_area, Synth &&synth)
 {
     // ASSUMPTIONS
     // 1. Cairo ARGB32 surface strides are always divisible by 4
     // 2. We can only receive CAIRO_FORMAT_ARGB32 or CAIRO_FORMAT_A8 surfaces
 
-    int w = out_area.width;
-    int h = out_area.height;
-    int strideout = cairo_image_surface_get_stride(out);
+    int x0 = out_area.x, x1 = out_area.x + out_area.width;
+    int y0 = out_area.y, y1 = out_area.y + out_area.height;
     int bppout = cairo_image_surface_get_format(out) == CAIRO_FORMAT_A8 ? 1 : 4;
-    // NOTE: fast path is not used, because we would need 2 divisions to get pixel indices
-
-    unsigned char *out_data = cairo_image_surface_get_data(out);
-
-    #if HAVE_OPENMP
-    int limit = w * h;
-    int numOfThreads = get_num_filter_threads();
-    #endif
 
     if (bppout == 4) {
-        #if HAVE_OPENMP
-        #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-        #endif
-        for (int i = out_area.y; i < h; ++i) {
-            guint32 *out_p = reinterpret_cast<guint32*>(out_data + i * strideout);
-            for (int j = out_area.x; j < w; ++j) {
-                *out_p = synth(j, i);
-                ++out_p;
-            }
-        }
-    } else {
-        // bppout == 1
-        #if HAVE_OPENMP
-        #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(numOfThreads)
-        #endif
-        for (int i = out_area.y; i < h; ++i) {
-            guint8 *out_p = out_data + i * strideout;
-            for (int j = out_area.x; j < w; ++j) {
-                guint32 out_px = synth(j, i);
-                *out_p = out_px >> 24;
-                ++out_p;
-            }
-        }
+        ink_cairo_surface_synthesize_internal<guint32>(out, x0, y0, x1, y1, synth);
+    } else /* if (bppout == 1) */ {
+        ink_cairo_surface_synthesize_internal<guint8>(out, x0, y0, x1, y1, synth);
     }
+
     cairo_surface_mark_dirty(out);
 }
 

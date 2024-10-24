@@ -17,25 +17,19 @@
 #include "calligraphic-profile-rename.h"
 
 #include <glibmm/i18n.h>
-#include <gtkmm/grid.h>
 
 #include "desktop.h"
 #include "ui/dialog-run.h"
-#include "ui/pack.h"
 
-namespace Inkscape {
-namespace UI {
-namespace Dialog {
+namespace Inkscape::UI::Dialog {
 
-CalligraphicProfileRename::CalligraphicProfileRename() :
-    _layout_table(Gtk::make_managed<Gtk::Grid>()),
-    _applied(false)
+CalligraphicProfileRename::CalligraphicProfileRename()
 {
+    set_name("CalligraphicProfileRename");
     set_title(_("Edit profile"));
 
-    auto mainVBox = get_content_area();
-    _layout_table->set_column_spacing(4);
-    _layout_table->set_row_spacing(4);
+    _layout_table.set_column_spacing(4);
+    _layout_table.set_row_spacing(4);
 
     _profile_name_entry.set_activates_default(true);
 
@@ -43,12 +37,15 @@ CalligraphicProfileRename::CalligraphicProfileRename() :
     _profile_name_label.set_halign(Gtk::Align::END);
     _profile_name_label.set_valign(Gtk::Align::CENTER);
 
-    _layout_table->attach(_profile_name_label, 0, 0, 1, 1);
+    _layout_table.attach(_profile_name_label, 0, 0, 1, 1);
 
     _profile_name_entry.set_hexpand();
-    _layout_table->attach(_profile_name_entry, 1, 0, 1, 1);
+    _layout_table.attach(_profile_name_entry, 1, 0, 1, 1);
 
-    UI::pack_start(*mainVBox, *_layout_table, false, false, 4);
+    auto mainbox = get_content_area();
+    mainbox->set_margin(4);
+    mainbox->append(_layout_table);
+
     // Buttons
     _close_button.set_use_underline();
     _close_button.set_label(_("_Cancel"));
@@ -95,35 +92,36 @@ void CalligraphicProfileRename::_delete()
 
 void CalligraphicProfileRename::_close()
 {
-    this->Gtk::Dialog::set_visible(false);
+    set_visible(false);
 }
 
-void CalligraphicProfileRename::show(SPDesktop *desktop, const Glib::ustring profile_name)
+void CalligraphicProfileRename::show(SPDesktop *desktop, Glib::ustring const &profile_name)
 {
-    CalligraphicProfileRename &dial = instance();
-    dial._applied=false;
-    dial._deleted=false;
-
+    auto &dial = _getInstance();
+    dial._applied = false;
+    dial._deleted = false;
     dial._profile_name = profile_name;
     dial._profile_name_entry.set_text(profile_name);
 
     if (profile_name.empty()) {
         dial.set_title(_("Add profile"));
         dial._delete_button.set_visible(false);
-
     } else {
         dial.set_title(_("Edit profile"));
         dial._delete_button.set_visible(true);
     }
 
     desktop->setWindowTransient(dial);
-    dial.property_destroy_with_parent() = true;
     Inkscape::UI::dialog_run(dial);
 }
 
-} // namespace Dialog
-} // namespace UI
-} // namespace Inkscape
+CalligraphicProfileRename &CalligraphicProfileRename::_getInstance()
+{
+    static CalligraphicProfileRename instance;
+    return instance;
+}
+
+} // namespace Inkscape::UI::Dialog
 
 /*
   Local Variables:

@@ -35,7 +35,6 @@
 
 #include "desktop.h"
 #include "document-undo.h"
-#include "mod360.h"
 #include "object/sp-ellipse.h"
 #include "object/sp-namedview.h"
 #include "selection.h"
@@ -43,7 +42,6 @@
 #include "ui/icon-names.h"
 #include "ui/tools/arc-tool.h"
 #include "ui/util.h"
-#include "ui/widget/canvas.h"
 #include "ui/widget/combo-tool-item.h"
 #include "ui/widget/spinbutton.h"
 #include "ui/widget/unit-tracker.h"
@@ -55,29 +53,32 @@ using Inkscape::Util::Quantity;
 
 namespace Inkscape::UI::Toolbar {
 
-ArcToolbar::ArcToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    , _tracker(new UnitTracker(Inkscape::Util::UNIT_TYPE_LINEAR))
-    , _builder(create_builder("toolbar-arc.ui"))
-    , _mode_item(get_widget<Gtk::Label>(_builder, "_mode_item"))
-    , _rx_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_rx_item"))
-    , _ry_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_ry_item"))
-    , _start_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_start_item"))
-    , _end_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_end_item"))
-    , _make_whole(get_widget<Gtk::Button>(_builder, "_make_whole"))
+ArcToolbar::ArcToolbar()
+    : ArcToolbar{create_builder("toolbar-arc.ui")}
+{}
+
+ArcToolbar::ArcToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
+    : Toolbar{get_widget<Gtk::Box>(builder, "arc-toolbar")}
+    , _tracker{std::make_unique<UnitTracker>(Util::UNIT_TYPE_LINEAR)}
+    , _mode_item{get_widget<Gtk::Label>(builder, "_mode_item")}
+    , _rx_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_rx_item")}
+    , _ry_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_ry_item")}
+    , _start_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_start_item")}
+    , _end_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_end_item")}
+    , _make_whole{get_widget<Gtk::Button>(builder, "_make_whole")}
+    , _type_buttons{
+          &get_widget<Gtk::ToggleButton>(builder, "slice_btn"),
+          &get_widget<Gtk::ToggleButton>(builder, "arc_btn"),
+          &get_widget<Gtk::ToggleButton>(builder, "chord_btn")
+      }
 {
-    _toolbar = &get_widget<Gtk::Box>(_builder, "arc-toolbar");
+    auto unit_menu = _tracker->create_tool_item(_("Units"), "");
+    get_widget<Gtk::Box>(builder, "unit_menu_box").append(*unit_menu);
 
-    auto init_units = desktop->getNamedView()->display_units;
-    _tracker->setActiveUnit(init_units);
-
-    auto unit_menu = _tracker->create_tool_item(_("Units"), (""));
-    get_widget<Gtk::Box>(_builder, "unit_menu_box").append(*unit_menu);
-
-    setup_derived_spin_button(_rx_item, "rx");
-    setup_derived_spin_button(_ry_item, "ry");
-    setup_startend_button(_start_item, "start");
-    setup_startend_button(_end_item, "end");
+    _setupDerivedSpinButton(_rx_item, "rx");
+    _setupDerivedSpinButton(_ry_item, "ry");
+    _setupStartendButton(_start_item, "start", _end_item);
+    _setupStartendButton(_end_item, "end", _start_item);
 
     _rx_item.set_custom_numeric_menu_data({
         {1, ""},
@@ -109,74 +110,101 @@ ArcToolbar::ArcToolbar(SPDesktop *desktop)
     _start_item.set_custom_numeric_menu_data({});
     _end_item.set_custom_numeric_menu_data({});
 
-    _type_buttons.push_back(&get_widget<Gtk::ToggleButton>(_builder, "slice_btn"));
-    _type_buttons.push_back(&get_widget<Gtk::ToggleButton>(_builder, "arc_btn"));
-    _type_buttons.push_back(&get_widget<Gtk::ToggleButton>(_builder, "chord_btn"));
-
     int type = Preferences::get()->getInt("/tools/shapes/arc/arc_type", 0);
+    type = std::clamp<int>(type, 0, _type_buttons.size() - 1);
     _type_buttons[type]->set_active();
-    int btn_index = 0;
 
-    for (auto btn : _type_buttons) {
-        btn->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &ArcToolbar::type_changed), btn_index++));
+    for (int i = 0; i < _type_buttons.size(); i++) {
+        _type_buttons[i]->signal_toggled().connect([this, i] {
+            if (_type_buttons[i]->get_active()) {
+                _typeChanged(i);
+            }
+        });
     }
 
-    set_child(*_toolbar);
+    _make_whole.signal_clicked().connect(sigc::mem_fun(*this, &ArcToolbar::_setDefaults));
 
-    _make_whole.signal_clicked().connect(sigc::mem_fun(*this, &ArcToolbar::defaults));
-
-    _single = true;
-
-    // sensitivize make whole and open checkbox
-    sensitivize(_start_item.get_adjustment()->get_value(), _end_item.get_adjustment()->get_value());
-
-    desktop->connectEventContextChanged(sigc::mem_fun(*this, &ArcToolbar::check_ec));
-    init_menu_btns();
+    _initMenuBtns();
 }
 
-void ArcToolbar::setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name)
-{
-    auto init_units = _desktop->getNamedView()->display_units;
-    auto adj = btn.get_adjustment();
-    const Glib::ustring path = "/tools/shapes/arc/" + static_cast<Glib::ustring>(name);
-    auto val = Preferences::get()->getDouble(path, 0);
-    val = Quantity::convert(val, "px", init_units);
-    adj->set_value(val);
+ArcToolbar::~ArcToolbar() = default;
 
-    adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun(*this, &ArcToolbar::value_changed), adj, name));
+void ArcToolbar::_setupDerivedSpinButton(UI::Widget::SpinButton &btn, Glib::ustring const &name)
+{
+    auto const adj = btn.get_adjustment();
+    auto const val = Preferences::get()->getDouble("/tools/shapes/arc/" + name, 0);
+    adj->set_value(Quantity::convert(val, "px", _tracker->getActiveUnit()));
+    adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun(*this, &ArcToolbar::_valueChanged), adj, name));
+
     _tracker->addAdjustment(adj->gobj());
-
     btn.addUnitTracker(_tracker.get());
-    btn.set_defocus_widget(_desktop->getCanvas());
     btn.set_sensitive(false);
+    btn.setDefocusTarget(this);
 }
 
-void ArcToolbar::setup_startend_button(UI::Widget::SpinButton &btn, Glib::ustring const &name)
+void ArcToolbar::_setupStartendButton(UI::Widget::SpinButton &btn, Glib::ustring const &name, UI::Widget::SpinButton &other_btn)
 {
-    auto adj = btn.get_adjustment();
-    const Glib::ustring path = "/tools/shapes/arc/" + name;
-    auto val = Preferences::get()->getDouble(path, 0);
+    auto const adj = btn.get_adjustment();
+    auto const val = Preferences::get()->getDouble("/tools/shapes/arc/" + name, 0);
     adj->set_value(val);
-
-    btn.set_defocus_widget(_desktop->getCanvas());
-
-    // Using the end item's adjustment when the name is "start" is intentional.
-    auto adjustment = name == "start" ? _end_item.get_adjustment() : _start_item.get_adjustment();
-    adj->signal_value_changed().connect(
-        sigc::bind(sigc::mem_fun(*this, &ArcToolbar::startend_value_changed), adj, name, std::move(adjustment)));
+    adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun(*this, &ArcToolbar::_startendValueChanged), adj, name, other_btn.get_adjustment()));
 }
 
-ArcToolbar::~ArcToolbar()
+void ArcToolbar::_attachRepr(XML::Node *repr, SPGenericEllipse *ellipse)
 {
-    if (_repr) {
-        _repr->removeObserver(*this);
-        GC::release(_repr);
-        _repr = nullptr;
+    assert(!_repr);
+    _repr = repr;
+    _ellipse = ellipse;
+    GC::anchor(_repr);
+    _repr->addObserver(*this);
+}
+
+void ArcToolbar::_detachRepr()
+{
+    assert(_repr);
+    _repr->removeObserver(*this);
+    GC::release(_repr);
+    _repr = nullptr;
+    _ellipse = nullptr;
+    _cancelUpdate();
+}
+
+void ArcToolbar::setDesktop(SPDesktop *desktop)
+{
+    if (_desktop) {
+        _selection_changed_conn.disconnect();
+
+        if (_repr) {
+            _detachRepr();
+        }
+    }
+
+    Toolbar::setDesktop(desktop);
+
+    if (_desktop) {
+        auto sel = _desktop->getSelection();
+        _selection_changed_conn = sel->connectChanged(sigc::mem_fun(*this, &ArcToolbar::_selectionChanged));
+        _selectionChanged(sel); // Synthesize an emission to trigger the update
+
+        _sensitivize();
     }
 }
 
-void ArcToolbar::value_changed(Glib::RefPtr<Gtk::Adjustment> &adj, Glib::ustring const &value_name)
+void ArcToolbar::setActiveUnit(Util::Unit const *unit)
 {
+    _tracker->setActiveUnit(unit);
+}
+
+void ArcToolbar::_valueChanged(Glib::RefPtr<Gtk::Adjustment> const &adj, Glib::ustring const &value_name)
+{
+    // quit if run by the XML listener or a unit change
+    if (_blocker.pending() || _tracker->isUpdating()) {
+        return;
+    }
+
+    // in turn, prevent XML listener from responding
+    auto guard = _blocker.block();
+
     // Per SVG spec "a [radius] value of zero disables rendering of the element".
     // However our implementation does not allow a setting of zero in the UI (not even in the XML editor)
     // and ugly things happen if it's forced here, so better leave the properties untouched.
@@ -184,32 +212,13 @@ void ArcToolbar::value_changed(Glib::RefPtr<Gtk::Adjustment> &adj, Glib::ustring
         return;
     }
 
-    Unit const *unit = _tracker->getActiveUnit();
-    g_return_if_fail(unit != nullptr);
+    auto const unit = _tracker->getActiveUnit();
 
-    SPDocument* document = _desktop->getDocument();
+    Preferences::get()->setDouble("/tools/shapes/arc/" + value_name, Quantity::convert(adj->get_value(), unit, "px"));
 
-    if (DocumentUndo::getUndoSensitive(document)) {
-        Preferences::get()->setDouble(Glib::ustring("/tools/shapes/arc/") + value_name,
-                                      Quantity::convert(adj->get_value(), unit, "px"));
-    }
-
-    // quit if run by the attr_changed listener
-    if (_freeze || _tracker->isUpdating()) {
-        return;
-    }
-
-    // in turn, prevent listener from responding
-    _freeze = true;
-
-    bool modmade = false;
-    Inkscape::Selection *selection = _desktop->getSelection();
-    auto itemlist= selection->items();
-    for(auto i=itemlist.begin();i!=itemlist.end();++i){
-        SPItem *item = *i;
-        if (is<SPGenericEllipse>(item)) {
-
-            auto ge = cast<SPGenericEllipse>(item);
+    bool modified = false;
+    for (auto item : _desktop->getSelection()->items()) {
+        if (auto ge = cast<SPGenericEllipse>(item)) {
 
             if (value_name == "rx") {
                 ge->setVisibleRx(Quantity::convert(adj->get_value(), unit, "px"));
@@ -219,82 +228,66 @@ void ArcToolbar::value_changed(Glib::RefPtr<Gtk::Adjustment> &adj, Glib::ustring
 
             ge->normalize();
             ge->updateRepr();
-            ge->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
 
-            modmade = true;
+            modified = true;
         }
     }
 
-    if (modmade) {
+    if (modified) {
         DocumentUndo::done(_desktop->getDocument(), _("Ellipse: Change radius"), INKSCAPE_ICON("draw-ellipse"));
     }
-
-    _freeze = false;
 }
 
-void ArcToolbar::startend_value_changed(Glib::RefPtr<Gtk::Adjustment> &adj, Glib::ustring const &value_name,
-                                        Glib::RefPtr<Gtk::Adjustment> &other_adj)
-
+void ArcToolbar::_startendValueChanged(Glib::RefPtr<Gtk::Adjustment> const &adj, Glib::ustring const &value_name, Glib::RefPtr<Gtk::Adjustment> const &other_adj)
 {
-    if (DocumentUndo::getUndoSensitive(_desktop->getDocument())) {
-        Preferences::get()->setDouble(Glib::ustring("/tools/shapes/arc/") + value_name, adj->get_value());
-    }
+    Preferences::get()->setDouble("/tools/shapes/arc/" + value_name, adj->get_value());
 
-    // quit if run by the attr_changed listener
-    if (_freeze) {
+    // quit if run by the XML listener
+    if (_blocker.pending()) {
         return;
     }
 
-    // in turn, prevent listener from responding
-    _freeze = true;
+    // in turn, prevent XML listener from responding
+    auto guard = _blocker.block();
 
-    bool modmade = false;
-    auto itemlist= _desktop->getSelection()->items();
-    for(auto i=itemlist.begin();i!=itemlist.end();++i){
-        SPItem *item = *i;
-        if (is<SPGenericEllipse>(item)) {
+    bool modified = false;
+    for (auto item : _desktop->getSelection()->items()) {
+        if (auto ge = cast<SPGenericEllipse>(item)) {
 
-            auto ge = cast<SPGenericEllipse>(item);
-
+            auto const val = Geom::rad_from_deg(adj->get_value());
             if (value_name == "start") {
-                ge->start = (adj->get_value() * M_PI)/ 180;
+                ge->start = val;
             } else {
-                ge->end = (adj->get_value() * M_PI)/ 180;
+                ge->end = val;
             }
 
             ge->normalize();
             ge->updateRepr();
-            ge->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
 
-            modmade = true;
+            modified = true;
         }
     }
 
-    sensitivize( adj->get_value(), other_adj->get_value() );
+    _sensitivize();
 
-    if (modmade) {
-        DocumentUndo::maybeDone(_desktop->getDocument(), value_name.c_str(), _("Arc: Change start/end"),
-                                INKSCAPE_ICON("draw-ellipse"));
+    if (modified) {
+        DocumentUndo::maybeDone(_desktop->getDocument(), value_name.c_str(), _("Arc: Change start/end"), INKSCAPE_ICON("draw-ellipse"));
     }
-
-    _freeze = false;
 }
 
-void ArcToolbar::type_changed(int type)
+void ArcToolbar::_typeChanged(int type)
 {
-    if (DocumentUndo::getUndoSensitive(_desktop->getDocument())) {
-        Preferences::get()->setInt("/tools/shapes/arc/arc_type", type);
-    }
+    Preferences::get()->setInt("/tools/shapes/arc/arc_type", type);
 
-    // quit if run by the attr_changed listener
-    if (_freeze) {
+    // quit if run by the XML listener
+    if (_blocker.pending()) {
         return;
     }
 
-    // in turn, prevent listener from responding
-    _freeze = true;
+    // in turn, prevent XML listener from responding
+    auto guard = _blocker.block();
 
-    Glib::ustring arc_type = "slice";
+    char const *arc_type = "slice";
     bool open = false;
     switch (type) {
         case 0:
@@ -310,161 +303,129 @@ void ArcToolbar::type_changed(int type)
             open = true; // For backward compat, not truly open but chord most like arc.
             break;
         default:
-            std::cerr << "sp_arctb_type_changed: bad arc type: " << type << std::endl;
+            std::cerr << __FUNCTION__ << ": bad arc type: " << type << std::endl;
+            break;
     }
 
-    bool modmade = false;
-    auto itemlist= _desktop->getSelection()->items();
-    for(auto i=itemlist.begin();i!=itemlist.end();++i){
-        SPItem *item = *i;
+    bool modified = false;
+    for (auto item : _desktop->getSelection()->items()) {
         if (is<SPGenericEllipse>(item)) {
-            Inkscape::XML::Node *repr = item->getRepr();
-            repr->setAttribute("sodipodi:open", (open?"true":nullptr) );
+            auto repr = item->getRepr();
+            repr->setAttribute("sodipodi:open", open ? "true" : nullptr);
             repr->setAttribute("sodipodi:arc-type", arc_type);
             item->updateRepr();
-            modmade = true;
+            modified = true;
         }
     }
 
-    if (modmade) {
+    if (modified) {
         DocumentUndo::done(_desktop->getDocument(), _("Arc: Change arc type"), INKSCAPE_ICON("draw-ellipse"));
     }
-
-    _freeze = false;
 }
 
-void ArcToolbar::defaults()
+void ArcToolbar::_setDefaults()
 {
     _start_item.get_adjustment()->set_value(0.0);
     _end_item.get_adjustment()->set_value(0.0);
-
-    if(_desktop->getCanvas()) _desktop->getCanvas()->grab_focus();
+    onDefocus();
 }
 
-void ArcToolbar::sensitivize(double v1, double v2)
+void ArcToolbar::_sensitivize()
 {
-    if (v1 == 0 && v2 == 0) {
-        if (_single) { // only for a single selected ellipse (for now)
-            for (auto btn : _type_buttons) btn->set_sensitive(false);
-            _make_whole.set_sensitive(false);
-        }
-    } else {
-        for (auto btn : _type_buttons) btn->set_sensitive(true);
-        _make_whole.set_sensitive(true);
+    bool disabled = _start_item.get_adjustment()->get_value() == 0 &&
+                    _end_item  .get_adjustment()->get_value() == 0 &&
+                    _single; // only for a single selected ellipse (for now)
+    for (auto btn : _type_buttons) {
+        btn->set_sensitive(!disabled);
     }
+    _make_whole.set_sensitive(!disabled);
 }
 
-void ArcToolbar::check_ec(SPDesktop *desktop, Inkscape::UI::Tools::ToolBase *tool)
+void ArcToolbar::_selectionChanged(Selection *selection)
 {
-    if (dynamic_cast<Tools::ArcTool const *>(tool)) {
-        _changed = _desktop->getSelection()->connectChanged(sigc::mem_fun(*this, &ArcToolbar::selection_changed));
-        selection_changed(desktop->getSelection());
-    } else {
-        if (_changed) {
-            _changed.disconnect();
-            if(_repr) {
-                _repr->removeObserver(*this);
-                Inkscape::GC::release(_repr);
-                _repr = nullptr;
-            }
-        }
+    if (_repr) {
+        _detachRepr();
     }
-}
 
-void ArcToolbar::selection_changed(Inkscape::Selection *selection)
-{
     int n_selected = 0;
-    Inkscape::XML::Node *repr = nullptr;
+    XML::Node *repr = nullptr;
+    SPGenericEllipse *ellipse = nullptr;
 
-    if ( _repr ) {
-        _item = nullptr;
-        _repr->removeObserver(*this);
-        GC::release(_repr);
-        _repr = nullptr;
-    }
-
-    SPItem *item = nullptr;
-
-    for(auto i : selection->items()){
-        if (is<SPGenericEllipse>(i)) {
+    for (auto item : selection->items()){
+        if (auto ge = cast<SPGenericEllipse>(item)) {
             n_selected++;
-            item = i;
-            repr = item->getRepr();
+            repr = ge->getRepr();
+            ellipse = ge;
         }
     }
 
-    _single = false;
-    if (n_selected == 0) {
-        _mode_item.set_markup(_("<b>New:</b>"));
-    } else if (n_selected == 1) {
-        _single = true;
-        _mode_item.set_markup(_("<b>Change:</b>"));
-        _rx_item.set_sensitive(true);
-        _ry_item.set_sensitive(true);
+    _single = n_selected == 1;
 
-        if (repr) {
-            _repr = repr;
-            _item = item;
-            Inkscape::GC::anchor(_repr);
-            _repr->addObserver(*this);
-            _repr->synthesizeEvents(*this);
-        }
-    } else {
-        // FIXME: implement averaging of all parameters for multiple selected
-        //gtk_label_set_markup(GTK_LABEL(l), _("<b>Average:</b>"));
-        _mode_item.set_markup(_("<b>Change:</b>"));
-        sensitivize( 1, 0 );
+    if (_single) {
+        _attachRepr(repr, ellipse);
+        _queueUpdate();
+    }
+
+    _mode_item.set_markup(n_selected == 0 ? _("<b>New:</b>") : _("<b>Change:</b>"));
+    _rx_item.set_sensitive(n_selected > 0);
+    _ry_item.set_sensitive(n_selected > 0);
+
+    if (!_single) { // otherwise handled by _queueUpdate
+        _sensitivize();
     }
 }
 
-
-void ArcToolbar::notifyAttributeChanged(Inkscape::XML::Node &repr, GQuark,
-                                        Inkscape::Util::ptr_shared,
-                                        Inkscape::Util::ptr_shared)
+void ArcToolbar::notifyAttributeChanged(XML::Node &, GQuark name, Util::ptr_shared, Util::ptr_shared)
 {
-    // quit if run by the _changed callbacks
-    if (_freeze) {
+    assert(_repr);
+    assert(_ellipse);
+
+    // quit if run by the UI callbacks
+    if (_blocker.pending()) {
         return;
     }
 
-    // in turn, prevent callbacks from responding
-    _freeze = true;
+    _queueUpdate();
+}
 
-    if (auto ge = cast<SPGenericEllipse>(_item)) {
-        Unit const *unit = _tracker->getActiveUnit();
-        g_return_if_fail(unit != nullptr);
-
-        gdouble rx = ge->getVisibleRx();
-        gdouble ry = ge->getVisibleRy();
-        _rx_item.get_adjustment()->set_value(Quantity::convert(rx, "px", unit));
-        _ry_item.get_adjustment()->set_value(Quantity::convert(ry, "px", unit));
+void ArcToolbar::_queueUpdate()
+{
+    if (_tick_callback) {
+        return;
     }
 
-    gdouble start = repr.getAttributeDouble("sodipodi:start", 0.0);;
-    gdouble end = repr.getAttributeDouble("sodipodi:end", 0.0);
+    _tick_callback = add_tick_callback([this] (Glib::RefPtr<Gdk::FrameClock> const &) {
+        _update();
+        _tick_callback = 0;
+        return false;
+    });
+}
 
-    _start_item.get_adjustment()->set_value(mod360((start * 180) / M_PI));
-    _end_item.get_adjustment()->set_value(mod360((end * 180) / M_PI));
-
-    sensitivize(_start_item.get_adjustment()->get_value(), _end_item.get_adjustment()->get_value());
-
-    char const *arctypestr = nullptr;
-    arctypestr = repr.attribute("sodipodi:arc-type");
-    if (!arctypestr) { // For old files.
-        char const *openstr = nullptr;
-        openstr = repr.attribute("sodipodi:open");
-        arctypestr = (openstr ? "arc" : "slice");
+void ArcToolbar::_cancelUpdate()
+{
+    if (!_tick_callback) {
+        return;
     }
 
-    if (!strcmp(arctypestr,"slice")) {
-        _type_buttons[0]->set_active();
-    } else if (!strcmp(arctypestr,"arc")) {
-        _type_buttons[1]->set_active();
-    } else {
-        _type_buttons[2]->set_active();
-    }
+    remove_tick_callback(_tick_callback);
+    _tick_callback = 0;
+}
 
-    _freeze = false;
+void ArcToolbar::_update()
+{
+    assert(_repr);
+    assert(_ellipse);
+
+    // prevent UI callbacks from responding
+    auto guard = _blocker.block();
+
+    _rx_item.get_adjustment()->set_value(Quantity::convert(_ellipse->getVisibleRx(), "px", _tracker->getActiveUnit()));
+    _ry_item.get_adjustment()->set_value(Quantity::convert(_ellipse->getVisibleRy(), "px", _tracker->getActiveUnit()));
+    _start_item.get_adjustment()->set_value(Geom::deg_from_rad(Geom::Angle{_ellipse->start}.radians0()));
+    _end_item.get_adjustment()->set_value(Geom::deg_from_rad(Geom::Angle{_ellipse->end}.radians0()));
+    _type_buttons[_ellipse->arc_type]->set_active();
+
+    _sensitivize();
 }
 
 } // namespace Inkscape::UI::Toolbar

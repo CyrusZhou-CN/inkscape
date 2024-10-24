@@ -11,19 +11,14 @@
 
 #include "objectpicker-toolbar.h"
 
-#include <gtkmm/box.h>
-
 #include "ui/builder-utils.h"
 
 namespace Inkscape::UI::Toolbar {
 
-ObjectPickerToolbar::ObjectPickerToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    , _builder(create_builder("toolbar-objectpicker.ui"))
+ObjectPickerToolbar::ObjectPickerToolbar()
+    : Toolbar{get_widget<Gtk::Box>(create_builder("toolbar-objectpicker.ui"), "objectpicker-toolbar")}
 {
-    _toolbar = &get_widget<Gtk::Box>(_builder, "objectpicker-toolbar");
-    set_child(*_toolbar);
-    init_menu_btns();
+    _initMenuBtns();
 }
 
 } // namespace Inkscape::UI::Toolbar

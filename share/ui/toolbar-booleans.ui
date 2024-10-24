@@ -32,7 +32,6 @@
         <property name="action-name">win.shape-builder-mode</property>
         <property name="action-target">0</property>
         <property name="has-frame">False</property>
-        <property name="active">True</property>
         <child>
           <object class="GtkImage" id="image1">
             <property name="icon-name">shapebuilder-tool-union</property>
@@ -48,7 +47,6 @@
         <property name="action-name">win.shape-builder-mode</property>
         <property name="action-target">1</property>
         <property name="has-frame">False</property>
-        <property name="active">True</property>
         <property name="group">radio_button_group</property>
         <child>
           <object class="GtkImage" id="image2">

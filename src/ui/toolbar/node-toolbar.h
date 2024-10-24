@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file
- * Node aux toolbar
+ * @file Node toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -26,13 +25,14 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_NODE_TOOLBAR_H
-#define SEEN_NODE_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_NODE_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_NODE_TOOLBAR_H
 
 #include <memory>
 #include <2geom/coord.h>
 
 #include "toolbar.h"
+#include "ui/operation-blocker.h"
 
 namespace Gtk {
 class Builder;
@@ -40,36 +40,33 @@ class Button;
 class ToggleButton;
 } // namespace Gtk
 
-class SPDesktop;
-
 namespace Inkscape {
-
 class Selection;
-
 namespace UI {
-
-class SimplePrefPusher;
 class ControlPointSelection;
-
-namespace Tools {
-class ToolBase;
-} // namespace Tools
-
+class SimplePrefPusher;
+namespace Tools { class NodeTool; }
 namespace Widget {
 class SpinButton;
 class UnitTracker;
 } // namespace Widget
+} // namespace UI
+} // namespace Inkscape
 
-namespace Toolbar {
+namespace Inkscape::UI::Toolbar {
 
-class NodeToolbar final : public Toolbar
+class NodeToolbar : public Toolbar
 {
 public:
-    NodeToolbar(SPDesktop *desktop);
+    NodeToolbar();
     ~NodeToolbar() override;
 
+    void setDesktop(SPDesktop *desktop) override;
+    void setActiveUnit(Util::Unit const *unit) override;
+
 private:
-    Glib::RefPtr<Gtk::Builder> _builder;
+    NodeToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     std::unique_ptr<UI::Widget::UnitTracker> _tracker;
 
     std::unique_ptr<UI::SimplePrefPusher> _pusher_show_transform_handles;
@@ -91,17 +88,16 @@ private:
     UI::Widget::SpinButton &_nodes_d_item;
     Gtk::Box &_nodes_d_box;
 
-    bool _freeze;
+    OperationBlocker _blocker;
 
     sigc::connection c_selection_changed;
     sigc::connection c_selection_modified;
     sigc::connection c_subselection_changed;
 
-    void value_changed(Glib::ustring const &name, Glib::RefPtr<Gtk::Adjustment> &adj);
-    void sel_changed(Inkscape::Selection *selection);
-    void sel_modified(Inkscape::Selection *selection, guint /*flags*/);
-    void coord_changed(Inkscape::UI::ControlPointSelection* selected_nodes);
-    void watch_ec(SPDesktop* desktop, Inkscape::UI::Tools::ToolBase* tool);
+    void value_changed(Glib::ustring const &name, Glib::RefPtr<Gtk::Adjustment> const &adj);
+    void sel_changed(Selection *selection);
+    void sel_modified(Selection *selection, unsigned flags);
+    void coord_changed(ControlPointSelection* selected_nodes);
     void edit_add();
     void edit_add_min_x();
     void edit_add_max_x();
@@ -118,17 +114,17 @@ private:
     void edit_auto();
     void edit_toline();
     void edit_tocurve();
-    void on_pref_toggled(Gtk::ToggleButton *item, const Glib::ustring &path);
+    void on_pref_toggled(Gtk::ToggleButton *item, Glib::ustring const &path);
 
-    void setup_derived_spin_button(Inkscape::UI::Widget::SpinButton &btn, Glib::ustring const &name);
+    void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name);
     void setup_insert_node_menu();
+
+    Tools::NodeTool *get_node_tool() const;
 };
 
-} // namespace Toolbar
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_SELECT_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_NODE_TOOLBAR_H
 
 /*
   Local Variables:

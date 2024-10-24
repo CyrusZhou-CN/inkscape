@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file
- * Tweak aux toolbar
+ * @file Tweak toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -36,27 +35,27 @@
 #include "ui/builder-utils.h"
 #include "ui/tools/tweak-tool.h"
 #include "ui/util.h"
-#include "ui/widget/canvas.h"
 #include "ui/widget/spinbutton.h"
 
 namespace Inkscape::UI::Toolbar {
 
-TweakToolbar::TweakToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    , _builder(create_builder("toolbar-tweak.ui"))
-    , _width_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_width_item"))
-    , _force_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_force_item"))
-    , _fidelity_box(get_widget<Gtk::Box>(_builder, "_fidelity_box"))
-    , _fidelity_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_fidelity_item"))
-    , _pressure_btn(get_widget<Gtk::ToggleButton>(_builder, "_pressure_btn"))
-    , _channels_box(get_widget<Gtk::Box>(_builder, "_channels_box"))
-    , _doh_btn(get_widget<Gtk::ToggleButton>(_builder, "_doh_btn"))
-    , _dos_btn(get_widget<Gtk::ToggleButton>(_builder, "_dos_btn"))
-    , _dol_btn(get_widget<Gtk::ToggleButton>(_builder, "_dol_btn"))
-    , _doo_btn(get_widget<Gtk::ToggleButton>(_builder, "_doo_btn"))
-{
-    _toolbar = &get_widget<Gtk::Box>(_builder, "tweak-toolbar");
+TweakToolbar::TweakToolbar()
+    : TweakToolbar{create_builder("toolbar-tweak.ui")}
+{}
 
+TweakToolbar::TweakToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
+    : Toolbar{get_widget<Gtk::Box>(builder, "tweak-toolbar")}
+    , _width_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_width_item")}
+    , _force_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_force_item")}
+    , _fidelity_box{get_widget<Gtk::Box>(builder, "_fidelity_box")}
+    , _fidelity_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_fidelity_item")}
+    , _pressure_btn{get_widget<Gtk::ToggleButton>(builder, "_pressure_btn")}
+    , _channels_box{get_widget<Gtk::Box>(builder, "_channels_box")}
+    , _doh_btn{get_widget<Gtk::ToggleButton>(builder, "_doh_btn")}
+    , _dos_btn{get_widget<Gtk::ToggleButton>(builder, "_dos_btn")}
+    , _dol_btn{get_widget<Gtk::ToggleButton>(builder, "_dol_btn")}
+    , _doo_btn{get_widget<Gtk::ToggleButton>(builder, "_doo_btn")}
+{
     setup_derived_spin_button(_width_item, "width", 15, &TweakToolbar::width_value_changed);
     setup_derived_spin_button(_force_item, "force", 20, &TweakToolbar::force_value_changed);
     setup_derived_spin_button(_fidelity_item, "fidelity", 50, &TweakToolbar::fidelity_value_changed);
@@ -97,7 +96,7 @@ TweakToolbar::TweakToolbar(SPDesktop *desktop)
 
     // Configure mode buttons
     int btn_index = 0;
-    for_each_child(get_widget<Gtk::Box>(_builder, "mode_buttons_box"), [&](Gtk::Widget &item){
+    for_each_child(get_widget<Gtk::Box>(builder, "mode_buttons_box"), [&](Gtk::Widget &item){
         auto &btn = dynamic_cast<Gtk::ToggleButton &>(item);
         _mode_buttons.push_back(&btn);
         btn.signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &TweakToolbar::mode_changed), btn_index++));
@@ -112,6 +111,7 @@ TweakToolbar::TweakToolbar(SPDesktop *desktop)
 
     // Set initial mode.
     int mode = prefs->getIntLimited("/tools/tweak/mode", 0, 0, _mode_buttons.size() - 1);
+    mode = std::clamp<int>(mode, 0, _mode_buttons.size() - 1);
     _mode_buttons[mode]->set_active();
 
     // Configure channel buttons.
@@ -126,33 +126,32 @@ TweakToolbar::TweakToolbar(SPDesktop *desktop)
     _doo_btn.signal_toggled().connect(sigc::mem_fun(*this, &TweakToolbar::toggle_doo));
     _doo_btn.set_active(prefs->getBool("/tools/tweak/doo", true));
 
-    set_child(*_toolbar);
-    init_menu_btns();
-
     // Elements must be hidden after being initially visible.
     if (mode == Inkscape::UI::Tools::TWEAK_MODE_COLORPAINT || mode == Inkscape::UI::Tools::TWEAK_MODE_COLORJITTER) {
         _fidelity_box.set_visible(false);
     } else {
         _channels_box.set_visible(false);
     }
+
+    _initMenuBtns();
 }
 
 TweakToolbar::~TweakToolbar() = default;
 
 void TweakToolbar::setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name,
-                                             double default_value, ValueChangedMemFun const value_changed_mem_fun)
+                                             double default_value, ValueChangedMemFun value_changed_mem_fun)
 {
-    const Glib::ustring path = "/tools/tweak/" + name;
+    auto const path = "/tools/tweak/" + name;
     auto const val = Preferences::get()->getDouble(path, default_value);
 
     auto adj = btn.get_adjustment();
     adj->set_value(val);
     adj->signal_value_changed().connect(sigc::mem_fun(*this, value_changed_mem_fun));
 
-    btn.set_defocus_widget(_desktop->getCanvas());
+    btn.setDefocusTarget(this);
 }
 
-void TweakToolbar::set_mode(int mode)
+void TweakToolbar::setMode(int mode)
 {
     _mode_buttons[mode]->set_active();
 }
@@ -171,8 +170,8 @@ void TweakToolbar::mode_changed(int mode)
 {
     Preferences::get()->setInt("/tools/tweak/mode", mode);
 
-    bool flag = ((mode == Inkscape::UI::Tools::TWEAK_MODE_COLORPAINT) ||
-                 (mode == Inkscape::UI::Tools::TWEAK_MODE_COLORJITTER));
+    bool flag = mode == Inkscape::UI::Tools::TWEAK_MODE_COLORPAINT ||
+                mode == Inkscape::UI::Tools::TWEAK_MODE_COLORJITTER;
 
     _channels_box.set_visible(flag);
 

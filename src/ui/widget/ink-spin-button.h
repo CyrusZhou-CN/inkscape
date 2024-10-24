@@ -86,8 +86,6 @@ private:
     bool on_key_pressed(guint keyval, guint keycode, Gdk::ModifierType state); // "pressed" vs GTK3 "press"
     // void on_key_released(guint keyval, guint keycode, Gdk::ModifierType state);
 
-    // Work-around do to missing signal_activate() in GTK4.
-    static void on_activate_c(GtkEntry* entry, gpointer user_data);
     void on_activate(); // "activate" fires on pressing Enter in an entry widget
 
     void on_changed();

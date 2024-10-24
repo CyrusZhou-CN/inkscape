@@ -43,10 +43,14 @@
 
 namespace Inkscape::UI::Widget {
 
-ComboBoxEntryToolItem::ComboBoxEntryToolItem(Glib::ustring name, Glib::ustring label, Glib::ustring tooltip,
-                                             Glib::RefPtr<Gtk::TreeModel> model, int entry_width, int extra_width,
-                                             CellDataFunc cell_data_func, SeparatorFunc separator_func,
-                                             Gtk::Widget *focusWidget)
+ComboBoxEntryToolItem::ComboBoxEntryToolItem(Glib::ustring name,
+                                             Glib::ustring label,
+                                             Glib::ustring tooltip,
+                                             Glib::RefPtr<Gtk::TreeModel> model,
+                                             int           entry_width,
+                                             int           extra_width,
+                                             CellDataFunc  cell_data_func,
+                                             SeparatorFunc separator_func)
     : _label(std::move(label))
     , _tooltip(std::move(tooltip))
     , _model(std::move(model))
@@ -54,7 +58,6 @@ ComboBoxEntryToolItem::ComboBoxEntryToolItem(Glib::ustring name, Glib::ustring l
     , _entry_width(entry_width)
     , _extra_width(extra_width)
     , _cell_data_func(std::move(cell_data_func))
-    , _focusWidget(focusWidget)
 {
     set_name(name);
 
@@ -66,7 +69,7 @@ ComboBoxEntryToolItem::ComboBoxEntryToolItem(Glib::ustring name, Glib::ustring l
     append(_combobox);
     _combobox.set_active(false); // ink_comboboxentry_action->active
     _combobox.signal_changed().connect([this] { combo_box_changed_cb(); });
-    _combobox.signal_realize().connect([this] { _combobox.set_model(_model); });
+    _combobox.signal_realize().connect([this] { _combo_box_changed_cb_blocked = true; _combobox.set_model(_model); _combo_box_changed_cb_blocked = false; });
 
     // Optionally add separator function...
     if (separator_func) {
@@ -397,6 +400,10 @@ Glib::ustring ComboBoxEntryToolItem::check_comma_separated_text() const
 
 void ComboBoxEntryToolItem::combo_box_changed_cb()
 {
+    if (_combo_box_changed_cb_blocked) {
+        return;
+    }
+
     // Two things can happen to get here:
     //   An item is selected in the drop-down menu.
     //   Text is typed.

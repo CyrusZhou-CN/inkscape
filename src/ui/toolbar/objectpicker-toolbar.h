@@ -9,10 +9,8 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_OBJECTPICKER_TOOLBAR_H
-#define SEEN_OBJECTPICKER_TOOLBAR_H
-
-#include <gtkmm/builder.h>
+#ifndef INKSCAPE_UI_TOOLBAR_OBJECTPICKER_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_OBJECTPICKER_TOOLBAR_H
 
 #include "toolbar.h"
 
@@ -21,12 +19,9 @@ namespace Inkscape::UI::Toolbar {
 class ObjectPickerToolbar final : public Toolbar
 {
 public:
-    ObjectPickerToolbar(SPDesktop *desktop);
-
-private:
-    Glib::RefPtr<Gtk::Builder> _builder;
+    ObjectPickerToolbar();
 };
 
 } // namespace Inkscape::UI::Toolbar
 
-#endif
+#endif // INKSCAPE_UI_TOOLBAR_OBJECTPICKER_TOOLBAR_H

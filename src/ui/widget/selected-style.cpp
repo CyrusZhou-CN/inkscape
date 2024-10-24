@@ -48,6 +48,7 @@
 #include "ui/dialog/fill-and-stroke.h"
 #include "ui/icon-names.h"
 #include "ui/tools/tool-base.h"
+#include "ui/widget/canvas.h"
 #include "ui/widget/color-preview.h"
 #include "ui/widget/gradient-image.h"
 #include "ui/widget/popover-menu.h"
@@ -226,6 +227,7 @@ SelectedStyle::SelectedStyle()
     opacity_sb->set_adjustment(opacity_adjustment);
     opacity_sb->set_size_request(SELECTED_STYLE_SB_WIDTH);
     opacity_sb->set_sensitive(false);
+    opacity_sb->setDefocusTarget(this);
 
     auto opacity_box = Gtk::make_managed<Gtk::Box>();
     opacity_box->append(*opacity_label);
@@ -697,6 +699,13 @@ void SelectedStyle::on_popup_preset(int i) {
     sp_desktop_set_style (_desktop, css, true);
     sp_repr_css_attr_unref (css);
     DocumentUndo::done(_desktop->getDocument(), _("Change stroke width"), INKSCAPE_ICON("swatches"));
+}
+
+void SelectedStyle::onDefocus()
+{
+    if (_desktop) {
+        _desktop->getCanvas()->grab_focus();
+    }
 }
 
 void

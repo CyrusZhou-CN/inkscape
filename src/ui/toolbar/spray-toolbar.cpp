@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file
- * Spray aux toolbar
+ * @file Spray toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -40,54 +39,48 @@
 #include "ui/dialog/dialog-container.h"
 #include "ui/simple-pref-pusher.h"
 #include "ui/util.h"
-#include "ui/widget/canvas.h"
 #include "ui/widget/spinbutton.h"
 
-// Disabled in 0.91 because of Bug #1274831 (crash, spraying an object
-// with the mode: spray object in single path)
-// Please enable again when working on 1.0
-#define ENABLE_SPRAY_MODE_SINGLE_PATH
-
-Inkscape::UI::Dialog::CloneTiler *get_clone_tiler_panel(SPDesktop *desktop)
+static Inkscape::UI::Dialog::CloneTiler *get_clone_tiler_panel(SPDesktop *desktop)
 {
-    Inkscape::UI::Dialog::DialogBase *dialog = desktop->getContainer()->get_dialog("CloneTiler");
+    auto dialog = desktop->getContainer()->get_dialog("CloneTiler");
     if (!dialog) {
         desktop->getContainer()->new_dialog("CloneTiler");
-        return dynamic_cast<Inkscape::UI::Dialog::CloneTiler *>(
-            desktop->getContainer()->get_dialog("CloneTiler"));
+        dialog = desktop->getContainer()->get_dialog("CloneTiler");
     }
     return dynamic_cast<Inkscape::UI::Dialog::CloneTiler *>(dialog);
 }
 
 namespace Inkscape::UI::Toolbar {
 
-SprayToolbar::SprayToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    , _builder(create_builder("toolbar-spray.ui"))
-    , _width_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_width_item"))
-    , _population_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_population_item"))
-    , _rotation_box(get_widget<Gtk::Box>(_builder, "_rotation_box"))
-    , _rotation_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_rotation_item"))
-    , _scale_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_scale_item"))
-    , _use_pressure_scale_btn(get_widget<Gtk::ToggleButton>(_builder, "_use_pressure_scale_btn"))
-    , _sd_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_sd_item"))
-    , _mean_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_mean_item"))
-    , _over_no_transparent_btn(get_widget<Gtk::ToggleButton>(_builder, "_over_no_transparent_btn"))
-    , _over_transparent_btn(get_widget<Gtk::ToggleButton>(_builder, "_over_transparent_btn"))
-    , _pick_no_overlap_btn(get_widget<Gtk::ToggleButton>(_builder, "_pick_no_overlap_btn"))
-    , _no_overlap_btn(get_widget<Gtk::ToggleButton>(_builder, "_no_overlap_btn"))
-    , _offset_box(get_widget<Gtk::Box>(_builder, "_offset_box"))
-    , _offset_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_offset_item"))
-    , _picker_btn(get_widget<Gtk::ToggleButton>(_builder, "_picker_btn"))
-    , _pick_fill_btn(get_widget<Gtk::ToggleButton>(_builder, "_pick_fill_btn"))
-    , _pick_stroke_btn(get_widget<Gtk::ToggleButton>(_builder, "_pick_stroke_btn"))
-    , _pick_inverse_value_btn(get_widget<Gtk::ToggleButton>(_builder, "_pick_inverse_value_btn"))
-    , _pick_center_btn(get_widget<Gtk::ToggleButton>(_builder, "_pick_center_btn"))
-{
-    _toolbar = &get_widget<Gtk::Box>(_builder, "spray-toolbar");
+SprayToolbar::SprayToolbar()
+    : SprayToolbar{create_builder("toolbar-spray.ui")}
+{}
 
-    auto use_pressure_width_btn = &get_widget<Gtk::ToggleButton>(_builder, "use_pressure_width_btn");
-    auto use_pressure_population_btn = &get_widget<Gtk::ToggleButton>(_builder, "use_pressure_population_btn");
+SprayToolbar::SprayToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
+    : Toolbar{get_widget<Gtk::Box>(builder, "spray-toolbar")}
+    , _width_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_width_item")}
+    , _population_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_population_item")}
+    , _rotation_box{get_widget<Gtk::Box>(builder, "_rotation_box")}
+    , _rotation_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_rotation_item")}
+    , _scale_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_scale_item")}
+    , _use_pressure_scale_btn{get_widget<Gtk::ToggleButton>(builder, "_use_pressure_scale_btn")}
+    , _sd_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_sd_item")}
+    , _mean_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_mean_item")}
+    , _over_no_transparent_btn{get_widget<Gtk::ToggleButton>(builder, "_over_no_transparent_btn")}
+    , _over_transparent_btn{get_widget<Gtk::ToggleButton>(builder, "_over_transparent_btn")}
+    , _pick_no_overlap_btn{get_widget<Gtk::ToggleButton>(builder, "_pick_no_overlap_btn")}
+    , _no_overlap_btn{get_widget<Gtk::ToggleButton>(builder, "_no_overlap_btn")}
+    , _offset_box{get_widget<Gtk::Box>(builder, "_offset_box")}
+    , _offset_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_offset_item")}
+    , _picker_btn{get_widget<Gtk::ToggleButton>(builder, "_picker_btn")}
+    , _pick_fill_btn{get_widget<Gtk::ToggleButton>(builder, "_pick_fill_btn")}
+    , _pick_stroke_btn{get_widget<Gtk::ToggleButton>(builder, "_pick_stroke_btn")}
+    , _pick_inverse_value_btn{get_widget<Gtk::ToggleButton>(builder, "_pick_inverse_value_btn")}
+    , _pick_center_btn{get_widget<Gtk::ToggleButton>(builder, "_pick_center_btn")}
+{
+    auto use_pressure_width_btn = &get_widget<Gtk::ToggleButton>(builder, "use_pressure_width_btn");
+    auto use_pressure_population_btn = &get_widget<Gtk::ToggleButton>(builder, "use_pressure_population_btn");
 
     // Setup the spin buttons.
     setup_derived_spin_button(_width_item, "width", 15, &SprayToolbar::width_value_changed);
@@ -179,7 +172,7 @@ SprayToolbar::SprayToolbar(SPDesktop *desktop)
 
     // Configure mode buttons
     int btn_index = 0;
-    for_each_child(get_widget<Gtk::Box>(_builder, "mode_buttons_box"), [&](Gtk::Widget &item){
+    for_each_child(get_widget<Gtk::Box>(builder, "mode_buttons_box"), [&](Gtk::Widget &item){
         auto &btn = dynamic_cast<Gtk::ToggleButton &>(item);
         _mode_buttons.push_back(&btn);
         btn.signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &SprayToolbar::mode_changed), btn_index++));
@@ -187,19 +180,19 @@ SprayToolbar::SprayToolbar(SPDesktop *desktop)
     });
 
     // Width pressure button.
-    _use_pressure_width_pusher.reset(new UI::SimplePrefPusher(use_pressure_width_btn, "/tools/spray/usepressurewidth"));
+    _use_pressure_width_pusher = std::make_unique<UI::SimplePrefPusher>(use_pressure_width_btn, "/tools/spray/usepressurewidth");
     use_pressure_width_btn->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &SprayToolbar::on_pref_toggled),
                                                                 use_pressure_width_btn->get_active(),
                                                                 "/tools/spray/usepressurewidth"));
 
     // Population pressure button.
-    _use_pressure_population_pusher.reset(
-        new UI::SimplePrefPusher(use_pressure_population_btn, "/tools/spray/usepressurepopulation"));
+    _use_pressure_population_pusher = std::make_unique<UI::SimplePrefPusher>
+        (use_pressure_population_btn, "/tools/spray/usepressurepopulation");
     use_pressure_population_btn->signal_toggled().connect(
         sigc::bind(sigc::mem_fun(*this, &SprayToolbar::on_pref_toggled), use_pressure_population_btn->get_active(),
                    "/tools/spray/usepressurepopulation"));
 
-    auto prefs = Inkscape::Preferences::get();
+    auto prefs = Preferences::get();
 
     // Scale pressure button.
     _use_pressure_scale_btn.set_active(prefs->getBool("/tools/spray/usepressurescale", false));
@@ -252,26 +245,26 @@ SprayToolbar::SprayToolbar(SPDesktop *desktop)
     _pick_center_btn.signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &SprayToolbar::on_pref_toggled),
                                                          _pick_center_btn.get_active(), "/tools/spray/pick_center"));
 
-    set_child(*_toolbar);
-    init_menu_btns();
 
     int mode = prefs->getIntLimited("/tools/spray/mode", 1, 0, _mode_buttons.size() - 1);
     _mode_buttons[mode]->set_active();
+
+    _initMenuBtns();
 }
 
 SprayToolbar::~SprayToolbar() = default;
 
 void SprayToolbar::setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name,
-                                             double default_value, ValueChangedMemFun const value_changed_mem_fun)
+                                             double default_value, ValueChangedMemFun value_changed_mem_fun)
 {
-    const Glib::ustring path = "/tools/spray/" + name;
+    auto const path = "/tools/spray/" + name;
     auto const val = Preferences::get()->getDouble(path, default_value);
 
     auto adj = btn.get_adjustment();
     adj->set_value(val);
     adj->signal_value_changed().connect(sigc::mem_fun(*this, value_changed_mem_fun));
 
-    btn.set_defocus_widget(_desktop->getCanvas());
+    btn.setDefocusTarget(this);
 }
 
 void SprayToolbar::width_value_changed()
@@ -301,7 +294,7 @@ void SprayToolbar::init()
 
     bool show = true;
 
-    if(mode == 3 || mode == 2){
+    if (mode == 3 || mode == 2) {
         show = false;
     }
 
@@ -317,7 +310,7 @@ void SprayToolbar::init()
     _pick_center_btn.set_visible(show);
     _offset_item.set_visible(show);
 
-    if(mode == 2){
+    if (mode == 2){
         show = true;
     }
 
@@ -374,10 +367,10 @@ void SprayToolbar::offset_value_changed()
 
 void SprayToolbar::toggle_pressure_scale()
 {
-    auto prefs = Inkscape::Preferences::get();
+    auto prefs = Preferences::get();
     bool active = _use_pressure_scale_btn.get_active();
     prefs->setBool("/tools/spray/usepressurescale", active);
-    if(active){
+    if (active){
         prefs->setDouble("/tools/spray/scale_variation", 0);
     }
     update_widgets();
@@ -385,13 +378,13 @@ void SprayToolbar::toggle_pressure_scale()
 
 void SprayToolbar::toggle_picker()
 {
-    auto prefs = Inkscape::Preferences::get();
+    auto prefs = Preferences::get();
     bool active = _picker_btn.get_active();
     prefs->setBool("/tools/spray/picker", active);
-    if(active){
+    if (active) {
         prefs->setBool("/dialogs/clonetiler/dotrace", false);
-        SPDesktop *dt = _desktop;
-        if (Inkscape::UI::Dialog::CloneTiler *ct = get_clone_tiler_panel(dt)){
+        auto dt = _desktop;
+        if (auto ct = get_clone_tiler_panel(dt)) {
             dt->getContainer()->new_dialog("CloneTiler");
             ct->show_page_trace();
         }
@@ -399,12 +392,12 @@ void SprayToolbar::toggle_picker()
     update_widgets();
 }
 
-void SprayToolbar::on_pref_toggled(bool active, const Glib::ustring &path)
+void SprayToolbar::on_pref_toggled(bool active, Glib::ustring const &path)
 {
     Preferences::get()->setBool(path, active);
 }
 
-void SprayToolbar::set_mode(int mode)
+void SprayToolbar::setMode(int mode)
 {
     _mode_buttons[mode]->set_active();
     mode_changed(mode); // Gtk4: set_active() does not trigger callback, call it here.

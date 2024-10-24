@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_CONNECTOR_TOOLBAR_H
-#define SEEN_CONNECTOR_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_CONNECTOR_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_CONNECTOR_TOOLBAR_H
 
 /**
- * @file
- * Connector aux toolbar
+ * @file Connector toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -30,6 +29,7 @@
  */
 
 #include "toolbar.h"
+#include "ui/operation-blocker.h"
 #include "ui/widget/spinbutton.h"
 #include "xml/node-observer.h"
 
@@ -38,30 +38,28 @@ class Builder;
 class ToggleButton;
 } // namespace Gtk
 
-class SPDesktop;
+class SPNamedView;
 
 namespace Inkscape {
 class Selection;
+namespace XML { class Node; }
+} // namespace Inkscape
 
-namespace XML {
-class Node;
-}
+namespace Inkscape::UI::Toolbar {
 
-namespace UI {
-namespace Toolbar {
-
-class ConnectorToolbar final
+class ConnectorToolbar
     : public Toolbar
     , private XML::NodeObserver
 {
 public:
-    ConnectorToolbar(SPDesktop *desktop);
-    ~ConnectorToolbar() override;
+    ConnectorToolbar();
+
+    void setDesktop(SPDesktop *desktop) override;
 
 private:
-    using ValueChangedMemFun = void (ConnectorToolbar::*)();
+    ConnectorToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
 
-    Glib::RefPtr<Gtk::Builder> _builder;
+    using ValueChangedMemFun = void (ConnectorToolbar::*)();
 
     Gtk::ToggleButton &_orthogonal_btn;
     Gtk::ToggleButton &_directed_btn;
@@ -71,12 +69,12 @@ private:
     UI::Widget::SpinButton &_spacing_item;
     UI::Widget::SpinButton &_length_item;
 
-    bool _freeze{false};
+    OperationBlocker _blocker;
 
-    Inkscape::XML::Node *_repr{nullptr};
+    XML::Node *_repr = nullptr;
 
     void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name, double default_value,
-                                   ValueChangedMemFun const value_changed_mem_fun);
+                                   ValueChangedMemFun value_changed_mem_fun);
     void path_set_avoid();
     void path_set_ignore();
     void orthogonal_toggled();
@@ -86,23 +84,13 @@ private:
     void curvature_changed();
     void spacing_changed();
     void length_changed();
-    void selection_changed(Inkscape::Selection *selection);
 
-	void notifyAttributeChanged(Inkscape::XML::Node &node, GQuark name,
-								Inkscape::Util::ptr_shared old_value,
-								Inkscape::Util::ptr_shared new_value) final;
+    sigc::connection _selection_changed_conn;
+    void _selectionChanged(Selection *selection);
 
-public:
-    static void event_attr_changed(Inkscape::XML::Node *repr,
-                                   gchar const         *name,
-                                   gchar const         * /*old_value*/,
-                                   gchar const         * /*new_value*/,
-                                   bool                  /*is_interactive*/,
-                                   gpointer             data);
+    void notifyAttributeChanged(XML::Node &node, GQuark name, Util::ptr_shared old_value, Util::ptr_shared new_value) override;
 };
 
-}
-}
-}
+} // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_CONNECTOR_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_CONNECTOR_TOOLBAR_H

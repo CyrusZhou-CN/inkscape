@@ -27,7 +27,7 @@ class SPDesktop;
 
 namespace Inkscape::UI::Toolbar {
 
-class SnapToolbar final : public Gtk::Box
+class SnapToolbar : public Gtk::Box
 {
 public:
     SnapToolbar();

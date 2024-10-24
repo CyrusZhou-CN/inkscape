@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file
- * Rect aux toolbar
+ * @file Rectangle toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -44,7 +43,6 @@
 #include "ui/icon-names.h"
 #include "ui/tools/rect-tool.h"
 #include "ui/util.h"
-#include "ui/widget/canvas.h"
 #include "ui/widget/combo-tool-item.h"
 #include "ui/widget/spinbutton.h"
 #include "ui/widget/unit-tracker.h"
@@ -57,32 +55,52 @@ using Inkscape::Util::Quantity;
 
 namespace Inkscape::UI::Toolbar {
 
-RectToolbar::RectToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    , _tracker(new UnitTracker(Inkscape::Util::UNIT_TYPE_LINEAR))
-    , _builder(create_builder("toolbar-rect.ui"))
-    , _mode_item(get_widget<Gtk::Label>(_builder, "_mode_item"))
-    , _width_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_width_item"))
-    , _height_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_height_item"))
-    , _rx_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_rx_item"))
-    , _ry_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_ry_item"))
-    , _not_rounded(get_widget<Gtk::Button>(_builder, "_not_rounded"))
+struct RectToolbar::DerivedSpinButton : UI::Widget::SpinButton
 {
-    _toolbar = &get_widget<Gtk::Box>(_builder, "rect-toolbar");
+    using Getter = double (SPRect::*)() const;
+    using Setter = void (SPRect::*)(double);
 
+    DerivedSpinButton(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> const &, char const *name, Getter getter, Setter setter)
+        : UI::Widget::SpinButton(cobject)
+        , name{name}
+        , getter{getter}
+        , setter{setter}
+    {}
+
+    char const *name;
+    Getter getter;
+    Setter setter;
+};
+
+RectToolbar::RectToolbar()
+    : RectToolbar{create_builder("toolbar-rect.ui")}
+{}
+
+RectToolbar::RectToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
+    : Toolbar{get_widget<Gtk::Box>(builder, "rect-toolbar")}
+    , _tracker{std::make_unique<UnitTracker>(Util::UNIT_TYPE_LINEAR)}
+    , _mode_item{UI::get_widget<Gtk::Label>(builder, "_mode_item")}
+    , _not_rounded{UI::get_widget<Gtk::Button>(builder, "_not_rounded")}
+    , _width_item{UI::get_derived_widget<DerivedSpinButton>(builder, "_width_item", "width", &SPRect::getVisibleWidth, &SPRect::setVisibleWidth)}
+    , _height_item{UI::get_derived_widget<DerivedSpinButton>(builder, "_height_item", "height", &SPRect::getVisibleHeight, &SPRect::setVisibleHeight)}
+    , _rx_item{UI::get_derived_widget<DerivedSpinButton>(builder, "_rx_item", "rx", &SPRect::getVisibleRx, &SPRect::setVisibleRx)}
+    , _ry_item{UI::get_derived_widget<DerivedSpinButton>(builder, "_ry_item", "ry", &SPRect::getVisibleRy, &SPRect::setVisibleRy)}
+{
     auto unit_menu = _tracker->create_tool_item(_("Units"), (""));
-    get_widget<Gtk::Box>(_builder, "unit_menu_box").append(*unit_menu);
+    get_widget<Gtk::Box>(builder, "unit_menu_box").append(*unit_menu);
 
-    // rx/ry units menu: create
-    //tracker->addUnit( SP_UNIT_PERCENT, 0 );
-    // fixme: add % meaning per cent of the width/height
-    auto init_units = desktop->getNamedView()->display_units;
-    _tracker->setActiveUnit(init_units);
+    _not_rounded.signal_clicked().connect([this] { _setDefaults(); });
 
-    setup_derived_spin_button(_width_item, "width", &SPRect::setVisibleWidth);
-    setup_derived_spin_button(_height_item, "height", &SPRect::setVisibleHeight);
-    setup_derived_spin_button(_rx_item, "rx", &SPRect::setVisibleRx);
-    setup_derived_spin_button(_ry_item, "ry", &SPRect::setVisibleRy);
+    for (auto sb : _getDerivedSpinButtons()) {
+        auto const adj = sb->get_adjustment();
+        auto const path = Glib::ustring{"/tools/shapes/rect/"} + sb->name;
+        auto const val = Preferences::get()->getDouble(path, 0);
+        adj->set_value(Quantity::convert(val, "px", _tracker->getActiveUnit()));
+        adj->signal_value_changed().connect([this, sb] { _valueChanged(*sb); });
+        _tracker->addAdjustment(adj->gobj());
+        sb->addUnitTracker(_tracker.get());
+        sb->setDefocusTarget(this);
+    }
 
     _width_item.set_custom_numeric_menu_data({
         {1, ""},
@@ -134,210 +152,192 @@ RectToolbar::RectToolbar(SPDesktop *desktop)
         {100, ""}
     });
 
-    _not_rounded.signal_clicked().connect(sigc::mem_fun(*this, &RectToolbar::defaults));
-    _desktop->connectEventContextChanged(sigc::mem_fun(*this, &RectToolbar::watch_ec));
-
-    set_child(*_toolbar);
-    init_menu_btns();
-
-    sensitivize();
+    _initMenuBtns();
 }
 
-void RectToolbar::setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name,
-                                            void (SPRect::*setter_fun)(gdouble))
+RectToolbar::~RectToolbar() = default;
+
+void RectToolbar::setDesktop(SPDesktop *desktop)
 {
-    auto init_units = _desktop->getNamedView()->display_units;
-    auto adj = btn.get_adjustment();
-    const Glib::ustring path = "/tools/shapes/rect/" + name;
-    auto val = Preferences::get()->getDouble(path, 0);
-    val = Quantity::convert(val, "px", init_units);
-    adj->set_value(val);
-    adj->signal_value_changed().connect(
-        sigc::bind(sigc::mem_fun(*this, &RectToolbar::value_changed), adj, name, setter_fun));
+    if (_desktop) {
+        _selection_changed_conn.disconnect();
 
-    _tracker->addAdjustment(adj->gobj());
-
-    btn.addUnitTracker(_tracker.get());
-    btn.set_defocus_widget(_desktop->getCanvas());
-}
-
-RectToolbar::~RectToolbar()
-{
-    if (_repr) { // remove old listener
-        _repr->removeObserver(*this);
-        Inkscape::GC::release(_repr);
-        _repr = nullptr;
-    }
-    _changed.disconnect();
-}
-
-void RectToolbar::value_changed(Glib::RefPtr<Gtk::Adjustment> &adj, Glib::ustring const &value_name,
-                                void (SPRect::*setter)(gdouble))
-{
-    Unit const *unit = _tracker->getActiveUnit();
-    g_return_if_fail(unit != nullptr);
-
-    if (DocumentUndo::getUndoSensitive(_desktop->getDocument())) {
-        const Glib::ustring path = "/tools/shapes/rect/" + value_name;
-        Preferences::get()->setDouble(path, Quantity::convert(adj->get_value(), unit, "px"));
-    }
-
-    // quit if run by the attr_changed listener
-    if (_freeze || _tracker->isUpdating()) {
-        return;
-    }
-
-    // in turn, prevent listener from responding
-    _freeze = true;
-
-    bool modmade = false;
-    Inkscape::Selection *selection = _desktop->getSelection();
-    auto itemlist= selection->items();
-    for(auto i=itemlist.begin();i!=itemlist.end();++i){
-        if (is<SPRect>(*i)) {
-            if (adj->get_value() != 0) {
-                (cast<SPRect>(*i)->*setter)(Quantity::convert(adj->get_value(), unit, "px"));
-            } else {
-                (*i)->removeAttribute(value_name.c_str());
-            }
-            modmade = true;
+        if (_repr) {
+            _detachRepr();
         }
     }
 
-    sensitivize();
+    Toolbar::setDesktop(desktop);
 
-    if (modmade) {
+    if (_desktop) {
+        auto sel = _desktop->getSelection();
+        _selection_changed_conn = sel->connectChanged(sigc::mem_fun(*this, &RectToolbar::_selectionChanged));
+        _selectionChanged(sel); // Synthesize an emission to trigger the update
+
+        _sensitivize();
+    }
+}
+
+void RectToolbar::setActiveUnit(Util::Unit const *unit)
+{
+    _tracker->setActiveUnit(unit);
+}
+
+void RectToolbar::_attachRepr(XML::Node *repr, SPRect *rect)
+{
+    assert(!_repr);
+    _repr = repr;
+    _rect = rect;
+    GC::anchor(_repr);
+    _repr->addObserver(*this);
+}
+
+void RectToolbar::_detachRepr()
+{
+    assert(_repr);
+    _repr->removeObserver(*this);
+    GC::release(_repr);
+    _repr = nullptr;
+    _rect = nullptr;
+    _cancelUpdate();
+}
+
+void RectToolbar::_valueChanged(DerivedSpinButton &btn)
+{
+    // quit if run by the XML listener or a unit change
+    if (_blocker.pending() || _tracker->isUpdating()) {
+        return;
+    }
+
+    // in turn, prevent XML listener from responding
+    auto guard = _blocker.block();
+
+    auto const adj = btn.get_adjustment();
+
+    if (DocumentUndo::getUndoSensitive(_desktop->getDocument())) {
+        auto const path = Glib::ustring{"/tools/shapes/rect/"} + btn.name;
+        Preferences::get()->setDouble(path, Quantity::convert(adj->get_value(), _tracker->getActiveUnit(), "px"));
+    }
+
+    bool modified = false;
+    for (auto item : _desktop->getSelection()->items()) {
+        if (auto rect = cast<SPRect>(item)) {
+            if (adj->get_value() != 0) {
+                (rect->*btn.setter)(Quantity::convert(adj->get_value(), _tracker->getActiveUnit(), "px"));
+            } else {
+                rect->removeAttribute(btn.name);
+            }
+            modified = true;
+        }
+    }
+
+    _sensitivize();
+
+    if (modified) {
         DocumentUndo::done(_desktop->getDocument(), _("Change rectangle"), INKSCAPE_ICON("draw-rectangle"));
     }
-
-    _freeze = false;
 }
 
-void RectToolbar::sensitivize()
+void RectToolbar::_sensitivize()
 {
-    if (_rx_item.get_adjustment()->get_value() == 0 && _ry_item.get_adjustment()->get_value() == 0 &&
-        _single) { // only for a single selected rect (for now)
-        _not_rounded.set_sensitive(false);
-    } else {
-        _not_rounded.set_sensitive(true);
-    }
+    bool disabled = _rx_item.get_adjustment()->get_value() == 0 &&
+                    _ry_item.get_adjustment()->get_value() == 0 &&
+                    _single; // only for a single selected rect (for now)
+    _not_rounded.set_sensitive(!disabled);
 }
 
-void RectToolbar::defaults()
+void RectToolbar::_setDefaults()
 {
     _rx_item.get_adjustment()->set_value(0.0);
     _ry_item.get_adjustment()->set_value(0.0);
-
-    sensitivize();
+    _sensitivize();
 }
 
-void RectToolbar::watch_ec(SPDesktop *desktop, Inkscape::UI::Tools::ToolBase *tool)
+void RectToolbar::_selectionChanged(Selection *selection)
 {
-    // use of dynamic_cast<> seems wrong here -- we just need to check the current tool
-
-    if (dynamic_cast<Inkscape::UI::Tools::RectTool *>(tool)) {
-        Inkscape::Selection *sel = desktop->getSelection();
-
-        _changed = sel->connectChanged(sigc::mem_fun(*this, &RectToolbar::selection_changed));
-
-        // Synthesize an emission to trigger the update
-        selection_changed(sel);
-    } else {
-        if (_changed) {
-            _changed.disconnect();
-
-            if (_repr) { // remove old listener
-                _repr->removeObserver(*this);
-                Inkscape::GC::release(_repr);
-                _repr = nullptr;
-            }
-        }
+    if (_repr) {
+        _detachRepr();
     }
-}
 
-/**
- *  \param selection should not be NULL.
- */
-void RectToolbar::selection_changed(Inkscape::Selection *selection)
-{
     int n_selected = 0;
-    Inkscape::XML::Node *repr = nullptr;
-    SPItem *item = nullptr;
+    XML::Node *repr = nullptr;
+    SPRect *rect = nullptr;
 
-    if (_repr) { // remove old listener
-        _item = nullptr;
-        _repr->removeObserver(*this);
-        Inkscape::GC::release(_repr);
-        _repr = nullptr;
-    }
-
-    auto itemlist= selection->items();
-    for(auto i=itemlist.begin();i!=itemlist.end();++i){
-        if (is<SPRect>(*i)) {
+    for (auto item : selection->items()) {
+        if (auto r = cast<SPRect>(item)) {
             n_selected++;
-            item = *i;
-            repr = item->getRepr();
+            repr = r->getRepr();
+            rect = r;
         }
     }
 
-    _single = false;
+    _single = n_selected == 1;
 
-    if (n_selected == 0) {
-        _mode_item.set_markup(_("<b>New:</b>"));
-        _width_item.set_sensitive(false);
-        _height_item.set_sensitive(false);
-    } else if (n_selected == 1) {
-        _mode_item.set_markup(_("<b>Change:</b>"));
-        _single = true;
-        _width_item.set_sensitive(true);
-        _height_item.set_sensitive(true);
+    if (_single) {
+        _attachRepr(repr, rect);
+        _queueUpdate();
+    }
 
-        if (repr) {
-            _repr = repr;
-            _item = item;
-            Inkscape::GC::anchor(_repr);
-            _repr->addObserver(*this);
-            _repr->synthesizeEvents(*this);
-        }
-    } else {
-        // FIXME: implement averaging of all parameters for multiple selected
-        //gtk_label_set_markup(GTK_LABEL(l), _("<b>Average:</b>"));
-        _mode_item.set_markup(_("<b>Change:</b>"));
-        sensitivize();
+    _mode_item.set_markup(n_selected == 0 ? _("<b>New:</b>") : _("<b>Change:</b>"));
+    _width_item.set_sensitive(n_selected > 0);
+    _height_item.set_sensitive(n_selected > 0);
+
+    if (!_single) { // otherwise handled by _queueUpdate
+        _sensitivize();
     }
 }
 
-void RectToolbar::notifyAttributeChanged(Inkscape::XML::Node &repr, GQuark,
-                                         Inkscape::Util::ptr_shared,
-                                         Inkscape::Util::ptr_shared)
+void RectToolbar::notifyAttributeChanged(XML::Node &, GQuark, Util::ptr_shared, Util::ptr_shared)
 {
-    // quit if run by the _changed callbacks
-    if (_freeze) {
+    assert(_repr);
+    assert(_rect);
+
+    // quit if run by the UI callbacks
+    if (_blocker.pending()) {
         return;
     }
 
-    // in turn, prevent callbacks from responding
-    _freeze = true;
+    _queueUpdate();
+}
 
-    auto unit = _tracker->getActiveUnit();
-    if (!unit) {
+// Todo: Code duplication; move into Toolbar container
+// Todo: Similarly for setDefocusWidget() handling.
+void RectToolbar::_queueUpdate()
+{
+    if (_tick_callback) {
         return;
     }
 
-    auto rx_adj = _rx_item.get_adjustment();
-    auto ry_adj = _ry_item.get_adjustment();
-    auto width_adj = _width_item.get_adjustment();
-    auto height_adj = _height_item.get_adjustment();
+    _tick_callback = add_tick_callback([this] (Glib::RefPtr<Gdk::FrameClock> const &) {
+        _update();
+        _tick_callback = 0;
+        return false;
+    });
+}
 
-    if (auto rect = cast<SPRect>(_item)) {
-        rx_adj->set_value(Quantity::convert(rect->getVisibleRx(), "px", unit));
-        ry_adj->set_value(Quantity::convert(rect->getVisibleRy(), "px", unit));
-        width_adj->set_value(Quantity::convert(rect->getVisibleWidth(), "px", unit));
-        height_adj->set_value(Quantity::convert(rect->getVisibleHeight(), "px", unit));
+void RectToolbar::_cancelUpdate()
+{
+    if (!_tick_callback) {
+        return;
     }
 
-    sensitivize();
-    _freeze = false;
+    remove_tick_callback(_tick_callback);
+    _tick_callback = 0;
+}
+
+void RectToolbar::_update()
+{
+    assert(_repr);
+    assert(_rect);
+
+    // prevent UI callbacks from responding
+    auto guard = _blocker.block();
+
+    for (auto sb : _getDerivedSpinButtons()) {
+        sb->get_adjustment()->set_value(Quantity::convert((_rect->*sb->getter)(), "px", _tracker->getActiveUnit()));
+    }
+
+    _sensitivize();
 }
 
 } // namespace Inkscape::UI::Toolbar

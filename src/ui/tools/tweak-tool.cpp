@@ -994,7 +994,7 @@ sp_tweak_switch_mode (TweakTool *tc, gint mode, bool with_shift)
     auto tb = dynamic_cast<UI::Toolbar::TweakToolbar*>(tc->getDesktop()->get_toolbar_by_name("TweakToolbar"));
 
     if(tb) {
-        tb->set_mode(mode);
+        tb->setMode(mode);
     } else {
         std::cerr << "Could not access Tweak toolbar" << std::endl;
     }
@@ -1014,7 +1014,7 @@ sp_tweak_switch_mode_temporarily (TweakTool *tc, gint mode, bool with_shift)
     auto tb = dynamic_cast<UI::Toolbar::TweakToolbar*>(tc->getDesktop()->get_toolbar_by_name("TweakToolbar"));
 
     if(tb) {
-        tb->set_mode(mode);
+        tb->setMode(mode);
     } else {
         std::cerr << "Could not access Tweak toolbar" << std::endl;
     }

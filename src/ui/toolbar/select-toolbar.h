@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /** \file
- * Selector aux toolbar
+ * Select toolbar
  */
 /*
  * Authors:
@@ -8,21 +8,20 @@
  *   bulia byak <bulia@dr.com>
  *   Vaibhav Malik <vaibhavmalik2018@gmail.com>
  *
- * Copyright (C) 2003 authors
+ * Copyright (C) 2003 Authors
  *
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_SELECT_TOOLBAR_H
-#define SEEN_SELECT_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_SELECT_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_SELECT_TOOLBAR_H
 
 #include <memory>
 #include <string>
 #include <vector>
-#include <glibmm/refptr.h>
 
 #include "toolbar.h"
-#include <sigc++/scoped_connection.h>
+#include "ui/operation-blocker.h"
 
 namespace Gtk {
 class Adjustment;
@@ -30,31 +29,28 @@ class ToggleButton;
 class Builder;
 } // namespace Gtk
 
-class SPDesktop;
-
 namespace Inkscape {
-
 class Selection;
-
-namespace UI {
-
-namespace Widget {
-class UnitTracker;
+namespace UI::Widget {
 class SpinButton;
-} // namespace Widget
+class UnitTracker;
+} // namespace UI::Widget
+} // namespace Inkscape
 
-namespace Toolbar {
+namespace Inkscape::UI::Toolbar {
 
-class SelectToolbar final : public Toolbar
+class SelectToolbar : public Toolbar
 {
 public:
-    using parent_type = Toolbar;
-
-    SelectToolbar(SPDesktop *desktop);
+    SelectToolbar();
     ~SelectToolbar() override;
 
+    void setDesktop(SPDesktop *desktop) override;
+    void setActiveUnit(Util::Unit const *unit) override;
+
 private:
-    Glib::RefPtr<Gtk::Builder> _builder;
+    SelectToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     std::unique_ptr<UI::Widget::UnitTracker> _tracker;
 
     Gtk::ToggleButton &_select_touch_btn;
@@ -64,41 +60,40 @@ private:
     Gtk::ToggleButton &_transform_gradient_btn;
     Gtk::ToggleButton &_transform_pattern_btn;
 
-    Inkscape::UI::Widget::SpinButton &_x_item;
-    Inkscape::UI::Widget::SpinButton &_y_item;
-    Inkscape::UI::Widget::SpinButton &_w_item;
-    Inkscape::UI::Widget::SpinButton &_h_item;
+    UI::Widget::SpinButton &_x_item;
+    UI::Widget::SpinButton &_y_item;
+    UI::Widget::SpinButton &_w_item;
+    UI::Widget::SpinButton &_h_item;
     Gtk::ToggleButton &_lock_btn;
 
     std::vector<Gtk::Widget *> _context_items;
-    std::vector<sigc::scoped_connection> _connections;
 
-    bool _update;
+    OperationBlocker _blocker;
+
     std::string _action_key;
     std::string const _action_prefix;
 
     char const *get_action_key(double mh, double sh, double mv, double sv);
-    void any_value_changed(Glib::RefPtr<Gtk::Adjustment>& adj);
-    void layout_widget_update(Inkscape::Selection *sel);
-    void on_inkscape_selection_modified(Inkscape::Selection *selection, unsigned flags);
-    void on_inkscape_selection_changed (Inkscape::Selection *selection);
+    void any_value_changed(Glib::RefPtr<Gtk::Adjustment> const &adj);
+    void layout_widget_update(Selection *sel);
     void toggle_lock();
     void toggle_touch();
     void toggle_stroke();
     void toggle_corners();
     void toggle_gradient();
     void toggle_pattern();
-    void setup_derived_spin_button(Inkscape::UI::Widget::SpinButton &btn, Glib::ustring const &name);
+    void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name);
+    void _sensitize();
 
-    void on_realize() final;
-    void on_unrealize() final;
+    void _selectionChanged(Selection *selection);
+    void _selectionModified(Selection *selection, unsigned flags);
+    sigc::connection _selection_changed_conn;
+    sigc::connection _selection_modified_conn;
 };
 
-} // namespace Widget
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_SELECT_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_SELECT_TOOLBAR_H
 
 /*
   Local Variables:

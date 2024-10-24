@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_STAR_TOOLBAR_H
-#define SEEN_STAR_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_STAR_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_STAR_TOOLBAR_H
 
 /**
- * @file
- * Star aux toolbar
+ * @file Star toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -30,6 +29,7 @@
  */
 
 #include "toolbar.h"
+#include "ui/operation-blocker.h"
 #include "xml/node-observer.h"
 
 namespace Gtk {
@@ -38,37 +38,34 @@ class Label;
 class ToggleButton;
 } // namespace Gtk
 
-class SPDesktop;
-
 namespace Inkscape {
 class Selection;
-
-namespace XML {
-class Node;
-}
-
 namespace UI {
-namespace Tools {
-class ToolBase;
-}
-
+namespace Tools { class ToolBase; }
 namespace Widget {
+class Label;
 class SpinButton;
-}
+} // namespace Widget
+} // namespace UI
+namespace XML { class Node; }
+} // namespace Inkscape
 
-namespace Toolbar {
+namespace Inkscape::UI::Toolbar {
 
-class StarToolbar final
+class StarToolbar
     : public Toolbar
     , private XML::NodeObserver
 {
 public:
-    StarToolbar(SPDesktop *desktop);
+    StarToolbar();
     ~StarToolbar() override;
 
+    void setDesktop(SPDesktop *desktop) override;
+
 private:
+    StarToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     using ValueChangedMemFun = void (StarToolbar::*)();
-    Glib::RefPtr<Gtk::Builder> _builder;
 
     Gtk::Label &_mode_item;
     std::vector<Gtk::ToggleButton *> _flat_item_buttons;
@@ -78,29 +75,27 @@ private:
     UI::Widget::SpinButton &_roundedness_item;
     UI::Widget::SpinButton &_randomization_item;
 
-    XML::Node *_repr{nullptr};
+    XML::Node *_repr = nullptr;
+    void _attachRepr(XML::Node *repr);
+    void _detachRepr();
 
     bool _batchundo = false;
-    bool _freeze{false};
-    sigc::connection _changed;
+    OperationBlocker _blocker;
+    sigc::connection _selection_changed_conn;
 
     void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name, double default_value,
-                                   ValueChangedMemFun const value_changed_mem_fun);
+                                   ValueChangedMemFun value_changed_mem_fun);
     void side_mode_changed(int mode);
     void magnitude_value_changed();
     void proportion_value_changed();
     void rounded_value_changed();
     void randomized_value_changed();
-    void defaults();
-    void watch_tool(SPDesktop *desktop, UI::Tools::ToolBase *tool);
-    void selection_changed(Selection *selection);
+    void _setDefaults();
+    void _selectionChanged(Selection *selection);
 
-    void notifyAttributeChanged(Inkscape::XML::Node &node, GQuark name, Inkscape::Util::ptr_shared old_value,
-                                Inkscape::Util::ptr_shared new_value) final;
+    void notifyAttributeChanged(XML::Node &node, GQuark name, Util::ptr_shared old_value, Util::ptr_shared new_value) override;
 };
 
-}
-}
-}
+} // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_SELECT_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_STAR_TOOLBAR_H

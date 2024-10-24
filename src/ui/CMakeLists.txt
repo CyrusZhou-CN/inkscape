@@ -288,6 +288,7 @@ set(ui_SRC
 	controller.h
 	cursor-utils.h
 	control-types.h
+	defocus-target.h
 	dialog-events.h
 	dialog-run.h
 	drag-and-drop.h

@@ -27,7 +27,7 @@ public:
         unsigned int& _c;
     };
 
-    scoped_block block() {
+    [[nodiscard]] scoped_block block() {
         return scoped_block(_counter);
     }
 

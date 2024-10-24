@@ -150,8 +150,7 @@ void InkSpinButton::construct() {
     //                  GTK4
     // -------------   SIGNALS   -------------
 
-    // GTKMM4 missing signal_activate()!
-    g_signal_connect(G_OBJECT(_entry.gobj()), "activate", G_CALLBACK(on_activate_c), this);
+    _entry.signal_activate().connect([this] { on_activate(); });
 
     // Value (button) NOT USED, Click handled by zero length drag.
     // m_value->signal_clicked().connect(sigc::mem_fun(*this, &SpinButton::on_value_clicked));
@@ -617,12 +616,6 @@ void InkSpinButton::on_changed() {
 
 void InkSpinButton::on_editing_done() {
     // NOT USED
-}
-
-// GTKMM4 bindings are missing signal_activate()!!
-void InkSpinButton::on_activate_c(GtkEntry* entry, gpointer user_data) {
-    auto spinbutton = static_cast<InkSpinButton*>(user_data);
-    spinbutton->on_activate();
 }
 
 void InkSpinButton::start_spinning(double steps, Gdk::ModifierType state, Glib::RefPtr<Gtk::GestureClick>& gesture) {

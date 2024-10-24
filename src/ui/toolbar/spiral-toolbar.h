@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_SPIRAL_TOOLBAR_H
-#define SEEN_SPIRAL_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_SPIRAL_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_SPIRAL_TOOLBAR_H
 
 /**
- * @file
- * Spiral aux toolbar
+ * @file Spiral toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -30,6 +29,7 @@
  */
 
 #include "toolbar.h"
+#include "ui/operation-blocker.h"
 #include "xml/node-observer.h"
 
 namespace Gtk {
@@ -38,57 +38,52 @@ class Label;
 class Adjustment;
 } // namespace Gtk
 
-class SPDesktop;
-
 namespace Inkscape {
 class Selection;
+namespace UI::Widget { class SpinButton; }
+namespace XML { class Node; }
+} // namespace Inkscape
 
-namespace XML {
-class Node;
-}
+namespace Inkscape::UI::Toolbar {
 
-namespace UI {
-namespace Widget {
-class SpinButton;
-}
-
-namespace Toolbar {
-
-class SpiralToolbar final
+class SpiralToolbar
     : public Toolbar
     , private XML::NodeObserver
 {
 public:
-    SpiralToolbar(SPDesktop *desktop);
-    ~SpiralToolbar() override;
+    SpiralToolbar();
+
+    void setDesktop(SPDesktop *desktop) override;
 
 private:
-    Glib::RefPtr<Gtk::Builder> _builder;
+    SpiralToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     Gtk::Label &_mode_item;
 
     UI::Widget::SpinButton &_revolution_item;
     UI::Widget::SpinButton &_expansion_item;
     UI::Widget::SpinButton &_t0_item;
 
-    bool _freeze{false};
+    OperationBlocker _blocker;
 
-    XML::Node *_repr{nullptr};
+    XML::Node *_repr = nullptr;
+    void _attachRepr(XML::Node *repr);
+    void _detachRepr();
 
-    void value_changed(Glib::RefPtr<Gtk::Adjustment> &adj, Glib::ustring const &value_name);
-    void defaults();
-    void selection_changed(Inkscape::Selection *selection);
+    void _setupDerivedSpinButton(UI::Widget::SpinButton &btn, Glib::ustring const &name, double default_value);
+    void _valueChanged(Glib::RefPtr<Gtk::Adjustment> &adj, Glib::ustring const &value_name);
+    void _setDefaults();
 
-    std::unique_ptr<sigc::connection> _connection;
+    sigc::connection _selection_changed_conn;
+    void _selectionChanged(Selection *selection);
 
-    void event_attr_changed(XML::Node &repr);
-
-	void notifyAttributeChanged(Inkscape::XML::Node &node, GQuark key, Inkscape::Util::ptr_shared oldval, Inkscape::Util::ptr_shared newval) final;
-
-    void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name, double default_value);
+    void notifyAttributeChanged(XML::Node &node, GQuark key, Util::ptr_shared oldval, Util::ptr_shared newval) override;
+    void _queueUpdate();
+    void _cancelUpdate();
+    void _update();
+    unsigned _tick_callback = 0;
 };
 
-} // namespace Toolbar
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_SPIRAL_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_SPIRAL_TOOLBAR_H

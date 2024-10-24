@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file
- * Zoom aux toolbar: Temp until we convert all toolbars to ui files with Gio::Actions.
+ * @file Zoom toolbar
  */
 /* Authors:
  *   Tavmjong Bah <tavmjong@free.fr>
@@ -18,14 +17,10 @@
 
 namespace Inkscape::UI::Toolbar {
 
-ZoomToolbar::ZoomToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    , _builder(create_builder("toolbar-zoom.ui"))
+ZoomToolbar::ZoomToolbar()
+    : Toolbar{get_widget<Gtk::Box>(create_builder("toolbar-zoom.ui"), "zoom-toolbar")}
 {
-    _toolbar = &get_widget<Gtk::Box>(_builder, "zoom-toolbar");
-
-    set_child(*_toolbar);
-    init_menu_btns();
+    _initMenuBtns();
 }
 
 ZoomToolbar::~ZoomToolbar() = default;

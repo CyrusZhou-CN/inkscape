@@ -41,7 +41,7 @@ FilterColorMatrix::ColorMatrixMatrix::ColorMatrixMatrix(std::vector<double> cons
     }
 }
 
-guint32 FilterColorMatrix::ColorMatrixMatrix::operator()(guint32 in)
+guint32 FilterColorMatrix::ColorMatrixMatrix::operator()(guint32 in) const
 {
     EXTRACT_ARGB32(in, a, r, g, b)
     // we need to un-premultiply alpha values for this type of matrix

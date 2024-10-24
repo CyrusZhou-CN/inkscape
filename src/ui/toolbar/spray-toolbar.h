@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_SPRAY_TOOLBAR_H
-#define SEEN_SPRAY_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_SPRAY_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_SPRAY_TOOLBAR_H
 
 /**
- * @file
- * Spray aux toolbar
+ * @file Spray toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -37,30 +36,25 @@ class ToggleButton;
 class Builder;
 } // namespace Gtk
 
-class SPDesktop;
-
-namespace Inkscape {
-namespace UI {
+namespace Inkscape::UI {
 class SimplePrefPusher;
+namespace Widget { class SpinButton; }
+} // namespace Inkscape::UI
 
-namespace Widget {
-class SpinButton;
-}
+namespace Inkscape::UI::Toolbar {
 
-namespace Toolbar {
-
-class SprayToolbar final : public Toolbar
+class SprayToolbar : public Toolbar
 {
 public:
-    SprayToolbar(SPDesktop *desktop);
+    SprayToolbar();
     ~SprayToolbar() override;
 
-    void set_mode(int mode);
+    void setMode(int mode);
 
 private:
-    using ValueChangedMemFun = void (SprayToolbar::*)();
+    SprayToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
 
-    Glib::RefPtr<Gtk::Builder> _builder;
+    using ValueChangedMemFun = void (SprayToolbar::*)();
 
     std::vector<Gtk::ToggleButton *> _mode_buttons;
 
@@ -107,10 +101,9 @@ private:
     void toggle_pressure_scale();
     void toggle_picker();
     void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name, double default_value,
-                                   ValueChangedMemFun const value_changed_mem_fun);
+                                   ValueChangedMemFun value_changed_mem_fun);
 };
-}
-}
-}
 
-#endif /* !SEEN_SELECT_TOOLBAR_H */
+} // namespace Inkscape::UI::Toolbar
+
+#endif // INKSCAPE_UI_TOOLBAR_SPRAY_TOOLBAR_H

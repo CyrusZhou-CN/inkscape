@@ -54,7 +54,7 @@ public:
     struct ColorMatrixMatrix
     {
         ColorMatrixMatrix(std::vector<double> const &values);
-        guint32 operator()(guint32 in);
+        guint32 operator()(guint32 in) const;
     private:
         gint32 _v[20];
     };

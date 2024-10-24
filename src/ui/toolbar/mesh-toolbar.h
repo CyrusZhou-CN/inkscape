@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+/**
+ * @file Mesh toolbar
+ */
 /*
- * Mesh aux toolbar
- *
  * Authors:
  *   bulia byak <bulia@dr.com>
  *   Tavmjong Bah <tavmjong@free.fr>
@@ -13,15 +14,14 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_MESH_TOOLBAR_H
-#define SEEN_MESH_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_MESH_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_MESH_TOOLBAR_H
 
 #include <vector>
-#include <glibmm/refptr.h>
 
 #include "toolbar.h"
+#include "ui/operation-blocker.h"
 
-class SPDesktop;
 class SPObject;
 
 namespace Gtk {
@@ -30,34 +30,31 @@ class ToggleButton;
 } // namespace Gtk
 
 namespace Inkscape {
-
 class Selection;
-
 namespace UI {
-
 class SimplePrefPusher;
-
-namespace Tools {
-class ToolBase;
-} // namespace Tools
-
+namespace Tools { class MeshTool; }
 namespace Widget {
 class ComboToolItem;
 class SpinButton;
 } // namespace Widget
+} // namespace UI
+} // namespace Inkscape
 
-namespace Toolbar {
+namespace Inkscape::UI::Toolbar {
 
-class MeshToolbar final : public Toolbar
+class MeshToolbar : public Toolbar
 {
 public:
-    MeshToolbar(SPDesktop *desktop);
-    ~MeshToolbar() final;
+    MeshToolbar();
+    ~MeshToolbar() override;
+
+    void setDesktop(SPDesktop *desktop) override;
 
 private:
-    using ValueChangedMemFun = void (MeshToolbar::*)();
+    MeshToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
 
-    Glib::RefPtr<Gtk::Builder> _builder;
+    using ValueChangedMemFun = void (MeshToolbar::*)();
 
     std::vector<Gtk::ToggleButton *> _new_type_buttons;
     std::vector<Gtk::ToggleButton *> _new_fillstroke_buttons;
@@ -73,6 +70,8 @@ private:
     std::unique_ptr<UI::SimplePrefPusher> _edit_stroke_pusher;
     std::unique_ptr<UI::SimplePrefPusher> _show_handles_pusher;
 
+    OperationBlocker _blocker;
+
     sigc::connection c_selection_changed;
     sigc::connection c_selection_modified;
     sigc::connection c_subselection_changed;
@@ -80,32 +79,27 @@ private:
     sigc::connection c_defs_modified;
 
     void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name, double default_value,
-                                   ValueChangedMemFun const value_changed_mem_fun);
+                                   ValueChangedMemFun value_changed_mem_fun);
     void new_geometry_changed(int mode);
     void new_fillstroke_changed(int mode);
     void row_changed();
     void col_changed();
     void toggle_fill_stroke();
-    void selection_changed(Inkscape::Selection *selection);
+    void selection_changed();
     void toggle_handles();
-    void watch_ec(SPDesktop* desktop, Inkscape::UI::Tools::ToolBase* tool);
-    void selection_modified(Inkscape::Selection *selection, guint flags);
-    void drag_selection_changed(gpointer dragger);
-    void defs_release(SPObject *defs);
-    void defs_modified(SPObject *defs, guint flags);
     void warning_popup();
     void type_changed(int mode);
     void toggle_sides();
     void make_elliptical();
     void pick_colors();
     void fit_mesh();
+
+    Tools::MeshTool *get_mesh_tool() const;
 };
 
-} // namespace Toolbar
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_MESH_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_MESH_TOOLBAR_H
 
 /*
   Local Variables:

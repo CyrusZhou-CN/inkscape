@@ -45,7 +45,7 @@ using Inkscape::IO::Resource::UIS;
 
 namespace Inkscape::UI::Toolbar {
 
-class SearchCols final : public Gtk::TreeModel::ColumnRecord
+class SearchCols : public Gtk::TreeModel::ColumnRecord
 {
 public:
     // These types must match those for the model in the ui file
@@ -60,37 +60,35 @@ public:
     Gtk::TreeModelColumn<Glib::ustring> key;
 };
 
-PageToolbar::PageToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    , _builder(create_builder("toolbar-page.ui"))
-    , _combo_page_sizes(get_widget<Gtk::ComboBoxText>(_builder, "_combo_page_sizes"))
-    , _text_page_margins(get_widget<Gtk::Entry>(_builder, "_text_page_margins"))
-    , _margin_popover(get_widget<Gtk::Popover>(_builder, "margin_popover"))
-    , _text_page_bleeds(get_widget<Gtk::Entry>(_builder, "_text_page_bleeds"))
-    , _text_page_label(get_widget<Gtk::Entry>(_builder, "_text_page_label"))
-    , _label_page_pos(get_widget<Gtk::Label>(_builder, "_label_page_pos"))
-    , _btn_page_backward(get_widget<Gtk::Button>(_builder, "_btn_page_backward"))
-    , _btn_page_foreward(get_widget<Gtk::Button>(_builder, "_btn_page_foreward"))
-    , _btn_page_delete(get_widget<Gtk::Button>(_builder, "_btn_page_delete"))
-    , _btn_move_toggle(get_widget<Gtk::Button>(_builder, "_btn_move_toggle"))
-    , _sep1(get_widget<Gtk::Separator>(_builder, "_sep1"))
-    , _sizes_list(get_object<Gtk::ListStore>(_builder, "_sizes_list"))
-    , _sizes_search(get_object<Gtk::ListStore>(_builder, "_sizes_search"))
-    , _margin_top(get_derived_widget<UI::Widget::MathSpinButton>(_builder, "_margin_top"))
-    , _margin_right(get_derived_widget<UI::Widget::MathSpinButton>(_builder, "_margin_right"))
-    , _margin_bottom(get_derived_widget<UI::Widget::MathSpinButton>(_builder, "_margin_bottom"))
-    , _margin_left(get_derived_widget<UI::Widget::MathSpinButton>(_builder, "_margin_left"))
+PageToolbar::PageToolbar()
+    : PageToolbar{create_builder("toolbar-page.ui")}
+{}
+
+PageToolbar::PageToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
+    : Toolbar{get_widget<Gtk::Box>(builder, "page-toolbar")}
+    , _combo_page_sizes(get_widget<Gtk::ComboBoxText>(builder, "_combo_page_sizes"))
+    , _text_page_margins(get_widget<Gtk::Entry>(builder, "_text_page_margins"))
+    , _margin_popover(get_widget<Gtk::Popover>(builder, "margin_popover"))
+    , _text_page_bleeds(get_widget<Gtk::Entry>(builder, "_text_page_bleeds"))
+    , _text_page_label(get_widget<Gtk::Entry>(builder, "_text_page_label"))
+    , _label_page_pos(get_widget<Gtk::Label>(builder, "_label_page_pos"))
+    , _btn_page_backward(get_widget<Gtk::Button>(builder, "_btn_page_backward"))
+    , _btn_page_foreward(get_widget<Gtk::Button>(builder, "_btn_page_foreward"))
+    , _btn_page_delete(get_widget<Gtk::Button>(builder, "_btn_page_delete"))
+    , _btn_move_toggle(get_widget<Gtk::Button>(builder, "_btn_move_toggle"))
+    , _sep1(get_widget<Gtk::Separator>(builder, "_sep1"))
+    , _sizes_list(get_object<Gtk::ListStore>(builder, "_sizes_list"))
+    , _sizes_search(get_object<Gtk::ListStore>(builder, "_sizes_search"))
+    , _margin_top(get_derived_widget<UI::Widget::MathSpinButton>(builder, "_margin_top"))
+    , _margin_right(get_derived_widget<UI::Widget::MathSpinButton>(builder, "_margin_right"))
+    , _margin_bottom(get_derived_widget<UI::Widget::MathSpinButton>(builder, "_margin_bottom"))
+    , _margin_left(get_derived_widget<UI::Widget::MathSpinButton>(builder, "_margin_left"))
 {
     set_name("PageToolbar");
 
-    _toolbar = &get_widget<Gtk::Box>(_builder, "page-toolbar");
-
-    set_child(*_toolbar);
-    init_menu_btns();
-
     _text_page_label.signal_changed().connect(sigc::mem_fun(*this, &PageToolbar::labelEdited));
 
-    get_object<Gtk::EntryCompletion>(_builder, "_sizes_searcher")
+    get_object<Gtk::EntryCompletion>(builder, "_sizes_searcher")
         ->signal_match_selected()
         .connect(
             [this] (Gtk::TreeModel::iterator const &iter) {
@@ -159,15 +157,39 @@ PageToolbar::PageToolbar(SPDesktop *desktop)
         populate_sizes();
     }
 
-    // Watch for when the tool changes
-    _ec_connection = _desktop->connectEventContextChanged(sigc::mem_fun(*this, &PageToolbar::toolChanged));
-    _doc_connection = _desktop->connectDocumentReplaced([this](SPDesktop *desktop, SPDocument *doc) {
-        if (doc) {
-            toolChanged(desktop, desktop->getTool());
-        }
-    });
+    _initMenuBtns();
+}
 
-    toolChanged(desktop, desktop->getTool());
+PageToolbar::~PageToolbar() = default;
+
+void PageToolbar::setDesktop(SPDesktop *desktop)
+{
+    if (_desktop) {
+        // Disconnect previous page changed signal
+        _page_selected.disconnect();
+        _pages_changed.disconnect();
+        _page_modified.disconnect();
+        _document = nullptr;
+    }
+
+    Toolbar::setDesktop(desktop);
+
+    if (_desktop) {
+        _document = _desktop->getDocument();
+        assert(_document);
+
+        _doc_connection = _desktop->connectDocumentReplaced([this] (SPDesktop *, SPDocument *doc) {
+            setDesktop(_desktop);
+        });
+
+        // Save the document and page_manager for future use.
+        auto &page_manager = _document->getPageManager();
+        // Connect the page changed signal and indicate changed
+        _pages_changed = page_manager.connectPagesChanged(sigc::mem_fun(*this, &PageToolbar::pagesChanged));
+        _page_selected = page_manager.connectPageSelected(sigc::mem_fun(*this, &PageToolbar::selectionChanged));
+        // Update everything now.
+        pagesChanged();
+    }
 }
 
 /**
@@ -189,44 +211,18 @@ void PageToolbar::populate_sizes()
 
             if (preset->is_visible(Inkscape::Extension::TEMPLATE_SIZE_LIST)) {
                 // Goes into drop down
-                Gtk::TreeModel::Row row = *(_sizes_list->append());
+                Gtk::TreeModel::Row row = *_sizes_list->append();
                 row[cols.name] = _(preset->get_name().c_str());
                 row[cols.label] = " <small><span fgalpha=\"50%\">" + label + "</span></small>";
                 row[cols.key] = preset->get_key();
             }
             if (preset->is_visible(Inkscape::Extension::TEMPLATE_SIZE_SEARCH)) {
                 // Goes into text search
-                Gtk::TreeModel::Row row = *(_sizes_search->append());
+                Gtk::TreeModel::Row row = *_sizes_search->append();
                 row[cols.name] = _(preset->get_name().c_str());
                 row[cols.label] = label;
                 row[cols.key] = preset->get_key();
             }
-        }
-    }
-}
-
-PageToolbar::~PageToolbar()
-{
-    toolChanged(nullptr, nullptr);
-}
-
-void PageToolbar::toolChanged(SPDesktop *desktop, Inkscape::UI::Tools::ToolBase *tool)
-{
-    // Disconnect previous page changed signal
-    _page_selected.disconnect();
-    _pages_changed.disconnect();
-    _page_modified.disconnect();
-    _document = nullptr;
-
-    if (dynamic_cast<Inkscape::UI::Tools::PagesTool *>(tool)) {
-        // Save the document and page_manager for future use.
-        if ((_document = desktop->getDocument())) {
-            auto &page_manager = _document->getPageManager();
-            // Connect the page changed signal and indicate changed
-            _pages_changed = page_manager.connectPagesChanged(sigc::mem_fun(*this, &PageToolbar::pagesChanged));
-            _page_selected = page_manager.connectPageSelected(sigc::mem_fun(*this, &PageToolbar::selectionChanged));
-            // Update everything now.
-            pagesChanged();
         }
     }
 }

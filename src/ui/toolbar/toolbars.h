@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /** @file
  *
- * A container for tool toolbars, displaying one toolbar at a time.
+ * A container for toolbars, displaying one toolbar at a time.
  *
  *//*
  * Authors: Tavmjong Bah
@@ -14,45 +14,38 @@
 #ifndef SEEN_TOOLBARS_H
 #define SEEN_TOOLBARS_H
 
-#include <map>
-#include <glibmm/ustring.h>
+#include <string>
+#include <unordered_map>
 #include <gtkmm/box.h>
 
 class SPDesktop;
+namespace Inkscape::UI::Tools { class ToolBase; }
+namespace Inkscape::Util { class Unit; }
 
-namespace Gtk {
-class Grid;
-} // namespace Gtk
+namespace Inkscape::UI::Toolbar {
 
-namespace Inkscape::UI {
-
-namespace Tools {
-  class ToolBase;
-} // namespace Tools
-
-namespace Toolbar {
+class Toolbar;
 
 /**
- * \brief A container for tool toolbars.
+ * \brief A container for toolbars.
  *
- * \detail A container for tool toolbars that display one toolbar at a time.
- *         The container tracks which toolbar is shown.
+ * Displays one toolbar at a time.
  */
-class Toolbars final : public Gtk::Box
+class Toolbars : public Gtk::Box
 {
 public:
     Toolbars();
+    ~Toolbars() override;
 
-    void create_toolbars(SPDesktop *desktop);
-    void change_toolbar(SPDesktop *desktop, Tools::ToolBase *tool);
+    void setTool(Tools::ToolBase *tool);
+    void setActiveUnit(Util::Unit const *unit);
 
 private:
-    std::map<Glib::ustring, Gtk::Grid*> toolbar_map;
-    GtkWidget *current_toolbar = nullptr;
+    std::unordered_map<std::string, std::unique_ptr<Toolbar>> _toolbars;
+    Toolbar *_current_toolbar = nullptr;
 };
 
-} // namespace Toolbar
-} // namespace Inkscape::UI
+} // namespace Inkscape::UI::Toolbar
 
 #endif // SEEN_TOOLBARS_H
 

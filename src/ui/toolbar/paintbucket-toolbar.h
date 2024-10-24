@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_PAINTBUCKET_TOOLBAR_H
-#define SEEN_PAINTBUCKET_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_PAINTBUCKET_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_PAINTBUCKET_TOOLBAR_H
 
 /**
- * @file
- * Paintbucket aux toolbar
+ * @file Paintbucket toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -33,32 +32,28 @@
 
 #include "toolbar.h"
 
-namespace Gtk {
-class Builder;
-} // namespace Gtk
+namespace Gtk { class Builder; }
 
-class SPDesktop;
-
-namespace Inkscape::UI {
-
-namespace Widget {
+namespace Inkscape::UI::Widget {
 class ComboToolItem;
 class UnitTracker;
 class SpinButton;
-} // namespace Widget
+} // namespace Inkscape::UI::Widget
 
-namespace Toolbar {
+namespace Inkscape::UI::Toolbar {
 
-class PaintbucketToolbar final : public Toolbar
+class PaintbucketToolbar : public Toolbar
 {
 public:
-    PaintbucketToolbar(SPDesktop *desktop);
+    PaintbucketToolbar();
     ~PaintbucketToolbar() override;
 
-private:
-    using ValueChangedMemFun = void (PaintbucketToolbar::*)();
+    void setActiveUnit(Util::Unit const *unit) override;
 
-    Glib::RefPtr<Gtk::Builder> _builder;
+private:
+    PaintbucketToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
+    using ValueChangedMemFun = void (PaintbucketToolbar::*)();
 
     std::unique_ptr<UI::Widget::UnitTracker> _tracker;
 
@@ -77,11 +72,9 @@ private:
     void defaults();
 };
 
-} // namespace Toolbar
+} // Inkscape::UI::Toolbar
 
-} // namespace Inkscape::UI
-
-#endif /* !SEEN_PAINTBUCKET_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_PAINTBUCKET_TOOLBAR_H
 
 /*
   Local Variables:

@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_BOX3D_TOOLBAR_H
-#define SEEN_BOX3D_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_BOX3D_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_BOX3D_TOOLBAR_H
 
 /**
- * @file
- * 3d box aux toolbar
+ * @file 3d box toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -31,6 +30,7 @@
 
 #include "axis-manip.h"
 #include "toolbar.h"
+#include "ui/operation-blocker.h"
 #include "xml/node-observer.h"
 
 namespace Gtk {
@@ -39,36 +39,29 @@ class ToggleButton;
 } // namespace Gtk
 
 class Persp3D;
-class SPDesktop;
 
 namespace Inkscape {
 class Selection;
-
-namespace XML {
-class Node;
-}
-
 namespace UI {
-namespace Widget {
-class SpinButton;
-}
+namespace Tools { class ToolBase; }
+namespace Widget { class SpinButton; }
+} // namespace UI
+namespace XML { class Node; }
+} // namespace Inkscape
 
-namespace Tools {
-class ToolBase;
-}
+namespace Inkscape::UI::Toolbar {
 
-namespace Toolbar {
-
-class Box3DToolbar final
+class Box3DToolbar
     : public Toolbar
     , private XML::NodeObserver
 {
 public:
-    Box3DToolbar(SPDesktop *desktop);
-    ~Box3DToolbar() override;
+    Box3DToolbar();
+
+    void setDesktop(SPDesktop *desktop) override;
 
 private:
-    Glib::RefPtr<Gtk::Builder> _builder;
+    Box3DToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
 
     UI::Widget::SpinButton &_angle_x_item;
     UI::Widget::SpinButton &_angle_y_item;
@@ -78,29 +71,31 @@ private:
     Gtk::ToggleButton &_vp_y_state_btn;
     Gtk::ToggleButton &_vp_z_state_btn;
 
-    XML::Node *_repr{nullptr};
-    bool _freeze{false};
+    XML::Node *_repr = nullptr;
+    Persp3D *_persp = nullptr;
+    void _attachRepr(XML::Node *repr, Persp3D *persp);
+    void _detachRepr();
 
-    void angle_value_changed(Glib::RefPtr<Gtk::Adjustment> &adj,
-                             Proj::Axis                     axis);
+    OperationBlocker _blocker;
+
+    void angle_value_changed(Glib::RefPtr<Gtk::Adjustment> const &adj, Proj::Axis axis);
     void vp_state_changed(Proj::Axis axis);
-    void check_ec(SPDesktop* desktop, Inkscape::UI::Tools::ToolBase* tool);
-    void selection_changed(Inkscape::Selection *selection);
-    void resync_toolbar(Inkscape::XML::Node *persp_repr);
-    void set_button_and_adjustment(Persp3D *persp, Proj::Axis axis, UI::Widget::SpinButton &spin_btn,
-                                   Gtk::ToggleButton &toggle_btn);
+    void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name, Proj::Axis axis);
+    void set_button_and_adjustment(Proj::Axis axis, UI::Widget::SpinButton &spin_btn, Gtk::ToggleButton &toggle_btn);
 
-    sigc::connection _changed;
+    sigc::connection _selection_changed_conn;
+    void _selectionChanged(Selection *selection);
 
-	void notifyAttributeChanged(Inkscape::XML::Node &node, GQuark name,
-								Inkscape::Util::ptr_shared old_value,
-								Inkscape::Util::ptr_shared new_value) final;
+    void notifyAttributeChanged(XML::Node &node, GQuark name,
+                                Util::ptr_shared old_value,
+                                Util::ptr_shared new_value) override;
 
-    void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name, Proj::Axis const axis);
+    void _queueUpdate();
+    void _cancelUpdate();
+    void _update();
+    unsigned _tick_callback = 0;
 };
 
-}
-}
-}
+} // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_BOX3D_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_BOX3D_TOOLBAR_H

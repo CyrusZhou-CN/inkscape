@@ -13,28 +13,23 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_TOOLBAR_COMMAND_H
-#define SEEN_TOOLBAR_COMMAND_H
+#ifndef INKSCAPE_UI_TOOLBAR_COMMAND_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_COMMAND_TOOLBAR_H
 
 #include "toolbar.h"
 
-namespace Gtk { class Builder; }
-
 namespace Inkscape::UI::Toolbar {
 
-class CommandToolbar final : public Toolbar
+class CommandToolbar : public ToolbarWidget
 {
 public:
-    CommandToolbar(SPDesktop *desktop);
+    CommandToolbar();
     ~CommandToolbar() override;
-
-private:
-    Glib::RefPtr<Gtk::Builder> _builder;
 };
 
 } // namespace Inkscape::UI::Toolbar
 
-#endif /* SEEN_TOOLBAR_COMMAND_H */
+#endif // INKSCAPE_UI_TOOLBAR_COMMAND_TOOLBAR_H
 
 /*
   Local Variables:

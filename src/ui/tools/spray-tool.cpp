@@ -1125,7 +1125,7 @@ static void sp_spray_switch_mode(SprayTool *tc, gint mode, bool with_shift)
     auto tb = dynamic_cast<UI::Toolbar::SprayToolbar*>(tc->getDesktop()->get_toolbar_by_name("SprayToolbar"));
 
     if(tb) {
-        tb->set_mode(mode);
+        tb->setMode(mode);
     } else {
         std::cerr << "Could not access Spray toolbar" << std::endl;
     }

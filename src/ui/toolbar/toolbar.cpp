@@ -10,7 +10,6 @@
 
 #include "toolbar.h"
 
-#include <algorithm>
 #include <glibmm/main.h>
 #include <gtkmm/button.h>
 #include <gtkmm/image.h>
@@ -18,13 +17,38 @@
 #include <gtkmm/popover.h>
 #include <map>
 
+#include "desktop.h"
 #include "ui/util.h"
+#include "ui/widget/canvas.h"
 
 namespace Inkscape::UI::Toolbar {
 
-Toolbar::Toolbar(SPDesktop *desktop)
-    : _desktop(desktop)
-{}
+struct ToolbarWidget::MenuButton
+{
+    // Constructor to initialize data members
+    MenuButton(int priority, int group_size, Gtk::MenuButton *menu_btn,
+                      std::stack<std::pair<Gtk::Widget *, Gtk::Widget *>> toolbar_children)
+        : priority(priority)
+        , group_size(group_size)
+        , menu_btn(menu_btn)
+        , toolbar_children(std::move(toolbar_children))
+    {}
+
+    // Data members
+    int priority;
+    int group_size;
+    Gtk::MenuButton *menu_btn;
+    std::stack<std::pair<Gtk::Widget *, Gtk::Widget *>> popover_children;
+    std::stack<std::pair<Gtk::Widget *, Gtk::Widget *>> toolbar_children;
+};
+
+ToolbarWidget::ToolbarWidget(Gtk::Box &toolbar)
+    : _toolbar{toolbar}
+{
+    set_child(&_toolbar);
+}
+
+ToolbarWidget::~ToolbarWidget() = default;
 
 static bool isMatchingPattern(const std::string &str, const std::string &pattern)
 {
@@ -34,7 +58,7 @@ static bool isMatchingPattern(const std::string &str, const std::string &pattern
     }
 
     for (size_t i = 0; i < pattern.size(); ++i) {
-        if (tolower(str[i]) != tolower(pattern[i])) {
+        if (std::tolower(str[i]) != std::tolower(pattern[i])) {
             return false; // Mismatch found, stop comparing
         }
     }
@@ -43,10 +67,10 @@ static bool isMatchingPattern(const std::string &str, const std::string &pattern
     return true;
 }
 
-void Toolbar::init_menu_btns()
+void ToolbarWidget::_initMenuBtns()
 {
     std::map<std::string, std::pair<int, std::stack<std::pair<Gtk::Widget *, Gtk::Widget *>>>> menu_btn_groups;
-    auto children = UI::get_children(*_toolbar);
+    auto children = UI::get_children(_toolbar);
     int position = 0;
 
     // Iterate over all the children of this toolbar.
@@ -99,7 +123,7 @@ void Toolbar::init_menu_btns()
         auto priority = key[key.size() - 1] - '0';
 
         // Add this menu button to the _menu_btns vector.
-        insert_menu_btn(priority, value.first, value.second);
+        _insert_menu_btn(priority, value.first, value.second);
 
         // The menu button added at the end would be the first to
         // collapse or expand.
@@ -112,41 +136,40 @@ void Toolbar::init_menu_btns()
     _size_needed.push(10000);
 }
 
-void Toolbar::insert_menu_btn(const int priority, int group_size,
-                              std::stack<std::pair<Gtk::Widget *, Gtk::Widget *>> toolbar_children)
+void ToolbarWidget::_insert_menu_btn(int priority, int group_size,
+                                     std::stack<std::pair<Gtk::Widget *, Gtk::Widget *>> toolbar_children)
 {
     auto menu_btn = Gtk::make_managed<Gtk::MenuButton>();
     auto popover = Gtk::make_managed<Gtk::Popover>();
-    auto box = Gtk::make_managed<Gtk::Box>(_toolbar->get_orientation(), 4);
+    auto box = Gtk::make_managed<Gtk::Box>(_toolbar.get_orientation(), 4);
 
-    // Special treatment for the commands toolbar.
-    if (_toolbar->get_orientation() == Gtk::Orientation::VERTICAL) {
+    if (_toolbar.get_orientation() == Gtk::Orientation::VERTICAL) {
         menu_btn->set_direction(Gtk::ArrowType::LEFT);
     }
 
     popover->set_child(*box);
     menu_btn->set_popover(*popover);
 
-    // Insert this menu button right next to it's topmost toolbar child.
-    _toolbar->insert_child_after(*menu_btn, *toolbar_children.top().second);
+    // Insert this menu button right next to its topmost toolbar child.
+    _toolbar.insert_child_after(*menu_btn, *toolbar_children.top().second);
     menu_btn->set_visible(false);
 
     // Add this menu button to the _menu_btns vector.
     _menu_btns.push_back(
-        std::make_unique<ToolbarMenuButton>(priority, group_size, menu_btn, std::move(toolbar_children)));
+        std::make_unique<MenuButton>(priority, group_size, menu_btn, std::move(toolbar_children)));
 }
 
-void Toolbar::measure_vfunc(Gtk::Orientation orientation, int for_size, int &min, int &nat, int &min_baseline, int &nat_baseline) const
+void ToolbarWidget::measure_vfunc(Gtk::Orientation orientation, int for_size, int &min, int &nat, int &min_baseline, int &nat_baseline) const
 {
-    _toolbar->measure(orientation, for_size, min, nat, min_baseline, nat_baseline);
+    _toolbar.measure(orientation, for_size, min, nat, min_baseline, nat_baseline);
 
-    if (_toolbar->get_orientation() == orientation) {
-        // HACK: Return too-small value to allow shrinking.
+    if (_toolbar.get_orientation() == orientation) {
+        // Return too-small value to allow shrinking.
         min = 0;
     }
 }
 
-void Toolbar::on_size_allocate(int width, int height, int baseline)
+void ToolbarWidget::on_size_allocate(int width, int height, int baseline)
 {
     _resize_handler(width, height);
     UI::Widget::Bin::on_size_allocate(width, height, baseline);
@@ -160,15 +183,15 @@ static int min_dimension(Gtk::Widget const *widget, Gtk::Orientation const orien
     return min;
 };
 
-void Toolbar::_resize_handler(int width, int height)
+void ToolbarWidget::_resize_handler(int width, int height)
 {
-    if (!_toolbar || _resizing || _active_mb_index < 0) {
+    if (_resizing || _active_mb_index < 0) {
         return;
     }
 
-    auto const orientation = _toolbar->get_orientation();
+    auto const orientation = _toolbar.get_orientation();
     auto const allocated_size = orientation == Gtk::Orientation::VERTICAL ? height : width;
-    int min_size = min_dimension(_toolbar, orientation);
+    int min_size = min_dimension(&_toolbar, orientation);
 
     _resizing = true;
     if (allocated_size < min_size) {
@@ -190,11 +213,11 @@ void Toolbar::_resize_handler(int width, int height)
             // Now, move the toolbar_children of this menu button to the popover.
             auto mb = _menu_btns[_active_mb_index].get();
             auto popover_box = dynamic_cast<Gtk::Box *>(mb->menu_btn->get_popover()->get_child());
-            _move_children(_toolbar, popover_box, mb->toolbar_children, mb->popover_children, mb->group_size);
+            _move_children(&_toolbar, popover_box, mb->toolbar_children, mb->popover_children, mb->group_size);
             mb->menu_btn->set_visible(true);
 
             int old = min_size;
-            min_size = min_dimension(_toolbar, orientation);
+            min_size = min_dimension(&_toolbar, orientation);
             int change = old - min_size;
             _size_needed.push(change);
         }
@@ -238,7 +261,7 @@ void Toolbar::_resize_handler(int width, int height)
 
             // Move a group of widgets back into the toolbar.
             auto popover_box = dynamic_cast<Gtk::Box *>(mb->menu_btn->get_popover()->get_child());
-            _move_children(popover_box, _toolbar, mb->toolbar_children, mb->popover_children, mb->group_size, true);
+            _move_children(popover_box, &_toolbar, mb->toolbar_children, mb->popover_children, mb->group_size, true);
             _size_needed.pop();
 
             if (mb->popover_children.empty()) {
@@ -246,13 +269,14 @@ void Toolbar::_resize_handler(int width, int height)
                 mb->menu_btn->set_visible(false);
             }
 
-            min_size = min_dimension(_toolbar, orientation);
+            min_size = min_dimension(&_toolbar, orientation);
         }
     }
+
     _resizing = false;
 }
 
-void Toolbar::_update_menu_btn_image(Gtk::Widget *child)
+void ToolbarWidget::_update_menu_btn_image(Gtk::Widget *child)
 {
     Glib::ustring icon_name = "go-down";
 
@@ -277,7 +301,7 @@ void Toolbar::_update_menu_btn_image(Gtk::Widget *child)
     menu_btn->set_icon_name(icon_name.c_str());
 }
 
-void Toolbar::_move_children(Gtk::Box *src, Gtk::Box *dest,
+void ToolbarWidget::_move_children(Gtk::Box *src, Gtk::Box *dest,
                              std::stack<std::pair<Gtk::Widget *, Gtk::Widget *>> &tb_children,
                              std::stack<std::pair<Gtk::Widget *, Gtk::Widget *>> &popover_children, int group_size,
                              bool is_expanding)
@@ -287,7 +311,6 @@ void Toolbar::_move_children(Gtk::Box *src, Gtk::Box *dest,
         Gtk::Widget *prev_child;
 
         if (is_expanding) {
-            // Use std::tie for unpacking
             std::tie(prev_child, child) = popover_children.top();
             popover_children.pop();
             tb_children.emplace(prev_child, child);
@@ -296,6 +319,8 @@ void Toolbar::_move_children(Gtk::Box *src, Gtk::Box *dest,
             tb_children.pop();
             popover_children.emplace(prev_child, child);
         }
+
+        child->reference();
 
         src->remove(*child);
 
@@ -316,6 +341,21 @@ void Toolbar::_move_children(Gtk::Box *src, Gtk::Box *dest,
             dest->prepend(*child);
             _update_menu_btn_image(child);
         }
+
+        child->unreference();
+    }
+}
+
+Toolbar::~Toolbar()
+{
+    // Lifecycle model for toolbars requires desktop to be unset before destruction.
+    assert(!_desktop);
+}
+
+void Toolbar::onDefocus()
+{
+    if (_desktop) {
+        _desktop->getCanvas()->grab_focus();
     }
 }
 

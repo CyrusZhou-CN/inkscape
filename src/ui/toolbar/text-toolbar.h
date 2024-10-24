@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_TEXT_TOOLBAR_H
-#define SEEN_TEXT_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_TEXT_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_TEXT_TOOLBAR_H
 
 /**
- * @file
- * Text aux toolbar
+ * @file Text toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -44,40 +43,40 @@ class ListBox;
 class ToggleButton;
 } // namespace Gtk
 
-class SPDesktop;
-
 namespace Inkscape {
 class Selection;
-
 namespace UI {
 namespace Tools {
 class ToolBase;
 class TextTool;
-}
-
+} // namespace Tools
 namespace Widget {
 class ComboBoxEntryToolItem;
 class ComboToolItem;
 class SpinButton;
 class UnitTracker;
-}
+} // namespace Widget
+} // namespace UI
+} // namespace Inkscape
 
-namespace Toolbar {
+namespace Inkscape::UI::Toolbar {
 
-class TextToolbar final : public Toolbar
+class TextToolbar : public Toolbar
 {
 public:
-    TextToolbar(SPDesktop *desktop);
+    TextToolbar();
     ~TextToolbar() override;
 
+    void setDesktop(SPDesktop *desktop) override;
+
 private:
+    TextToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     using ValueChangedMemFun = void (TextToolbar::*)();
     using ModeChangedMemFun = void (TextToolbar::*)(int);
 
-    Glib::RefPtr<Gtk::Builder> _builder;
-
-    UI::Widget::UnitTracker *_tracker;
-    UI::Widget::UnitTracker *_tracker_fs;
+    std::unique_ptr<UI::Widget::UnitTracker> _tracker;
+    std::unique_ptr<UI::Widget::UnitTracker> _tracker_fs;
 
     std::vector<Gtk::ToggleButton *> _alignment_buttons;
     std::vector<Gtk::ToggleButton *> _writing_buttons;
@@ -102,30 +101,30 @@ private:
     UI::Widget::SpinButton &_dy_item;
     UI::Widget::SpinButton &_rotation_item;
 
-    bool _freeze;
-    bool _text_style_from_prefs;
-    bool _outer;
+    bool _freeze = false;
+    bool _text_style_from_prefs = false;
+    bool _outer = true;
     SPItem *_sub_active_item;
     int _lineheight_unit;
-    Inkscape::Text::Layout::iterator wrap_start;
-    Inkscape::Text::Layout::iterator wrap_end;
-    bool _updating;
-    int _cusor_numbers;
+    Text::Layout::iterator wrap_start;
+    Text::Layout::iterator wrap_end;
+    bool _updating = false;
+    int _cursor_numbers = 0;
     SPStyle _query_cursor;
     double selection_fontsize;
 
     sigc::scoped_connection fc_changed_selection;
     sigc::scoped_connection fc_update;
     sigc::scoped_connection font_count_changed_connection;
-    sigc::connection c_selection_changed;
-    sigc::connection c_selection_modified;
-    sigc::connection c_selection_modified_select_tool;
-    sigc::connection c_subselection_changed;
+    sigc::connection _selection_changed_conn;
+    sigc::connection _selection_modified_conn;
+    sigc::connection _cursor_moved_conn;
+    sigc::connection _fonts_updated_conn;
 
     void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name, double default_value,
-                                   ValueChangedMemFun const value_changed_mem_fun);
+                                   ValueChangedMemFun value_changed_mem_fun);
     void configure_mode_buttons(std::vector<Gtk::ToggleButton *> &buttons, Gtk::Box &box, Glib::ustring const &name,
-                                ModeChangedMemFun const mode_changed_mem_fun);
+                                ModeChangedMemFun mode_changed_mem_fun);
     void text_outer_set_style(SPCSSAttr *css);
     void fontfamily_value_changed();
     void fontsize_value_changed();
@@ -146,22 +145,17 @@ private:
     void focus_text();
     void rotation_value_changed();
     void fontsize_unit_changed(int not_used);
-    void selection_changed(Inkscape::Selection *selection);
-    void selection_modified(Inkscape::Selection *selection, guint flags);
-    void selection_modified_select_tool(Inkscape::Selection *selection, guint flags);
-    void subselection_changed(Inkscape::UI::Tools::TextTool* texttool);
-    void watch_ec(SPDesktop* desktop, Inkscape::UI::Tools::ToolBase* tool);
+    void _selectionChanged(Selection *selection);
+    void _selectionModified(Selection *selection, guint flags);
+    void _cursorMoved(Tools::TextTool *texttool);
     void set_sizes(int unit);
     void display_font_collections();
     void on_fcm_button_pressed();
     void on_reset_button_pressed();
-    Inkscape::XML::Node *unindent_node(Inkscape::XML::Node *repr, Inkscape::XML::Node *before);
+    XML::Node *unindent_node(XML::Node *repr, XML::Node *before);
     bool mergeDefaultStyle(SPCSSAttr *css);
-
-    sigc::scoped_connection _fonts_updated_signal;
 };
-}
-}
-}
 
-#endif /* !SEEN_TEXT_TOOLBAR_H */
+} // namespace Inkscape::UI::Toolbar
+
+#endif // INKSCAPE_UI_TOOLBAR_TEXT_TOOLBAR_H

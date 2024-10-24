@@ -83,6 +83,7 @@ StatusBar::StatusBar()
     zoom_value->signal_output().connect(sigc::mem_fun(*this, &StatusBar::zoom_output), true);
     zoom_value->signal_value_changed().connect(sigc::mem_fun(*this, &StatusBar::zoom_value_changed));
     on_popup_menu(*zoom_value, sigc::mem_fun(*this, &StatusBar::zoom_popup));
+    zoom_value->setDefocusTarget(this);
 
     auto zoom_adjustment = zoom_value->get_adjustment();
     zoom_adjustment->set_lower(log(SP_DESKTOP_ZOOM_MIN)/log(2));
@@ -119,6 +120,7 @@ StatusBar::StatusBar()
     rotate_value->signal_output().connect(sigc::mem_fun(*this, &StatusBar::rotate_output), true);
     rotate_value->signal_value_changed().connect(sigc::mem_fun(*this, &StatusBar::rotate_value_changed));
     on_popup_menu(*rotate_value, sigc::mem_fun(*this, &StatusBar::rotate_popup));
+    rotate_value->setDefocusTarget(this);
 
     // Add rest by hand for now.
 
@@ -157,8 +159,6 @@ StatusBar::set_desktop(SPDesktop* desktop_in)
 
     // A desktop is always "owned" by a desktop widget.
     desktop_widget = desktop->getDesktopWidget();
-    zoom_value->set_defocus_widget(desktop_widget->get_canvas());
-    rotate_value->set_defocus_widget(desktop_widget->get_canvas());
 
     // We add page widget here as it requires desktop for constructor.
     auto &box = dynamic_cast<Gtk::Box &>(*UI::get_children(*this).at(0));
@@ -207,6 +207,11 @@ void
 StatusBar::zoom_grab_focus()
 {
     zoom_value->grab_focus();
+}
+
+void StatusBar::onDefocus()
+{
+    desktop_widget->get_canvas()->grab_focus();
 }
 
 // ******** Zoom ********

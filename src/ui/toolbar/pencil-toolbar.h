@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_PENCIL_TOOLBAR_H
-#define SEEN_PENCIL_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_PENCIL_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_PENCIL_TOOLBAR_H
 
 /**
  * @file
@@ -30,6 +30,7 @@
  */
 
 #include "toolbar.h"
+#include "ui/operation-blocker.h"
 
 namespace Gtk {
 class Builder;
@@ -37,31 +38,28 @@ class Button;
 class ToggleButton;
 } // namespace Gtk
 
-class SPDesktop;
-
 namespace Inkscape {
-namespace XML {
-class Node;
-}
-
-namespace UI {
-namespace Widget {
+namespace UI::Widget {
 class SpinButton;
 class ComboToolItem;
-}
+} // namespace UI::Widget
+namespace XML { class Node; }
+} // namespace Inkscape
 
-namespace Toolbar {
+namespace Inkscape::UI::Toolbar {
 
-class PencilToolbar final : public Toolbar
+class PencilToolbar : public Toolbar
 {
 public:
-    PencilToolbar(SPDesktop *desktop, bool pencil_mode);
+    PencilToolbar(bool pencil_mode);
     ~PencilToolbar() override;
 
-private:
-    using ValueChangedMemFun = void (PencilToolbar::*)();
+    void setDesktop(SPDesktop *desktop) override;
 
-    Glib::RefPtr<Gtk::Builder> _builder;
+private:
+    PencilToolbar(Glib::RefPtr<Gtk::Builder> const &builder, bool pencil_mode);
+
+    using ValueChangedMemFun = void (PencilToolbar::*)();
 
     bool const _tool_is_pencil;
     std::vector<Gtk::ToggleButton *> _mode_buttons;
@@ -80,17 +78,17 @@ private:
     UI::Widget::ComboToolItem *_shape_item;
     Gtk::Box &_shapescale_box;
     UI::Widget::SpinButton &_shapescale_item;
+    bool _set_shape = false;
 
-    XML::Node *_repr = nullptr;
-    bool _freeze = false;
+    OperationBlocker _blocker;
 
-    void add_powerstroke_cap();
-    void add_shape_option();
+    void add_powerstroke_cap(Glib::RefPtr<Gtk::Builder> const &builder);
+    void add_shape_option(Glib::RefPtr<Gtk::Builder> const &builder);
     void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name, double default_value,
-                                   ValueChangedMemFun const value_changed_mem_fun);
-    void hide_extra_widgets();
+                                   ValueChangedMemFun value_changed_mem_fun);
+    void hide_extra_widgets(Glib::RefPtr<Gtk::Builder> const &builder);
     void mode_changed(int mode);
-    Glib::ustring const freehand_tool_name();
+    Glib::ustring freehand_tool_name() const;
     void minpressure_value_changed();
     void maxpressure_value_changed();
     void shapewidth_value_changed();
@@ -101,11 +99,9 @@ private:
     void change_cap(int cap);
     void simplify_lpe();
     void simplify_flatten();
-    void flatten_spiro_bspline();
+    template <typename... T> void _flattenLPE();
 };
 
-} // namespace Toolbar
-}
-}
+} // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_PENCIL_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_PENCIL_TOOLBAR_H

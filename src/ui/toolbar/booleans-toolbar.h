@@ -14,24 +14,19 @@
 #ifndef INKSCAPE_UI_TOOLBAR_BOOLEANS_TOOLBAR_H
 #define INKSCAPE_UI_TOOLBAR_BOOLEANS_TOOLBAR_H
 
-#include <glibmm/refptr.h>
-
 #include "toolbar.h"
 
 namespace Gtk { class Builder; }
 
-class SPDesktop;
-
 namespace Inkscape::UI::Toolbar {
 
-class BooleansToolbar final : public Toolbar
+class BooleansToolbar : public Toolbar
 {
 public:
-    BooleansToolbar(SPDesktop *desktop);
-    ~BooleansToolbar() final;
+    BooleansToolbar();
 
 private:
-    Glib::RefPtr<Gtk::Builder> _builder;
+    BooleansToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
 };
 
 } // namespace Inkscape::UI::Toolbar

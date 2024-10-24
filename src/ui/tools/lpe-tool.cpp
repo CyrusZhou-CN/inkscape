@@ -232,7 +232,7 @@ void LpeTool::switch_mode(LivePathEffect::EffectType const type)
     mode = type;
 
     if (auto tb = dynamic_cast<UI::Toolbar::LPEToolbar*>(getDesktop()->get_toolbar_by_name("LPEToolToolbar"))) {
-        tb->set_mode(index);
+        tb->setMode(index);
     } else {
         std::cerr << "Could not access LPE toolbar" << std::endl;
     }

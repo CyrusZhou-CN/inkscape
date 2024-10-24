@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file
- * Spiral aux toolbar
+ * @file Spiral toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -42,7 +41,6 @@
 #include "selection.h"
 #include "ui/builder-utils.h"
 #include "ui/icon-names.h"
-#include "ui/widget/canvas.h"
 #include "ui/widget/spinbutton.h"
 #include "xml/node.h"
 
@@ -50,19 +48,20 @@ using Inkscape::DocumentUndo;
 
 namespace Inkscape::UI::Toolbar {
 
-SpiralToolbar::SpiralToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    , _builder(create_builder("toolbar-spiral.ui"))
-    , _mode_item(get_widget<Gtk::Label>(_builder, "_mode_item"))
-    , _revolution_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_revolution_item"))
-    , _expansion_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_expansion_item"))
-    , _t0_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_t0_item"))
-{
-    _toolbar = &get_widget<Gtk::Box>(_builder, "spiral-toolbar");
+SpiralToolbar::SpiralToolbar()
+    : SpiralToolbar{create_builder("toolbar-spiral.ui")}
+{}
 
-    setup_derived_spin_button(_revolution_item, "revolution", 3.0);
-    setup_derived_spin_button(_expansion_item, "expansion", 1.0);
-    setup_derived_spin_button(_t0_item, "t0", 0.0);
+SpiralToolbar::SpiralToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
+    : Toolbar{get_widget<Gtk::Box>(builder, "spiral-toolbar")}
+    , _mode_item{get_widget<Gtk::Label>(builder, "_mode_item")}
+    , _revolution_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_revolution_item")}
+    , _expansion_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_expansion_item")}
+    , _t0_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_t0_item")}
+{
+    _setupDerivedSpinButton(_revolution_item, "revolution", 3.0);
+    _setupDerivedSpinButton(_expansion_item, "expansion", 1.0);
+    _setupDerivedSpinButton(_t0_item, "t0", 0.0);
 
     _revolution_item.set_custom_numeric_menu_data({
         {0.01, _("just a curve")},
@@ -92,154 +91,171 @@ SpiralToolbar::SpiralToolbar(SPDesktop *desktop)
         {0.9, _("starts near edge")},
     });
 
-    set_child(*_toolbar);
-    init_menu_btns();
-
-    get_widget<Gtk::Button>(_builder, "reset_btn")
+    get_widget<Gtk::Button>(builder, "reset_btn")
         .signal_clicked()
-        .connect(sigc::mem_fun(*this, &SpiralToolbar::defaults));
+        .connect(sigc::mem_fun(*this, &SpiralToolbar::_setDefaults));
 
-    _connection.reset(new sigc::connection(
-        desktop->getSelection()->connectChanged(sigc::mem_fun(*this, &SpiralToolbar::selection_changed))));
+    _initMenuBtns();
 }
 
-void SpiralToolbar::setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name,
-                                              double default_value)
+void SpiralToolbar::_setupDerivedSpinButton(UI::Widget::SpinButton &btn, Glib::ustring const &name, double default_value)
 {
-    auto adj = btn.get_adjustment();
-
-    const Glib::ustring path = "/tools/shapes/spiral/" + name;
+    auto const adj = btn.get_adjustment();
+    auto const path = "/tools/shapes/spiral/" + name;
     auto const val = Preferences::get()->getDouble(path, default_value);
     adj->set_value(val);
 
-    adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun(*this, &SpiralToolbar::value_changed), adj, name));
+    adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun(*this, &SpiralToolbar::_valueChanged), adj, name));
 
-    btn.set_defocus_widget(_desktop->getCanvas());
+    btn.setDefocusTarget(this);
 }
 
-SpiralToolbar::~SpiralToolbar()
+void SpiralToolbar::setDesktop(SPDesktop *desktop)
 {
-    if(_repr) {
-        _repr->removeObserver(*this);
-        GC::release(_repr);
-        _repr = nullptr;
+    if (_desktop) {
+        _selection_changed_conn.disconnect();
+
+        if (_repr) {
+            _detachRepr();
+        }
     }
 
-    if(_connection) {
-        _connection->disconnect();
+    Toolbar::setDesktop(desktop);
+
+    if (_desktop) {
+        auto sel = _desktop->getSelection();
+        _selection_changed_conn = sel->connectChanged(sigc::mem_fun(*this, &SpiralToolbar::_selectionChanged));
+        _selectionChanged(sel); // Synthesize an emission to trigger the update
     }
 }
 
-void SpiralToolbar::value_changed(Glib::RefPtr<Gtk::Adjustment> &adj, Glib::ustring const &value_name)
+void SpiralToolbar::_attachRepr(XML::Node *repr)
+{
+    assert(!_repr);
+    _repr = repr;
+    GC::anchor(_repr);
+    _repr->addObserver(*this);
+}
+
+void SpiralToolbar::_detachRepr()
+{
+    assert(_repr);
+    _repr->removeObserver(*this);
+    GC::release(_repr);
+    _repr = nullptr;
+    _cancelUpdate();
+}
+
+void SpiralToolbar::_valueChanged(Glib::RefPtr<Gtk::Adjustment> &adj, Glib::ustring const &value_name)
 {
     if (DocumentUndo::getUndoSensitive(_desktop->getDocument())) {
         Preferences::get()->setDouble("/tools/shapes/spiral/" + value_name, adj->get_value());
     }
 
     // quit if run by the attr_changed listener
-    if (_freeze) {
+    if (_blocker.pending()) {
         return;
     }
 
     // in turn, prevent listener from responding
-    _freeze = true;
+    auto guard = _blocker.block();
 
-    gchar* namespaced_name = g_strconcat("sodipodi:", value_name.data(), nullptr);
+    auto const namespaced_name = "sodipodi:" + value_name;
 
-    bool modmade = false;
-    auto itemlist= _desktop->getSelection()->items();
-    for(auto i=itemlist.begin();i!=itemlist.end(); ++i){
-        SPItem *item = *i;
+    bool modified = false;
+    for (auto item : _desktop->getSelection()->items()) {
         if (is<SPSpiral>(item)) {
-            Inkscape::XML::Node *repr = item->getRepr();
-            repr->setAttributeSvgDouble(namespaced_name, adj->get_value() );
+            auto repr = item->getRepr();
+            repr->setAttributeSvgDouble(namespaced_name, adj->get_value());
             item->updateRepr();
-            modmade = true;
+            modified = true;
         }
     }
 
-    g_free(namespaced_name);
-
-    if (modmade) {
+    if (modified) {
         DocumentUndo::done(_desktop->getDocument(), _("Change spiral"), INKSCAPE_ICON("draw-spiral"));
     }
-
-    _freeze = false;
 }
 
-void SpiralToolbar::defaults()
+void SpiralToolbar::_setDefaults()
 {
     // fixme: make settable
-    gdouble rev = 3;
-    gdouble exp = 1.0;
-    gdouble t0 = 0.0;
+    _revolution_item.get_adjustment()->set_value(3);
+    _expansion_item.get_adjustment()->set_value(1.0);
+    _t0_item.get_adjustment()->set_value(0.0);
 
-    _revolution_item.get_adjustment()->set_value(rev);
-    _expansion_item.get_adjustment()->set_value(exp);
-    _t0_item.get_adjustment()->set_value(t0);
-
-    if(_desktop->getCanvas()) _desktop->getCanvas()->grab_focus();
+    onDefocus();
 }
 
-void SpiralToolbar::selection_changed(Inkscape::Selection *selection)
+void SpiralToolbar::_selectionChanged(Selection *selection)
 {
-    int n_selected = 0;
-    Inkscape::XML::Node *repr = nullptr;
-
-    if ( _repr ) {
-        _repr->removeObserver(*this);
-        GC::release(_repr);
-        _repr = nullptr;
+    if (_repr) {
+        _detachRepr();
     }
 
-    auto itemlist= selection->items();
-    for(auto i=itemlist.begin();i!=itemlist.end(); ++i){
-        SPItem *item = *i;
+    int n_selected = 0;
+    XML::Node *repr = nullptr;
+
+    for (auto item : selection->items()) {
         if (is<SPSpiral>(item)) {
             n_selected++;
             repr = item->getRepr();
         }
     }
 
-    if (n_selected == 0) {
-        _mode_item.set_markup(_("<b>New:</b>"));
-    } else if (n_selected == 1) {
-        _mode_item.set_markup(_("<b>Change:</b>"));
+    _mode_item.set_markup(n_selected == 0 ? _("<b>New:</b>") : _("<b>Change:</b>"));
 
-        if (repr) {
-            _repr = repr;
-            Inkscape::GC::anchor(_repr);
-            _repr->addObserver(*this);
-            _repr->synthesizeEvents(*this);
-        }
-    } else {
-        // FIXME: implement averaging of all parameters for multiple selected
-        //gtk_label_set_markup(GTK_LABEL(l), _("<b>Average:</b>"));
-        _mode_item.set_markup(_("<b>Change:</b>"));
+    if (n_selected == 1) {
+        _attachRepr(repr);
+        _repr->synthesizeEvents(*this);
     }
 }
 
-void SpiralToolbar::notifyAttributeChanged(Inkscape::XML::Node &repr, GQuark, Inkscape::Util::ptr_shared, Inkscape::Util::ptr_shared)
+void SpiralToolbar::notifyAttributeChanged(XML::Node &, GQuark, Util::ptr_shared, Util::ptr_shared)
 {
+    assert(_repr);
 
-    // quit if run by the _changed callbacks
-    if (_freeze) {
+    // quit if run by the UI callbacks
+    if (_blocker.pending()) {
         return;
     }
 
-    // in turn, prevent callbacks from responding
-    _freeze = true;
+    _queueUpdate();
+}
 
-    double revolution = repr.getAttributeDouble("sodipodi:revolution", 3.0);
-    _revolution_item.get_adjustment()->set_value(revolution);
+void SpiralToolbar::_queueUpdate()
+{
+    if (_tick_callback) {
+        return;
+    }
 
-    double expansion = repr.getAttributeDouble("sodipodi:expansion", 1.0);
-    _expansion_item.get_adjustment()->set_value(expansion);
+    _tick_callback = add_tick_callback([this] (Glib::RefPtr<Gdk::FrameClock> const &) {
+        _update();
+        _tick_callback = 0;
+        return false;
+    });
+}
 
-    double t0 = repr.getAttributeDouble("sodipodi:t0", 0.0);
-    _t0_item.get_adjustment()->set_value(t0);
+void SpiralToolbar::_cancelUpdate()
+{
+    if (!_tick_callback) {
+        return;
+    }
 
-    _freeze = false;
+    remove_tick_callback(_tick_callback);
+    _tick_callback = 0;
+}
+
+void SpiralToolbar::_update()
+{
+    assert(_repr);
+
+    // prevent UI callbacks from responding
+    auto guard = _blocker.block();
+
+    _revolution_item.get_adjustment()->set_value(_repr->getAttributeDouble("sodipodi:revolution", 3.0));
+    _expansion_item.get_adjustment()->set_value(_repr->getAttributeDouble("sodipodi:expansion", 1.0));
+    _t0_item.get_adjustment()->set_value(_repr->getAttributeDouble("sodipodi:t0", 0.0));
 }
 
 } // namespace Inkscape::UI::Toolbar

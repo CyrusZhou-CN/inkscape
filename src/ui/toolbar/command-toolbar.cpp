@@ -15,18 +15,13 @@
 #include "command-toolbar.h"
 
 #include "ui/builder-utils.h"
-#include "ui/util.h"
 
 namespace Inkscape::UI::Toolbar {
 
-CommandToolbar::CommandToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    , _builder(create_builder("toolbar-commands.ui"))
+CommandToolbar::CommandToolbar()
+    : ToolbarWidget{get_widget<Gtk::Box>(create_builder("toolbar-commands.ui"), "commands-toolbar")}
 {
-    _toolbar = &get_widget<Gtk::Box>(_builder, "commands-toolbar");
-
-    set_child(*_toolbar);
-    init_menu_btns();
+    _initMenuBtns();
 }
 
 CommandToolbar::~CommandToolbar() = default;

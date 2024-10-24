@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_TWEAK_TOOLBAR_H
-#define SEEN_TWEAK_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_TWEAK_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_TWEAK_TOOLBAR_H
 
 /**
- * @file
- * Tweak aux toolbar
+ * @file Tweak toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -36,27 +35,23 @@ class Builder;
 class ToggleButton;
 } // namespace Gtk
 
-class SPDesktop;
+namespace Inkscape::UI::Widget { class SpinButton; }
 
-namespace Inkscape {
-namespace UI {
-namespace Widget {
-class SpinButton;
-}
+namespace Inkscape::UI::Toolbar {
 
-namespace Toolbar {
-
-class TweakToolbar final : public Toolbar
+class TweakToolbar : public Toolbar
 {
 public:
-    TweakToolbar(SPDesktop *desktop);
+    TweakToolbar();
     ~TweakToolbar() override;
 
-    void set_mode(int mode);
+    void setMode(int mode);
 
 private:
+    TweakToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     using ValueChangedMemFun = void (TweakToolbar::*)();
-    Glib::RefPtr<Gtk::Builder> _builder;
+
     std::vector<Gtk::ToggleButton *> _mode_buttons;
 
     UI::Widget::SpinButton &_width_item;
@@ -73,7 +68,7 @@ private:
     Gtk::ToggleButton &_doo_btn;
 
     void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name, double default_value,
-                                   ValueChangedMemFun const value_changed_mem_fun);
+                                   ValueChangedMemFun value_changed_mem_fun);
     void width_value_changed();
     void force_value_changed();
     void mode_changed(int mode);
@@ -85,8 +80,6 @@ private:
     void toggle_doo();
 };
 
-} // namespace Toolbar
-}
-}
+} // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_SELECT_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_TWEAK_TOOLBAR_H

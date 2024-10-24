@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_ARC_TOOLBAR_H
-#define SEEN_ARC_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_ARC_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_ARC_TOOLBAR_H
 
 /**
- * @file
- * 3d box aux toolbar
+ * @file Arc toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -30,6 +29,7 @@
  */
 
 #include "toolbar.h"
+#include "ui/operation-blocker.h"
 #include "xml/node-observer.h"
 
 namespace Gtk {
@@ -39,38 +39,37 @@ class Label;
 class ToggleButton;
 } // namespace Gtk
 
-class SPDesktop;
-class SPItem;
+class SPGenericEllipse;
 
 namespace Inkscape {
 class Selection;
-
-namespace XML {
-class Node;
-}
-
 namespace UI {
-namespace Tools {
-class ToolBase;
-}
-
+namespace Tools { class ToolBase; }
 namespace Widget {
+class Label;
 class SpinButton;
 class UnitTracker;
-}
+} // namespace Widget
+} // namespace UI
+namespace XML { class Node; }
+} // namespace Inkscape
 
-namespace Toolbar {
+namespace Inkscape::UI::Toolbar {
 
-class ArcToolbar final
+class ArcToolbar
     : public Toolbar
     , private XML::NodeObserver
 {
 public:
-    ArcToolbar(SPDesktop *desktop);
+    ArcToolbar();
     ~ArcToolbar() override;
 
+    void setDesktop(SPDesktop *desktop) override;
+    void setActiveUnit(Util::Unit const *unit) override;
+
 private:
-    Glib::RefPtr<Gtk::Builder> _builder;
+    ArcToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     std::unique_ptr<UI::Widget::UnitTracker> _tracker;
 
     UI::Widget::SpinButton &_rx_item;
@@ -83,31 +82,32 @@ private:
     std::vector<Gtk::ToggleButton *> _type_buttons;
     Gtk::Button &_make_whole;
 
-    bool _freeze{false};
-    bool _single;
+    XML::Node *_repr = nullptr;
+    SPGenericEllipse *_ellipse = nullptr;
+    void _attachRepr(XML::Node *repr, SPGenericEllipse *ellipse);
+    void _detachRepr();
 
-    XML::Node *_repr{nullptr};
-    SPItem *_item;
+    OperationBlocker _blocker;
+    bool _single = true;
 
-    void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name);
-    void setup_startend_button(UI::Widget::SpinButton &btn, Glib::ustring const &name);
-    void value_changed(Glib::RefPtr<Gtk::Adjustment> &adj, Glib::ustring const &value_name);
-    void startend_value_changed(Glib::RefPtr<Gtk::Adjustment> &adj, Glib::ustring const &value_name,
-                                Glib::RefPtr<Gtk::Adjustment> &other_adj);
-    void type_changed( int type );
-    void defaults();
-    void sensitivize( double v1, double v2 );
-    void check_ec(SPDesktop* desktop, Inkscape::UI::Tools::ToolBase* tool);
-    void selection_changed(Inkscape::Selection *selection);
+    void _setupDerivedSpinButton(UI::Widget::SpinButton &btn, Glib::ustring const &name);
+    void _setupStartendButton(UI::Widget::SpinButton &btn, Glib::ustring const &name, UI::Widget::SpinButton &other_btn);
+    void _valueChanged(Glib::RefPtr<Gtk::Adjustment> const &adj, Glib::ustring const &value_name);
+    void _startendValueChanged(Glib::RefPtr<Gtk::Adjustment> const &adj, Glib::ustring const &value_name, Glib::RefPtr<Gtk::Adjustment> const &other_adj);
+    void _typeChanged(int type);
+    void _setDefaults();
+    void _sensitivize();
 
-    sigc::connection _changed;
+    sigc::connection _selection_changed_conn;
+    void _selectionChanged(Selection *selection);
 
-    void notifyAttributeChanged(Inkscape::XML::Node &node, GQuark name, Inkscape::Util::ptr_shared old_value,
-                                Inkscape::Util::ptr_shared new_value) final;
+    void notifyAttributeChanged(XML::Node &node, GQuark name, Util::ptr_shared old_value, Util::ptr_shared new_value) override;
+    void _queueUpdate();
+    void _cancelUpdate();
+    void _update();
+    unsigned _tick_callback = 0;
 };
 
-}
-}
-}
+} // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_ARC_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_ARC_TOOLBAR_H

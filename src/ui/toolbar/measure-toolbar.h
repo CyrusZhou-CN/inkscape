@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_MEASURE_TOOLBAR_H
-#define SEEN_MEASURE_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_MEASURE_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_MEASURE_TOOLBAR_H
 
 /**
- * @file
- * Measure aux toolbar
+ * @file Measure toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -36,29 +35,29 @@ class Builder;
 class ToggleButton;
 } // namespace Gtk
 
-class SPDesktop;
-
-namespace Inkscape {
-namespace UI {
-
-namespace Widget {
+namespace Inkscape::UI::Widget {
 class SpinButton;
 class UnitTracker;
-}
+} // namespace Inkscape::UI::Widget
 
-namespace Toolbar {
+namespace Inkscape::UI::Toolbar {
 
-class MeasureToolbar final : public Toolbar
+class MeasureToolbar : public Toolbar
 {
 public:
-    MeasureToolbar(SPDesktop *desktop);
+    MeasureToolbar();
     ~MeasureToolbar() override;
 
+    void setDesktop(SPDesktop *desktop) override;
+
 private:
+    MeasureToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     using ValueChangedMemFun = void (MeasureToolbar::*)();
 
-    Glib::RefPtr<Gtk::Builder> _builder;
-    UI::Widget::UnitTracker *_tracker;
+    std::unique_ptr<UI::Widget::UnitTracker> _tracker;
+    bool _unit_set = false;
+
     UI::Widget::SpinButton &_font_size_item;
     UI::Widget::SpinButton &_precision_item;
     UI::Widget::SpinButton &_scale_item;
@@ -89,8 +88,7 @@ private:
     void to_item();
     void to_mark_dimension();
 };
-}
-}
-}
 
-#endif /* !SEEN_MEASURE_TOOLBAR_H */
+} // namespace Inkscape::UI::Toolbar
+
+#endif // INKSCAPE_UI_TOOLBAR_MEASURE_TOOLBAR_H

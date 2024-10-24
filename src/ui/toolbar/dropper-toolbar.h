@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_DROPPER_TOOLBAR_H
-#define SEEN_DROPPER_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_DROPPER_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_DROPPER_TOOLBAR_H
 
 /**
  * @file
- * Dropper aux toolbar
+ * Dropper toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -41,14 +41,13 @@ namespace Inkscape::UI::Toolbar {
 /**
  * \brief A toolbar for controlling the dropper tool
  */
-class DropperToolbar final : public Toolbar
+class DropperToolbar : public Toolbar
 {
 public:
-    DropperToolbar(SPDesktop *desktop);
-    ~DropperToolbar() override;
+    DropperToolbar();
 
 private:
-    Glib::RefPtr<Gtk::Builder> _builder;
+    DropperToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
 
     // Control whether to pick opacity.
     Gtk::ToggleButton &_pick_alpha_btn;
@@ -63,7 +62,7 @@ private:
 
 } // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_DROPPER_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_DROPPER_TOOLBAR_H
 
 /*
   Local Variables:

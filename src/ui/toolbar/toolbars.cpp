@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /** @file
  *
- * A container for tool toolbars, displaying one toolbar at a time.
+ * A container for toolbars, displaying one toolbar at a time.
  *
  *//*
  * Authors:
@@ -9,19 +9,14 @@
  *  Alex Valavanis
  *  Mike Kowalski
  *  Vaibhav Malik
+ *  PBS
  *
- * Copyright (C) 2023 Tavmjong Bah
+ * Copyright (C) 2024 PBS
  *
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
 #include "toolbars.h"
-
-#include <iostream>
-#include <glibmm/i18n.h>
-#include <gtkmm/button.h>
-#include <gtkmm/grid.h>
-#include <gtkmm/spinbutton.h>
 
 // For creating toolbars
 #include "ui/toolbar/arc-toolbar.h"
@@ -50,108 +45,107 @@
 #include "ui/toolbar/tweak-toolbar.h"
 #include "ui/toolbar/zoom-toolbar.h"
 #include "ui/tools/tool-base.h"
-#include "ui/util.h"
-#include "ui/widget/style-swatch.h"
 
 namespace Inkscape::UI::Toolbar {
 namespace {
 
 // Data for building and tracking toolbars.
-struct ToolBoxData
+struct ToolbarData
 {
-    char const *type_name; // Used by preferences
-    Glib::ustring const tool_name;
-    std::unique_ptr<Toolbar> (*create)(SPDesktop *desktop);
+    Glib::ustring name;
+    std::unique_ptr<Toolbar> (*create)();
 };
 
 template <typename T, auto... args>
-auto create = [](SPDesktop *desktop) -> std::unique_ptr<Toolbar> { return std::make_unique<T>(desktop, args...); };
+auto create = [] () -> std::unique_ptr<Toolbar> { return std::make_unique<T>(args...); };
 
-ToolBoxData const aux_toolboxes[] = {
-    // If you change the tool_name for Measure or Text here, change it also in desktop-widget.cpp.
+auto const toolbar_data = std::unordered_map<std::string, ToolbarData>{
     // clang-format off
-    { "/tools/select",          "Select",       create<SelectToolbar>},
-    { "/tools/nodes",           "Node",         create<NodeToolbar>},
-    { "/tools/booleans",        "Booleans",     create<BooleansToolbar>},
-    { "/tools/marker",          "Marker",       create<MarkerToolbar>},
-    { "/tools/shapes/rect",     "Rect",         create<RectToolbar>},
-    { "/tools/shapes/arc",      "Arc",          create<ArcToolbar>},
-    { "/tools/shapes/star",     "Star",         create<StarToolbar>},
-    { "/tools/shapes/3dbox",    "3DBox",        create<Box3DToolbar>},
-    { "/tools/shapes/spiral",   "Spiral",       create<SpiralToolbar>},
-    { "/tools/freehand/pencil", "Pencil",       create<PencilToolbar, true>},
-    { "/tools/freehand/pen",    "Pen",          create<PencilToolbar, false>},
-    { "/tools/calligraphic",    "Calligraphic", create<CalligraphyToolbar>},
-    { "/tools/text",            "Text",         create<TextToolbar>},
-    { "/tools/gradient",        "Gradient",     create<GradientToolbar>},
-    { "/tools/mesh",            "Mesh",         create<MeshToolbar>},
-    { "/tools/zoom",            "Zoom",         create<ZoomToolbar>},
-    { "/tools/measure",         "Measure",      create<MeasureToolbar>},
-    { "/tools/dropper",         "Dropper",      create<DropperToolbar>},
-    { "/tools/tweak",           "Tweak",        create<TweakToolbar>},
-    { "/tools/spray",           "Spray",        create<SprayToolbar>},
-    { "/tools/connector",       "Connector",    create<ConnectorToolbar>},
-    { "/tools/pages",           "Pages",        create<PageToolbar>},
-    { "/tools/paintbucket",     "Paintbucket",  create<PaintbucketToolbar>},
-    { "/tools/eraser",          "Eraser",       create<EraserToolbar>},
-    { "/tools/lpetool",         "LPETool",      create<LPEToolbar>},
-    { "/tools/picker",          "ObjectPicker", create<ObjectPickerToolbar>},
-    { nullptr,                  "",             nullptr}
+    {"/tools/select",          {"Select",       create<SelectToolbar>}},
+    {"/tools/nodes",           {"Node",         create<NodeToolbar>}},
+    {"/tools/booleans",        {"Booleans",     create<BooleansToolbar>}},
+    {"/tools/marker",          {"Marker",       create<MarkerToolbar>}},
+    {"/tools/shapes/rect",     {"Rect",         create<RectToolbar>}},
+    {"/tools/shapes/arc",      {"Arc",          create<ArcToolbar>}},
+    {"/tools/shapes/star",     {"Star",         create<StarToolbar>}},
+    {"/tools/shapes/3dbox",    {"3DBox",        create<Box3DToolbar>}},
+    {"/tools/shapes/spiral",   {"Spiral",       create<SpiralToolbar>}},
+    {"/tools/freehand/pencil", {"Pencil",       create<PencilToolbar, true>}},
+    {"/tools/freehand/pen",    {"Pen",          create<PencilToolbar, false>}},
+    {"/tools/calligraphic",    {"Calligraphic", create<CalligraphyToolbar>}},
+    {"/tools/text",            {"Text",         create<TextToolbar>}},
+    {"/tools/gradient",        {"Gradient",     create<GradientToolbar>}},
+    {"/tools/mesh",            {"Mesh",         create<MeshToolbar>}},
+    {"/tools/zoom",            {"Zoom",         create<ZoomToolbar>}},
+    {"/tools/measure",         {"Measure",      create<MeasureToolbar>}},
+    {"/tools/dropper",         {"Dropper",      create<DropperToolbar>}},
+    {"/tools/tweak",           {"Tweak",        create<TweakToolbar>}},
+    {"/tools/spray",           {"Spray",        create<SprayToolbar>}},
+    {"/tools/connector",       {"Connector",    create<ConnectorToolbar>}},
+    {"/tools/pages",           {"Pages",        create<PageToolbar>}},
+    {"/tools/paintbucket",     {"Paintbucket",  create<PaintbucketToolbar>}},
+    {"/tools/eraser",          {"Eraser",       create<EraserToolbar>}},
+    {"/tools/lpetool",         {"LPETool",      create<LPEToolbar>}},
+    {"/tools/picker",          {"ObjectPicker", create<ObjectPickerToolbar>}},
     // clang-format on
 };
 
 } // namespace
 
-// We only create an empty box, it is filled later after the desktop is created.
 Toolbars::Toolbars()
-    : Gtk::Box(Gtk::Orientation::VERTICAL)
+    : Gtk::Box{Gtk::Orientation::VERTICAL}
 {
-    set_name("Tool-Toolbars");
+    set_name("Toolbars");
 }
 
-// Fill the toolbars widget with toolbars.
-// Toolbars are contained inside a grid with an optional swatch.
-void Toolbars::create_toolbars(SPDesktop *desktop)
+Toolbars::~Toolbars()
 {
-    // Create the toolbars using their "create" methods.
-    for (int i = 0; aux_toolboxes[i].type_name; i++) {
-        if (aux_toolboxes[i].create) {
-            // Change create_func to return Gtk::Box!
-            auto const sub_toolbox = Gtk::manage(aux_toolboxes[i].create(desktop).release());
-            sub_toolbox->set_name("SubToolBox");
-            sub_toolbox->set_hexpand();
+    if (_current_toolbar) {
+        _current_toolbar->setDesktop(nullptr);
+    }
+}
 
-            // Use a grid to wrap the toolbar and a possible swatch.
-            auto const grid = Gtk::make_managed<Gtk::Grid>();
+void Toolbars::setTool(Tools::ToolBase *tool)
+{
+    // Acquire the toolbar to be shown, possibly null
+    Toolbar *toolbar = nullptr;
 
-            // Store a pointer to the grid so we can show/hide it as the tool changes.
-            toolbar_map[aux_toolboxes[i].tool_name] = grid;
+    if (tool) {
+        auto &toolbars_entry = _toolbars[tool->getPrefsPath()];
 
-            Glib::ustring ui_name = aux_toolboxes[i].tool_name +
-                                    "Toolbar"; // If you change "Toolbar" here, change it also in desktop-widget.cpp.
-            grid->set_name(ui_name);
-
-            grid->attach(*sub_toolbox, 0, 0, 1, 1);
-
-            append(*grid);
+        if (!toolbars_entry) {
+            // Lazily create the toolbar.
+            auto const &data = toolbar_data.at(tool->getPrefsPath());
+            toolbars_entry = data.create();
+            toolbars_entry->set_name(data.name + "Toolbar");
+            toolbars_entry->set_hexpand();
+            append(*toolbars_entry);
         }
+
+        toolbar = toolbars_entry.get();
     }
 
-    desktop->connectEventContextChanged(sigc::mem_fun(*this, &Toolbars::change_toolbar));
-
-    // Show initial toolbar, hide others.
-    change_toolbar(desktop, desktop->getTool());
+    if (toolbar != _current_toolbar) {
+        // Tool has changed.
+        if (_current_toolbar) {
+            _current_toolbar->set_visible(false);
+            _current_toolbar->setDesktop(nullptr);
+        }
+        _current_toolbar = toolbar;
+        if (_current_toolbar) {
+            _current_toolbar->setDesktop(tool->getDesktop());
+            _current_toolbar->set_visible(true);
+        }
+    } else if (_current_toolbar && tool->getDesktop() != _current_toolbar->getDesktop()) {
+        // Tool has stayed the same but desktop has changed.
+        _current_toolbar->setDesktop(tool->getDesktop());
+    }
 }
 
-void Toolbars::change_toolbar(SPDesktop * /*desktop*/, Tools::ToolBase *tool)
+void Toolbars::setActiveUnit(Util::Unit const *unit)
 {
-    if (!tool) {
-        std::cerr << "Toolbars::change_toolbar: tool is null!" << std::endl;
-        return;
-    }
-
-    for (int i = 0; aux_toolboxes[i].type_name; i++) {
-        toolbar_map[aux_toolboxes[i].tool_name]->set_visible(tool->getPrefsPath() == aux_toolboxes[i].type_name);
+    if (_current_toolbar) {
+        _current_toolbar->setActiveUnit(unit);
     }
 }
 

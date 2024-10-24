@@ -24,6 +24,7 @@
 #include "colors/color.h"
 #include <sigc++/scoped_connection.h>
 #include "rotateable.h"
+#include "ui/defocus-target.h"
 #include "ui/popup-menu.h"
 #include "ui/widget/spinbutton.h"
 #include "ui/widget/popover-bin.h"
@@ -115,7 +116,9 @@ private:
 /**
  * Selected style indicator (fill, stroke, opacity).
  */
-class SelectedStyle : public UI::Widget::PopoverBin
+class SelectedStyle
+    : public UI::Widget::PopoverBin
+    , private DefocusTarget
 {
 public:
     bool dragging = false;
@@ -218,6 +221,9 @@ protected:
 
     std::unique_ptr<SelectedStyleDropTracker> drop[2];
     bool dropEnabled[2] = {false, false};
+
+private:
+    void onDefocus() override;
 };
 
 } // namespace UI::Widget

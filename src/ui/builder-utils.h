@@ -47,7 +47,7 @@ W& get_derived_widget(const Glib::RefPtr<Gtk::Builder>& builder, const char* id,
     return *widget;
 }
 
-template<class Ob> Glib::RefPtr<Ob> get_object(Glib::RefPtr<Gtk::Builder>& builder, const char* id) {
+template<class Ob> Glib::RefPtr<Ob> get_object(Glib::RefPtr<Gtk::Builder> const &builder, char const *id) {
     auto const object = std::dynamic_pointer_cast<Ob>(builder->get_object(id));
     if (!object) {
         Detail::throw_missing("object", id);

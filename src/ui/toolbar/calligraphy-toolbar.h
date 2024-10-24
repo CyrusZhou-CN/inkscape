@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_CALLIGRAPHY_TOOLBAR_H
-#define SEEN_CALLIGRAPHY_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_CALLIGRAPHY_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_CALLIGRAPHY_TOOLBAR_H
 
 /**
- * @file
- * Calligraphy aux toolbar
+ * @file Calligraphy toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -35,8 +34,6 @@
 
 #include "toolbar.h"
 
-class SPDesktop;
-
 namespace Gtk {
 class Builder;
 class ComboBoxText;
@@ -44,29 +41,28 @@ class ToggleButton;
 } // namespace Gtk
 
 namespace Inkscape::UI {
-
 class SimplePrefPusher;
-
 namespace Widget {
 class SpinButton;
 class UnitTracker;
 } // namespace Widget
+} // namespace Inkscape::UI
 
-namespace Toolbar {
+namespace Inkscape::UI::Toolbar {
 
-class CalligraphyToolbar final : public Toolbar
+class CalligraphyToolbar : public Toolbar
 {
 public:
-    CalligraphyToolbar(SPDesktop *desktop);
+    CalligraphyToolbar();
     ~CalligraphyToolbar() override;
 
 private:
+    CalligraphyToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     using ValueChangedMemFun = void (CalligraphyToolbar::*)();
 
-    Glib::RefPtr<Gtk::Builder> _builder;
-
     std::unique_ptr<UI::Widget::UnitTracker> _tracker;
-    bool _presets_blocked;
+    bool _presets_blocked = false;
 
     Gtk::ComboBoxText &_profile_selector_combo;
     UI::Widget::SpinButton &_width_item;
@@ -84,7 +80,7 @@ private:
     UI::Widget::SpinButton &_tremor_item;
     UI::Widget::SpinButton &_wiggle_item;
 
-    std::map<Glib::ustring, GObject *> _widget_map;
+    std::map<std::string, Glib::Object *> _widget_map;
 
     // TODO: Check if these can be moved to the constructor.
     std::unique_ptr<SimplePrefPusher> _tracebackground_pusher;
@@ -92,7 +88,7 @@ private:
     std::unique_ptr<SimplePrefPusher> _usetilt_pusher;
 
     void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name, double default_value,
-                                   ValueChangedMemFun const value_changed_mem_fun);
+                                   ValueChangedMemFun value_changed_mem_fun);
     void width_value_changed();
     void velthin_value_changed();
     void angle_value_changed();
@@ -111,11 +107,9 @@ private:
     void on_pref_toggled(Gtk::ToggleButton *item, Glib::ustring const &path);
 };
 
-} // namespace Inkscape::UI
+} // namespace Inkscape::UI::Toolbar
 
-} // namespace Toolbar
-
-#endif /* !SEEN_CALLIGRAPHY_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_CALLIGRAPHY_TOOLBAR_H
 
 /*
   Local Variables:

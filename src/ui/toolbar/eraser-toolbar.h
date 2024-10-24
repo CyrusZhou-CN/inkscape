@@ -26,10 +26,8 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_INKCAPE_UI_ERASERTOOLBAR_H
-#define SEEN_INKCAPE_UI_ERASERTOOLBAR_H
-
-#include <glibmm/refptr.h>
+#ifndef INKCAPE_UI_TOOLBAR_ERASER_TOOLBAR_H
+#define INKCAPE_UI_TOOLBAR_ERASER_TOOLBAR_H
 
 #include "toolbar.h"
 
@@ -54,16 +52,17 @@ class SpinButton;
 
 namespace Toolbar {
 
-class EraserToolbar final : public Toolbar
+class EraserToolbar : public Toolbar
 {
 public:
-    EraserToolbar(SPDesktop *desktop);
+    EraserToolbar();
     ~EraserToolbar() override;
 
 private:
+    EraserToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     using ValueChangedMemFun = void (EraserToolbar::*)();
 
-    Glib::RefPtr<Gtk::Builder> _builder;
     UI::Widget::SpinButton &_width_item;
     UI::Widget::SpinButton &_thinning_item;
     UI::Widget::SpinButton &_cap_rounding_item;
@@ -73,8 +72,6 @@ private:
     Gtk::ToggleButton &_split_btn;
 
     std::unique_ptr<SimplePrefPusher> _pressure_pusher;
-
-    bool _freeze = false;
 
     void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name, double default_value,
                                    ValueChangedMemFun value_changed_mem_fun);
@@ -95,7 +92,7 @@ private:
 } // namespace UI
 } // namespace Inkscape
 
-#endif // SEEN_INKCAPE_UI_ERASERTOOLBAR_H
+#endif // INKCAPE_UI_TOOLBAR_ERASER_TOOLBAR_H
 
 /*
   Local Variables:

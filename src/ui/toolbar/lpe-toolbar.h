@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_LPE_TOOLBAR_H
-#define SEEN_LPE_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_LPE_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_LPE_TOOLBAR_H
 
 /**
- * @file
- * LPE aux toolbar
+ * @file LPE toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -30,44 +29,43 @@
  */
 
 #include "toolbar.h"
+#include "ui/operation-blocker.h"
 
 namespace Gtk {
 class Builder;
 class ToggleButton;
 } // namespace Gtk
 
-class SPDesktop;
 class SPLPEItem;
 
 namespace Inkscape {
+namespace LivePathEffect { class Effect; }
 class Selection;
-
-namespace LivePathEffect {
-class Effect;
-}
-
+namespace Tools { class ToolBase; }
 namespace UI {
-namespace Tools {
-class ToolBase;
-}
-
 namespace Widget {
 class ComboToolItem;
 class UnitTracker;
-}
+} // namespace Widget
+} // namespace UI
+} // namespace Inkscape
 
-namespace Toolbar {
+namespace Inkscape::UI::Toolbar {
 
-class LPEToolbar final : public Toolbar
+class LPEToolbar : public Toolbar
 {
 public:
-    LPEToolbar(SPDesktop *desktop);
+    LPEToolbar();
     ~LPEToolbar() override;
 
-    void set_mode(int mode);
+    void setDesktop(SPDesktop *desktop) override;
+    void setActiveUnit(Util::Unit const *unit) override;
+
+    void setMode(int mode);
 
 private:
-    Glib::RefPtr<Gtk::Builder> _builder;
+    LPEToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     std::unique_ptr<UI::Widget::UnitTracker> _tracker;
 
     std::vector<Gtk::ToggleButton *> _mode_buttons;
@@ -78,10 +76,10 @@ private:
     UI::Widget::ComboToolItem *_line_segment_combo;
     UI::Widget::ComboToolItem *_units_item;
 
-    bool _freeze;
+    OperationBlocker _blocker;
 
-    LivePathEffect::Effect *_currentlpe;
-    SPLPEItem *_currentlpeitem;
+    LivePathEffect::Effect *_currentlpe = nullptr;
+    SPLPEItem *_currentlpeitem = nullptr;
 
     sigc::connection c_selection_modified;
     sigc::connection c_selection_changed;
@@ -91,15 +89,13 @@ private:
     void sel_modified(Inkscape::Selection *selection, guint flags);
     void sel_changed(Inkscape::Selection *selection);
     void change_line_segment_type(int mode);
-    void watch_ec(SPDesktop* desktop, UI::Tools::ToolBase* tool);
 
     void toggle_show_bbox();
     void toggle_set_bbox();
     void toggle_show_measuring_info();
     void open_lpe_dialog();
 };
-}
-}
-}
 
-#endif /* !SEEN_LPE_TOOLBAR_H */
+} // Inkscape::UI::Toolbar
+
+#endif // INKSCAPE_UI_TOOLBAR_LPE_TOOLBAR_H

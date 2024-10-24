@@ -16,6 +16,7 @@
 
 #include "message.h"
 #include "preferences.h" // observer
+#include "ui/defocus-target.h"
 #include "ui/popup-menu.h"
 
 namespace Gtk {
@@ -37,8 +38,10 @@ class SelectedStyle;
 class LayerSelector;
 class SpinButton;
 
-class StatusBar : public Gtk::Box {
-
+class StatusBar
+    : public Gtk::Box
+    , public Inkscape::UI::DefocusTarget
+{
 public:
     StatusBar();
     ~StatusBar() override = default;
@@ -53,6 +56,8 @@ public:
 
     void rotate_grab_focus();
     void zoom_grab_focus();
+
+    void onDefocus() override;
 
 private:
     int zoom_input(double &new_value);

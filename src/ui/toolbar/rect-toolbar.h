@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_RECT_TOOLBAR_H
-#define SEEN_RECT_TOOLBAR_H
+#ifndef INKSCAPE_UI_TOOLBAR_RECT_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_RECT_TOOLBAR_H
 
 /**
- * @file
- * Rect aux toolbar
+ * @file Rectangle toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -29,7 +28,10 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#include <array>
+
 #include "toolbar.h"
+#include "ui/operation-blocker.h"
 #include "xml/node-observer.h"
 
 namespace Gtk {
@@ -39,73 +41,71 @@ class Label;
 class Adjustment;
 } // namespace Gtk
 
-class SPDesktop;
-class SPItem;
 class SPRect;
 
 namespace Inkscape {
 class Selection;
-
-namespace XML {
-class Node;
-}
-
 namespace UI {
-namespace Tools {
-class ToolBase;
-}
-
+namespace Tools { class ToolBase; }
 namespace Widget {
 class Label;
 class SpinButton;
 class UnitTracker;
-}
+} // namespace Widget
+} // namespace UI
+namespace XML { class Node; }
+} // namespace Inkscape
 
-namespace Toolbar {
+namespace Inkscape::UI::Toolbar {
 
-class RectToolbar final
+class RectToolbar
     : public Toolbar
-    , private Inkscape::XML::NodeObserver
+    , private XML::NodeObserver
 {
 public:
-    RectToolbar(SPDesktop *desktop);
+    RectToolbar();
     ~RectToolbar() override;
 
+    void setDesktop(SPDesktop *desktop) override;
+    void setActiveUnit(Util::Unit const *unit) override;
+
 private:
-    Glib::RefPtr<Gtk::Builder> _builder;
+    RectToolbar(Glib::RefPtr<Gtk::Builder> const &builder);
+
     std::unique_ptr<UI::Widget::UnitTracker> _tracker;
 
-    XML::Node *_repr{nullptr};
-    SPItem *_item;
-
     Gtk::Label &_mode_item;
-    UI::Widget::SpinButton &_width_item;
-    UI::Widget::SpinButton &_height_item;
-    UI::Widget::SpinButton &_rx_item;
-    UI::Widget::SpinButton &_ry_item;
     Gtk::Button &_not_rounded;
 
-    bool _freeze{false};
-    bool _single{true};
+    struct DerivedSpinButton;
+    DerivedSpinButton &_width_item;
+    DerivedSpinButton &_height_item;
+    DerivedSpinButton &_rx_item;
+    DerivedSpinButton &_ry_item;
+    auto _getDerivedSpinButtons() const { return std::to_array({&_rx_item, &_ry_item, &_width_item, &_height_item}); }
+    void _valueChanged(DerivedSpinButton &btn);
 
-    void setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name,
-                                   void (SPRect::*setter_fun)(gdouble));
-    void value_changed(Glib::RefPtr<Gtk::Adjustment> &adj, Glib::ustring const &value_name,
-                       void (SPRect::*setter)(gdouble));
+    XML::Node *_repr = nullptr;
+    SPRect *_rect = nullptr;
+    void _attachRepr(XML::Node *repr, SPRect *rect);
+    void _detachRepr();
 
-    void sensitivize();
-    void defaults();
-    void watch_ec(SPDesktop* desktop, Inkscape::UI::Tools::ToolBase* tool);
-    void selection_changed(Inkscape::Selection *selection);
+    OperationBlocker _blocker;
+    bool _single = true;
 
-    sigc::connection _changed;
+    sigc::connection _selection_changed_conn;
+    void _selectionChanged(Selection *selection);
 
-    void notifyAttributeChanged(Inkscape::XML::Node &node, GQuark name, Inkscape::Util::ptr_shared old_value,
-                                Inkscape::Util::ptr_shared new_value) final;
+    void _sensitivize();
+    void _setDefaults();
+
+    void notifyAttributeChanged(XML::Node &node, GQuark name, Util::ptr_shared old_value, Util::ptr_shared new_value) override;
+    void _queueUpdate();
+    void _cancelUpdate();
+    void _update();
+    unsigned _tick_callback = 0;
 };
 
-}
-}
-}
+} // namespace Inkscape::UI::Toolbar
 
-#endif /* !SEEN_RECT_TOOLBAR_H */
+#endif // INKSCAPE_UI_TOOLBAR_RECT_TOOLBAR_H

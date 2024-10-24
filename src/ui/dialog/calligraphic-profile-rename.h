@@ -9,71 +9,58 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef INKSCAPE_DIALOG_CALLIGRAPHIC_PROFILE_H
-#define INKSCAPE_DIALOG_CALLIGRAPHIC_PROFILE_H
+#ifndef INKSCAPE_UI_DIALOG_CALLIGRAPHIC_PROFILE_H
+#define INKSCAPE_UI_DIALOG_CALLIGRAPHIC_PROFILE_H
 
 #include <gtkmm/dialog.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/label.h>
-
-namespace Gtk {
-class Grid;
-}
+#include <gtkmm/grid.h>
 
 class SPDesktop;
 
-namespace Inkscape {
-namespace UI {
-namespace Dialog {
-      
-class CalligraphicProfileRename : public Gtk::Dialog {  
+namespace Inkscape::UI::Dialog {
+
+class CalligraphicProfileRename : public Gtk::Dialog
+{
 public:
-    CalligraphicProfileRename();
-    ~CalligraphicProfileRename() override = default;
-    Glib::ustring getName() const {
-        return "CalligraphicProfileRename";
-    }
-    
-    static void show(SPDesktop *desktop, const Glib::ustring profile_name);
+    static void show(SPDesktop *desktop, Glib::ustring const &profile_name);
+
     static bool applied() {
-        return instance()._applied;
+        return _getInstance()._applied;
     }
     static bool deleted() {
-        return instance()._deleted;
+        return _getInstance()._deleted;
     }
-    static Glib::ustring getProfileName() {
-        return instance()._profile_name;
+    static Glib::ustring const &getProfileName() {
+        return _getInstance()._profile_name;
     }
 
-protected:
+private:
+    CalligraphicProfileRename();
+
     void _close();
     void _apply();
     void _delete();
 
-    Gtk::Label        _profile_name_label;
-    Gtk::Entry        _profile_name_entry;
-    Gtk::Grid*        _layout_table;
+    Gtk::Label _profile_name_label;
+    Gtk::Entry _profile_name_entry;
+    Gtk::Grid _layout_table;
 
-    Gtk::Button       _close_button;
-    Gtk::Button       _delete_button;
-    Gtk::Button       _apply_button;
+    Gtk::Button _close_button;
+    Gtk::Button _delete_button;
+    Gtk::Button _apply_button;
+
     Glib::ustring _profile_name;
     bool _applied;
     bool _deleted;
-private:
-    static CalligraphicProfileRename &instance() {
-        static CalligraphicProfileRename instance_;
-        return instance_;
-    }
-    CalligraphicProfileRename(CalligraphicProfileRename const &) = delete; // no copy
-    CalligraphicProfileRename &operator=(CalligraphicProfileRename const &) = delete; // no assign
-};
- 
-} // namespace Dialog
-} // namespace UI
-} // namespace Inkscape
 
-#endif // INKSCAPE_DIALOG_CALLIGRAPHIC_PROFILE_H
+    static CalligraphicProfileRename &_getInstance();
+};
+
+} // namespace Inkscape::UI::Dialog
+
+#endif // INKSCAPE_UI_DIALOG_CALLIGRAPHIC_PROFILE_H
 
 /*
   Local Variables:

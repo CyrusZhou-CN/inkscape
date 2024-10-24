@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <gtkmm/enums.h>
+#include <gtkmm/eventcontrollerfocus.h>
 #include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/object.h>
 #include <gtkmm/popovermenu.h>
@@ -21,6 +22,7 @@
 
 #include "scroll-utils.h"
 #include "ui/controller.h"
+#include "ui/defocus-target.h"
 #include "ui/tools/tool-base.h"
 #include "ui/util.h"
 #include "ui/widget/popover-menu-item.h"
@@ -53,9 +55,16 @@ void SpinButton::_construct()
 {
     auto const key = Gtk::EventControllerKey::create();
     key->signal_key_pressed().connect([this, &key = *key](auto &&...args) { return on_key_pressed(key, args...); }, true);
+    key->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
     add_controller(key);
 
-    property_has_focus().signal_changed().connect(sigc::mem_fun(*this, &SpinButton::on_has_focus_changed));
+    auto focus = Gtk::EventControllerFocus::create();
+    focus->signal_enter().connect([this] {
+        // When focus is obtained, save the value to enable undo later.
+        _on_focus_in_value = get_value();
+    });
+    add_controller(focus);
+
     UI::on_popup_menu(*this, sigc::mem_fun(*this, &SpinButton::on_popup_menu));
 
     signal_input().connect(sigc::mem_fun(*this, &SpinButton::on_input), true);
@@ -93,13 +102,6 @@ int SpinButton::on_input(double &newvalue)
     return true;
 }
 
-void SpinButton::on_has_focus_changed()
-{
-    if (has_focus()) {
-        _on_focus_in_value = get_value();
-    }
-}
-
 bool SpinButton::on_key_pressed(Gtk::EventControllerKey const &controller,
                                 unsigned keyval, unsigned keycode, Gdk::ModifierType state)
 {
@@ -124,23 +126,16 @@ bool SpinButton::on_key_pressed(Gtk::EventControllerKey const &controller,
         case GDK_KEY_Escape: // defocus
             undo();
             defocus();
-            break;
+            return true;
 
         case GDK_KEY_Return: // defocus
         case GDK_KEY_KP_Enter:
             defocus();
             break;
 
-        case GDK_KEY_Tab:
-        case GDK_KEY_ISO_Left_Tab:
-            // set the flag meaning "do not leave toolbar when changing value"
-            _stay = true;
-            break;
-
         case GDK_KEY_z:
         case GDK_KEY_Z:
             if (Controller::has_flag(state, Gdk::ModifierType::CONTROL_MASK)) {
-                _stay = true;
                 undo();
                 return true; // I consumed the event
             }
@@ -169,10 +164,9 @@ bool SpinButton::on_key_pressed(Gtk::EventControllerKey const &controller,
     return false;
 }
 
-void SpinButton::on_numeric_menu_item_activate(double const value)
+void SpinButton::on_numeric_menu_item_activate(double value)
 {
-    auto adj = get_adjustment();
-    adj->set_value(value);
+    get_adjustment()->set_value(value);
 }
 
 bool SpinButton::on_popup_menu(PopupMenuOptionalClick)
@@ -251,14 +245,14 @@ SpinButton::~SpinButton()
 
 void SpinButton::defocus()
 {
-    // defocus spinbutton by moving focus to the canvas, unless "stay" is on
-    if (_stay) {
-        _stay = false;
-    } else {
-        Gtk::Widget *widget = _defocus_widget ? _defocus_widget : get_scrollable_ancestor(this);
-        if (widget) {
-            widget->grab_focus();
-        }
+    // clear selection, which would otherwise persist
+    select_region(0, 0);
+
+    // defocus spinbutton by moving focus to the canvas
+    if (_defocus_target) {
+        _defocus_target->onDefocus();
+    } else if (auto widget = get_scrollable_ancestor(this)) {
+        widget->grab_focus();
     }
 }
 

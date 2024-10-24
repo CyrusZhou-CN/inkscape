@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file
- * Dropper aux toolbar
+ * @file Dropper toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -38,45 +37,25 @@
 
 namespace Inkscape::UI::Toolbar {
 
-void DropperToolbar::on_pick_alpha_button_toggled()
-{
-    auto active = _pick_alpha_btn.get_active();
-
-    auto prefs = Inkscape::Preferences::get();
-    prefs->setInt( "/tools/dropper/pick", active );
-
-    _set_alpha_btn.set_sensitive(active);
-    _desktop->getCanvas()->grab_focus();
-}
-
-void DropperToolbar::on_set_alpha_button_toggled()
-{
-    auto prefs = Inkscape::Preferences::get();
-    prefs->setBool("/tools/dropper/setalpha", _set_alpha_btn.get_active());
-    _desktop->getCanvas()->grab_focus();
-}
-
 /*
  * TODO: Would like to add swatch of current color.
  * TODO: Add queue of last 5 or so colors selected with new swatches so that
  *       can drag and drop places. Will provide a nice mixing palette.
  */
-DropperToolbar::DropperToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    , _builder(create_builder("toolbar-dropper.ui"))
-    , _pick_alpha_btn(get_widget<Gtk::ToggleButton>(_builder, "_pick_alpha_btn"))
-    , _set_alpha_btn(get_widget<Gtk::ToggleButton>(_builder, "_set_alpha_btn"))
+DropperToolbar::DropperToolbar()
+    : DropperToolbar{create_builder("toolbar-dropper.ui")}
+{}
+
+DropperToolbar::DropperToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
+    : Toolbar{get_widget<Gtk::Box>(builder, "dropper-toolbar")}
+    , _pick_alpha_btn(get_widget<Gtk::ToggleButton>(builder, "_pick_alpha_btn"))
+    , _set_alpha_btn(get_widget<Gtk::ToggleButton>(builder, "_set_alpha_btn"))
 {
-    _toolbar = &get_widget<Gtk::Box>(_builder, "dropper-toolbar");
-
-    set_child(*_toolbar);
-    init_menu_btns();
-
     auto prefs = Preferences::get();
 
     // Set initial state of widgets
-    auto pickAlpha = prefs->getInt( "/tools/dropper/pick", 1 );
-    auto setAlpha  = prefs->getBool( "/tools/dropper/setalpha", true);
+    auto pickAlpha = prefs->getInt("/tools/dropper/pick", 1);
+    auto setAlpha  = prefs->getBool("/tools/dropper/setalpha", true);
 
     _pick_alpha_btn.set_active(pickAlpha);
     _set_alpha_btn.set_active(setAlpha);
@@ -90,9 +69,27 @@ DropperToolbar::DropperToolbar(SPDesktop *desktop)
 
     _pick_alpha_btn.signal_toggled().connect(pick_alpha_button_toggled_cb);
     _set_alpha_btn.signal_toggled().connect(set_alpha_button_toggled_cb);
+
+    _initMenuBtns();
 }
 
-DropperToolbar::~DropperToolbar() = default;
+void DropperToolbar::on_pick_alpha_button_toggled()
+{
+    auto active = _pick_alpha_btn.get_active();
+
+    auto prefs = Preferences::get();
+    prefs->setInt("/tools/dropper/pick", active);
+
+    _set_alpha_btn.set_sensitive(active);
+    _desktop->getCanvas()->grab_focus();
+}
+
+void DropperToolbar::on_set_alpha_button_toggled()
+{
+    auto prefs = Preferences::get();
+    prefs->setBool("/tools/dropper/setalpha", _set_alpha_btn.get_active());
+    _desktop->getCanvas()->grab_focus();
+}
 
 } // namespace Inkscape::UI::Toolbar
 

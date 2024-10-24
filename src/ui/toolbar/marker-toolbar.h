@@ -11,24 +11,19 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifndef SEEN_MARKER_TOOLBAR_H
-#define SEEN_MARKER_TOOLBAR_H
-
-#include <gtkmm/builder.h>
+#ifndef INKSCAPE_UI_TOOLBAR_SEEN_MARKER_TOOLBAR_H
+#define INKSCAPE_UI_TOOLBAR_SEEN_MARKER_TOOLBAR_H
 
 #include "toolbar.h"
 
 namespace Inkscape::UI::Toolbar {
 
-class MarkerToolbar final : public Toolbar
+class MarkerToolbar : public Toolbar
 {
 public:
-    MarkerToolbar(SPDesktop *desktop);
-
-private:
-    Glib::RefPtr<Gtk::Builder> _builder;
+    MarkerToolbar();
 };
 
 } // namespace Inkscape::UI::Toolbar
 
-#endif
+#endif // INKSCAPE_UI_TOOLBAR_SEEN_MARKER_TOOLBAR_H

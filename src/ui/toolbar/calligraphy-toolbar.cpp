@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /**
- * @file
- * Calligraphy aux toolbar
+ * @file Calligraphy toolbar
  */
 /* Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -38,7 +37,6 @@
 #include "ui/dialog/calligraphic-profile-rename.h"
 #include "ui/simple-pref-pusher.h"
 #include "ui/util.h"
-#include "ui/widget/canvas.h"
 #include "ui/widget/combo-tool-item.h"
 #include "ui/widget/spinbutton.h"
 #include "ui/widget/unit-tracker.h"
@@ -48,30 +46,32 @@ using Inkscape::Util::Quantity;
 using Inkscape::Util::Unit;
 using Inkscape::Util::UnitTable;
 
-std::vector<Glib::ustring> get_presets_list() {
-    std::vector<Glib::ustring> presets = Inkscape::Preferences::get()->getAllDirs("/tools/calligraphic/preset");
-    return presets;
-}
-
 namespace Inkscape::UI::Toolbar {
 
-CalligraphyToolbar::CalligraphyToolbar(SPDesktop *desktop)
-    : Toolbar(desktop)
-    , _tracker{std::make_unique<UnitTracker>(Inkscape::Util::UNIT_TYPE_LINEAR)}
-    , _presets_blocked(false)
-    , _builder(create_builder("toolbar-calligraphy.ui"))
-    , _profile_selector_combo(get_widget<Gtk::ComboBoxText>(_builder, "_profile_selector_combo"))
-    , _width_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_width_item"))
-    , _thinning_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_thinning_item"))
-    , _mass_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_mass_item"))
-    , _angle_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_angle_item"))
-    , _usetilt_btn(&get_widget<Gtk::ToggleButton>(_builder, "_usetilt_btn"))
-    , _flatness_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_flatness_item"))
-    , _cap_rounding_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_cap_rounding_item"))
-    , _tremor_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_tremor_item"))
-    , _wiggle_item(get_derived_widget<UI::Widget::SpinButton>(_builder, "_wiggle_item"))
+static std::vector<Glib::ustring> get_presets_list()
 {
-    auto *prefs = Inkscape::Preferences::get();
+    return Preferences::get()->getAllDirs("/tools/calligraphic/preset");
+}
+
+CalligraphyToolbar::CalligraphyToolbar()
+    : CalligraphyToolbar{create_builder("toolbar-calligraphy.ui")}
+{}
+
+CalligraphyToolbar::CalligraphyToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
+    : Toolbar{get_widget<Gtk::Box>(builder, "calligraphy-toolbar")}
+    , _tracker{std::make_unique<UnitTracker>(Util::UNIT_TYPE_LINEAR)}
+    , _profile_selector_combo{get_widget<Gtk::ComboBoxText>(builder, "_profile_selector_combo")}
+    , _width_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_width_item")}
+    , _thinning_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_thinning_item")}
+    , _mass_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_mass_item")}
+    , _angle_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_angle_item")}
+    , _usetilt_btn{&get_widget<Gtk::ToggleButton>(builder, "_usetilt_btn")}
+    , _flatness_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_flatness_item")}
+    , _cap_rounding_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_cap_rounding_item")}
+    , _tremor_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_tremor_item")}
+    , _wiggle_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_wiggle_item")}
+{
+    auto prefs = Preferences::get();
 
     _tracker->prependUnit(UnitTable::get().getUnit("px"));
     _tracker->changeLabel("%", 0, true);
@@ -79,10 +79,8 @@ CalligraphyToolbar::CalligraphyToolbar(SPDesktop *desktop)
         _tracker->setActiveUnitByLabel(prefs->getString("/tools/calligraphic/unit"));
     }
 
-    _toolbar = &get_widget<Gtk::Box>(_builder, "calligraphy-toolbar");
-
-    auto usepressure_btn = &get_widget<Gtk::ToggleButton>(_builder, "usepressure_btn");
-    auto tracebackground_btn = &get_widget<Gtk::ToggleButton>(_builder, "tracebackground_btn");
+    auto &usepressure_btn = get_widget<Gtk::ToggleButton>(builder, "usepressure_btn");
+    auto &tracebackground_btn = get_widget<Gtk::ToggleButton>(builder, "tracebackground_btn");
 
     // Setup the spin buttons.
     setup_derived_spin_button(_width_item, "width", 15.118, &CalligraphyToolbar::width_value_changed);
@@ -180,50 +178,49 @@ CalligraphyToolbar::CalligraphyToolbar(SPDesktop *desktop)
 
     // Unit menu.
     auto unit_menu = _tracker->create_tool_item(_("Units"), "");
-    get_widget<Gtk::Box>(_builder, "unit_menu_box").append(*unit_menu);
+    get_widget<Gtk::Box>(builder, "unit_menu_box").append(*unit_menu);
     unit_menu->signal_changed_after().connect(sigc::mem_fun(*this, &CalligraphyToolbar::unit_changed));
 
     // Use pressure button.
-    _widget_map["usepressure"] = G_OBJECT(usepressure_btn->gobj());
-    _usepressure_pusher.reset(new SimplePrefPusher(usepressure_btn, "/tools/calligraphic/usepressure"));
-    usepressure_btn->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &CalligraphyToolbar::on_pref_toggled),
-                                                         usepressure_btn, "/tools/calligraphic/usepressure"));
+    _widget_map["usepressure"] = &usepressure_btn;
+    _usepressure_pusher = std::make_unique<SimplePrefPusher>(&usepressure_btn, "/tools/calligraphic/usepressure");
+    usepressure_btn.signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &CalligraphyToolbar::on_pref_toggled),
+                                                         &usepressure_btn, "/tools/calligraphic/usepressure"));
 
     // Tracebackground button.
-    _widget_map["tracebackground"] = G_OBJECT(tracebackground_btn->gobj());
-    _tracebackground_pusher.reset(new SimplePrefPusher(tracebackground_btn, "/tools/calligraphic/tracebackground"));
-    tracebackground_btn->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &CalligraphyToolbar::on_pref_toggled),
-                                                             tracebackground_btn,
+    _widget_map["tracebackground"] = &tracebackground_btn;
+    _tracebackground_pusher = std::make_unique<SimplePrefPusher>(&tracebackground_btn, "/tools/calligraphic/tracebackground");
+    tracebackground_btn.signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &CalligraphyToolbar::on_pref_toggled),
+                                                             &tracebackground_btn,
                                                              "/tools/calligraphic/tracebackground"));
 
     // Use tilt button.
-    _widget_map["usetilt"] = G_OBJECT(_usetilt_btn->gobj());
-    _usetilt_pusher.reset(new SimplePrefPusher(_usetilt_btn, "/tools/calligraphic/usetilt"));
+    _widget_map["usetilt"] = _usetilt_btn;
+    _usetilt_pusher = std::make_unique<SimplePrefPusher>(_usetilt_btn, "/tools/calligraphic/usetilt");
     _usetilt_btn->signal_toggled().connect(sigc::mem_fun(*this, &CalligraphyToolbar::tilt_state_changed));
     _angle_item.set_sensitive(!prefs->getBool("/tools/calligraphic/usetilt", true));
     _usetilt_btn->set_active(prefs->getBool("/tools/calligraphic/usetilt", true));
 
-    set_child(*_toolbar);
-    init_menu_btns();
-
     // Signals.
-    get_widget<Gtk::Button>(_builder, "profile_edit_btn")
+    get_widget<Gtk::Button>(builder, "profile_edit_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &CalligraphyToolbar::edit_profile));
+
+    _initMenuBtns();
 }
 
 CalligraphyToolbar::~CalligraphyToolbar() = default;
 
 void CalligraphyToolbar::setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name,
-                                                   double default_value, ValueChangedMemFun const value_changed_mem_fun)
+                                                   double default_value, ValueChangedMemFun value_changed_mem_fun)
 {
-    auto prefs = Preferences::get();
-    const Glib::ustring path = "/tools/calligraphic/" + name;
+    auto const prefs = Preferences::get();
+    auto const path = "/tools/calligraphic/" + name;
     auto const val = prefs->getDouble(path, default_value);
     auto adj = btn.get_adjustment();
 
     if (name == "width") {
-        Unit const *unit = UnitTable::get().getUnit(prefs->getString("/tools/calligraphic/unit"));
+        auto const unit = UnitTable::get().getUnit(prefs->getString("/tools/calligraphic/unit"));
         adj = Gtk::Adjustment::create(Quantity::convert(val, "px", unit), 0.001, 100, 1.0, 10.0);
         btn.set_adjustment(adj);
     } else {
@@ -232,17 +229,15 @@ void CalligraphyToolbar::setup_derived_spin_button(UI::Widget::SpinButton &btn, 
 
     adj->signal_value_changed().connect(sigc::mem_fun(*this, value_changed_mem_fun));
 
-    _widget_map[name] = G_OBJECT(adj->gobj());
+    _widget_map[name] = adj.get();
     _tracker->addAdjustment(adj->gobj());
-
-    btn.set_defocus_widget(_desktop->getCanvas());
+    btn.setDefocusTarget(this);
 }
 
 void CalligraphyToolbar::width_value_changed()
 {
-    Unit const *unit = _tracker->getActiveUnit();
-    g_return_if_fail(unit != nullptr);
-    auto prefs = Inkscape::Preferences::get();
+    auto const unit = _tracker->getActiveUnit();
+    auto prefs = Preferences::get();
     prefs->setBool("/tools/calligraphic/abs_width", _tracker->getCurrentLabel() != "%");
     prefs->setDouble("/tools/calligraphic/width",
                      Quantity::convert(_width_item.get_adjustment()->get_value(), unit, "px"));
@@ -310,27 +305,22 @@ void CalligraphyToolbar::update_presets_list()
         bool match = true;
 
         auto preset = Preferences::get()->getAllEntries(*i);
-        for (auto & j : preset) {
-            Glib::ustring entry_name = j.getEntryName();
+        for (auto &j : preset) {
+            auto const entry_name = j.getEntryName();
             if (entry_name == "id" || entry_name == "name") {
                 continue;
             }
 
-            void *widget = _widget_map[entry_name.data()];
-            if (widget) {
-                if (GTK_IS_ADJUSTMENT(widget)) {
+            if (auto widget = _widget_map[entry_name.data()]) {
+                if (auto adj = dynamic_cast<Gtk::Adjustment *>(widget)) {
                     double v = j.getDouble();
-                    GtkAdjustment* adj = static_cast<GtkAdjustment *>(widget);
-                    //std::cout << "compared adj " << attr_name << gtk_adjustment_get_value(adj) << " to " << v << "\n";
-                    if (fabs(gtk_adjustment_get_value(adj) - v) > 1e-6) {
+                    if (std::abs(adj->get_value() - v) > 1e-6) {
                         match = false;
                         break;
                     }
-                } else if (GTK_IS_TOGGLE_BUTTON(widget)) {
+                } else if (auto toggle = dynamic_cast<Gtk::ToggleButton *>(widget)) {
                     bool v = j.getBool();
-                    auto toggle = GTK_TOGGLE_BUTTON(widget);
-                    //std::cout << "compared toggle " << attr_name << gtk_toggle_action_get_active(toggle) << " to " << v << "\n";
-                    if (static_cast<bool>(gtk_toggle_button_get_active(toggle)) != v) {
+                    if (toggle->get_active() != v) {
                         match = false;
                         break;
                     }
@@ -365,11 +355,8 @@ void CalligraphyToolbar::build_presets_list()
     _profile_selector_combo.append(_("No preset"));
 
     // iterate over all presets to populate the list
-    auto presets = get_presets_list();
-
-    for (auto & preset : presets) {
-        Glib::ustring preset_name = Preferences::get()->getString(preset + "/name");
-
+    for (auto const &preset : get_presets_list()) {
+        auto const preset_name = Preferences::get()->getString(preset + "/name");
         if (!preset_name.empty()) {
             _profile_selector_combo.append(_(preset_name.data()));
         }
@@ -389,7 +376,7 @@ void CalligraphyToolbar::change_profile()
     }
 
     // mode is one-based so we subtract 1
-    std::vector<Glib::ustring> presets = get_presets_list();
+    auto const presets = get_presets_list();
 
     Glib::ustring preset_path = "";
     if (mode - 1 < presets.size()) {
@@ -399,24 +386,19 @@ void CalligraphyToolbar::change_profile()
     if (!preset_path.empty()) {
         _presets_blocked = true; //temporarily block the selector so no one will updadte it while we're reading it
 
-        std::vector<Inkscape::Preferences::Entry> preset = Preferences::get()->getAllEntries(preset_path);
+        auto preset = Preferences::get()->getAllEntries(preset_path);
 
         // Shouldn't this be std::map?
-        for (auto & i : preset) {
-            Glib::ustring entry_name = i.getEntryName();
+        for (auto &i : preset) {
+            auto const entry_name = i.getEntryName();
             if (entry_name == "id" || entry_name == "name") {
                 continue;
             }
-            void *widget = _widget_map[entry_name.data()];
-            if (widget) {
-                if (GTK_IS_ADJUSTMENT(widget)) {
-                    GtkAdjustment* adj = static_cast<GtkAdjustment *>(widget);
-                    gtk_adjustment_set_value(adj, i.getDouble());
-                    //std::cout << "set adj " << attr_name << " to " << v << "\n";
-                } else if (GTK_IS_TOGGLE_BUTTON(widget)) {
-                    auto toggle = GTK_TOGGLE_BUTTON(widget);
-                    gtk_toggle_button_set_active(toggle, i.getBool());
-                    //std::cout << "set toggle " << attr_name << " to " << v << "\n";
+            if (auto widget = _widget_map[entry_name.data()]) {
+                if (auto adj = dynamic_cast<Gtk::Adjustment *>(widget)) {
+                    adj->set_value(i.getDouble());
+                } else if (auto toggle = dynamic_cast<Gtk::ToggleButton *>(widget)) {
+                    toggle->set_active(i.getBool());
                 } else {
                     g_warning("Unknown widget type for preset: %s\n", entry_name.data());
                 }
@@ -424,6 +406,7 @@ void CalligraphyToolbar::change_profile()
                 g_warning("Bad key found in a preset record: %s\n", entry_name.data());
             }
         }
+
         _presets_blocked = false;
     }
 }
@@ -433,22 +416,21 @@ void CalligraphyToolbar::edit_profile()
     save_profile(nullptr);
 }
 
-void CalligraphyToolbar::unit_changed(int /* NotUsed */)
+void CalligraphyToolbar::unit_changed(int)
 {
-    Unit const *unit = _tracker->getActiveUnit();
-    g_return_if_fail(unit != nullptr);
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    auto const unit = _tracker->getActiveUnit();
+    auto prefs = Preferences::get();
     prefs->setBool("/tools/calligraphic/abs_width", _tracker->getCurrentLabel() != "%");
     prefs->setDouble("/tools/calligraphic/width",
-                     CLAMP(prefs->getDouble("/tools/calligraphic/width"), Quantity::convert(0.001, unit, "px"),
+                     std::clamp(prefs->getDouble("/tools/calligraphic/width"), Quantity::convert(0.001, unit, "px"),
                            Quantity::convert(100, unit, "px")));
     prefs->setString("/tools/calligraphic/unit", unit->abbr);
 }
 
-void CalligraphyToolbar::save_profile(GtkWidget * /*widget*/)
+void CalligraphyToolbar::save_profile(GtkWidget *)
 {
-    using Inkscape::UI::Dialog::CalligraphicProfileRename;
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    using Dialog::CalligraphicProfileRename;
+    auto prefs = Preferences::get();
     if (! _desktop) {
         return;
     }
@@ -464,7 +446,7 @@ void CalligraphyToolbar::save_profile(GtkWidget * /*widget*/)
     }
 
     CalligraphicProfileRename::show(_desktop, current_profile_name);
-    if ( !CalligraphicProfileRename::applied()) {
+    if (!CalligraphicProfileRename::applied()) {
         // dialog cancelled
         update_presets_list();
         return;
@@ -473,7 +455,7 @@ void CalligraphyToolbar::save_profile(GtkWidget * /*widget*/)
 
     if (new_profile_name.empty()) {
         // empty name entered
-        update_presets_list ();
+        update_presets_list();
         return;
     }
 
@@ -485,17 +467,17 @@ void CalligraphyToolbar::save_profile(GtkWidget * /*widget*/)
     int new_index = -1;
     Glib::ustring save_path; // profile pref path without a trailing slash
 
-    int temp_index = 0;
-    for (std::vector<Glib::ustring>::iterator i = presets.begin(); i != presets.end(); ++i, ++temp_index) {
-        Glib::ustring name = prefs->getString(*i + "/name");
+    for (int i = 0; i < presets.size(); i++) {
+        auto &p = presets[i];
+        auto const name = prefs->getString(p + "/name");
         if (!name.empty() && (new_profile_name == name || current_profile_name == name)) {
-            new_index = temp_index;
-            save_path = *i;
+            new_index = i;
+            save_path = p;
             break;
         }
     }
 
-    if ( CalligraphicProfileRename::deleted() && new_index != -1) {
+    if (CalligraphicProfileRename::deleted() && new_index != -1) {
         prefs->remove(save_path);
         _presets_blocked = false;
         build_presets_list();
@@ -505,21 +487,17 @@ void CalligraphyToolbar::save_profile(GtkWidget * /*widget*/)
     if (new_index == -1) {
         // no preset with this name, create
         new_index = total_presets + 1;
-        gchar *profile_id = g_strdup_printf("/dcc%d", new_index);
+        auto const profile_id = g_strdup_printf("/dcc%d", new_index);
         save_path = Glib::ustring("/tools/calligraphic/preset") + profile_id;
         g_free(profile_id);
     }
 
     for (auto const &[widget_name, widget] : _widget_map) {
         if (widget) {
-            if (GTK_IS_ADJUSTMENT(widget)) {
-                GtkAdjustment* adj = GTK_ADJUSTMENT(widget);
-                prefs->setDouble(save_path + "/" + widget_name, gtk_adjustment_get_value(adj));
-                //std::cout << "wrote adj " << widget_name << ": " << v << "\n";
-            } else if (GTK_IS_TOGGLE_BUTTON(widget)) {
-                auto toggle = GTK_TOGGLE_BUTTON(widget);
-                prefs->setBool(save_path + "/" + widget_name, gtk_toggle_button_get_active(toggle));
-                //std::cout << "wrote tog " << widget_name << ": " << v << "\n";
+            if (auto adj = dynamic_cast<Gtk::Adjustment *>(widget)) {
+                prefs->setDouble(save_path + "/" + widget_name, adj->get_value());
+            } else if (auto toggle = dynamic_cast<Gtk::ToggleButton *>(widget)) {
+                prefs->setBool(save_path + "/" + widget_name, toggle->get_active());
             } else {
                 g_warning("Unknown widget type for preset: %s\n", widget_name.c_str());
             }
