@@ -186,6 +186,8 @@ inkscape:windows:
     - *run_otherwise
   script:
     - . "C:/$Env:IDW_NAME/msys2_shell.cmd" -defterm -no-start -ucrt64 -here -c "cmake -B build -G Ninja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+    # If we are building the MSI package, install extra build dependencies
+    - if ("${DIST}" -eq "msi") { & "$Env:CI_PROJECT_DIR\buildtools\windows-deps-install-wix4.ps1" }
     # Kill the job before hitting runner's timeout. This way we can preserve the cache so the next retry
     # will be able to advance the build further and eventually finish (after up to two retries, 3 jobs in total).
     # Calculation is:  20 minutes for download and extraction of msys2

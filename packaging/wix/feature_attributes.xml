@@ -15,7 +15,7 @@
 <CPackWiXPatch>
   <CPackWiXFragment Id="#PRODUCTFEATURE" AllowAdvertise="no" InstallDefault="local" />
 
-  <CPackWiXFragment Id="CM_G_group_1_program_files" AllowAdvertise="no" InstallDefault="local" Absent="disallow">
+  <CPackWiXFragment Id="CM_G_group_1_program_files" AllowAdvertise="no" InstallDefault="local" AllowAbsent="no">
     <Component Id="dummy1" Directory="INSTALL_ROOT" Guid="7D08CAE1-A5A8-4C4B-A2B4-E97E2EA10FE4" KeyPath="yes" />
   </CPackWiXFragment>
   <CPackWiXFragment Id="CM_G_group_2_inkscape_data" AllowAdvertise="no" InstallDefault="local">
