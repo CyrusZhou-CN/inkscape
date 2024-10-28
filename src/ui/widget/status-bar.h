@@ -75,9 +75,7 @@ private:
     SelectedStyle* selected_style = nullptr;
     LayerSelector* layer_selector = nullptr;
     Gtk::Label*    selection = nullptr;
-    Gtk::Label*    coordinate_x = nullptr;
-    Gtk::Label*    coordinate_y = nullptr;
-    Gtk::Grid*     coordinates = nullptr;
+    Gtk::Label*     coordinates = nullptr;
     Gtk::Box*      zoom = nullptr;
     Gtk::Box*      rotate = nullptr;
     UI::Widget::SpinButton* zoom_value = nullptr;

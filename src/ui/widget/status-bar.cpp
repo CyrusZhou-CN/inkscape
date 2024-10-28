@@ -49,9 +49,7 @@ StatusBar::StatusBar()
 
     // **** Coordinates  ****
 
-    coordinates  = &UI::get_widget<Gtk::Grid> (builder, "statusbar-coordinates");
-    coordinate_x = &UI::get_widget<Gtk::Label>(builder, "statusbar-coordinate-x");
-    coordinate_y = &UI::get_widget<Gtk::Label>(builder, "statusbar-coordinate-y");
+    coordinates  = &UI::get_widget<Gtk::Label> (builder, "statusbar-coordinates");
 
     // ******** Zoom ********
 
@@ -188,13 +186,9 @@ StatusBar::set_message(const Inkscape::MessageType type, const char* message)
 void
 StatusBar::set_coordinate(const Geom::Point& p)
 {
-    char * const str_x = g_strdup_printf("%7.2f", p[Geom::X]);
-    coordinate_x->set_markup(str_x);
-    g_free(str_x);
-
-    char * const str_y = g_strdup_printf("%7.2f", p[Geom::Y]);
-    coordinate_y->set_markup(str_y);
-    g_free(str_y);
+    char * str_total = g_strdup_printf("(%7.2f, %7.2f)", p.x(), p.y());
+    coordinates->set_markup(str_total);
+    g_free(str_total);
 }
 
 void
@@ -236,7 +230,7 @@ StatusBar::zoom_output()
         g_snprintf(b, 64, "%4.0f%%", value);
     }
     zoom_value->set_text(b);
-       
+
     return true;
 }
 
@@ -287,7 +281,7 @@ StatusBar::rotate_output()
     char b[64];
     g_snprintf(b, 64, "%7.2f°", val);
     rotate_value->set_text(b);
-       
+
     return true;
 }
 

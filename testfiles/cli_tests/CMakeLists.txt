@@ -768,6 +768,12 @@ add_cli_test(action_stroke-to-path_varied
                         EXPECTED_FILES stroke-to-path-variations_out.svg
                         TEST_SCRIPT match_regex_fail.sh stroke-to-path-variations_out.svg "(#mixed)|(#fillet)|(<text)|(<flow)|(<use)")
 
+add_cli_test(action_stroke-to-path_visual
+                        INPUT_FILENAME stroke-to-path-variations.svg
+                        PARAMETERS --actions=select-all:all$<SEMICOLON>object-stroke-to-path
+                        OUTPUT_FILENAME stroke-to-path-variations.png
+                        REFERENCE_FILENAME actions-object-stroke-to-path_variations_expected.png)
+
 # object-to-path
 add_cli_test(actions-object-to-path        INPUT_FILENAME areas.svg
                                            PARAMETERS --actions=select-by-id:MyRect$<SEMICOLON>object-to-path$<SEMICOLON>export-id:MyRect$<SEMICOLON>export-id-only

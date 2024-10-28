@@ -350,23 +350,24 @@ void item_to_paths_add_marker( SPItem *context,
 {
     auto doc = context->document;
     auto marker = cast<SPMarker>(marker_object);
-    SPItem* marker_item = sp_item_first_item_child(marker_object);
-    if (!marker_item) {
-        return;
-    }
+    auto marker_tr = marker->get_marker_transform(marker_transform, linewidth, start_marker);
 
+    for (auto& obj: marker->children) {
+        if (auto item = cast<SPItem>(&obj)) {
+            // total marker transform
+            // NOTE: The SVG spec says that a <marker> cannot have a transform attribute, even if it's set, it should be ignored.
+            // The SPMarker in Inkscape inherits from SPGroup so it does allow a transform, even though it shouldn't.
+            auto tr = item->transform * marker->c2p * marker_tr;
 
-    // total marker transform
-    auto tr = marker->get_marker_transform(marker_transform, linewidth, start_marker);
-    tr = marker_item->transform * marker->c2p * tr;
+            Inkscape::XML::Node *m_repr = obj.getRepr()->duplicate(doc->getReprDoc());
+            g_repr->appendChild(m_repr);
 
-    if (marker_item->getRepr()) {
-        Inkscape::XML::Node *m_repr = marker_item->getRepr()->duplicate(doc->getReprDoc());
-        g_repr->addChildAtPos(m_repr, 0);
-        SPItem *marker_item = (SPItem *) doc->getObjectByRepr(m_repr);
-        marker_item->doWriteTransform(tr);
-        if (!legacy) {
-            item_to_paths(marker_item, legacy, context);
+            if (auto m_item = cast<SPItem>(doc->getObjectByRepr(m_repr))) {
+                m_item->doWriteTransform(tr);
+                if (!legacy) {
+                    item_to_paths(m_item, legacy, context);
+                }
+            }
         }
     }
 }
@@ -543,10 +544,11 @@ item_to_paths(SPItem *item, bool legacy, SPItem *context)
     // The stroke ------------------------
     Inkscape::XML::Node *stroke = nullptr;
     if (s_val && g_strcmp0(s_val,"none") != 0 && stroke_path.size() > 0) {
+        auto stroke_style = std::make_unique<SPStyle>(doc);
+        stroke_style->mergeCSS(ncss);
+
         stroke = xml_doc->createElement("svg:path");
-        style->clear();
-        style->mergeCSS(ncss);
-        stroke->setAttribute("style", style->writeIfDiff(item->parent->style));
+        stroke->setAttribute("style", stroke_style->writeIfDiff(item->parent->style));
         stroke->setAttribute("d", sp_svg_write_path(stroke_path));
     }
     sp_repr_css_attr_unref(ncss);
@@ -554,10 +556,11 @@ item_to_paths(SPItem *item, bool legacy, SPItem *context)
     // The fill --------------------------
     Inkscape::XML::Node *fill = nullptr;
     if (f_val && g_strcmp0(f_val,"none") != 0 && !legacy) {
+        auto fill_style = std::make_unique<SPStyle>(doc);
+        fill_style->mergeCSS(ncsf);
+
         fill = xml_doc->createElement("svg:path");
-        style->clear();
-        style->mergeCSS(ncsf);
-        fill->setAttribute("style", style->writeIfDiff(item->parent->style));
+        fill->setAttribute("style", fill_style->writeIfDiff(item->parent->style));
         fill->setAttribute("d", sp_svg_write_path(fill_path));
     }
     sp_repr_css_attr_unref(ncsf);

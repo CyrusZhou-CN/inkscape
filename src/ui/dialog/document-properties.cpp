@@ -1970,8 +1970,6 @@ GridWidget::GridWidget(SPGrid *grid)
     int first_row = row;
     left_col->attach(*_units, 0, row++, 2);
 
-    int angle_row = 0;
-    auto left_side = true;
     auto cur_grid = left_col;
     for (auto rs : std::to_array<Scalar*>({
             // left
