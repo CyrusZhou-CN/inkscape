@@ -18,14 +18,11 @@
 #include <memory>
 #include <glibmm/refptr.h>
 #include <glibmm/ustring.h>
+#include <gdkmm/pixbuf.h>
 #include <gtkmm/box.h>
 #include <gtkmm/enums.h>
 #include <gtkmm/treemodel.h>
 #include <sigc++/signal.h>
-
-namespace Gdk {
-class Pixbuf;
-} // namespace Gdk
 
 namespace Gtk {
 class ComboBox;
@@ -41,6 +38,8 @@ public:
         add (col_label);
         add (col_value);
         add (col_icon);
+        // Guard against Gdk::Pixbuf being forward-declared (https://discourse.gnome.org/t/24669).
+        static_assert(sizeof(Gdk::Pixbuf) > 0);
         add (col_pixbuf);
         add (col_data);  // Used to store a pointer
         add (col_tooltip);

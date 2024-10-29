@@ -488,7 +488,9 @@ char* SPGuide::description(bool const verbose) const
         Glib::ustring position_string_x = x_q.string(namedview->display_units);
         Glib::ustring position_string_y = y_q.string(namedview->display_units);
 
-        gchar *shortcuts = g_strdup_printf("; %s", _("<b>Shift+drag</b> to rotate, <b>Ctrl+drag</b> to move origin, <b>Del</b> to delete"));
+        gchar *shortcuts =
+            g_strdup_printf("; %s", _("<b>Shift+drag</b> to rotate, <b>Ctrl+drag</b> to move origin, <b>Del</b> to "
+                                      "delete; <b>double-click</b> to edit this guide's properties"));
 
         if ( are_near(this->normal_to_line, Geom::Point(1., 0.)) ||
              are_near(this->normal_to_line, -Geom::Point(1., 0.)) ) {

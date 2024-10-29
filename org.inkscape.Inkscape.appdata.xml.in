@@ -41,8 +41,20 @@
   <url type="contribute">https://inkscape.org/contribute</url>
   <screenshots>
     <screenshot type="default">
-      <image>https://media.inkscape.org/media/resources/file/Screenshot_Freedom_Machine_Inkscape_master_FB3NeUU.png</image>
-      <caption>Main application window</caption>
+      <image>https://media.inkscape.org/media/resources/file/light-2.png</image>
+      <caption>Editing a Flatpak Logo</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://media.inkscape.org/media/resources/file/light-1.png</image>
+      <caption>Multipage editing</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://media.inkscape.org/media/resources/file/dark-1.png</image>
+      <caption>Editing with Inkscape</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://media.inkscape.org/media/resources/file/dark-2.png</image>
+      <caption>Gradient editing</caption>
     </screenshot>
   </screenshots>
   <releases>

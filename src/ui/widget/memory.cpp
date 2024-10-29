@@ -11,6 +11,8 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#include "memory.h"
+
 #include <sigc++/functors/mem_fun.h>
 #include <glibmm/i18n.h>
 #include <glibmm/main.h>
@@ -24,18 +26,18 @@
 
 #include "debug/heap.h"
 #include "inkgc/gc-core.h"
-#include "ui/dialog/memory.h"
+#include "ui/widget/memory.h"
 #include "ui/pack.h"
 #include "util/format_size.h"
 
 using Inkscape::Util::format_size;
 
-namespace Inkscape {
-namespace UI {
-namespace Dialog {
+namespace Inkscape::UI::Widget {
 
-struct Memory::Private {
-    class ModelColumns : public Gtk::TreeModel::ColumnRecord {
+struct Memory::Private
+{
+    class ModelColumns : public Gtk::TreeModel::ColumnRecord
+    {
     public:
         Gtk::TreeModelColumn<Glib::ustring> name;
         Gtk::TreeModelColumn<Glib::ustring> used;
@@ -45,7 +47,8 @@ struct Memory::Private {
         ModelColumns() { add(name); add(used); add(slack); add(total); }
     };
 
-    Private() {
+    Private()
+    {
         model = Gtk::ListStore::create(columns);
         view.set_model(model);
         view.append_column(_("Heap"), columns.name);
@@ -68,7 +71,8 @@ struct Memory::Private {
     sigc::connection update_task;
 };
 
-void Memory::Private::update() {
+void Memory::Private::update()
+{
     Debug::Heap::Stats total = { 0, 0 };
 
     int aggregate_features = Debug::Heap::SIZE_AVAILABLE | Debug::Heap::USED_AVAILABLE;
@@ -148,7 +152,8 @@ void Memory::Private::update() {
     }
 }
 
-void Memory::Private::start_update_task() {
+void Memory::Private::start_update_task()
+{
     update_task.disconnect();
     update_task = Glib::signal_timeout().connect(
         sigc::bind_return(sigc::mem_fun(*this, &Private::update), true),
@@ -156,12 +161,13 @@ void Memory::Private::start_update_task() {
     );
 }
 
-void Memory::Private::stop_update_task() {
+void Memory::Private::stop_update_task()
+{
     update_task.disconnect();
 }
 
 Memory::Memory()
-    : DialogBase("/dialogs/memory", "Memory")
+    : Gtk::Box(Gtk::Orientation::VERTICAL)
     , _private(std::make_unique<Private>())
 {
     UI::pack_start(*this, _private->view);
@@ -195,9 +201,7 @@ void Memory::apply()
     _private->update();
 }
 
-} // namespace Dialog
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Widget
 
 /*
   Local Variables:

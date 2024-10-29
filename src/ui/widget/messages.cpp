@@ -16,7 +16,7 @@
 
 #include "ui/pack.h"
 
-namespace Inkscape::UI::Dialog {
+namespace Inkscape::UI::Widget {
 
 //#########################################################################
 //## E V E N T S
@@ -38,7 +38,7 @@ void Messages::clear()
  * Constructor
  */
 Messages::Messages()
-    : DialogBase("/dialogs/messages", "Messages")
+    : Box(Gtk::Orientation::VERTICAL)
     , buttonClear(_("_Clear"), _("Clear log messages"))
     , checkCapture(_("Capture log messages"), _("Capture log messages"))
     , buttonBox(Gtk::Orientation::HORIZONTAL)
@@ -50,8 +50,9 @@ Messages::Messages()
     UI::pack_start(*this, textScroll);
 
     buttonBox.set_spacing(6);
-    UI::pack_start(buttonBox, checkCapture, true, true, 6);
-    UI::pack_end(buttonBox, buttonClear, false, false, 10);
+    buttonBox.set_margin(4);
+    UI::pack_start(buttonBox, checkCapture, true, true);
+    UI::pack_end(buttonBox, buttonClear, false, false);
     UI::pack_start(*this, buttonBox, UI::PackOptions::shrink);
 
     message(_("Ready."));
@@ -64,24 +65,24 @@ Messages::Messages()
 //## M E T H O D S
 //#########################################################################
 
-void Messages::message(char const * const msg)
+void Messages::message(char const *msg)
 {
     Glib::RefPtr<Gtk::TextBuffer> buffer = messageText.get_buffer();
     Glib::ustring uMsg = msg;
-    if (uMsg[uMsg.length()-1] != '\n')
+    if (uMsg[uMsg.length() - 1] != '\n') {
         uMsg += '\n';
-    buffer->insert (buffer->end(), uMsg);
+    }
+    buffer->insert(buffer->end(), uMsg);
 }
 
 // dialogLoggingCallback is already used in debug.cpp
 static void dialogLoggingCallback(char const */*log_domain*/,
                                   GLogLevelFlags /*log_level*/,
-                                  char const * const messageText,
+                                  char const *messageText,
                                   gpointer user_data)
 {
     Messages *dlg = static_cast<Messages *>(user_data);
     dlg->message(messageText);
-
 }
 
 void Messages::toggleCapture()
@@ -102,63 +103,57 @@ void Messages::captureLogMessages()
    GLogLevelFlags flags = (GLogLevelFlags) (G_LOG_LEVEL_ERROR   | G_LOG_LEVEL_CRITICAL |
                              G_LOG_LEVEL_WARNING | G_LOG_LEVEL_MESSAGE  |
                              G_LOG_LEVEL_INFO    | G_LOG_LEVEL_DEBUG);
-    if ( !handlerDefault ) {
-        handlerDefault = g_log_set_handler(nullptr, flags,
-              dialogLoggingCallback, (gpointer)this);
+    if (!handlerDefault) {
+        handlerDefault = g_log_set_handler(nullptr, flags, dialogLoggingCallback, (gpointer)this);
     }
-    if ( !handlerGlibmm ) {
-        handlerGlibmm = g_log_set_handler("glibmm", flags,
-              dialogLoggingCallback, (gpointer)this);
+    if (!handlerGlibmm) {
+        handlerGlibmm = g_log_set_handler("glibmm", flags, dialogLoggingCallback, (gpointer)this);
     }
-    if ( !handlerAtkmm ) {
-        handlerAtkmm = g_log_set_handler("atkmm", flags,
-              dialogLoggingCallback, (gpointer)this);
+    if (!handlerAtkmm) {
+        handlerAtkmm = g_log_set_handler("atkmm", flags, dialogLoggingCallback, (gpointer)this);
     }
-    if ( !handlerPangomm ) {
-        handlerPangomm = g_log_set_handler("pangomm", flags,
-              dialogLoggingCallback, (gpointer)this);
+    if (!handlerPangomm) {
+        handlerPangomm = g_log_set_handler("pangomm", flags, dialogLoggingCallback, (gpointer)this);
     }
-    if ( !handlerGdkmm ) {
-        handlerGdkmm = g_log_set_handler("gdkmm", flags,
-              dialogLoggingCallback, (gpointer)this);
+    if (!handlerGdkmm) {
+        handlerGdkmm = g_log_set_handler("gdkmm", flags, dialogLoggingCallback, (gpointer)this);
     }
-    if ( !handlerGtkmm ) {
-        handlerGtkmm = g_log_set_handler("gtkmm", flags,
-              dialogLoggingCallback, (gpointer)this);
+    if (!handlerGtkmm) {
+        handlerGtkmm = g_log_set_handler("gtkmm", flags, dialogLoggingCallback, (gpointer)this);
     }
     message(_("Log capture started."));
 }
 
 void Messages::releaseLogMessages()
 {
-    if ( handlerDefault ) {
+    if (handlerDefault) {
         g_log_remove_handler(nullptr, handlerDefault);
         handlerDefault = 0;
     }
-    if ( handlerGlibmm ) {
+    if (handlerGlibmm) {
         g_log_remove_handler("glibmm", handlerGlibmm);
         handlerGlibmm = 0;
     }
-    if ( handlerAtkmm ) {
+    if (handlerAtkmm) {
         g_log_remove_handler("atkmm", handlerAtkmm);
         handlerAtkmm = 0;
     }
-    if ( handlerPangomm ) {
+    if (handlerPangomm) {
         g_log_remove_handler("pangomm", handlerPangomm);
         handlerPangomm = 0;
     }
-    if ( handlerGdkmm ) {
+    if (handlerGdkmm) {
         g_log_remove_handler("gdkmm", handlerGdkmm);
         handlerGdkmm = 0;
     }
-    if ( handlerGtkmm ) {
+    if (handlerGtkmm) {
         g_log_remove_handler("gtkmm", handlerGtkmm);
         handlerGtkmm = 0;
     }
     message(_("Log capture stopped."));
 }
 
-} // namespace Inkscape::UI::Dialog
+} // namespace Inkscape::UI::Widget
 
 /*
   Local Variables:

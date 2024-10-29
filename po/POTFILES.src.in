@@ -310,8 +310,6 @@ ${_build_dir}/share/templates/templates.h
 ../src/ui/dialog/livepatheffect-editor.cpp
 ../src/ui/dialog/lpe-fillet-chamfer-properties.cpp
 ../src/ui/dialog/lpe-powerstroke-properties.cpp
-../src/ui/dialog/memory.cpp
-../src/ui/dialog/messages.cpp
 ../src/ui/dialog/new-from-template.cpp
 ../src/ui/dialog/object-attributes.cpp
 ../src/ui/dialog/object-properties.cpp
@@ -415,6 +413,8 @@ ${_build_dir}/share/templates/templates.h
 ../src/ui/widget/layer-selector.cpp
 ../src/ui/widget/licensor.cpp
 ../src/ui/widget/marker-combo-box.cpp
+../src/ui/widget/memory.cpp
+../src/ui/widget/messages.cpp
 ../src/ui/widget/object-composite-settings.cpp
 ../src/ui/widget/page-properties.cpp
 ../src/ui/widget/page-selector.cpp
