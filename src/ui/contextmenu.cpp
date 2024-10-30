@@ -360,6 +360,7 @@ ContextMenu::ContextMenu(SPDesktop *desktop, SPObject *object, std::vector<SPIte
 
     set_menu_model(gmenu);
     set_position(Gtk::PositionType::BOTTOM);
+    set_halign(Gtk::Align::START);
     set_has_arrow(false);
     show_all_images(*this);
     set_flags(Gtk::PopoverMenu::Flags::NESTED);

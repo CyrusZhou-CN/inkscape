@@ -137,7 +137,7 @@ public:
     void loadPatternColorProfiles(Dict *resources);
     void loadColorProfile();
     void loadColorSpaceProfile(GfxColorSpace *space, Object *obj);
-    GfxPattern *lookupPattern(Object *obj, GfxState *state);
+    std::unique_ptr<GfxPattern> lookupPattern(Object *obj, GfxState *state);
 
     std::shared_ptr<CairoFontEngine> getFontEngine();
 
@@ -176,7 +176,7 @@ private:
     //! Caches color spaces by name
     std::map<std::string, std::unique_ptr<GfxColorSpace>> colorSpacesCache;
 
-    GfxColorSpace *lookupColorSpaceCopy(Object &);
+    std::unique_ptr<GfxColorSpace> lookupColorSpaceCopy(Object &);
 
     void setDefaultApproximationPrecision(); // init color deltas
     void pushOperator(const char *name);

@@ -290,7 +290,7 @@ void Transformation::layoutPageRotate()
     _counterclockwise_rotate.set_has_frame(false);
     _counterclockwise_rotate.set_tooltip_text(_("Rotate in a counterclockwise direction"));
 
-    _counterclockwise_rotate.set_icon_name("object-rotate-right");
+    _clockwise_rotate.set_icon_name("object-rotate-right");
     _clockwise_rotate.set_has_frame(false);
     _clockwise_rotate.set_tooltip_text(_("Rotate in a clockwise direction"));
     _clockwise_rotate.set_group(_counterclockwise_rotate);
