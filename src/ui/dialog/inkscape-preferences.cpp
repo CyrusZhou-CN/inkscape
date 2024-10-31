@@ -3739,11 +3739,22 @@ void InkscapePreferences::initPageSystem()
 
     _sys_user_prefs.set_text(prefs->getPrefsFilename());
     _sys_user_prefs.set_editable(false);
-    auto const reset_prefs = Gtk::make_managed<Gtk::Button>(_("Reset Preferences"));
+
+    auto const hbox = Gtk::make_managed<Gtk::Box>();
+
+    auto const reset_prefs = Gtk::make_managed<Gtk::Button>(_("Reset"));
+    reset_prefs->set_tooltip_text(_("Reset the preferences to default"));
     reset_prefs->signal_clicked().connect(sigc::mem_fun(*this, &InkscapePreferences::on_reset_prefs_clicked));
+    hbox->append(*reset_prefs);
+
+    auto const save_prefs = Gtk::make_managed<Gtk::Button>(_("Save"));
+    save_prefs->set_tooltip_text(_("Save the preferences to disk"));
+    save_prefs->set_action_name("app.save-preferences");
+    hbox->append(*save_prefs);
+    hbox->set_hexpand(false);
 
     _page_system.add_line(true, _("User preferences:"), _sys_user_prefs, "",
-                          _("Location of the user’s preferences file"), true, reset_prefs);
+                          _("Location of the user’s preferences file"), true, hbox);
     auto profilefolder = Inkscape::IO::Resource::profile_path();
     _sys_user_config.init(profilefolder.c_str(), _("Open preferences folder"));
     _page_system.add_line(true, _("User config:"), _sys_user_config, "", _("Location of users configuration"), true);

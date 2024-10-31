@@ -23,6 +23,7 @@
 #include "file.h"                 // dpi convert method
 #include "inkscape-version-info.h"// Inkscape version
 #include "inkscape.h"             // Inkscape::Application
+#include "preferences.h"
 #include "path-prefix.h"          // Extension directory
 #include "selection.h"            // Selection
 
@@ -45,6 +46,11 @@ active_window_start() {
 void
 active_window_end() {
     active_window_end_helper();
+}
+
+void
+save_preferences() {
+    Inkscape::Preferences::get()->save();
 }
 
 void
@@ -196,6 +202,7 @@ std::vector<std::vector<Glib::ustring>> raw_data_base =
     {"app.inkscape-version",          N_("Inkscape Version"),        "Base",       N_("Print Inkscape version and exit")                   },
     {"app.active-window-start",       N_("Active Window: Start Call"), "Base",     N_("Start execution in active window")                          },
     {"app.active-window-end",         N_("Active Window: End Call"), "Base",       N_("End execution in active window")                            },
+    {"app.save-preferences",          N_("Save preferences"),        "Base",       N_("Make sure the preferences are saved")               },
     {"app.debug-info",                N_("Debug Info"),              "Base",       N_("Print debugging information and exit")              },
     {"app.system-data-directory",     N_("System Directory"),        "Base",       N_("Print system data directory and exit")              },
     {"app.user-data-directory",       N_("User Directory"),          "Base",       N_("Print user data directory and exit")                },
@@ -225,6 +232,7 @@ add_actions_base(InkscapeApplication* app)
     gapp->add_action(               "inkscape-version",                                    sigc::ptr_fun(&print_inkscape_version)                 );
     gapp->add_action(               "active-window-start",                                 sigc::ptr_fun(&active_window_start)                    );
     gapp->add_action(               "active-window-end",                                   sigc::ptr_fun(&active_window_end)                      );
+    gapp->add_action(               "save-preferences",                                    sigc::ptr_fun(&save_preferences)                       );
     gapp->add_action(               "debug-info",                                          sigc::ptr_fun(&print_debug_info)                       );
     gapp->add_action(               "system-data-directory",                               sigc::ptr_fun(&print_system_data_directory)            );
     gapp->add_action(               "user-data-directory",                                 sigc::ptr_fun(&print_user_data_directory)              );

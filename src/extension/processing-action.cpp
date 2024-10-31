@@ -13,6 +13,7 @@
 #include <glibmm/i18n.h>
 
 #include "document.h"
+#include "inkscape-application.h"
 #include "preferences.h"
 
 #include "xml/attribute-record.h"
@@ -63,8 +64,12 @@ void ProcessingAction::run(SPDocument *doc)
             // Doc is already bound into this action so does't need to be passed in
             action->activate();
         }
+    } else if (auto action = InkscapeApplication::instance()->gio_app()->lookup_action(_action_name)) {
+        if (action->get_enabled()) {
+            action->activate();
+        }
     } else {
-        g_warning("Can't find document action 'doc.%s'", _action_name.c_str());
+        g_warning("Can't find action 'doc.%s' or 'app.%s'", _action_name.c_str(), _action_name.c_str());
     }
 }
 

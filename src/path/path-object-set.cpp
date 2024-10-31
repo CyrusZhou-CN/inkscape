@@ -57,16 +57,6 @@ ObjectSet::strokesToPaths(bool legacy, bool skip_undo)
     if (new_node) {
       SPObject* new_item = document()->getObjectByRepr(new_node);
 
-      // Markers don't inherit properties from outside the
-      // marker. When converted to paths objects they need to be
-      // protected from inheritance. This is why (probably) the stroke
-      // to path code uses SP_STYLE_FLAG_ALWAYS when defining the
-      // style of the fill and stroke during the conversion. This
-      // means the style contains every possible property. Once we've
-      // finished the stroke to path conversion, we can eliminate
-      // unneeded properties from the style element.
-      sp_attribute_clean_recursive(new_node, SP_ATTRCLEAN_STYLE_REMOVE | SP_ATTRCLEAN_DEFAULT_REMOVE);
-
       add(new_item); // Add to selection.
       did = true;
     }
