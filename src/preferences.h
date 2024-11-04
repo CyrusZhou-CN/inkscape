@@ -146,38 +146,54 @@ public:
      * Data type representing a typeless value of a preference.
      *
      * This is passed to the observer in the notify() method.
-     * To retrieve useful data from it, use its member functions. Setting
-     * any preference using the Preferences class invalidates this object,
-     * so use its get methods before doing so.
+     *
+     * Most methods of @c Entry return the preference value at the time the @c Entry was created.
+     * In a few special cases, values are read "on-demand" from the @c Preferences, which is ugly but currently hard to
+     * avoid. To avoid surprising behavior, users should drop *all* previously obtained @c Entry variables after any
+     * write to @c Preferences . The only exception is @c Preferences itself, which uses @c Entry for caching but takes
+     * care to remove all outdated entries.
      */
-    class Entry {
-    friend class Preferences; // Preferences class has to access _value
+    class Entry
+    {
     public:
+        /**
+         * Construct new Entry
+         * @param path Preferences path, e.g., "/options/some_group/some_option"
+         * @param value Raw value string from preferences XML file, or @c std::nullopt if no preference exists for the
+         * given path.
+         */
+        Entry(Glib::ustring path, std::optional<Glib::ustring> value)
+            : _pref_path(std::move(path))
+            , _value(std::move(value))
+        {}
+
         ~Entry() = default;
         Entry() {} // needed to enable use in maps
         Entry(Entry const &other) = default;
 
         /**
          * Check whether the received entry is valid.
+         * This means that the requested preference path exists.
          *
-         * @return False if the entry is invalid.
-         * Invalid means that the get...() functions will return the default value.
+         * If not, then the get...() functions will return the default value.
+         *
+         * @return True if the entry valid.
          */
-        bool isValid() const { return _value != nullptr; }
+        bool isValid() const { return _value.has_value(); }
 
         /**
          * Interpret the preference as a Boolean value.
          *
          * @param def Default value if the preference is not set.
          */
-        inline bool getBool(bool def=false) const;
+        bool getBool(bool def = false) const;
 
         /**
          * Interpret the preference as an integer.
          *
          * @param def Default value if the preference is not set.
          */
-        inline int getInt(int def=0) const;
+        int getInt(int def = 0) const;
 
         /**
          * Interpret the preference as a limited integer.
@@ -190,14 +206,14 @@ public:
          * @param min Minimum value allowed to return.
          * @param max Maximum value allowed to return.
          */
-        inline int getIntLimited(int def=0, int min=INT_MIN, int max=INT_MAX) const;
+        int getIntLimited(int def = 0, int min = INT_MIN, int max = INT_MAX) const;
 
         /**
          * Interpret the preference as an unsigned integer.
          *
          * @param def Default value if the preference is not set.
          */
-        inline unsigned int getUInt(unsigned int def=0) const;
+        unsigned int getUInt(unsigned int def = 0) const;
 
         /**
          * Interpret the preference as a floating point value.
@@ -205,7 +221,7 @@ public:
          * @param def  Default value if the preference is not set.
          * @param unit Specifies the unit of the returned result. Will be ignored when equal to "". If the preference has no unit set, the default unit will be assumed.
          */
-        inline double getDouble(double def=0.0, Glib::ustring const &unit = "") const;
+        double getDouble(double def = 0.0, Glib::ustring const &unit = "") const;
 
         /**
          * Interpret the preference as a limited floating point value.
@@ -218,31 +234,35 @@ public:
          * @param max Maximum value allowed to return.
          * @param unit Specifies the unit of the returned result. Will be ignored when equal to "". If the preference has no unit set, the default unit will be assumed.
          */
-        inline double getDoubleLimited(double def=0.0, double min=DBL_MIN, double max=DBL_MAX, Glib::ustring const &unit = "") const;
+        double getDoubleLimited(double def = 0.0, double min = DBL_MIN, double max = DBL_MAX,
+                                Glib::ustring const &unit = "") const;
 
         /**
          * Interpret the preference as an UTF-8 string.
          *
+         * If unset, return the default value given by @c def.
+         *
          * To store a filename, convert it using Glib::filename_to_utf8().
          */
-        inline Glib::ustring getString(Glib::ustring const &def) const;
+        Glib::ustring getString(Glib::ustring const &def = "") const;
 
-       /**
+        /**
          * Interpret the preference as a number followed by a unit (without space), and return this unit string.
+         * If unset, return "".
          */
-        inline Glib::ustring getUnit() const;
+        Glib::ustring getUnit() const;
 
         /**
          * Interpret the preference as a css color value.
          */
-        inline Colors::Color getColor(std::string const &def) const;
+        Colors::Color getColor(std::string const &def) const;
 
         /**
          * Interpret the preference as a CSS style.
          *
          * @return A CSS style that has to be unrefed when no longer necessary. Never NULL.
          */
-        inline SPCSSAttr *getStyle() const;
+        SPCSSAttr *getStyle() const;
 
         /**
          * Interpret the preference as a CSS style with directory-based
@@ -253,7 +273,7 @@ public:
          *
          * @return Inherited CSS style that has to be unrefed after use. Never NULL.
          */
-        inline SPCSSAttr *getInheritedStyle() const;
+        SPCSSAttr *getInheritedStyle() const;
 
         /**
          * Get the full path of the preference described by this Entry.
@@ -267,19 +287,16 @@ public:
          */
         Glib::ustring getEntryName() const;
     private:
-        Entry(Glib::ustring path, void const *v)
-            : _pref_path(std::move(path))
-            , _value(v) {}
+        double _getDoubleAssumeExisting() const;
 
         Glib::ustring _pref_path;
-        void const *_value = nullptr;
+        std::optional<Glib::ustring> _value;
 
         mutable bool value_bool = false;
         mutable int value_int = 0;
         mutable unsigned int value_uint = 0;
         mutable double value_double = 0.;
         mutable Glib::ustring value_unit;
-        mutable SPCSSAttr* value_style = nullptr;
 
         mutable bool cached_bool = false;
         mutable bool cached_point = false;
@@ -287,8 +304,6 @@ public:
         mutable bool cached_uint = false;
         mutable bool cached_double = false;
         mutable bool cached_unit = false;
-        mutable bool cached_color = false;
-        mutable bool cached_style = false;
     };
 
     // disable copying
@@ -420,6 +435,8 @@ public:
      *
      * @param pref_path Path to the retrieved preference.
      * @param def The default value to return if the preference is not set.
+     * @param unit Specifies the unit of the returned result. Will be ignored when equal to "". If the preference has no
+     * unit set, the default unit will be assumed.
      */
     double getDouble(Glib::ustring const &pref_path, double def=0.0, Glib::ustring const &unit = "") {
         return getEntry(pref_path).getDouble(def, unit);
@@ -566,6 +583,9 @@ public:
 
     /**
      * Register a preference observer.
+     *
+     * Limitations: If the observed preferences path does not exist or is removed,
+     * then the observer may stop working, even if the path is re-added later.
      */
     void addObserver(Observer &);
 
@@ -636,35 +656,31 @@ public:
             _prefs_doc->beginTransaction();
         return scope_exit([this,new_transaction] {
             if (new_transaction) {
-                cachedRawValue.clear();
+                cachedEntry.clear();
                 _prefs_doc->rollback();
             }
         });
     }
 
 protected:
-    /* helper methods used by Entry
-     * This will enable using the same Entry class with different backends.
-     * For now, however, those methods are not virtual. These methods assume
-     * that v._value is not NULL
+    // helper methods used by Entry
+    /**
+     * Interpret the preference as a CSS style with directory-based
+     * inheritance.
+     *
+     * This function will look up the preferences with the same entry name
+     * in ancestor directories and return the inherited CSS style.
+     *
+     * @return Inherited CSS style that has to be unrefed after use. Never NULL.
      */
-    bool _extractBool(Entry const &v);
-    int _extractInt(Entry const &v);
-    unsigned int _extractUInt(Entry const &v);
-    double _extractDouble(Entry const &v);
-    double _extractDouble(Entry const &v, Glib::ustring const &requested_unit);
-    Glib::ustring _extractString(Entry const &v);
-    Glib::ustring _extractUnit(Entry const &v);
-    SPCSSAttr *_extractStyle(Entry const &v);
-    SPCSSAttr *_extractInheritedStyle(Entry const &v);
+    SPCSSAttr *_getInheritedStyleForPath(Glib::ustring const &prefPath);
 
 private:
     Preferences();
     ~Preferences();
     void _loadDefaults();
     void _load();
-    gchar const * _getRawValueCached(Glib::ustring const &path);
-    gchar const * _getRawValueNonCached(Glib::ustring const &path);
+    std::optional<Glib::ustring> _getRawValue(Glib::ustring const &path);
     void _setRawValue(Glib::ustring const &path, Glib::ustring const &value);
     void _reportError(Glib::ustring const &, Glib::ustring const &);
     void _keySplit(Glib::ustring const &pref_path, Glib::ustring &node_key, Glib::ustring &attr_key);
@@ -679,8 +695,9 @@ private:
     bool _writable = false; ///< Will the preferences be saved at exit?
     bool _hasError = false; ///< Indication that some error has occurred;
     bool _initialized = false; ///< Is this instance fully initialized? Caching should be avoided before.
+    /// Cache for getEntry()
     // cache key has type std::string because Glib::ustring is slower for equality checks
-    std::unordered_map<std::string, std::optional<Glib::ustring>> cachedRawValue;
+    std::unordered_map<std::string, Entry> cachedEntry;
 
     /// Wrapper class for XML node observers
     class PrefNodeObserver;
@@ -690,7 +707,6 @@ private:
     _ObsMap _observer_map;
 
     // privilege escalation methods for PrefNodeObserver
-    static Entry const _create_pref_value(Glib::ustring const &, void const *ptr);
     static _ObserverData *_get_pref_observer_data(Observer &o) { return o._data.get(); }
 
     static Preferences *_instance;
@@ -700,121 +716,6 @@ friend class Entry;
 };
 
 typedef std::unique_ptr<Preferences::PreferencesObserver> PrefObserver;
-
-/* Trivial inline Preferences::Entry functions.
- * In fact only the _extract* methods do something, the rest is delegation
- * to avoid duplication of code. There should be no performance hit if
- * compiled with -finline-functions.
- */
-
-inline bool Preferences::Entry::getBool(bool def) const
-{
-    if (!this->isValid()) {
-        return def;
-    } else {
-        return Inkscape::Preferences::get()->_extractBool(*this);
-    }
-}
-
-inline int Preferences::Entry::getInt(int def) const
-{
-    if (!this->isValid()) {
-        return def;
-    } else {
-        return Inkscape::Preferences::get()->_extractInt(*this);
-    }
-}
-
-inline int Preferences::Entry::getIntLimited(int def, int min, int max) const
-{
-    if (!this->isValid()) {
-        return def;
-    } else {
-        int val = Inkscape::Preferences::get()->_extractInt(*this);
-        return ( val >= min && val <= max ? val : def );
-    }
-}
-
-inline unsigned int Preferences::Entry::getUInt(unsigned int def) const
-{
-    if (!this->isValid()) {
-        return def;
-    } else {
-        return Inkscape::Preferences::get()->_extractUInt(*this);
-    }
-}
-
-inline double Preferences::Entry::getDouble(double def, Glib::ustring const &unit) const
-{
-    if (!this->isValid()) {
-        return def;
-    } else if (unit.length() == 0) {
-        return Inkscape::Preferences::get()->_extractDouble(*this);
-    } else {
-        return Inkscape::Preferences::get()->_extractDouble(*this, unit);
-    }
-}
-
-inline double Preferences::Entry::getDoubleLimited(double def, double min, double max, Glib::ustring const &unit) const
-{
-    if (!this->isValid()) {
-        return def;
-    } else {
-        double val;
-        if (unit.length() == 0) {
-            val = Inkscape::Preferences::get()->_extractDouble(*this);
-        } else {
-            val = Inkscape::Preferences::get()->_extractDouble(*this, unit);
-        }
-        return ( val >= min && val <= max ? val : def );
-    }
-}
-
-inline Glib::ustring Preferences::Entry::getString(Glib::ustring const &def = "") const
-{
-    Glib::ustring ret = def;
-    if (this->isValid()) {
-        ret = Inkscape::Preferences::get()->_extractString(*this);
-        if (ret == "") {
-            ret = def;
-        }
-    }
-    return ret;
-}
-
-inline Glib::ustring Preferences::Entry::getUnit() const
-{
-    if (!this->isValid()) {
-        return "";
-    } else {
-        return Inkscape::Preferences::get()->_extractUnit(*this);
-    }
-}
-
-inline SPCSSAttr *Preferences::Entry::getStyle() const
-{
-    if (!this->isValid()) {
-        return sp_repr_css_attr_new();
-    } else {
-        return Inkscape::Preferences::get()->_extractStyle(*this);
-    }
-}
-
-inline SPCSSAttr *Preferences::Entry::getInheritedStyle() const
-{
-    if (!this->isValid()) {
-        return sp_repr_css_attr_new();
-    } else {
-        return Inkscape::Preferences::get()->_extractInheritedStyle(*this);
-    }
-}
-
-inline Glib::ustring Preferences::Entry::getEntryName() const
-{
-    Glib::ustring path_base = _pref_path;
-    path_base.erase(0, path_base.rfind('/') + 1);
-    return path_base;
-}
 
 /**
  * @brief Proxy object providing a "live value" interface.

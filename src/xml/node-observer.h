@@ -134,8 +134,10 @@ public:
      *
      * @param node The changed XML node
      * @param name GQuark corresponding to the attribute's name
-     * @param old_value Old value of the modified attribute
-     * @param new_value New value of the modified attribute
+     * @param old_value Old value of the modified attribute.
+     * Is a nullptr when the attribute is added.
+     * @param new_value New value of the modified attribute.
+     * Is a nullptr when the attribute is removed.
      */
     virtual void notifyAttributeChanged(Node &node, GQuark name,
                                         Util::ptr_shared old_value,
