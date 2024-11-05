@@ -32,7 +32,6 @@
 
 #include "object/sp-defs.h"
 #include "object/sp-page.h"
-#include "object/sp-path.h"
 #include "object/sp-shape.h"
 #include "ui/tool/control-point-selection.h"
 #include "ui/tool/path-manipulator.h"
@@ -96,14 +95,7 @@ gboolean Selection::_emit_modified(Selection *selection)
 
 void Selection::_emitModified(guint flags)
 {
-    for (auto it = _modified_signals.begin(); it != _modified_signals.end(); ) {
-        if (it->empty()) {
-            it = _modified_signals.erase(it);
-        } else {
-            it->emit(this, flags);
-            ++it;
-        }
-    }
+    _modified_signal.emit(this, flags);
 
     if (!_desktop || isEmpty()) {
         return;
@@ -156,14 +148,7 @@ void Selection::_emitChanged(bool persist_selection_context/* = false */) {
         DocumentUndo::resetKey(_document);
     }
 
-    for (auto it = _changed_signals.begin(); it != _changed_signals.end(); ) {
-        if (it->empty()) {
-            it = _changed_signals.erase(it);
-        } else {
-            it->emit(this);
-            ++it;
-        }
-    }
+    _changed_signal.emit(this);
 }
 
 void Selection::_releaseContext(SPObject *obj)
@@ -205,17 +190,6 @@ std::vector<Inkscape::SnapCandidatePoint> Selection::getSnapPoints(SnapPreferenc
     return p;
 }
 
-sigc::connection Selection::connectChanged(sigc::slot<void (Selection *)> slot)
-{
-    if (_changed_signals.empty()) _changed_signals.emplace_back();
-    return _changed_signals.back().connect(std::move(slot));
-}
-
-sigc::connection Selection::connectChangedFirst(sigc::slot<void (Selection *)> slot)
-{
-    return _changed_signals.emplace_front().connect(std::move(slot));
-}
-
 void Selection::setAnchor(double x, double y, bool set)
 {
     double const epsilon = 1e-12;
@@ -225,17 +199,6 @@ void Selection::setAnchor(double x, double y, bool set)
         has_anchor = set;
         this->_emitModified(SP_OBJECT_MODIFIED_FLAG);
     }
-}
-
-sigc::connection Selection::connectModified(sigc::slot<void (Selection *, unsigned)> slot)
-{
-    if (_modified_signals.empty()) _modified_signals.emplace_back();
-    return _modified_signals.back().connect(std::move(slot));
-}
-
-sigc::connection Selection::connectModifiedFirst(sigc::slot<void (Selection *, unsigned)> slot)
-{
-    return _modified_signals.emplace_front().connect(std::move(slot));
 }
 
 SPObject *Selection::_objectForXMLNode(Inkscape::XML::Node *repr) const {

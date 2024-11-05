@@ -77,6 +77,7 @@ private:
     private:
         Glib::ustring _value;
         Glib::ustring _text;
+        bool _is_default = false;
     };
 
     std::vector<ParamOptionGroupOption *> choices; /**< List of available options for the option group */

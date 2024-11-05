@@ -469,7 +469,7 @@ if(WITH_NLS)
     endif()
 endif(WITH_NLS)
 
-pkg_check_modules(SIGC++ REQUIRED sigc++-3.0)
+pkg_check_modules(SIGC++ REQUIRED sigc++-3.0>=3.6)
 sanitize_ldflags_for_libs(SIGC++_LDFLAGS)
 list(APPEND INKSCAPE_LIBS ${SIGC++_LDFLAGS})
 list(APPEND INKSCAPE_CXX_FLAGS ${SIGC++_CFLAGS_OTHER} "-DSIGCXX_DISABLE_DEPRECATED")

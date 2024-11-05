@@ -87,6 +87,12 @@ ParamOptionGroup::ParamOptionGroup(Inkscape::XML::Node *xml, Inkscape::Extension
         if (!choices.empty()) {
             _value = choices[0]->_value;
         }
+        for (auto const * choice : choices) {
+            if (choice->_is_default) {
+                _value = choice->_value;
+                break;
+            }
+        }
     }
 
     // parse appearance
@@ -330,6 +336,8 @@ ParamOptionGroup::ParamOptionGroupOption::ParamOptionGroupOption(Inkscape::XML::
                       _text.c_str(), parent->_name, _extension->get_id());
         }
     }
+
+    _is_default = g_strcmp0(xml->attribute("default"), "true") == 0;
 }
 
 } // namespace Inkscape::Extension

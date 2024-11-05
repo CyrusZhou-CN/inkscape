@@ -53,8 +53,6 @@ class Node;
  */
 class Selection : public ObjectSet
 {
-    friend class ObjectSet;
-
 public:
     /**
      * Constructs an selection object, bound to a particular
@@ -70,7 +68,7 @@ public:
     /** no copy. */
     Selection(Selection const &) = delete;
     /** no assign. */
-    void operator=(Selection const &) = delete;
+    Selection &operator=(Selection const &) = delete;
 
     /**
      * Returns active layer for selection (currentLayer or its parent).
@@ -158,8 +156,18 @@ public:
      *
      * @return the resulting connection
      */
-    sigc::connection connectChanged     (sigc::slot<void (Selection *)> slot);
-    sigc::connection connectChangedFirst(sigc::slot<void (Selection *)> slot);
+    sigc::connection connectChanged(sigc::slot<void (Selection *)> slot) {
+        return _changed_signal.connect(std::move(slot));
+    }
+
+    /**
+     * Similar to connectChanged, but will be run first.
+     *
+     * This is a hack; see cf86d4abd17 for explanation.
+     */
+    sigc::connection connectChangedFirst(sigc::slot<void (Selection *)> slot) {
+        return _changed_signal.connect_first(std::move(slot));
+    }
 
     /**
      * Set the anchor point of the selection, used for telling it how transforms
@@ -185,8 +193,16 @@ public:
      * @return the resulting connection
      *
      */
-    sigc::connection connectModified     (sigc::slot<void (Selection *, unsigned)> slot);
-    sigc::connection connectModifiedFirst(sigc::slot<void (Selection *, unsigned)> slot);
+    sigc::connection connectModified(sigc::slot<void (Selection *, unsigned)> slot) {
+        return _modified_signal.connect(std::move(slot));
+    }
+
+    /**
+     * Similar to connectModified, but will be run first.
+     */
+    sigc::connection connectModifiedFirst(sigc::slot<void (Selection *, unsigned)> slot) {
+        return _modified_signal.connect_first(std::move(slot));
+    }
 
     /**
      * Set a backup of current selection and store it also to be command line readable by extension system
@@ -240,8 +256,8 @@ private:
     std::unordered_map<SPObject *, sigc::scoped_connection> _modified_connections;
     sigc::scoped_connection _context_release_connection;
 
-    std::list<sigc::signal<void (Selection *)>> _changed_signals;
-    std::list<sigc::signal<void (Selection *, unsigned int)>> _modified_signals;
+    sigc::signal<void (Selection *)> _changed_signal;
+    sigc::signal<void (Selection *, unsigned)> _modified_signal;
 };
 
 } // namespace Inkscape
