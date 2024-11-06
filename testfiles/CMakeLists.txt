@@ -90,6 +90,7 @@ set(TEST_SOURCES
     util-test
     drag-and-drop-svgz
     drawing-pattern-test
+    poppler-utils-test
     extract-uri-test
     attributes-test
     dir-util-test

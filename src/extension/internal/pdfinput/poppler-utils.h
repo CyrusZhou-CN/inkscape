@@ -80,6 +80,7 @@ std::string getDictString(Dict *dict, const char *key);
 std::string getString(const std::unique_ptr<GooString> &value);
 std::string getString(const GooString *value);
 std::string validateString(std::string const &in);
+std::string sanitizeId(std::string const &in);
 
 // Replacate poppler FontDict
 class InkFontDict

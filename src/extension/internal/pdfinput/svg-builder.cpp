@@ -136,7 +136,7 @@ void SvgBuilder::pushPage(const std::string &label, GfxState *state)
         _page->setAttributeSvgDouble("y", _page_top);
 
         if (!label.empty()) {
-            _page->setAttribute("inkscape:label", label);
+            _page->setAttribute("inkscape:label", validateString(label));
         }
         auto _nv = _doc->getNamedView()->getRepr();
         _nv->appendChild(_page);
@@ -248,7 +248,7 @@ void SvgBuilder::setMargins(const Geom::Rect &page, const Geom::Rect &margins, c
 void SvgBuilder::setMetadata(char const *name, const std::string &content)
 {
     if (name && !content.empty()) {
-        rdf_set_work_entity(_doc, rdf_find_entity(name), content.c_str());
+        rdf_set_work_entity(_doc, rdf_find_entity(name), validateString(content).c_str());
     }
 }
 
@@ -259,7 +259,7 @@ void SvgBuilder::setAsLayer(const char *layer_name, bool visible)
 {
     _container->setAttribute("inkscape:groupmode", "layer");
     if (layer_name) {
-        _container->setAttribute("inkscape:label", layer_name);
+        _container->setAttribute("inkscape:label", validateString(layer_name));
     }
     if (!visible) {
         SPCSSAttr *css = sp_repr_css_attr_new();
@@ -852,7 +852,7 @@ Inkscape::XML::Node *SvgBuilder::_createClip(const std::string &d, const Geom::A
 void SvgBuilder::beginMarkedContent(const char *name, const char *group)
 {
     if (name && group && std::string(name) == "OC") {
-        auto layer_id = std::string("layer-") + group;
+        auto layer_id = std::string("layer-") + sanitizeId(group);
         if (auto existing = _doc->getObjectById(layer_id)) {
             if (existing->getRepr()->parent() == _container) {
                 _container = existing->getRepr();
@@ -872,7 +872,7 @@ void SvgBuilder::beginMarkedContent(const char *name, const char *group)
     } else {
         auto node = _pushGroup();
         if (group) {
-            node->setAttribute("id", std::string("group-") + group);
+            node->setAttribute("id", std::string("group-") + sanitizeId(group));
         }
     }
 }
@@ -884,8 +884,9 @@ void SvgBuilder::addOptionalGroup(const std::string &oc, const std::string &labe
 
 Inkscape::XML::Node *SvgBuilder::beginLayer(const std::string &label, bool visible)
 {
+    auto id = sanitizeId(label);
     Inkscape::XML::Node *save_current_location = _container;
-    if (auto existing = _doc->getObjectById(label)){
+    if (auto existing = _doc->getObjectById(id)) {
         _container = existing->getRepr();
         _node_stack.push_back(_container);
     } else {
@@ -893,9 +894,9 @@ Inkscape::XML::Node *SvgBuilder::beginLayer(const std::string &label, bool visib
             _popGroup();
         }
         auto node = _pushGroup();
-        node->setAttribute("id", label.c_str());
+        node->setAttribute("id", id);
         setAsLayer(label.c_str(), visible);
-    } 
+    }
     return save_current_location;
 }
 
@@ -933,7 +934,7 @@ std::string SvgBuilder::_getColorProfile(cmsHPROFILE hp)
         return _icc_profiles[hp];
 
     auto profile = Colors::CMS::Profile::create(hp);
-    std::string name = profile->getName();
+    std::string name = validateString(profile->getName());
 
     // Find the named profile in the document (if already added)
     if (_doc->getDocumentCMS().getSpace(name))

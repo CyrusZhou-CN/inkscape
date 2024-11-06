@@ -494,12 +494,21 @@ change_def_references(SPObject *from_obj, SPObject *to_obj)
     }
 }
 
-// Supposedly this is a list of valid XML 1.0 ID characters
-// TODO: find link to some reference page
+// This is a subset of the valid XML 1.0 ID characters.
 const char valid_id_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:";
 
+/**
+ * Convert string to valid XML id.
+ * The input is returned unchanged if it is a valid ID and only uses ASCII characters.
+ * The returned ID is not guaranteed to be unique. Different inputs can map to the same output.
+ */
 Glib::ustring sanitize_id(const Glib::ustring& input_id) {
-    if (input_id.empty()) return input_id;
+    // XML allows IDs of the form [a-zA-Z_:][a-zA-Z0-9\-_\.:]* plus some UTF8 characters.
+    // We restrict us to the ASCII subset for simplicity.
+    // https://www.w3.org/TR/2008/REC-xml-20081126/#id
+    // https://stackoverflow.com/questions/1077084/what-characters-are-allowed-in-dom-ids#1077111
+    if (input_id.empty())
+        return "_";
 
     auto id = input_id;
     for (auto pos = id.find_first_not_of(valid_id_chars);

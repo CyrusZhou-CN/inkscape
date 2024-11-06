@@ -419,9 +419,9 @@ CairoFreeTypeFont *CairoFreeTypeFont::create(GfxFont *gfxFont, XRef *xref, FT_Li
                 FoFiTrueType *ff;
 #endif
                 if (!font_data.empty()) {
-                    ff = FoFiTrueType::make((fontchar)font_data.data(), font_data.size());
+                    ff = FoFiTrueType::make((fontchar)font_data.data(), font_data.size(), 0);
                 } else {
-                    ff = FoFiTrueType::load(fileName.c_str());
+                    ff = FoFiTrueType::load(fileName.c_str(), 0);
                 }
                 if (!ff) {
                     goto err2;
@@ -444,9 +444,9 @@ CairoFreeTypeFont *CairoFreeTypeFont::create(GfxFont *gfxFont, XRef *xref, FT_Li
             FoFiTrueType *ff;
 #endif
             if (!font_data.empty()) {
-                ff = FoFiTrueType::make((fontchar)font_data.data(), font_data.size());
+                ff = FoFiTrueType::make((fontchar)font_data.data(), font_data.size(), 0);
             } else {
-                ff = FoFiTrueType::load(fileName.c_str());
+                ff = FoFiTrueType::load(fileName.c_str(), 0);
             }
             if (!ff) {
                 error(errSyntaxError, -1, "failed to load truetype font\n");
@@ -512,9 +512,9 @@ CairoFreeTypeFont *CairoFreeTypeFont::create(GfxFont *gfxFont, XRef *xref, FT_Li
                     FoFiTrueType *ff;
 #endif
                     if (!font_data.empty()) {
-                        ff = FoFiTrueType::make((fontchar)font_data.data(), font_data.size());
+                        ff = FoFiTrueType::make((fontchar)font_data.data(), font_data.size(), 0);
                     } else {
-                        ff = FoFiTrueType::load(fileName.c_str());
+                        ff = FoFiTrueType::load(fileName.c_str(), 0);
                     }
                     if (ff) {
                         if (ff->isOpenTypeCFF()) {

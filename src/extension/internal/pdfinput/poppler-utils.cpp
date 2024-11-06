@@ -553,7 +553,58 @@ FontList getPdfFonts(std::shared_ptr<PDFDoc> pdf_doc)
     return fontsList;
 }
 
+/**
+ * Convert arbitrary string (e.g. group name in PDF) to a valid SVG ID.
+ *
+ * This function guarantees the following:
+ * - The result is a valid SVG ID.
+ * - Two different inputs can never lead to the same output, so ID collisions are avoided.
+ *   (Mathematically, the function is invertible.)
+ * - Valid SVG IDs are preserved if they only use the characters a-z A-Z 0-9.
+ *
+ * It does *not* guarantee that all other valid input SVG IDs are preserved.
+ * (This would be impossible together with the above guarantees.)
+ *
+ * See also sanitize_id() in id-clash.cpp for a less aggressive version that is, however, not collision-free.
+ */
+std::string sanitizeId(std::string const &in)
+{
+    // XML allows IDs of the form [a-zA-Z_:][a-zA-Z0-9\-_\.:]* plus some UTF8 characters.
+    // Here we restrict us to the subset [a-zA-Z_][a-zA-Z0-9_]*,
+    // where "_" is used as escape character.
+    // https://www.w3.org/TR/2008/REC-xml-20081126/#id
+    // https://stackoverflow.com/questions/1077084/what-characters-are-allowed-in-dom-ids#1077111
 
+    if (in.empty()) {
+        return "_";
+    }
+    if (isalpha(in[0]) && std::find_if_not(in.begin(), in.end(), isalnum) == in.end()) {
+        [[likely]];
+        // Fast path:
+        // Input is of the form [a-zA-Z][a-zA-Z0-9]*
+        // --> Return unchanged.
+        return in;
+    }
+
+    // Slow path: Escape anything non-alphanumeric,
+    //  e.g., "a bc" as a_20bc
+    std::ostringstream outStream;
+    for (char chr : in) {
+        if (isalnum(chr)) {
+            outStream.put(chr);
+        } else {
+            outStream.put('_');
+            outStream << std::hex << ((unsigned int)chr & 0xff);
+        }
+    }
+    return outStream.str();
+}
+
+/**
+ * Ensure string is valid UTF8.
+ * If not, return an empty string.
+ * (This could be changed in the future to only remove the problematic characters.)
+ */
 std::string validateString(std::string const &in)
 {
     if (g_utf8_validate(in.c_str(), -1, nullptr)) {
