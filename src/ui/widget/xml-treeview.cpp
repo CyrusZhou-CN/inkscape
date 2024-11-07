@@ -419,7 +419,6 @@ XmlTreeView::build_tree(SPDocument* document_in)
     root_watcher.reset();
 
     if (!document) {
-        std::cerr << "XMLTreeView::set_root_watcher: No document!" << std::endl;
         return;
     }
 
