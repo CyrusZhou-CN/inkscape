@@ -17,10 +17,11 @@
 #include <thread>
 
 #include "cairo-utils.h"
-#include "drawing-context.h"
 #include "control/canvas-item-drawing.h"
+#include "drawing-context.h"
 #include "nr-filter-gaussian.h"
 #include "nr-filter-types.h"
+#include "threading.h"
 
 namespace Inkscape {
 
@@ -336,8 +337,9 @@ void Drawing::_loadPrefs()
         _cache_budget = 0;
     }
 
-    // Set the global variable governing the number of filter threads, and track it too. (This is ugly, but hopefully transitional.)
-    set_num_filter_threads(prefs->getIntLimited("/options/threading/numthreads", default_numthreads(), 1, 256));
+    // Set the global variable governing the number of threads, and track it too. (This is ugly, but hopefully
+    // transitional.)
+    set_num_dispatch_threads(prefs->getIntLimited("/options/threading/numthreads", default_numthreads(), 1, 256));
 
     // Similarly, enable preference tracking only for the Canvas's drawing.
     if (_canvas_item_drawing) {
@@ -354,7 +356,9 @@ void Drawing::_loadPrefs()
         actions.emplace("/options/cursortolerance/value",        [this] (auto &entry) { setCursorTolerance(entry.getDouble(1.0)); });
         actions.emplace("/options/selection/zeroopacity",        [this] (auto &entry) { setSelectZeroOpacity(entry.getBool(false)); });
         actions.emplace("/options/renderingcache/size",          [this] (auto &entry) { setCacheBudget((1 << 20) * entry.getIntLimited(64, 0, 4096)); });
-        actions.emplace("/options/threading/numthreads",         [this] (auto &entry) { set_num_filter_threads(entry.getIntLimited(default_numthreads(), 1, 256)); });
+        actions.emplace("/options/threading/numthreads", [this](auto &entry) {
+            set_num_dispatch_threads(entry.getIntLimited(default_numthreads(), 1, 256));
+        });
 
         _pref_tracker = Inkscape::Preferences::PreferencesObserver::create("/options", [actions = std::move(actions)] (auto &entry) {
             auto it = actions.find(entry.getPath());

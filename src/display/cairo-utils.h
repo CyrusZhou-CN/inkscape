@@ -91,10 +91,6 @@ public:
 
 } // namespace Inkscape
 
-// Atomic accessors to global variable governing number of filter threads.
-int  get_num_filter_threads();
-void set_num_filter_threads(int);
-
 SPColorInterpolation get_cairo_surface_ci(cairo_surface_t *surface);
 void set_cairo_surface_ci(cairo_surface_t *surface, SPColorInterpolation cif);
 void copy_cairo_surface_ci(cairo_surface_t *in, cairo_surface_t *out);

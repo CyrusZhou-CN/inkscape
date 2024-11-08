@@ -3,6 +3,7 @@
 set(display_SRC
     cairo-utils.cpp
     curve.cpp
+    dispatch-pool.cpp
     drawing-context.cpp
     drawing-group.cpp
     drawing-image.cpp
@@ -38,6 +39,7 @@ set(display_SRC
     nr-light.cpp
     nr-style.cpp
     nr-svgfonts.cpp
+    threading.cpp
     translucency-group.cpp
 
     control/canvas-temporary-item-list.cpp
@@ -67,6 +69,7 @@ set(display_SRC
     cairo-templates.h
     cairo-utils.h
     curve.h
+    dispatch-pool.h
     drawing-context.h
     drawing-group.h
     drawing-image.h
@@ -109,6 +112,7 @@ set(display_SRC
     nr-svgfonts.h
     rendermode.h
     tags.h
+    threading.h
     translucency-group.h
 
     control/canvas-temporary-item-list.h

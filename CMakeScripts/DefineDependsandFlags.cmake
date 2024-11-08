@@ -391,26 +391,6 @@ list(APPEND INKSCAPE_INCS_SYS ${LIBXML2_INCLUDE_DIR})
 list(APPEND INKSCAPE_LIBS ${LIBXML2_LIBRARIES})
 add_definitions(${LIBXML2_DEFINITIONS})
 
-if(WITH_OPENMP)
-    find_package(OpenMP)
-    if(OPENMP_FOUND)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-        list(APPEND INKSCAPE_CXX_FLAGS  ${OpenMP_CXX_FLAGS})
-        if(APPLE OR (MINGW AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang"))
-            list(APPEND INKSCAPE_LIBS "-lomp")
-        endif()
-        mark_as_advanced(OpenMP_C_FLAGS)
-        mark_as_advanced(OpenMP_CXX_FLAGS)
-        # '-fopenmp' is in OpenMP_C_FLAGS, OpenMP_CXX_FLAGS and implies '-lgomp'
-        # uncomment explicit linking below if still needed:
-        set(HAVE_OPENMP ON)
-        #list(APPEND INKSCAPE_LIBS "-lgomp")  # FIXME
-    else()
-        set(HAVE_OPENMP OFF)
-        set(WITH_OPENMP OFF)
-    endif()
-endif()
-
 find_package(ZLIB REQUIRED)
 list(APPEND INKSCAPE_INCS_SYS ${ZLIB_INCLUDE_DIRS})
 list(APPEND INKSCAPE_LIBS ${ZLIB_LIBRARIES})

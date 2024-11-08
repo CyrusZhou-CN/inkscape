@@ -10,10 +10,6 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"  // only include where actually required!
-#endif
-
 #include <cmath>
 #include <algorithm>
 #include <deque>
@@ -65,11 +61,9 @@ void morphologicalFilter1D(cairo_surface_t * const input, cairo_surface_t * cons
     int ri = round(radius); // TODO: Support fractional radii?
     int wi = 2*ri+1;
 
-    #if HAVE_OPENMP
-    int limit = w * h;
-    #pragma omp parallel for if(limit > OPENMP_THRESHOLD) num_threads(get_num_filter_threads())
-    #endif // HAVE_OPENMP
-    for (int i = 0; i < h; ++i) {
+    int const limit = w * h;
+    auto const pool = get_global_dispatch_pool();
+    pool->dispatch_threshold(h, limit > POOL_THRESHOLD, [&](int i, int) {
         // TODO: Store position and value in one 32 bit integer? 24 bits should be enough for a position, it would be quite strange to have an image with a width/height of more than 16 million(!).
         std::deque<std::pair<int, unsigned char>> vals[BPP]; // In my tests it was actually slightly faster to allocate it here than allocate it once for all threads and retrieving the correct set based on the thread id.
 
@@ -148,7 +142,7 @@ void morphologicalFilter1D(cairo_surface_t * const input, cairo_surface_t * cons
             }
             if (axis == Geom::Y) out_p += strideout - BPP;
         }
-    }
+    });
 
     cairo_surface_mark_dirty(out);
 }

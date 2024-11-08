@@ -41,9 +41,6 @@
 /* Define to 1 if you have the <malloc.h> header file. */
 #cmakedefine HAVE_MALLOC_H 1
 
-/* Use OpenMP (via cmake) */
-#cmakedefine HAVE_OPENMP 1
-
 /* Use libpoppler for direct PDF import */
 #cmakedefine HAVE_POPPLER 1
 
