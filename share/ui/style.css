@@ -773,28 +773,28 @@ button.square-button image {
 .inkscape-toolbar {
     margin: 4px;
 }
-
 .inkscape-toolbar > * {
     margin-right: 2px;
-    margin-left: 1px;
+    margin-left: 2px;
 }
-
-.inkscape-toolbar > * > * {
+.inkscape-toolbar > box > image,
+.inkscape-toolbar > box > label {
     margin-right: 2px;
-    margin-left: 1px;
 }
-
-.inkscape-toolbar > popover > box {
-    margin: 4px 3px;
+.inkscape-toolbar  popover content > * {
+    margin-right: 2px;
+    margin-left: 2px;
 }
-
-.inkscape-toolbar > popover > box > * {
-    margin-right: 3px;
-}
-
-.inkscape-toolbar > popover > box > *:last-child {
-    margin-right: 0;
-}
+/* Revise for gtk4: There's no box in popover */
+/*.inkscape-toolbar > popover > box {*/
+/*    margin: 4px 3px;*/
+/*}*/
+/*.inkscape-toolbar > popover > box > * {*/
+/*    margin-right: 3px;*/
+/*}*/
+/*.inkscape-toolbar > popover > box > *:last-child {*/
+/*    margin-right: 0;*/
+/*}*/
 
 /* for dialogs with "Apply" button (or equivalent) - larger hit target */
 .wide-apply-button {
@@ -811,9 +811,9 @@ button.menu-btn-tight {
 }
 
 #DialogMenuButton {
-    padding: 0px;
+    padding: 0;
     border: none;
-    opacity: 0.5;
+    opacity: 0.7;
 }
 #DialogMenuButton:hover {
     opacity: 1;

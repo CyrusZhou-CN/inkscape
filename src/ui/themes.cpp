@@ -62,19 +62,18 @@ ThemeContext::~ThemeContext() = default;
 /**
  * Inkscape fill gtk, taken from glib/gtk code with our own checks.
  */
-void 
-ThemeContext::inkscape_fill_gtk(const gchar *path, gtkThemeList &themes)
+void ThemeContext::inkscape_fill_gtk(const gchar *path, gtkThemeList &themes)
 {
     const gchar *dir_entry;
     GDir *dir = g_dir_open(path, 0, nullptr);
     if (!dir)
         return;
     while ((dir_entry = g_dir_read_name(dir))) {
-        gchar *filename = g_build_filename(path, dir_entry, "gtk-3.0", "gtk.css", nullptr);
+        gchar *filename = g_build_filename(path, dir_entry, "gtk-4.0", "gtk.css", nullptr);
         bool has_prefer_dark = false;
   
         Glib::ustring theme = dir_entry;
-        gchar *filenamedark = g_build_filename(path, dir_entry, "gtk-3.0", "gtk-dark.css", nullptr);
+        gchar *filenamedark = g_build_filename(path, dir_entry, "gtk-4.0", "gtk-dark.css", nullptr);
         if (g_file_test(filenamedark, G_FILE_TEST_IS_REGULAR))
             has_prefer_dark = true;
         if (themes.find(theme) != themes.end() && !has_prefer_dark) {
@@ -96,6 +95,11 @@ ThemeContext::inkscape_fill_gtk(const gchar *path, gtkThemeList &themes)
 std::map<Glib::ustring, bool> 
 ThemeContext::get_available_themes()
 {
+    // NOTE: This function tries to mimic what _gtk_css_find_theme in gtk4 does to locate a theme;
+    // that is we traverse resources and then certain directories looking for themes.
+    // We only gather theme names as this is what's saved in gtk settings to select a UI theme.
+    // gtk4 will load a theme based solely on its name searching for it in a list of folders (that we cannot change).
+
     gtkThemeList themes;
     Glib::ustring theme = "";
     gchar *path;
