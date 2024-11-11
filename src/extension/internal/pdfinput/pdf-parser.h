@@ -24,13 +24,12 @@
 #pragma interface
 #endif
 
-#include "glib/poppler-features.h"
-#include "Object.h"
-
+#include <2geom/affine.h>
+#include <glib/poppler-features.h>
 #include <map>
 #include <memory>
+#include <poppler/Object.h>
 #include <string>
-#include <2geom/affine.h>
 
 #define Operator Operator_Gfx
 #include <poppler/Gfx.h>
