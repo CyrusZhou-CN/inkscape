@@ -14,7 +14,7 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -78,16 +78,8 @@ public:
     // no setter for this -- only we can control this variable
     static bool isCrashing() { return _crashIsHappening; }
 
-    // useful functions
-    void application_init (gboolean use_gui);
-    void load_config (const gchar *filename, Inkscape::XML::Document *config, const gchar *skeleton, 
-                      unsigned int skel_size, const gchar *e_notreg, const gchar *e_notxml, 
-                      const gchar *e_notsp, const gchar *warn);
-
-    Inkscape::UI::Tools::ToolBase * active_event_context();
     SPDocument * active_document();
     SPDesktop * active_desktop();
-    bool sole_desktop_for_document(SPDesktop const &desktop);
 
     Inkscape::UI::ThemeContext *themecontext = nullptr;
     
@@ -109,11 +101,11 @@ public:
     
     // Moved document add/remove functions into public inkscape.h as they are used
     // (rightly or wrongly) by console-mode functions
-    void add_document (SPDocument *document);
-    bool remove_document (SPDocument *document);
+    void add_document(SPDocument *document);
+    void remove_document(SPDocument *document);
     
-    // fixme: This also
-    void exit ();
+    // Fixme: This has to be rethought
+    void exit();
     
     static void crash_handler(int signum);
 
@@ -139,8 +131,6 @@ public:
     // these are orphaned signals (nothing emits them and nothing connects to them)
     sigc::signal<void (SPDocument *)> signal_destroy_document;
     
-    // inkscape is quitting
-    sigc::signal<void ()> signal_shut_down;
     // a document was changed by some external means (undo or XML editor); this
     // may not be reflected by a selection change and thus needs a separate signal
     sigc::signal<void ()> signal_external_change;
@@ -173,7 +163,7 @@ public:
     Application(Application const&); // no copy
     Application& operator=(Application const&); // no assign
     Application* operator&() const; // no pointer access
-    std::map<SPDocument *, int> _document_set;
+    std::set<SPDocument *> _document_set;
     std::vector<SPDesktop *> *_desktops = nullptr;
     std::string _pages;
 

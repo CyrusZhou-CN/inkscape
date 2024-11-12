@@ -129,6 +129,7 @@ SPDocument *InkscapeApplication::document_add(std::unique_ptr<SPDocument> docume
     assert(document);
     auto [it, inserted] = _documents.try_emplace(std::move(document));
     assert(inserted);
+    INKSCAPE.add_document(it->first.get());
     return it->first.get();
 }
 
@@ -261,10 +262,6 @@ bool InkscapeApplication::document_swap(InkscapeWindow *window, SPDocument *docu
 
     doc_it->second.push_back(std::move(win_uniq));
 
-    // To be removed (add/delete once per window)!
-    INKSCAPE.add_document(document);
-    INKSCAPE.remove_document(old_document);
-
     _active_document  = document;
     _active_selection = desktop->getSelection();
     _active_desktop   = desktop;
@@ -346,21 +343,8 @@ void InkscapeApplication::document_close(SPDocument *document)
         std::cerr << "InkscapeApplication::close_document: Window vector not empty!" << std::endl;
     }
 
+    INKSCAPE.remove_document(it->first.get());
     _documents.erase(it);
-}
-
-/**
- * Return number of windows with document.
- */
-unsigned InkscapeApplication::document_window_count(SPDocument *document)
-{
-    auto it = _documents.find(document);
-    if (it == _documents.end()) {
-        std::cerr << "InkscapeApplication::document_window_count: Document not in map!" << std::endl;
-        return 0;
-    }
-
-    return it->second.size();
 }
 
 /** Fix up a document if necessary (Only fixes that require GUI). MOVE TO ANOTHER FILE!
@@ -424,9 +408,6 @@ InkscapeWindow *InkscapeApplication::window_open(SPDocument *document)
     auto win_uniq = std::make_unique<InkscapeWindow>(document);
     // TODO Add window to application. (Instead of in InkscapeWindow constructor.)
 
-    // To be removed (add once per window)!
-    INKSCAPE.add_document(document);
-
     _active_window    = win_uniq.get();
     _active_desktop   = win_uniq->get_desktop();
     _active_selection = win_uniq->get_desktop()->getSelection();
@@ -458,9 +439,6 @@ void InkscapeApplication::window_close(InkscapeWindow *window)
 
     auto document = window->get_document();
     assert(document);
-
-    // To be removed (remove once per window)!
-    INKSCAPE.remove_document(document);
 
     // Leave active document alone (maybe should find new active window and reset variables).
     _active_selection = nullptr;
@@ -498,25 +476,6 @@ void InkscapeApplication::window_close_active()
         return;
     }
     window_close(_active_window);
-}
-
-/** Update windows in response to:
- *  - New active window
- *  - Document change
- *  - Selection change
- */
-void InkscapeApplication::windows_update(SPDocument *document)
-{
-    // Find windows:
-    // auto it = _documents.find( document );
-    // if (it != _documents.end()) {
-        // std::vector<InkscapeWindow*> windows = it->second;
-        // std::cout << "InkscapeApplication::update_windows: windows size: " << windows.size() << std::endl;
-        // Loop over InkscapeWindows.
-        // Loop over DialogWindows. TBD
-    // } else {
-        // std::cout << "InkscapeApplication::update_windows: no windows found" << std::endl;
-    // }
 }
 
 /** Debug function
@@ -954,9 +913,6 @@ InkscapeApplication::destroy_all()
 void
 InkscapeApplication::process_document(SPDocument* document, std::string output_path)
 {
-    // Add to Inkscape::Application...
-    INKSCAPE.add_document(document);
-
     // Are we doing one file at a time? In that case, we don't recreate new windows for each file.
     bool replace = _use_pipe || _batch_process;
 

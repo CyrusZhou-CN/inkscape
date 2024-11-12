@@ -87,6 +87,7 @@ using namespace std::literals;
 #include "ui/icon-loader.h"
 #include "ui/pack.h"
 #include "util/statics.h"
+#include "util/value-utils.h"
 #include "xml/href-attribute-helper.h"
 
 #ifdef WITH_LIBVISIO
@@ -362,22 +363,17 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
         auto const dims = getSymbolDimensions(dragged);
         sendToClipboard(*dragged, Geom::Rect(-0.5 * dims, 0.5 * dims), false);
 
-        Glib::Value<DnDSymbol> value;
-        value.init(value.value_type());
-        value.set(DnDSymbol{dragged->symbol_id, dragged->unique_key, dragged->symbol_document});
-        auto content = Gdk::ContentProvider::create(value);
-        source.set_content(content);
-        return content;
+        return Gdk::ContentProvider::create(Util::GlibValue::create<DnDSymbol>(
+            DnDSymbol{dragged->symbol_id, dragged->unique_key, dragged->symbol_document}
+        ));
     };
     auto drag_begin = [this, &source = *source](Glib::RefPtr<Gdk::Drag> const &drag) {
         auto c = source.get_content();
         if (!c) return;
 
-        Glib::Value<DnDSymbol> value;
-        value.init(value.value_type());
-        c->get_value(value);
-        const auto& symbol = value.get();
-        auto tex = get_image(symbol.unique_key, symbol.document, symbol.id);
+        auto symbol = Util::GlibValue::from_content_provider<DnDSymbol>(*c);
+
+        auto tex = get_image(symbol->unique_key, symbol->document, symbol->id);
         // TODO: scale for high dpi display (somehow)
         int x = 0, y = 0;
         if (tex) {

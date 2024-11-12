@@ -41,12 +41,19 @@ public:
     SPDesktopWidget* get_desktop_widget() { return _desktop_widget; }
     void change_document(SPDocument* document);
 
+    Gdk::Toplevel::State get_toplevel_state() const;
+
+    bool isFullscreen() const;
+    bool isMaximised() const;
+    bool isMinimised() const;
+
+    void toggleFullscreen();
+
 private:
     InkscapeApplication *_app = nullptr;
     SPDocument*          _document = nullptr;
     SPDesktop*           _desktop = nullptr;
     SPDesktopWidget*     _desktop_widget = nullptr;
-    Gtk::Box*      _mainbox = nullptr;
     Glib::RefPtr<Gtk::ShortcutController> _shortcut_controller;
 
     void setup_view();

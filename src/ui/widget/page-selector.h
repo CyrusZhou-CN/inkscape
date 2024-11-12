@@ -27,17 +27,15 @@ class SPDesktop;
 class SPDocument;
 class SPPage;
 
-namespace Inkscape {
-namespace UI {
-namespace Widget {
-
-// class DocumentTreeModel;
+namespace Inkscape::UI::Widget {
 
 class PageSelector : public Gtk::Box
 {
 public:
-    PageSelector(SPDesktop *desktop = nullptr);
+    PageSelector();
     ~PageSelector() override;
+
+    void setDesktop(SPDesktop *desktop);
 
 private:
     class PageModelColumns : public Gtk::TreeModel::ColumnRecord
@@ -48,8 +46,8 @@ private:
         PageModelColumns() { add(object); }
     };
 
-    SPDesktop *_desktop;
-    SPDocument *_document;
+    SPDesktop *_desktop = nullptr;
+    SPDocument *_document = nullptr;
 
     Gtk::ComboBox _selector;
     Gtk::Button _prev_button;
@@ -74,9 +72,7 @@ private:
     void prevPage();
 };
 
-} // namespace Widget
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Widget
 
 #endif
 /*

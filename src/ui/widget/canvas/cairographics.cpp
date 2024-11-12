@@ -245,17 +245,6 @@ void CairoGraphics::paint_widget(Fragment const &view, PaintArgs const &a, Cairo
     // get away with it without any negative visual impact; when we can't, we turn it back on.)
     cr->set_antialias(Cairo::ANTIALIAS_NONE);
 
-    // Due to a Cairo bug, Cairo sometimes draws outside of its clip region. This results in flickering as Canvas content is drawn
-    // over the bottom scrollbar. This cannot be fixed by setting the correct clip region, as Cairo detects that and turns it into
-    // a no-op. Hence the following workaround, which recreates the clip region from scratch, is required.
-    auto rlist = cairo_copy_clip_rectangle_list(cr->cobj());
-    cr->reset_clip();
-    for (int i = 0; i < rlist->num_rectangles; i++) {
-        cr->rectangle(rlist->rectangles[i].x, rlist->rectangles[i].y, rlist->rectangles[i].width, rlist->rectangles[i].height);
-    }
-    cr->clip();
-    cairo_rectangle_list_destroy(rlist);
-
     // Draw background if solid colour optimisation is not enabled. (If enabled, it is baked into the stores.)
     if (!background_in_stores) {
         if (prefs.debug_framecheck) f = FrameCheck::Event("background");

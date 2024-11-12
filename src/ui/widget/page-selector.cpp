@@ -19,20 +19,15 @@
 
 #include "desktop.h"
 #include "document.h"
-#include "object/sp-namedview.h"
 #include "object/sp-page.h"
 #include "page-manager.h"
-#include "ui/icon-loader.h"
 #include "ui/icon-names.h"
 #include "ui/pack.h"
 
-namespace Inkscape {
-namespace UI {
-namespace Widget {
+namespace Inkscape::UI::Widget {
 
-PageSelector::PageSelector(SPDesktop *desktop)
+PageSelector::PageSelector()
     : Gtk::Box(Gtk::Orientation::HORIZONTAL)
-    , _desktop(desktop)
 {
     set_name("PageSelector");
 
@@ -61,11 +56,6 @@ PageSelector::PageSelector(SPDesktop *desktop)
     UI::pack_start(*this, _prev_button, UI::PackOptions::expand_padding);
     UI::pack_start(*this, _selector, UI::PackOptions::expand_widget);
     UI::pack_start(*this, _next_button, UI::PackOptions::expand_padding);
-
-    _doc_replaced_connection =
-        _desktop->connectDocumentReplaced(sigc::hide<0>(sigc::mem_fun(*this, &PageSelector::setDocument)));
-
-    setDocument(desktop->getDocument());
 }
 
 PageSelector::~PageSelector()
@@ -75,13 +65,31 @@ PageSelector::~PageSelector()
     setDocument(nullptr);
 }
 
+void PageSelector::setDesktop(SPDesktop *desktop)
+{
+    if (_desktop) {
+        _doc_replaced_connection.disconnect();
+    }
+
+    _desktop = desktop;
+    setDocument(_desktop ? _desktop->getDocument() : nullptr);
+
+    if (_desktop) {
+        _doc_replaced_connection = _desktop->connectDocumentReplaced(sigc::hide<0>(sigc::mem_fun(*this, &PageSelector::setDocument)));
+    }
+}
+
 void PageSelector::setDocument(SPDocument *document)
 {
+    if (_document) {
+        _pages_changed_connection.disconnect();
+        _page_selected_connection.disconnect();
+    }
+
     _document = document;
-    _pages_changed_connection.disconnect();
-    _page_selected_connection.disconnect();
-    if (document) {
-        auto &page_manager = document->getPageManager();
+
+    if (_document) {
+        auto &page_manager = _document->getPageManager();
         _pages_changed_connection =
             page_manager.connectPagesChanged(sigc::mem_fun(*this, &PageSelector::pagesChanged));
         _page_selected_connection =
@@ -184,9 +192,7 @@ void PageSelector::prevPage()
     }
 }
 
-} // namespace Widget
-} // namespace UI
-} // namespace Inkscape
+} // namespace Inkscape::UI::Widget
 
 /*
   Local Variables:

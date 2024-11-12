@@ -102,7 +102,6 @@ public:
     bool                  document_swap(InkscapeWindow* window, SPDocument* document);
     bool                  document_revert(SPDocument* document);
     void                  document_close(SPDocument* document);
-    unsigned              document_window_count(SPDocument* document);
 
     /* These require a GUI! */
     void                  document_fix(InkscapeWindow* window); // MOVE TO ANOTHER FILE
@@ -114,10 +113,6 @@ public:
     void                  window_close(InkscapeWindow* window);
     void                  window_close_active();
     void                  startup_close();
-
-    // Update all windows connected to a document.
-    void                  windows_update(SPDocument* document);
-
 
     /****** Actions *******/
     InkActionExtraData&     get_action_extra_data()     { return _action_extra_data;  }

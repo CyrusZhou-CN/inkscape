@@ -209,8 +209,8 @@ void SelectToolbar::any_value_changed(Glib::RefPtr<Gtk::Adjustment> const &adj)
         new_y = Quantity::convert(_adj_y->get_value(), unit, "px");
 
     } else {
-        double old_x = bbox_user->min()[Geom::X] + (old_w * selection->anchor_x);
-        double old_y = bbox_user->min()[Geom::Y] + (old_h * selection->anchor_y);
+        double old_x = bbox_user->min()[Geom::X] + (old_w * selection->anchor.x());
+        double old_y = bbox_user->min()[Geom::Y] + (old_h * selection->anchor.y());
 
         // Adjust against selected page, so later correction isn't broken.
         if (page_correction) {
@@ -225,8 +225,8 @@ void SelectToolbar::any_value_changed(Glib::RefPtr<Gtk::Adjustment> const &adj)
     }
 
     // Adjust depending on the selected anchor.
-    double x0 = (new_x - (old_w * selection->anchor_x)) - ((new_w - old_w) * selection->anchor_x);
-    double y0 = (new_y - (old_h * selection->anchor_y)) - ((new_h - old_h) * selection->anchor_y);
+    double x0 = (new_x - (old_w * selection->anchor.x())) - ((new_w - old_w) * selection->anchor.x());
+    double y0 = (new_y - (old_h * selection->anchor.y())) - ((new_h - old_h) * selection->anchor.y());
 
     // Adjust according to the selected page, if needed
     if (page_correction) {
@@ -299,8 +299,8 @@ void SelectToolbar::layout_widget_update(Selection *sel)
 
             auto width = bbox->width();
             auto height = bbox->height();
-            auto x = bbox->left() + width * sel->anchor_x;
-            auto y = bbox->top() + height * sel->anchor_y;
+            auto x = bbox->left() + width * sel->anchor.x();
+            auto y = bbox->top() + height * sel->anchor.y();
 
             if (Preferences::get()->getBool("/options/origincorrection/page", true)) {
                 auto &pm = _desktop->getDocument()->getPageManager();

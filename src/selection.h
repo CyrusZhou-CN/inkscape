@@ -65,11 +65,6 @@ public:
     Selection(SPDocument *document);
     ~Selection() override;
 
-    /** no copy. */
-    Selection(Selection const &) = delete;
-    /** no assign. */
-    Selection &operator=(Selection const &) = delete;
-
     /**
      * Returns active layer for selection (currentLayer or its parent).
      *
@@ -178,8 +173,7 @@ public:
     void setAnchor(double x, double y, bool set = true);
     // Allow the selection to specify a facus anchor (helps with transforming against this point)
     bool has_anchor = false;
-    double anchor_x;
-    double anchor_y;
+    Geom::Point anchor;
 
     /**
      * Connects a slot to be notified of selected object modifications.
@@ -246,12 +240,12 @@ private:
     /** Releases an active layer object that is being removed. */
     void _releaseContext(SPObject *obj);
 
-    SPObject* _selection_context;
-    unsigned int _flags;
-    unsigned int _idle;
+    SPObject *_selection_context = nullptr;
+    unsigned _flags = 0;
+    unsigned _idle = 0;
     bool _change_layer = true;
     bool _change_page = true;
-    std::vector<std::pair<std::string, std::pair<int, int> > > _seldata;
+    std::vector<std::pair<std::string, std::pair<int, int>>> _seldata;
     std::vector<std::string> _selected_ids;
     std::unordered_map<SPObject *, sigc::scoped_connection> _modified_connections;
     sigc::scoped_connection _context_release_connection;

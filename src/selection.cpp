@@ -41,25 +41,13 @@ static constexpr auto SP_SELECTION_UPDATE_PRIORITY = G_PRIORITY_HIGH_IDLE + 1;
 
 namespace Inkscape {
 
-Selection::Selection(SPDesktop *desktop):
-    ObjectSet(desktop),
-    _selection_context(nullptr),
-    _flags(0),
-    _idle(0),
-    anchor_x(0.0),
-    anchor_y(0.0)
-{
-}
+Selection::Selection(SPDesktop *desktop)
+    : ObjectSet(desktop)
+{}
 
-Selection::Selection(SPDocument *document):
-    ObjectSet(document),
-    _selection_context(nullptr),
-    _flags(0),
-    _idle(0),
-    anchor_x(0.0),
-    anchor_y(0.0)
-{
-}
+Selection::Selection(SPDocument *document)
+    : ObjectSet(document)
+{}
 
 Selection::~Selection() {
     if (_idle) {
@@ -117,7 +105,8 @@ void Selection::_emitModified(guint flags)
     }
 }
 
-void Selection::_emitChanged(bool persist_selection_context/* = false */) {
+void Selection::_emitChanged(bool persist_selection_context)
+{
     ObjectSet::_emitChanged();
     if (persist_selection_context) {
         if (nullptr == _selection_context) {
@@ -153,8 +142,9 @@ void Selection::_emitChanged(bool persist_selection_context/* = false */) {
 
 void Selection::_releaseContext(SPObject *obj)
 {
-    if (nullptr == _selection_context || _selection_context != obj)
+    if (!_selection_context || _selection_context != obj) {
         return;
+    }
 
     _context_release_connection.disconnect();
 
@@ -162,9 +152,11 @@ void Selection::_releaseContext(SPObject *obj)
     _selection_context = nullptr;
 }
 
-SPObject *Selection::activeContext() {
-    if (nullptr != _selection_context)
+SPObject *Selection::activeContext()
+{
+    if (_selection_context) {
         return _selection_context;
+    }
     return _desktop->layerManager().currentLayer();
 }
 
@@ -192,12 +184,12 @@ std::vector<Inkscape::SnapCandidatePoint> Selection::getSnapPoints(SnapPreferenc
 
 void Selection::setAnchor(double x, double y, bool set)
 {
-    double const epsilon = 1e-12;
-    if (std::fabs(anchor_x - x) > epsilon || std::fabs(anchor_y - y) > epsilon || set != has_anchor) {
-        anchor_x = x;
-        anchor_y = y;
+    constexpr double epsilon = 1e-12;
+    auto const pt = Geom::Point{x, y};
+    if (Geom::LInfty(anchor - pt) > epsilon || set != has_anchor) {
+        anchor = pt;
         has_anchor = set;
-        this->_emitModified(SP_OBJECT_MODIFIED_FLAG);
+        _emitModified(SP_OBJECT_MODIFIED_FLAG);
     }
 }
 

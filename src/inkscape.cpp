@@ -374,10 +374,7 @@ Application::crash_handler (int /*signum*/)
     gchar *curdir = g_get_current_dir(); // This one needs to be freed explicitly
     std::vector<gchar *> savednames;
     std::vector<gchar *> failednames;
-    for (std::map<SPDocument*,int>::iterator iter = INKSCAPE._document_set.begin(), e = INKSCAPE._document_set.end();
-          iter != e;
-          ++iter) {
-        SPDocument *doc = iter->first;
+    for (auto doc : INKSCAPE._document_set) {
         Inkscape::XML::Node *repr;
         repr = doc->getReprRoot();
         if (doc->isModifiedSinceSave()) {
@@ -778,51 +775,14 @@ Application::external_change()
     signal_external_change.emit();
 }
 
-/**
- * fixme: These need probably signals too
- */
-void
-Application::add_document (SPDocument *document)
+void Application::add_document(SPDocument *document)
 {
-    g_return_if_fail (document != nullptr);
-
-    // try to insert the pair into the list
-    if (!(_document_set.insert(std::make_pair(document, 1)).second)) {
-        //insert failed, this key (document) is already in the list
-        for (auto & iter : _document_set) {
-            if (iter.first == document) {
-                // found this document in list, increase its count
-                iter.second ++;
-            }
-       }
-    }
+    _document_set.emplace(document);
 }
 
-
-// returns true if this was last reference to this document, so you can delete it
-bool
-Application::remove_document (SPDocument *document)
+void Application::remove_document(SPDocument *document)
 {
-    g_return_val_if_fail (document != nullptr, false);
-
-    for (std::map<SPDocument *,int>::iterator iter = _document_set.begin();
-              iter != _document_set.end();
-              ++iter) {
-        if (iter->first == document) {
-            // found this document in list, decrease its count
-            iter->second --;
-            if (iter->second < 1) {
-                // this was the last one, remove the pair from list
-                _document_set.erase (iter);
-
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
-
-    return false;
+    _document_set.erase(document);
 }
 
 SPDesktop *
@@ -843,25 +803,10 @@ Application::active_document()
     } else if (!_document_set.empty()) {
         // If called from the command line there will be no desktop
         // So 'fall back' to take the first listed document in the Inkscape instance
-        return _document_set.begin()->first;
+        return *_document_set.begin();
     }
 
     return nullptr;
-}
-
-bool
-Application::sole_desktop_for_document(SPDesktop const &desktop) {
-    SPDocument const* document = desktop.doc();
-    if (!document) {
-        return false;
-    }
-    for (auto other_desktop : *_desktops) {
-        SPDocument *other_document = other_desktop->doc();
-        if ( other_document == document && other_desktop != &desktop ) {
-            return false;
-        }
-    }
-    return true;
 }
 
 /*#####################
@@ -872,12 +817,8 @@ Application::sole_desktop_for_document(SPDesktop const &desktop) {
  *  Handler for Inkscape's Exit verb.  This emits the shutdown signal,
  *  saves the preferences if appropriate, and quits.
  */
-void
-Application::exit ()
+void Application::exit()
 {
-    //emit shutdown signal so that dialogs could remember layout
-    signal_shut_down.emit();
-
     Inkscape::Preferences::unload();
 }
 

@@ -51,7 +51,6 @@
 #include "ui/dialog-run.h"
 #include "ui/dialog/swatches.h"
 #include "ui/monitor.h"   // Monitor aspect ratio
-#include "ui/pack.h"
 #include "ui/shortcuts.h"
 #include "ui/themes.h"
 #include "ui/toolbar/command-toolbar.h"
@@ -62,7 +61,6 @@
 #include "ui/util.h"
 #include "ui/widget/canvas-grid.h"
 #include "ui/widget/canvas.h"
-#include "ui/widget/combo-tool-item.h"
 #include "ui/widget/ink-ruler.h"
 #include "ui/widget/spinbutton.h"
 #include "ui/widget/status-bar.h"
@@ -85,16 +83,16 @@ SPDesktopWidget::SPDesktopWidget(InkscapeWindow *inkscape_window, SPDocument *do
 {
     set_name("SPDesktopWidget");
 
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    auto prefs = Inkscape::Preferences::get();
 
     /* Status bar */
     _statusbar = Gtk::make_managed<Inkscape::UI::Widget::StatusBar>();
-    Inkscape::UI::pack_end(*this, *_statusbar, false, true);
+    prepend(*_statusbar);
 
     /* Swatch Bar */
     _panels = Gtk::make_managed<Inkscape::UI::Dialog::SwatchesPanel>(true, "/embedded/swatches");
     _panels->set_vexpand(false);
-    Inkscape::UI::pack_end(*this, *_panels, false, true);
+    prepend(*_panels);
 
     /* DesktopHBox (Vertical toolboxes, canvas) */
     _hbox = Gtk::make_managed<Gtk::Box>();
@@ -102,13 +100,13 @@ SPDesktopWidget::SPDesktopWidget(InkscapeWindow *inkscape_window, SPDocument *do
 
     _tbbox = Gtk::make_managed<Gtk::Paned>(Gtk::Orientation::HORIZONTAL);
     _tbbox->set_name("ToolboxCanvasPaned");
-    Inkscape::UI::pack_start(*_hbox, *_tbbox, true, true);
+    _hbox->append(*_tbbox);
 
-    Inkscape::UI::pack_end(*this, *_hbox, true, true);
+    prepend(*_hbox);
 
     _top_toolbars = Gtk::make_managed<Gtk::Grid>();
     _top_toolbars->set_name("TopToolbars");
-    Inkscape::UI::pack_end(*this, *_top_toolbars, false, true);
+    prepend(*_top_toolbars);
 
     /* Toolboxes */
     tool_toolbars = std::make_unique<Inkscape::UI::Toolbar::Toolbars>();
@@ -133,7 +131,7 @@ SPDesktopWidget::SPDesktopWidget(InkscapeWindow *inkscape_window, SPDocument *do
     _tbbox->property_position().signal_changed().connect([=](){ adjust_pos(); });
 
     snap_toolbar = std::make_unique<Inkscape::UI::Toolbar::SnapToolbar>();
-    Inkscape::UI::pack_end(*_hbox, *snap_toolbar, false, true); // May moved later.
+    _hbox->append(*snap_toolbar); // May be moved later.
 
     _tb_snap_pos = prefs->createObserver("/toolbox/simplesnap", sigc::mem_fun(*this, &SPDesktopWidget::repack_snaptoolbar));
     repack_snaptoolbar();
@@ -147,7 +145,7 @@ SPDesktopWidget::SPDesktopWidget(InkscapeWindow *inkscape_window, SPDocument *do
         int min = Inkscape::UI::Toolbar::min_pixel_size;
         int max = Inkscape::UI::Toolbar::max_pixel_size;
         int s = prefs->getIntLimited(Inkscape::UI::Toolbar::tools_icon_size, min, min, max);
-        Inkscape::UI::set_icon_sizes(tool_toolbox->gobj(), s);
+        Inkscape::UI::set_icon_sizes(tool_toolbox, s);
         adjust_pos();
     };
 
@@ -229,8 +227,9 @@ SPDesktopWidget::SPDesktopWidget(InkscapeWindow *inkscape_window, SPDocument *do
     _panels->setDesktop(_desktop.get());
 }
 
-void SPDesktopWidget::apply_ctrlbar_settings() {
-    Inkscape::Preferences* prefs = Inkscape::Preferences::get();
+void SPDesktopWidget::apply_ctrlbar_settings()
+{
+    auto prefs = Preferences::get();
     int min = Inkscape::UI::Toolbar::min_pixel_size;
     int max = Inkscape::UI::Toolbar::max_pixel_size;
     int size = prefs->getIntLimited(Inkscape::UI::Toolbar::ctrlbars_icon_size, min, min, max);
@@ -239,10 +238,9 @@ void SPDesktopWidget::apply_ctrlbar_settings() {
     Inkscape::UI::set_icon_sizes(tool_toolbars.get(), size);
 }
 
-void
-SPDesktopWidget::setMessage (Inkscape::MessageType type, const gchar *message)
+void SPDesktopWidget::setMessage(Inkscape::MessageType type, char const *message)
 {
-    _statusbar->set_message (type, message);
+    _statusbar->set_message(type, message);
 }
 
 /**
@@ -324,7 +322,7 @@ void SPDesktopWidget::updateTitle(char const *uri)
             Name += N_("print colors preview");
         }
 
-        if (*Name.rbegin() == '(') {  // Can not use C++11 .back() or .pop_back() with ustring!
+        if (Name.back() == '(') {
             Name.erase(Name.size() - 2);
         } else {
             Name += ")";
@@ -487,21 +485,6 @@ bool SPDesktopWidget::warnDialog (Glib::ustring const &text)
     return response == Gtk::ResponseType::OK;
 }
 
-void
-SPDesktopWidget::fullscreen()
-{
-    GtkWindow *topw = GTK_WINDOW(gtk_widget_get_root(_canvas->Gtk::Widget::gobj()));
-    if (GTK_IS_WINDOW(topw)) {
-        if (_desktop->is_fullscreen()) {
-            gtk_window_unfullscreen(topw);
-            // widget layout is triggered by the resulting window_state_event
-        } else {
-            gtk_window_fullscreen(topw);
-            // widget layout is triggered by the resulting window_state_event
-        }
-    }
-}
-
 /**
  * Hide whatever the user does not want to see in the window.
  * Also move command toolbar to top or side as required.
@@ -646,7 +629,7 @@ void SPDesktopWidget::repack_snaptoolbar()
     // Only repack if there's no parent widget now.
     if (!snap.get_parent()) {
         if (is_perm) {
-            Inkscape::UI::pack_end(*_hbox, snap, false, true);
+            _hbox->append(snap);
         } else {
             _top_toolbars->attach(snap, 1, 0, 1, 2);
         }

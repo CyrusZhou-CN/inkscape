@@ -172,7 +172,7 @@ void SelCue::_newItemLines()
 
     // Show a set of lines where the anchor is.
     if (_selection->has_anchor && bbox) {
-        auto anchor = Geom::Scale(_selection->anchor_x, _selection->anchor_y);
+        auto anchor = Geom::Scale(_selection->anchor);
         auto point = bbox->min() + (bbox->dimensions() * anchor);
         for (bool horz : {false, true}) {
             auto line = make_canvasitem<CanvasItemGuideLine>(_desktop->getCanvasGuides(), "", point, Geom::Point(!horz, horz));

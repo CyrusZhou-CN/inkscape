@@ -34,8 +34,7 @@ file_open(const Glib::VariantBase& value, InkscapeApplication *app)
         show_output(Glib::ustring("file_open: file '") + s.get().raw() + "' does not exist.");
         return;
     }
-    SPDocument *document = app->document_open(file).first;
-    INKSCAPE.add_document(document);
+    auto document = app->document_open(file).first;
 
     app->set_active_document(document);
     app->set_active_selection(document->getSelection());
@@ -68,8 +67,7 @@ file_new(const Glib::VariantBase& value, InkscapeApplication *app)
 {
     Glib::Variant<Glib::ustring> s = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring> >(value);
 
-    SPDocument *document = app->document_new(s.get());
-    INKSCAPE.add_document(document);
+    auto document = app->document_new(s.get());
 
     app->set_active_document(document);
     app->set_active_selection(document->getSelection());

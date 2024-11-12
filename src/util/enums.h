@@ -11,10 +11,10 @@
 #ifndef INKSCAPE_UTIL_ENUMS_H
 #define INKSCAPE_UTIL_ENUMS_H
 
+#include <type_traits>
 #include <glibmm/ustring.h>
 
-namespace Inkscape {
-namespace Util {
+namespace Inkscape::Util {
 
 /**
  * Simplified management of enumerations of svg items with UI labels.
@@ -116,11 +116,23 @@ private:
     const EnumData<E>* _data;
 };
 
-
+template <typename T>
+requires std::is_enum_v<T>
+constexpr bool any_flag(T test)
+{
+    return test != T{};
 }
+
+template <typename T>
+requires std::is_enum_v<T>
+constexpr bool has_flag(T test, T flag)
+{
+    return any_flag(test & flag);
 }
 
-#endif
+} // namespace Inkscape::Util
+
+#endif // INKSCAPE_UTIL_ENUMS_H
 
 /*
   Local Variables:

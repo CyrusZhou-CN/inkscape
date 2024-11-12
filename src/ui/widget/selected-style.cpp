@@ -23,9 +23,8 @@
 #include <gtkmm/checkbutton.h>
 
 #include "selected-style.h"
-
-#include "colors/dragndrop.h"
 #include "colors/manager.h"
+#include "colors/xml-color.h"
 #include "desktop-style.h"
 #include "document-undo.h"
 #include "gradient-chemistry.h"
@@ -53,9 +52,10 @@
 #include "ui/widget/gradient-image.h"
 #include "ui/widget/popover-menu.h"
 #include "ui/widget/popover-menu-item.h"
-#include "util/safe-printf.h"
 #include "util/units.cpp"
+#include "util/value-utils.h"
 #include "util-string/ustring-format.h"
+#include "util/variant-visitor.h"
 
 static constexpr int SELECTED_STYLE_SB_WIDTH     =  48;
 static constexpr int SELECTED_STYLE_PLACE_WIDTH  =  50;
@@ -171,15 +171,18 @@ SelectedStyle::SelectedStyle()
         drop[i] = std::make_unique<SelectedStyleDropTracker>();
         drop[i]->parent = this;
         drop[i]->item = i;
-        auto target = Gtk::DropTarget::create(Glib::Value<std::optional<Colors::Color>>::value_type(), Gdk::DragAction::COPY | Gdk::DragAction::MOVE);
+        auto target = Gtk::DropTarget::create(Util::GlibValue::type<Colors::Paint>(), Gdk::DragAction::COPY | Gdk::DragAction::MOVE);
         target->signal_drop().connect([this, i] (Glib::ValueBase const &value, double, double) {
             if (!dropEnabled[i]) {
                 return false;
             }
 
             auto const &tracker = *drop[i];
-            auto const &color = *reinterpret_cast<std::optional<Colors::Color>*>(g_value_get_boxed(value.gobj()));
-            std::string colorspec = color ? color->toString(false) : "none";
+            auto const paint = Util::GlibValue::get<Colors::Paint>(value);
+            auto const colorspec = std::visit(VariantVisitor{
+                [] (Colors::Color const &color) { return color.toString(false); },
+                [] (Colors::NoColor) -> std::string { return "none"; }
+            }, *paint);
 
             auto const css = sp_repr_css_attr_new();
             sp_repr_css_set_property_string(css, tracker.item == SS_FILL ? "fill" : "stroke", colorspec);
@@ -251,24 +254,29 @@ SelectedStyle::SelectedStyle()
     make_popup_units();
 }
 
-void
-SelectedStyle::setDesktop(SPDesktop *desktop)
+void SelectedStyle::setDesktop(SPDesktop *desktop)
 {
+    if (_desktop) {
+        selection_changed_connection.disconnect();
+        selection_modified_connection.disconnect();
+    }
+
     _desktop = desktop;
 
-    Inkscape::Selection *selection = desktop->getSelection();
+    if (_desktop) {
+        auto selection = desktop->getSelection();
 
-    selection_changed_connection = selection->connectChanged(
-        sigc::bind(&ss_selection_changed, this)
-    );
-    selection_modified_connection = selection->connectModified(
-        sigc::bind(&ss_selection_modified, this)
-    );
+        selection_changed_connection = selection->connectChanged(
+            sigc::bind(&ss_selection_changed, this)
+        );
+        selection_modified_connection = selection->connectModified(
+            sigc::bind(&ss_selection_modified, this)
+        );
+        update();
 
-    _sw_unit = desktop->getNamedView()->display_units;
+        _sw_unit = desktop->getNamedView()->display_units;
+    }
 }
-
-
 
 void SelectedStyle::on_fill_remove() {
     SPCSSAttr *css = sp_repr_css_attr_new ();

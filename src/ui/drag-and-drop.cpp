@@ -45,60 +45,16 @@
 #include "ui/tools/tool-base.h"
 #include "ui/widget/canvas.h"  // Target, canvas to world transform.
 #include "ui/widget/desktop-widget.h"
+#include "util/value-utils.h"
 
 using Inkscape::DocumentUndo;
+using namespace Inkscape::Util;
 
 namespace {
 
 /*
  * Gtk API wrapping - Todo: Improve gtkmm.
  */
-
-template <typename T>
-T *get(GValue *value)
-{
-    if (G_VALUE_HOLDS(value, Glib::Value<T>::value_type())) {
-        return reinterpret_cast<T *>(g_value_get_boxed(value));
-    } else {
-        return nullptr;
-    }
-}
-
-template <typename T>
-T const *get(GValue const *value)
-{
-    if (G_VALUE_HOLDS(value, Glib::Value<T>::value_type())) {
-        return reinterpret_cast<T const *>(g_value_get_boxed(value));
-    } else {
-        return nullptr;
-    }
-}
-
-template <typename T>
-T *get(Glib::ValueBase &value)
-{
-    return get<T>(value.gobj());
-}
-
-template <typename T>
-T const *get(Glib::ValueBase const &value)
-{
-    return get<T>(value.gobj());
-}
-
-bool holds(Glib::ValueBase const &value, GType type)
-{
-    return G_VALUE_HOLDS(value.gobj(), type);
-}
-
-template <typename T>
-GValue make_value(T &&t)
-{
-    Glib::Value<T> v;
-    v.init(v.value_type());
-    *reinterpret_cast<T *>(g_value_get_boxed(v.gobj())) = std::forward<T>(t);
-    return std::exchange(*v.gobj(), GValue(G_VALUE_INIT));
-}
 
 template <typename T, typename F>
 void foreach(GSList *list, F &&f)
@@ -128,7 +84,7 @@ Glib::RefPtr<Glib::Bytes> make_bytes(T &&t)
 }
 
 template <typename T>
-GValue from_bytes(Glib::RefPtr<Glib::Bytes> &&bytes, char const *mime_type) = delete;
+Glib::ValueBase from_bytes(Glib::RefPtr<Glib::Bytes> &&bytes, char const *mime_type) = delete;
 
 template <typename T>
 void deserialize_func(GdkContentDeserializer *deserializer)
@@ -139,7 +95,7 @@ void deserialize_func(GdkContentDeserializer *deserializer)
         try {
             out->splice_finish(result);
             out->close();
-            *gdk_content_deserializer_get_value(deserializer) = from_bytes<T>(out->steal_as_bytes(), gdk_content_deserializer_get_mime_type(deserializer));
+            *gdk_content_deserializer_get_value(deserializer) = GlibValue::release(from_bytes<T>(out->steal_as_bytes(), gdk_content_deserializer_get_mime_type(deserializer)));
             gdk_content_deserializer_return_success(deserializer);
         } catch (Glib::Error const &error) {
             gdk_content_deserializer_return_error(deserializer, g_error_copy(error.gobj()));
@@ -150,7 +106,7 @@ void deserialize_func(GdkContentDeserializer *deserializer)
 template <typename T>
 void register_deserializer(char const *mime_type)
 {
-    gdk_content_register_deserializer(mime_type, Glib::Value<T>::value_type(), deserialize_func<T>, nullptr, nullptr);
+    gdk_content_register_deserializer(mime_type, GlibValue::type<T>(), deserialize_func<T>, nullptr, nullptr);
 }
 
 template <typename T>
@@ -160,7 +116,7 @@ template <typename T>
 void serialize_func(GdkContentSerializer *serializer)
 {
     auto const out = Glib::wrap(gdk_content_serializer_get_output_stream(serializer), true);
-    auto const bytes = to_bytes(*get<T>(gdk_content_serializer_get_value(serializer)), gdk_content_serializer_get_mime_type(serializer));
+    auto const bytes = to_bytes(*GlibValue::get<T>(gdk_content_serializer_get_value(serializer)), gdk_content_serializer_get_mime_type(serializer));
     auto const span = get_span(bytes);
     out->write_all_async(span.data(), span.size_bytes(), [serializer, out, bytes] (Glib::RefPtr<Gio::AsyncResult> &result) {
         try {
@@ -176,7 +132,7 @@ void serialize_func(GdkContentSerializer *serializer)
 template <typename T>
 void register_serializer(char const *mime_type)
 {
-    gdk_content_register_serializer(Glib::Value<T>::value_type(), mime_type, serialize_func<T>, nullptr, nullptr);
+    gdk_content_register_serializer(GlibValue::type<T>(), mime_type, serialize_func<T>, nullptr, nullptr);
 }
 
 /*
@@ -189,16 +145,16 @@ struct DnDSvg
 };
 
 template <>
-GValue from_bytes<DnDSvg>(Glib::RefPtr<Glib::Bytes> &&bytes, char const *)
+Glib::ValueBase from_bytes<DnDSvg>(Glib::RefPtr<Glib::Bytes> &&bytes, char const *)
 {
-    return make_value(DnDSvg{std::move(bytes)});
+    return GlibValue::create<DnDSvg>(DnDSvg{std::move(bytes)});
 }
 
 template <>
-GValue from_bytes<Colors::Paint>(Glib::RefPtr<Glib::Bytes> &&bytes, char const *mime_type)
+Glib::ValueBase from_bytes<Colors::Paint>(Glib::RefPtr<Glib::Bytes> &&bytes, char const *mime_type)
 {
     try {
-        return make_value(Colors::fromMIMEData(get_span(bytes), mime_type));
+        return GlibValue::create<Colors::Paint>(Colors::fromMIMEData(get_span(bytes), mime_type));
     } catch (Colors::ColorError const &c) {
         throw Glib::Error(G_FILE_ERROR, 0, c.what());
     }
@@ -234,10 +190,10 @@ std::vector<GType> const &get_drop_types()
         register_serializer<DnDSymbol>("text/plain;charset=utf-8");
 
         return {
-            Glib::Value<Colors::Paint>::value_type(),
-            Glib::Value<DnDSvg>::value_type(),
+            GlibValue::type<Colors::Paint>(),
+            GlibValue::type<DnDSvg>(),
             GDK_TYPE_FILE_LIST,
-            Glib::Value<DnDSymbol>::value_type(),
+            GlibValue::type<DnDSymbol>(),
             GDK_TYPE_TEXTURE
         };
     }();
@@ -256,7 +212,7 @@ bool on_drop(Glib::ValueBase const &value, double x, double y, SPDesktopWidget *
     auto const world_pos = canvas->canvas_to_world(canvas_pos);
     auto const dt_pos = desktop->w2d(world_pos);
 
-    if (auto const ptr = get<Colors::Paint>(value)) {
+    if (auto const ptr = GlibValue::get<Colors::Paint>(value)) {
         auto paint = *ptr;
         auto const item = desktop->getItemAtPoint(world_pos, true);
         if (!item) {
@@ -329,7 +285,7 @@ bool on_drop(Glib::ValueBase const &value, double x, double y, SPDesktopWidget *
         item->updateRepr();
         DocumentUndo::done(doc, _("Drop color"), "");
         return true;
-    } else if (auto const dndsvg = get<DnDSvg>(value)) {
+    } else if (auto const dndsvg = GlibValue::get<DnDSvg>(value)) {
         auto const data = get_span(dndsvg->bytes);
         if (data.empty()) {
             return false;
@@ -370,7 +326,7 @@ bool on_drop(Glib::ValueBase const &value, double x, double y, SPDesktopWidget *
         Inkscape::GC::release(newgroup);
         DocumentUndo::done(doc, _("Drop SVG"), "");
         return true;
-    } else if (holds(value, GDK_TYPE_FILE_LIST)) {
+    } else if (G_VALUE_HOLDS(value.gobj(), GDK_TYPE_FILE_LIST)) {
         auto list = reinterpret_cast<GSList *>(g_value_get_boxed(value.gobj()));
         foreach<GFile>(list, [&] (GFile *f) {
             auto const path = g_file_get_path(f);
@@ -380,12 +336,12 @@ bool on_drop(Glib::ValueBase const &value, double x, double y, SPDesktopWidget *
         });
 
         return true;
-    } else if (holds(value, Glib::Value<DnDSymbol>::value_type())) {
+    } else if (GlibValue::holds<DnDSymbol>(value)) {
         auto cm = Inkscape::UI::ClipboardManager::get();
         cm->insertSymbol(desktop, dt_pos, false);
         DocumentUndo::done(doc, _("Drop Symbol"), "");
         return true;
-    } else if (holds(value, GDK_TYPE_TEXTURE)) {
+    } else if (G_VALUE_HOLDS(value.gobj(), GDK_TYPE_TEXTURE)) {
         auto const ext = Inkscape::Extension::find_by_mime("image/png");
         bool const save = std::strcmp(ext->get_param_optiongroup("link"), "embed") == 0;
         ext->set_param_optiongroup("link", "embed");

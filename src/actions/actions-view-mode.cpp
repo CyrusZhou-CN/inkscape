@@ -186,19 +186,15 @@ canvas_interface_mode(InkscapeWindow *win)
     desktop_widget->layoutWidgets();
 }
 
-void
-view_fullscreen(InkscapeWindow *win)
+void view_fullscreen(InkscapeWindow *win)
 {
-    SPDesktop* dt = win->get_desktop();
-    dt->fullscreen();
+    win->toggleFullscreen();
 }
 
-void
-view_full_screen_focus(InkscapeWindow *win)
+void view_full_screen_focus(InkscapeWindow *win)
 {
-    SPDesktop* dt = win->get_desktop();    
-    dt->fullscreen();
-    dt->focusMode(!dt->is_fullscreen());
+    win->toggleFullscreen();
+    win->get_desktop()->focusMode(!win->isFullscreen());
 }
 
 void

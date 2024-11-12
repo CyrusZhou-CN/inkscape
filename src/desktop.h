@@ -42,6 +42,7 @@
 #include <2geom/transforms.h>
 #include <2geom/parallelogram.h>
 
+#include "display/rendermode.h"
 #include <sigc++/scoped_connection.h>
 #include "message-stack.h"
 #include "object/sp-gradient.h" // TODO refactor enums out to their own .h file
@@ -219,7 +220,6 @@ public:
     bool _focusMode = false; ///< Whether we're focused working or general working
 
     unsigned dkey = 0;
-    Gdk::Toplevel::State toplevel_state{};
     unsigned interaction_disabled_counter = 0;
     bool waiting_cursor = false;
     bool showing_dialogs = false;
@@ -374,6 +374,9 @@ public:
     void showInfoDialog(Glib::ustring const &message);
     bool warnDialog (Glib::ustring const &text);
 
+    void setRenderMode(Inkscape::RenderMode mode);
+    void setColorMode(Inkscape::ColorMode  mode);
+
     void toggleCommandPalette();
     void toggleRulers();
     void toggleScrollbars();
@@ -382,7 +385,6 @@ public:
     void layoutWidget();
     void setToolboxFocusTo(char const *label);
     Gtk::Widget *get_toolbar_by_name(Glib::ustring const &name);
-    Gtk::Widget *get_toolbox() const;
 
     void setToolboxAdjustmentValue(char const *id, double val);
     bool isToolboxButtonActive(char const *id) const;
@@ -396,13 +398,12 @@ public:
     void toggleLockGuides();
     void toggleToolbar(char const *toolbar_name);
 
-    bool is_iconified () const;
+    bool isMinimised() const;
     bool is_darktheme () const;
     bool is_maximized () const;
     bool is_fullscreen() const;
     bool is_focusMode () const;
 
-    void fullscreen();
     void focusMode(bool mode = true);
 
     /// Transformation from window to desktop coordinates (zoom/rotate).
@@ -427,7 +428,6 @@ public:
 
 private:
     SPDesktopWidget *_widget = nullptr;
-    bool _active = false;
 
     // This simple class ensures that _w2d is always in sync with _rotation and _scale
     // We keep rotation and scale separate to avoid having to extract them from the affine.
@@ -522,8 +522,6 @@ private:
     DesktopAffine _current_affine;
     std::list<DesktopAffine> transforms_past;
     std::list<DesktopAffine> transforms_future;
-    bool _split_canvas = false;
-    bool _xray = false;
     bool _quick_zoom_enabled = false; ///< Signifies that currently we're in quick zoom mode
     DesktopAffine _quick_zoom_affine; ///< The transform of the screen before quick zoom
 

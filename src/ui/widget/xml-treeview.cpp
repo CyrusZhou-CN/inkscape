@@ -36,13 +36,23 @@
 #include "object/sp-text.h"
 #include "object/sp-tspan.h"
 #include "util/cast.h"  // cast<> of SPObjects
-#include "ui/controller.h"
 #include "ui/syntax.h"  // XMLFormatter
 #include "xml/node.h"
 #include "xml/simple-node.h"
 #include "xml/node-observer.h"
+#include "util/value-utils.h"
+
+using namespace Inkscape::Util;
 
 namespace Inkscape::UI::Widget {
+namespace {
+
+struct XMLDnDRow
+{
+    XML::Node *node;
+};
+
+} // namespace
 
 class ModelColumns final : public Gtk::TreeModel::ColumnRecord
 {
@@ -66,7 +76,7 @@ class NodeWatcher : public Inkscape::XML::NodeObserver
 public:
     NodeWatcher() = delete;
     NodeWatcher(XmlTreeView *xml_tree_view, Inkscape::XML::Node *node, Gtk::TreeRow *row);
-    ~NodeWatcher() final;
+    ~NodeWatcher() override;
 
     std::unordered_map<Inkscape::XML::Node const *,
                        std::unique_ptr<NodeWatcher>> child_watchers;
@@ -401,13 +411,11 @@ XmlTreeView::XmlTreeView()
     drag->signal_prepare().connect([this, &drag = *drag](auto &&...args) { return on_prepare(drag, args...); }, false); // before
     add_controller(drag);
 
-    auto const drop = Gtk::DropTarget::create(Glib::Value<void*>::value_type(), Gdk::DragAction::MOVE);
+    auto const drop = Gtk::DropTarget::create(GlibValue::type<XMLDnDRow>(), Gdk::DragAction::MOVE);
     drop->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
     drop->signal_motion().connect(sigc::mem_fun(*this, &XmlTreeView::on_drag_motion), false); // before
     drop->signal_drop().connect(sigc::mem_fun(*this, &XmlTreeView::on_drag_drop), false); // before
     add_controller(drop);
-
-    // build_tree(); Don't do now as this is explicitely called in xml-tree.cpp!
 }
 
 // Build TreeView model, starting with root.
@@ -517,12 +525,7 @@ XmlTreeView::on_prepare(Gtk::DragSource &controller, double x, double y)
         controller.set_icon(surface, x, 12);
     }
 
-    // We must have some kind of value which matches DropTarget type, even if we don't use it!
-    Glib::Value<void*> value;
-    value.init(Glib::Value<void*>::value_type());
-    value.set(node);
-    auto provider = Gdk::ContentProvider::create(value);
-    return provider;
+    return Gdk::ContentProvider::create(GlibValue::create<XMLDnDRow>(XMLDnDRow{node}));
 }
 
 Gdk::DragAction XmlTreeView::on_drag_motion(double const x, double const y)
@@ -555,10 +558,10 @@ Gdk::DragAction XmlTreeView::on_drag_motion(double const x, double const y)
 
 bool XmlTreeView::on_drag_drop(Glib::ValueBase const &value, double x, double y)
 {
-    auto pointer = static_cast<Glib::Value<void*> const &>(value).get();
-    assert (pointer);
-    auto node = static_cast<Inkscape::XML::Node*>(pointer);
-    assert (node);
+    auto pointer = GlibValue::get<XMLDnDRow>(value);
+    assert(pointer);
+    auto node = pointer->node;
+    assert(node);
 
     Glib:: ustring      id =  (     node->attribute("id") ?      node->attribute("id") : "Not element");
 

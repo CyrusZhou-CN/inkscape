@@ -17,6 +17,7 @@
 #include "message.h"
 #include "preferences.h" // observer
 #include "ui/defocus-target.h"
+#include "ui/operation-blocker.h"
 #include "ui/popup-menu.h"
 
 namespace Gtk {
@@ -36,6 +37,7 @@ namespace Inkscape::UI::Widget {
 
 class SelectedStyle;
 class LayerSelector;
+class PageSelector;
 class SpinButton;
 
 class StatusBar
@@ -74,6 +76,7 @@ private:
     // From left to right
     SelectedStyle* selected_style = nullptr;
     LayerSelector* layer_selector = nullptr;
+    PageSelector *_page_selector = nullptr;
     Gtk::Label*    selection = nullptr;
     Gtk::Label*     coordinates = nullptr;
     Gtk::Box*      zoom = nullptr;
@@ -86,6 +89,8 @@ private:
     std::unique_ptr<Gtk::Popover> rotate_popover;
 
     SPDesktop* desktop = nullptr;
+
+    OperationBlocker _blocker;
 
     Inkscape::PrefObserver preference_observer;
 };

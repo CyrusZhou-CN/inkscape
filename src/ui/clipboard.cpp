@@ -91,6 +91,7 @@
 #include "ui/tools/node-tool.h"
 #include "ui/tools/text-tool.h"
 #include "util/scope_exit.h"
+#include "util/value-utils.h"
 #include "xml/repr.h"
 #include "xml/sp-css-attr.h"
 
@@ -98,6 +99,8 @@
 #undef NOGDI
 #include <windows.h>
 #endif
+
+using namespace Inkscape::Util;
 
 namespace Inkscape::UI {
 namespace {
@@ -155,10 +158,7 @@ auto const mime_uti = make_bimap<std::string, std::string>({
 #endif
 
 /// Type used to represent the Inkscape clipboard on the GTK clipboard.
-struct ClipboardSvg
-{
-    static auto type() { return Glib::Value<ClipboardSvg>::value_type(); }
-};
+struct ClipboardSvg {};
 
 /*
  * Fixme: Get rid of all event pumpers.
@@ -1608,12 +1608,7 @@ void ClipboardManagerImpl::_retrieveClipboard(Glib::ustring best_target)
             _discardInternalClipboard();
         }
 
-        auto value = Glib::ValueBase{};
-        value.init(ClipboardSvg::type());
-
-        try {
-            content->get_value(value);
-        } catch (Glib::Error const &) {
+        if (!GlibValue::from_content_provider<ClipboardSvg>(*content)) {
             _discardInternalClipboard();
         }
 
@@ -1960,7 +1955,7 @@ void ClipboardManagerImpl::_registerSerializers()
     target_list.emplace_back("image/png");
 
     for (auto const &tgt : target_list) {
-        gdk_content_register_serializer(ClipboardSvg::type(), tgt.c_str(), +[] (GdkContentSerializer *serializer) {
+        gdk_content_register_serializer(GlibValue::type<ClipboardSvg>(), tgt.c_str(), +[] (GdkContentSerializer *serializer) {
             auto mime = gdk_content_serializer_get_mime_type(serializer);
             auto out = Glib::wrap(gdk_content_serializer_get_output_stream(serializer), true);
             auto self = reinterpret_cast<decltype(this)>(gdk_content_serializer_get_user_data(serializer));
@@ -2017,10 +2012,7 @@ void ClipboardManagerImpl::_setClipboardTargets()
     }
 #endif
 
-    auto value = Glib::Value<ClipboardSvg>{};
-    value.init(ClipboardSvg::type());
-    auto provider = Gdk::ContentProvider::create(value);
-    _clipboard->set_content(provider);
+    _clipboard->set_content(Gdk::ContentProvider::create(GlibValue::create<ClipboardSvg>()));
 }
 
 /**

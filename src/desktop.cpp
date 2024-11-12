@@ -50,7 +50,6 @@
 #include "io/fix-broken-links.h"
 #include "object/sp-namedview.h"
 #include "object/sp-root.h"
-#include "ui/controller.h"
 #include "ui/dialog/dialog-container.h"
 #include "ui/interface.h" // Only for getLayoutPrefPath
 #include "ui/tool-factory.h"
@@ -63,6 +62,7 @@
 // TODO those includes are only for node tool quick zoom. Remove them after fixing it.
 #include "ui/tools/node-tool.h"
 #include "ui/tool/control-point-selection.h"
+#include "util/enums.h"
 
 namespace Inkscape::XML { class Node; }
 
@@ -237,10 +237,6 @@ SPDesktop::~SPDesktop()
     }
 
     _guides_message_context = nullptr;
-
-    if (document) {
-        INKSCAPE.remove_document(document);
-    }
 }
 
 //--------------------------------------------------------------------
@@ -946,14 +942,9 @@ bool SPDesktop::scroll_to_point(Geom::Point const &p, double)
     return false;
 }
 
-static bool has_flag(Gdk::Toplevel::State state, Gdk::Toplevel::State flags)
+bool SPDesktop::isMinimised() const
 {
-    return (state & flags) != Gdk::Toplevel::State{};
-}
-
-bool SPDesktop::is_iconified() const
-{
-    return has_flag(toplevel_state, Gdk::Toplevel::State::MINIMIZED);
+    return getInkscapeWindow()->isMinimised();
 }
 
 bool SPDesktop::is_darktheme() const
@@ -963,17 +954,12 @@ bool SPDesktop::is_darktheme() const
 
 bool SPDesktop::is_maximized() const
 {
-    return has_flag(toplevel_state, Gdk::Toplevel::State::MAXIMIZED);
+    return getInkscapeWindow()->isMaximised();
 }
 
 bool SPDesktop::is_fullscreen() const
 {
-    return has_flag(toplevel_state, Gdk::Toplevel::State::FULLSCREEN);
-}
-
-void SPDesktop::fullscreen()
-{
-    _widget->fullscreen();
+    return getInkscapeWindow()->isFullscreen();
 }
 
 /**
@@ -1047,6 +1033,18 @@ bool
 SPDesktop::warnDialog (Glib::ustring const &text)
 {
     return _widget->warnDialog (text);
+}
+
+void SPDesktop::setRenderMode(Inkscape::RenderMode mode)
+{
+    canvas->set_render_mode(mode);
+    setWindowTitle();
+}
+
+void SPDesktop::setColorMode(Inkscape::ColorMode mode)
+{
+    canvas->set_color_mode(mode);
+    setWindowTitle();
 }
 
 void
@@ -1126,18 +1124,13 @@ SPDesktop::layoutWidget()
  *  onWindowStateChanged
  *
  *  Called when the window changes its maximize/fullscreen/iconify/pinned state.
- *  Since GTK doesn't have a way to query this state information directly, we
- *  record it for the desktop here, and also possibly trigger a layout.
  */
 void
 SPDesktop::onWindowStateChanged(Gdk::Toplevel::State const changed,
                                 Gdk::Toplevel::State const new_state)
 {
-    // Record the desktop window's state
-    toplevel_state = new_state;
-
     // Layout may differ depending on full-screen mode or not
-    if (has_flag(changed, Gdk::Toplevel::State::FULLSCREEN | Gdk::Toplevel::State::MAXIMIZED)) {
+    if (Inkscape::Util::has_flag(changed, Gdk::Toplevel::State::FULLSCREEN | Gdk::Toplevel::State::MAXIMIZED)) {
         layoutWidget();
         view_set_gui(getInkscapeWindow()); // Updates View menu
     }
@@ -1178,11 +1171,6 @@ SPDesktop::setToolboxAdjustmentValue(char const * const id, double const val)
 Gtk::Widget *SPDesktop::get_toolbar_by_name(const Glib::ustring &name)
 {
     return _widget->get_toolbar_by_name(name);
-}
-
-Gtk::Widget *SPDesktop::get_toolbox() const
-{
-    return _widget->get_tool_toolbox();
 }
 
 bool
@@ -1266,9 +1254,7 @@ SPDesktop::setDocument (SPDocument *doc)
     // Formerly in View::View VVVVVVVVVVVVVVVVVVV
     if (document) {
         _document_uri_set_connection.disconnect();
-        INKSCAPE.remove_document(document);
     }
-    INKSCAPE.add_document(doc);
     document = doc;
 
     _document_uri_set_connection = document->connectFilenameSet([this](auto const filename) {

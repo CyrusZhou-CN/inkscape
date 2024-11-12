@@ -12,7 +12,6 @@
 #define SEEN_INKSCAPE_LAYER_MANAGER_H
 
 #include <memory>
-#include <vector>
 #include <glibmm/ustring.h>
 
 #include "document-subset.h"
@@ -57,7 +56,6 @@ public:
     bool isRoot() const { return currentLayer() == currentRoot(); }
 
 private:
-
     void _objectModified( SPObject* obj, unsigned int flags );
     void _setDocument(SPDesktop *, SPDocument *document);
     void _rebuild();
@@ -84,7 +82,7 @@ enum LayerRelativePosition {
     LPOS_CHILD,
     LPOS_BELOW,
 };
-    
+
 SPObject *create_layer(SPObject *root, SPObject *layer, LayerRelativePosition position);
 SPObject *next_layer(SPObject *root, SPObject *layer);
 SPObject *previous_layer(SPObject *root, SPObject *layer);

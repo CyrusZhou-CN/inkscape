@@ -48,9 +48,9 @@ LayerManager::LayerManager(SPDesktop *desktop)
     , _document(nullptr)
 {
     _layer_hierarchy = std::make_unique<Inkscape::ObjectHierarchy>(nullptr);
-    _layer_hierarchy->connectAdded(sigc::mem_fun(*this, &LayerManager::_layer_activated));
-    _layer_hierarchy->connectRemoved(sigc::mem_fun(*this, &LayerManager::_layer_deactivated));
-    _layer_hierarchy->connectChanged(sigc::mem_fun(*this, &LayerManager::_selectedLayerChanged));
+    _activate_connection = _layer_hierarchy->connectAdded(sigc::mem_fun(*this, &LayerManager::_layer_activated));
+    _deactivate_connection = _layer_hierarchy->connectRemoved(sigc::mem_fun(*this, &LayerManager::_layer_deactivated));
+    _layer_connection = _layer_hierarchy->connectChanged(sigc::mem_fun(*this, &LayerManager::_selectedLayerChanged));
     _document_connection = desktop->connectDocumentReplaced(sigc::mem_fun(*this, &LayerManager::_setDocument));
     _setDocument(desktop, desktop->doc());
 }
@@ -62,7 +62,6 @@ LayerManager::~LayerManager()
     _deactivate_connection.disconnect();
     _document_connection.disconnect();
     _resource_connection.disconnect();
-    _document = nullptr;
 }
 
 void LayerManager::_setDocument(SPDesktop *, SPDocument *document) {
@@ -85,8 +84,6 @@ void LayerManager::_layer_activated(SPObject *layer)
 
 void LayerManager::_layer_deactivated(SPObject *layer)
 {
-    if (!_document)
-        return; // happens on destruction
     if (auto group = cast<SPGroup>(layer)) {
         group->setLayerDisplayMode(_desktop->dkey, SPGroup::GROUP);
     }
@@ -111,10 +108,10 @@ SPGroup *LayerManager::currentLayer() const
 /**
  * Resets the bottom layer to the current root
  */
-void LayerManager::reset() {
+void LayerManager::reset()
+{
     _layer_hierarchy->setBottom(currentRoot());
 }
-
 
 /*
  * Return a unique layer name similar to param label
@@ -233,7 +230,7 @@ void LayerManager::_rebuild() {
 
     std::vector<SPObject *> layers = _document->getResourceList("layer");
 
-    if (auto root = _desktop->layerManager().currentRoot()) {
+    if (auto root = currentRoot()) {
         _addOne(root);
         std::set<SPGroup *> layersToAdd;
 
@@ -568,7 +565,7 @@ SPGroup *LayerManager::asLayer(SPObject *object)
     return nullptr;
 }
 
-}
+} // namespace Inkscape
 
 /*
   Local Variables:

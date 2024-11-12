@@ -1740,9 +1740,6 @@ void Canvas::set_render_mode(RenderMode mode)
     if (mode == _render_mode) return;
     _render_mode = mode;
     d->schedule_redraw();
-    if (_desktop) {
-        _desktop->setWindowTitle(); // Mode is listed in title.
-    }
 }
 
 void Canvas::set_color_mode(ColorMode mode)
@@ -1750,9 +1747,6 @@ void Canvas::set_color_mode(ColorMode mode)
     _color_mode = mode;
     if (_drawing) {
         _drawing->setColorMode(_color_mode);
-    }
-    if (_desktop) {
-        _desktop->setWindowTitle(); // Mode is listed in title.
     }
 }
 

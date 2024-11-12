@@ -64,6 +64,7 @@ set(util_SRC
 	smart_ptr_keys.h
 	units.h
     variant-visitor.h
+    value-utils.h
 	ziptool.h
 	numeric/converters.h
 )

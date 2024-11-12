@@ -162,17 +162,12 @@ public:
     void update_rotation();
     void repack_snaptoolbar();
 
-    void fullscreen();
-
     void layoutWidgets();
     void toggle_scrollbars();
     void toggle_command_palette();
     void toggle_rulers();
     void sticky_zoom_toggled();
     void sticky_zoom_updated();
-
-    Gtk::Widget *get_tool_toolbox() const { return tool_toolbox; }
-    Gtk::Widget *get_hbox() const { return _hbox; }
 
 private:
     Gtk::Widget *tool_toolbox;
