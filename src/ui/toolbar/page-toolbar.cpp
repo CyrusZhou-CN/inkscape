@@ -15,6 +15,7 @@
 #include "page-toolbar.h"
 
 #include <glibmm/i18n.h>
+#include <glibmm/regex.h>
 #include <gtkmm/box.h>
 #include <gtkmm/comboboxtext.h>
 #include <gtkmm/entry.h>
@@ -23,7 +24,6 @@
 #include <gtkmm/liststore.h>
 #include <gtkmm/popover.h>
 #include <gtkmm/separator.h>
-#include <regex>
 #include <sigc++/functors/mem_fun.h>
 
 #include "desktop.h"
@@ -361,33 +361,29 @@ double PageToolbar::_unit_to_size(std::string number, std::string unit_str,
 void PageToolbar::sizeChanged()
 {
     // Parse the size out of the typed text if possible.
-    Glib::ustring cb_text = std::string(_combo_page_sizes.get_active_text());
+    auto cb_text = _combo_page_sizes.get_active_text();
 
-    // Replace utf8 x with regular x
-    auto pos = cb_text.find_first_of("×");
-    if (pos != cb_text.npos) {
-        cb_text.replace(pos, 1, "x");
-    }
     // Remove parens from auto generated names
     auto pos1 = cb_text.find_first_of("(");
     auto pos2 = cb_text.find_first_of(")");
     if (pos1 != cb_text.npos && pos2 != cb_text.npos && pos1 < pos2) {
         cb_text = cb_text.substr(pos1+1, pos2-pos1-1);
     }
-    std::string text = cb_text;
 
     // This does not support negative values, because pages can not be negatively sized.
-    static const std::string arg = "([0-9]+[\\.,]?[0-9]*|\\.[0-9]+) ?(px|mm|cm|m|in|\\\"|ft|')?";
-    // We can't support × here since it's UTF8 and this doesn't match
-    static const std::regex re_size("^ *" + arg + " *([ *Xx,\\-]) *" + arg + " *$");
+    static auto const arg = "([0-9]+[\\.,]?[0-9]*|\\.[0-9]+) ?(px|mm|cm|m|in|\\\"|ft|')?";
+    static auto const regex = Glib::Regex::create(Glib::ustring{"^ *"} + arg + " *([ *Xx×,\\-]) *" + arg + " *$", Glib::Regex::CompileFlags::OPTIMIZE);
 
-    std::smatch matches;
-    if (std::regex_match(text, matches, re_size)) {
+    Glib::MatchInfo match;
+    if (regex->match(cb_text, match)) {
         // Convert the desktop px back into document units for 'resizePage'
-        double width = _unit_to_size(matches[1], matches[2], matches[5]);
-        double height = _unit_to_size(matches[4], matches[5], matches[2]);
+        auto const width_unit = match.fetch(2);
+        auto const height_unit = match.fetch(5);
+        double width = _unit_to_size(match.fetch(1), width_unit, height_unit);
+        double height = _unit_to_size(match.fetch(4), height_unit, width_unit);
         if (width > 0 && height > 0) {
             _document->getPageManager().resizePage(width, height);
+            DocumentUndo::done(_document, _("Set page size"), INKSCAPE_ICON("tool-pages"));
         }
     }
     setSizeText();
