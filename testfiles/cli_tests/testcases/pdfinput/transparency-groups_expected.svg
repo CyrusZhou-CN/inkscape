@@ -22,52 +22,8 @@
        id="clipPath1">
       <path
          d="M 0,0 H 212 V 275 H 0 Z"
+         transform="scale(1.3333333)"
          id="path1" />
-    </clipPath>
-    <clipPath
-       clipPathUnits="userSpaceOnUse"
-       id="clipPath2">
-      <path
-         d="M 0,0 H 212 V 275 H 0 Z"
-         transform="scale(1.3333333)"
-         id="path2" />
-    </clipPath>
-    <clipPath
-       clipPathUnits="userSpaceOnUse"
-       id="clipPath3">
-      <path
-         d="M 0,0 H 212 V 275 H 0 Z"
-         id="path3" />
-    </clipPath>
-    <clipPath
-       clipPathUnits="userSpaceOnUse"
-       id="clipPath4">
-      <path
-         d="M 0,0 H 212 V 275 H 0 Z"
-         transform="scale(1.3333333)"
-         id="path4" />
-    </clipPath>
-    <clipPath
-       clipPathUnits="userSpaceOnUse"
-       id="clipPath5">
-      <path
-         d="M 0,0 H 212 V 275 H 0 Z"
-         id="path5" />
-    </clipPath>
-    <clipPath
-       clipPathUnits="userSpaceOnUse"
-       id="clipPath6">
-      <path
-         d="M 0,0 H 212 V 275 H 0 Z"
-         transform="scale(1.3333333)"
-         id="path6" />
-    </clipPath>
-    <clipPath
-       clipPathUnits="userSpaceOnUse"
-       id="clipPath7">
-      <path
-         d="M 0,0 H 212 V 275 H 0 Z"
-         id="path7" />
     </clipPath>
   </defs>
   <sodipodi:namedview
@@ -95,49 +51,41 @@
      inkscape:label="1">
     <g
        opacity="0.7"
-       id="g11">
+       id="g5">
       <g
          opacity="0.7"
-         clip-path="url(#clipPath6)"
-         id="g10">
+         clip-path="url(#clipPath1)"
+         id="g4">
         <g
            opacity="0.7"
-           clip-path="url(#clipPath4)"
-           id="g9">
-          <g
+           clip-path="url(#clipPath1)"
+           id="g3">
+          <path
+             d="m 110.199,62.617 37.778,65.43 L 86.133,163.754 48.355,98.32 Z"
+             style="fill:#c01c28;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             transform="scale(1.3333333)"
              opacity="0.7"
-             clip-path="url(#clipPath2)"
-             id="g8">
-            <path
-               d="m 110.199,62.617 37.778,65.43 L 86.133,163.754 48.355,98.32 Z"
-               style="fill:#c01c28;fill-opacity:1;fill-rule:nonzero;stroke:none"
-               transform="scale(1.3333333)"
-               clip-path="url(#clipPath1)"
-               id="path8" />
-          </g>
+             id="path2" />
           <path
              d="m 158.082,122.602 53.426,53.425 -50.5,50.496 -53.422,-53.421 z"
              style="fill:#c01c28;fill-opacity:1;fill-rule:nonzero;stroke:none"
              transform="scale(1.3333333)"
-             clip-path="url(#clipPath3)"
-             id="path9" />
+             id="path3" />
         </g>
         <path
            d="m 35.707,143.125 65.43,37.777 L 65.43,242.75 0,204.973 Z"
            style="fill:#c01c28;fill-opacity:1;fill-rule:nonzero;stroke:none"
            transform="scale(1.3333333)"
-           clip-path="url(#clipPath5)"
-           id="path10" />
+           id="path4" />
       </g>
       <path
          d="m 115.984,186.332 72.981,19.555 -18.485,68.98 -72.976,-19.555 z"
          style="fill:#c01c28;fill-opacity:1;fill-rule:nonzero;stroke:none"
          transform="scale(1.3333333)"
-         clip-path="url(#clipPath7)"
-         id="path11" />
+         id="path5" />
     </g>
     <path
-       id="path12"
+       id="path6"
        d="M 90.445,0 163.422,19.555 144.941,88.535 71.961,68.98 Z"
        style="fill:#c01c28;fill-opacity:1;fill-rule:nonzero;stroke:none"
        transform="scale(1.3333333)" />

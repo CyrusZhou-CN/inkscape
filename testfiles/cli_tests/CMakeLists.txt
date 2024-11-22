@@ -946,6 +946,7 @@ add_pdfinput_test(multiple-style-same-text-block 1 keep)
 add_pdfinput_test(gs_linewidth all draw-all)
 add_pdfinput_test(XObj_layer all draw-all)
 add_pdfinput_test(Annot_w_AP all draw-all)
+add_pdfinput_test(clipping_shift 1 keep)
 
 ###########################
 ### file format support ###

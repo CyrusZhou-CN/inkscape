@@ -28,6 +28,7 @@
 #include <glib/poppler-features.h>
 #include <map>
 #include <memory>
+#include <gdkmm/enums.h>
 #include <poppler/Object.h>
 #include <string>
 

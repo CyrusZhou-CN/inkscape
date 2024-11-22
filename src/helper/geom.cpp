@@ -192,6 +192,43 @@ bool pathv_similar(Geom::PathVector const &apv, Geom::PathVector const &bpv, dou
     return true;
 }
 
+/*
+* Checks if the path describes a simple rectangle, returning true and populating rect if it does.
+*/
+bool is_simple_rect(Geom::PathVector const &pathv, Geom::OptRect &rect, double precision)
+{
+    // "Simple rectangle" is a single path with 4 line segments.
+    if (pathv.size() != 1) {
+        return false;
+    }
+
+    auto const &path = pathv.front();
+    // might be a better way to check if all the curves are line segments
+    if (!path.closed() || path.size() != 4 ||
+        std::any_of(path.begin(), path.end(), [](auto const &curve) { return !curve.isLineSegment(); })) {
+        return false;
+    }
+
+    auto p0 = path.initialPoint();
+    auto start = p0;
+    int prev_change = 0;
+    for (auto const &seg : path) {
+        auto end = seg.finalPoint();
+        // define a change in X as 1, change in Y as -1. Both is 0
+        int change = (abs(end[X] - start[X]) < precision ? 0 : 1) + (abs(end[Y] - start[Y]) < precision ? 0 : -1);
+        if (change == 0 || change == prev_change) {
+            // Changing in both x and y, or continuing the same direction as the previous segment.
+            return false;
+        }
+        start = end;
+        prev_change = change;
+    }
+    // if we've made it this far, we can assume that the final point of the second segment is the opposite corner
+    auto p1 = path[1].finalPoint();
+    rect = Geom::OptRect(p0, p1);
+    return true;
+}
+
 static void
 geom_line_wind_distance (Geom::Coord x0, Geom::Coord y0, Geom::Coord x1, Geom::Coord y1, Geom::Point const &pt, int *wind, Geom::Coord *best)
 {
@@ -504,6 +541,43 @@ bool pathvs_have_nonempty_overlap(Geom::PathVector const &a, Geom::PathVector co
         return true;
     }
     return false;
+}
+
+/*
+ * Checks whether pathvector b is completely within the bounds of pathvector a.
+ */
+bool pathv_fully_contains(Geom::PathVector const &a, Geom::PathVector const &b)
+{
+    Geom::OptRect a_bounds;
+    bool a_is_rect = is_simple_rect(a, a_bounds);
+    if (!a_is_rect) {
+        a_bounds = a.boundsExact();
+    }
+
+    // At minimum, BBox of a must contain bbox of b
+    if (!a_bounds.contains(b.boundsExact())) {
+        return false;
+    } else if (a_is_rect) {
+        // If a is a rectangle, then it is the same as its bounding box
+        return true;
+    }
+
+    // check winding numbers - all nodes of b need to be contained by a to be fully contained.
+    // Non-zero winding is a necessary but not sufficient condition.
+    for (auto &node : b.nodes()) {
+        if (!a.winding(node)) {
+            return false;
+        }
+    }
+
+    // As in pathvs_have_nonempty_overlap, windings may not account for nodeless Bézier arc intersections.
+    auto intersections = a.intersect(b);
+    if (!intersections.empty()) {
+        return false;
+    }
+
+    // BBox is fully contained, passed the winding test, no intersections, the path must be contained
+    return true;
 }
 
 /*

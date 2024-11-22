@@ -29,6 +29,7 @@ void pathv_matrix_point_bbox_wind_distance ( Geom::PathVector const & pathv, Geo
                                              Geom::Coord tolerance, Geom::Rect const *viewbox);
 
 bool pathvs_have_nonempty_overlap(Geom::PathVector const &a, Geom::PathVector const &b);
+bool pathv_fully_contains(Geom::PathVector const &a, Geom::PathVector const &b);
 
 size_t count_pathvector_nodes(Geom::PathVector const &pathv);
 size_t count_path_nodes(Geom::Path const &path);
@@ -41,6 +42,7 @@ Geom::PathVector pathv_to_linear_and_cubic_beziers( Geom::PathVector const &path
 Geom::PathVector pathv_to_linear( Geom::PathVector const &pathv, double maxdisp );
 Geom::PathVector pathv_to_cubicbezier( Geom::PathVector const &pathv, bool nolines);
 bool pathv_similar(Geom::PathVector const &apv, Geom::PathVector const &bpv, double precission = 0.001);
+bool is_simple_rect(Geom::PathVector const &pathv, Geom::OptRect &rect, double precision = 0.001);
 void recursive_bezier4(const double x1, const double y1, const double x2, const double y2, 
                        const double x3, const double y3, const double x4, const double y4,
                        std::vector<Geom::Point> &pointlist,

@@ -16,44 +16,7 @@
    xmlns:cc="http://creativecommons.org/ns#"
    xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
-     id="defs1">
-    <clipPath
-       clipPathUnits="userSpaceOnUse"
-       id="clipPath2">
-      <path
-         d="M 116.66666,116.66666 H 2437.5 V 3185.0461 H 116.66666 Z"
-         transform="matrix(0.31971276,0,0,0.31971276,-37.299821,-37.299821)"
-         clip-rule="evenodd"
-         id="path2" />
-    </clipPath>
-    <clipPath
-       clipPathUnits="userSpaceOnUse"
-       id="clipPath4">
-      <path
-         d="M 141.68912,141.68912 H 1080.0314 V 391.91373 H 141.68912 Z"
-         transform="matrix(0.31971276,0,0,0.31971276,-45.299819,-45.299819)"
-         clip-rule="evenodd"
-         id="path4" />
-    </clipPath>
-    <clipPath
-       clipPathUnits="userSpaceOnUse"
-       id="clipPath6">
-      <path
-         d="M 141.68912,141.68912 H 1080.0314 V 391.91373 H 141.68912 Z"
-         transform="matrix(0.31971276,0,0,0.31971276,-45.299819,-45.299819)"
-         clip-rule="evenodd"
-         id="path6" />
-    </clipPath>
-    <clipPath
-       clipPathUnits="userSpaceOnUse"
-       id="clipPath8">
-      <path
-         d="M 141.68912,141.68912 H 1080.0314 V 391.91373 H 141.68912 Z"
-         transform="matrix(0.31971276,0,0,0.31971276,-45.299819,-45.299819)"
-         clip-rule="evenodd"
-         id="path8" />
-    </clipPath>
-  </defs>
+     id="defs1" />
   <sodipodi:namedview
      id="namedview1"
      pagecolor="#ffffff"
@@ -81,26 +44,22 @@
        id="path1"
        d="M 0,0 H 742 V 981 H 0 Z"
        style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
-       transform="matrix(1.0008984,0,0,1.0008984,37.333331,37.333331)"
-       clip-path="url(#clipPath2)" />
+       transform="matrix(1.0008984,0,0,1.0008984,37.333331,37.333331)" />
     <path
-       id="path3"
+       id="path2"
        d="M 5,20 H 220"
        style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
-       transform="matrix(1.0008984,0,0,1.0008984,45.340516,45.340516)"
-       clip-path="url(#clipPath4)" />
+       transform="matrix(1.0008984,0,0,1.0008984,45.340516,45.340516)" />
     <path
-       id="path5"
+       id="path3"
        d="M 5,40 H 220"
        style="fill:none;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
-       transform="matrix(1.0008984,0,0,1.0008984,45.340516,45.340516)"
-       clip-path="url(#clipPath6)" />
+       transform="matrix(1.0008984,0,0,1.0008984,45.340516,45.340516)" />
     <path
-       id="path7"
+       id="path4"
        d="M 5,60 H 220"
        style="fill:none;stroke:#000000;stroke-width:6;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
-       transform="matrix(1.0008984,0,0,1.0008984,45.340516,45.340516)"
-       clip-path="url(#clipPath8)" />
+       transform="matrix(1.0008984,0,0,1.0008984,45.340516,45.340516)" />
   </g>
   <metadata
      id="metadata1">

@@ -26,6 +26,7 @@ namespace Inkscape {
 }
 
 #define Operator Operator_Gfx
+#include <gdkmm/enums.h>
 #include <poppler/Gfx.h>
 #undef Operator
 
@@ -222,7 +223,8 @@ private:
     std::vector<GfxState *> _mask_groups;
     int _clip_groups = 0;
 
-    Inkscape::XML::Node *_getClip(const Geom::Affine &node_tr);
+    Inkscape::XML::Node *_getClip(const Inkscape::XML::Node *node);
+    bool _shouldClip(const Inkscape::XML::Node *node) const;
     Inkscape::XML::Node *_addToContainer(const char *name);
     Inkscape::XML::Node *_renderText(std::shared_ptr<CairoFont> cairo_font, double font_size,
                                      const Geom::Affine &transform,
@@ -283,6 +285,9 @@ private:
     ClipHistoryEntry *_clip_history; // clip path stack
     Inkscape::XML::Node *_clip_text = nullptr;
     Inkscape::XML::Node *_clip_text_group = nullptr;
+    
+    // Keep track of the previously created clip path
+    Inkscape::XML::Node *_prev_clip = nullptr;
 };
 
 
