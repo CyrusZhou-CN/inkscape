@@ -833,9 +833,9 @@ bool SelectTool::root_handler(CanvasEvent const &event)
 
             bool const rotated = prefs->getBool("/options/moverotated/value", true);
 
-            int delta = 1;
+            double delta = 1.0;
             if (mod_shift(event)) { // shift
-                delta = 10;
+                delta = 10.0;
             }
 
             bool screen = true;
