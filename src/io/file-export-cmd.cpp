@@ -354,6 +354,7 @@ int InkFileExportCmd::do_export_vector(SPDocument *doc, std::string const &expor
 
     // Export pages instead of objects
     if (!export_page.empty()) {
+        auto &pm = doc->getPageManager();
         std::string base = export_filename;
         std::string ext = "svg";
         // Strip any possible extension
@@ -364,7 +365,7 @@ int InkFileExportCmd::do_export_vector(SPDocument *doc, std::string const &expor
             ext = tmp_out.substr(extension_pos+1);
         }
 
-        auto pages = Inkscape::parseIntRange(export_page);
+        auto pages = Inkscape::parseIntRange(export_page, 1, pm.getPageCount());
         for (auto page_num : pages) {
             // And if only one page is selected then we assume the user knows the filename they intended.
             std::string filename_out = base + (pages.size() > 1 ? "_p" + std::to_string(page_num) : "") + "." + ext;
@@ -525,7 +526,7 @@ InkFileExportCmd::do_export_png(SPDocument *doc, std::string const &export_filen
         if (extension_pos != std::string::npos)
             base = export_filename.substr(0, extension_pos);
 
-        auto pages = Inkscape::parseIntRange(export_page);
+        auto pages = Inkscape::parseIntRange(export_page, 1, pm.getPageCount());
         for (auto page_num : pages) {
             // We always use the png extension and ignore the extension given by the user
             // And if only one page is selected then we assume the user knows the filename they intended.
