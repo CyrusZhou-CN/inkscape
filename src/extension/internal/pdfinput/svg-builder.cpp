@@ -881,7 +881,8 @@ Inkscape::XML::Node *SvgBuilder::_createClip(const std::string &d, const Geom::A
         std::string prev_d = prev_path->attribute("d");
         std::string prev_tr = prev_path->attribute("transform") ? prev_path->attribute("transform")
                                                                 : sp_svg_transform_write(Geom::identity());
-        bool prev_even_odd = prev_path->attribute("clip-rule") ? prev_path->attribute("clip-rule") == "evenodd" : false;
+        bool prev_even_odd =
+            prev_path->attribute("clip-rule") ? std::string(prev_path->attribute("clip-rule")) == "evenodd" : false;
 
         // Don't create an identical new clipping path
         if (prev_d == d && prev_tr == sp_svg_transform_write(tr) && prev_even_odd == even_odd) {

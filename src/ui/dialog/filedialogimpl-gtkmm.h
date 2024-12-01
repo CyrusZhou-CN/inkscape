@@ -107,7 +107,14 @@ public:
     Glib::RefPtr<Gio::ListModel> getFiles() override { return get_files(); }
     Glib::RefPtr<Gio::File> getFile() override { return get_file(); }
 
-    Glib::RefPtr<Gio::File> getCurrentDirectory() override { return get_current_folder(); }
+    Glib::RefPtr<Gio::File> getCurrentDirectory() override
+    {
+        auto file = get_current_folder();
+        if (file != nullptr) {
+            return file;
+        }
+        return getFile()->get_parent();
+    }
 
     void addFilterMenu(Glib::ustring const &name, Glib::ustring pattern = "",
                        Inkscape::Extension::Extension *mod = nullptr) override
