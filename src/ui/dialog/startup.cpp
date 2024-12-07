@@ -244,7 +244,7 @@ StartScreen::StartScreen()
         notebook_switch(nullptr, 2);
     }
     // Refresh keyboard warning message
-    keyboard_changed();
+    refresh_keys_warning();
     set_modal(true);
     // set_position(Gtk::WIN_POS_CENTER_ALWAYS); // Gone.
     property_resizable() = false;
@@ -656,6 +656,20 @@ StartScreen::filter_themes()
 }
 
 void
+StartScreen::refresh_keys_warning()
+{
+    auto prefs = Inkscape::Preferences::get();
+    auto current_file = prefs->getString("/options/kbshortcuts/shortcutfile");
+    auto &keys_warning = get_widget<Gtk::InfoBar>(builder, "keys_warning");
+    if (current_file != "inkscape.xml" && current_file != "default.xml") {
+        keys_warning.set_visible(true);
+    } else {
+        keys_warning.set_message_type(Gtk::MessageType::WARNING);
+        keys_warning.set_visible(false);
+    }
+}
+
+void
 StartScreen::enlist_keys()
 {
     NameIdCols cols;
@@ -690,14 +704,7 @@ StartScreen::keyboard_changed()
     Glib::ustring set_to = row[cols.col_id];
     prefs->setString("/options/kbshortcuts/shortcutfile", set_to);
     Inkscape::Shortcuts::getInstance().init();
-
-    auto &keys_warning = get_widget<Gtk::InfoBar>(builder, "keys_warning");
-    if (set_to != "inkscape.xml" && set_to != "default.xml") {
-        keys_warning.set_visible(true);
-    } else {
-        keys_warning.set_message_type(Gtk::MessageType::WARNING);
-        keys_warning.set_visible(false);
-    }
+    refresh_keys_warning();
 }
 
 /**

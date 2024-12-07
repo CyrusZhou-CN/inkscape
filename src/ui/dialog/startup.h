@@ -56,6 +56,7 @@ private:
     Gtk::TreeModel::Row active_combo(std::string widget_name);
     void set_active_combo(std::string widget_name, std::string unique_id);
     void show_toggle();
+    void refresh_keys_warning();
     void enlist_recent_files();
     void enlist_keys();
     void filter_themes();
