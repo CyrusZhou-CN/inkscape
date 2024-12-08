@@ -118,42 +118,39 @@ void SPGenericEllipse::set(SPAttr key, gchar const *value)
     double const em = style->font_size.computed;
     double const ex = em * 0.5;
 
-    SVGLength t;
     switch (key) {
     case SPAttr::CX:
     case SPAttr::SODIPODI_CX:
-        if( t.read(value) ) cx = t;
+        cx.readOrUnset(value);
         cx.update( em, ex, w );
         this->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
         break;
 
     case SPAttr::CY:
     case SPAttr::SODIPODI_CY:
-        if( t.read(value) ) cy = t;
+        cy.readOrUnset(value);
         cy.update( em, ex, h );
         this->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
         break;
 
     case SPAttr::RX:
     case SPAttr::SODIPODI_RX:
-        if( t.read(value) && t.value > 0.0 ) rx = t;
+        rx.readOrUnset(value);
         rx.update( em, ex, w );
         this->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
         break;
 
     case SPAttr::RY:
     case SPAttr::SODIPODI_RY:
-        if( t.read(value) && t.value > 0.0 ) ry = t;
+        ry.readOrUnset(value);
         ry.update( em, ex, h );
         this->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
         break;
 
     case SPAttr::R:
-        if( t.read(value) && t.value > 0.0 ) {
-            this->ry = this->rx = t;
-        }
+        rx.readOrUnset(value);
         rx.update( em, ex, d );
-        ry.update( em, ex, d );
+        ry = rx;
         this->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
         break;
 
@@ -291,6 +288,12 @@ Inkscape::XML::Node *SPGenericEllipse::write(Inkscape::XML::Document *xml_doc, I
     //           << "  rx: " << rx.write() << " " << rx.computed
     //           << "  ry: " << ry.write() << " " << ry.computed << std::endl;
 
+    // remember these attributes because removeAttribute() may unset them
+    auto const save_cx = cx;
+    auto const save_cy = cy;
+    auto const save_rx = rx;
+    auto const save_ry = ry;
+
     switch ( type ) {
         case SP_GENERIC_ELLIPSE_UNDEFINED:
         case SP_GENERIC_ELLIPSE_ARC:
@@ -304,10 +307,10 @@ Inkscape::XML::Node *SPGenericEllipse::write(Inkscape::XML::Document *xml_doc, I
             if (flags & SP_OBJECT_WRITE_EXT) {
 
                 repr->setAttribute("sodipodi:type", "arc");
-                repr->setAttributeSvgLength("sodipodi:cx", cx);
-                repr->setAttributeSvgLength("sodipodi:cy", cy);
-                repr->setAttributeSvgLength("sodipodi:rx", rx);
-                repr->setAttributeSvgLength("sodipodi:ry", ry);
+                repr->setAttributeSvgLength("sodipodi:cx", save_cx);
+                repr->setAttributeSvgLength("sodipodi:cy", save_cy);
+                repr->setAttributeSvgLength("sodipodi:rx", save_rx);
+                repr->setAttributeSvgLength("sodipodi:ry", save_ry);
 
                 // write start and end only if they are non-trivial; otherwise remove
                 if (_isSlice()) {
@@ -344,9 +347,6 @@ Inkscape::XML::Node *SPGenericEllipse::write(Inkscape::XML::Document *xml_doc, I
             break;
 
         case SP_GENERIC_ELLIPSE_CIRCLE:
-            repr->setAttributeSvgLength("cx", cx);
-            repr->setAttributeSvgLength("cy", cy);
-            repr->setAttributeSvgLength("r", rx);
             repr->removeAttribute("rx");
             repr->removeAttribute("ry");
             repr->removeAttribute("sodipodi:cx");
@@ -359,13 +359,12 @@ Inkscape::XML::Node *SPGenericEllipse::write(Inkscape::XML::Document *xml_doc, I
             repr->removeAttribute("sodipodi:arc-type");
             repr->removeAttribute("sodipodi:type");
             repr->removeAttribute("d");
+            repr->setAttributeSvgLength("cx", save_cx);
+            repr->setAttributeSvgLength("cy", save_cy);
+            repr->setAttributeSvgLength("r", save_rx);
             break;
 
         case SP_GENERIC_ELLIPSE_ELLIPSE:
-            repr->setAttributeSvgLength("cx", cx);
-            repr->setAttributeSvgLength("cy", cy);
-            repr->setAttributeSvgLength("rx", rx);
-            repr->setAttributeSvgLength("ry", ry);
             repr->removeAttribute("r");
             repr->removeAttribute("sodipodi:cx");
             repr->removeAttribute("sodipodi:cy");
@@ -377,6 +376,10 @@ Inkscape::XML::Node *SPGenericEllipse::write(Inkscape::XML::Document *xml_doc, I
             repr->removeAttribute("sodipodi:arc-type");
             repr->removeAttribute("sodipodi:type");
             repr->removeAttribute("d");
+            repr->setAttributeSvgLength("cx", save_cx);
+            repr->setAttributeSvgLength("cy", save_cy);
+            repr->setAttributeSvgLength("rx", save_rx);
+            repr->setAttributeSvgLength("ry", save_ry);
             break;
 
         default:
@@ -437,7 +440,8 @@ void SPGenericEllipse::set_shape()
     if (checkBrokenPathEffect()) {
         return;
     }
-    if (Geom::are_near(this->rx.computed, 0) || Geom::are_near(this->ry.computed, 0)) {
+    if (this->rx.computed <= Geom::EPSILON || this->ry.computed <= Geom::EPSILON) {
+        setCurveInsync(nullptr);
         return;
     }
 
