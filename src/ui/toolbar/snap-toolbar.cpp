@@ -21,19 +21,20 @@
 #include <gtkmm/scrolledwindow.h>
 
 #include "actions/actions-canvas-snapping.h" // transition_to_xxx
+#include "inkscape-window.h"
 #include "ui/builder-utils.h"
 #include "ui/pack.h"
 
 namespace Inkscape::UI::Toolbar {
 
-SnapToolbar::SnapToolbar()
-    : Gtk::Box()
-    , builder(UI::create_builder("toolbar-snap.ui"))
+SnapToolbar::SnapToolbar(InkscapeWindow *win)
+    : builder(UI::create_builder("toolbar-snap.ui"))
     , snap_toolbar(UI::get_widget<Gtk::Box>(builder, "snap-toolbar"))
     , btn_simple(UI::get_widget<Gtk::MenuButton>(builder, "btn-simple"))
     , btn_advanced(UI::get_widget<Gtk::MenuButton>(builder, "btn-advanced"))
     , scroll_permanent(UI::get_widget<Gtk::ScrolledWindow>(builder, "scroll-permanent"))
     , box_permanent(UI::get_widget<Gtk::Box>(builder, "box-permanent"))
+    , _win{win}
 {
     set_name("SnapToolbar");
 
@@ -84,7 +85,7 @@ void SnapToolbar::mode_update() {
             btn_simple.set_visible(true);
             set_orientation(Gtk::Orientation::HORIZONTAL);
             snap_toolbar.set_orientation(Gtk::Orientation::HORIZONTAL);
-            transition_to_simple_snapping();  // Defined in actions-canvas-snapping.cpp
+            apply_simple_snap_defaults(*_win);
             break;
         case ADVANCED:
             btn_advanced.set_visible(true);

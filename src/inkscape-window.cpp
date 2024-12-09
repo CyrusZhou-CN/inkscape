@@ -173,8 +173,8 @@ InkscapeWindow::InkscapeWindow(SPDocument *document)
     set_visible(true);  // Gtk4: This 'hack' is required for windows created via 'File->New' to be shown. If called before 'build_menu()', menu will not be visible.
 
     // Apply preferences that are deferred on initialization of the desktop
-    apply_preferences_canvas_mode(this);
-    apply_preferences_canvas_transform(this);
+    apply_preferences_canvas_mode(_desktop);
+    apply_preferences_canvas_transform(_desktop);
 }
 
 void InkscapeWindow::on_realize()

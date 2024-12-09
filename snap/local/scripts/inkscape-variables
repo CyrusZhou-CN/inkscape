@@ -18,12 +18,13 @@ export INKSCAPE_EXTENSIONS_DIR=${SNAP_USER_COMMON}/extensions/
 
 export GTK_USE_PORTAL=1
 
-export GS_LIB=${SNAP}/usr/share/ghostscript/9.55.0/Resource/Init/
+export GS_LIB=${SNAP}/usr/share/ghostscript/*.*.*/Resource/Init/
 if [ ! -x ${GS_LIB} ]; then
   echo "WARN: Ghostscript library not executable: $GS_LIB"
 fi
 
-export PYTHONPATH=/usr/lib/python3.10:/usr/lib/python3.10/lib-dynload:${SNAP}/lib/python3.10/site-packages:${SNAP}/usr/lib/python3/dist-packages
+# FIXME - still necessary?
+# export PYTHONPATH=/usr/lib/python3.10:/usr/lib/python3.10/lib-dynload:${SNAP}/lib/python3.10/site-packages:${SNAP}/usr/lib/python3/dist-packages
 
 cd $SNAP_REAL_HOME
 

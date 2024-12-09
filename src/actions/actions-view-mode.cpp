@@ -287,18 +287,8 @@ void
 add_actions_view_mode(InkscapeWindow* win)
 {
     auto prefs = Inkscape::Preferences::get();
-    SPDesktop* desktop = win->get_desktop();
 
-    if (!desktop) {
-        show_output("add_actions_view_mode: no desktop!");
-    }
-
-    Glib::ustring pref_root = "/window/";
-    if (desktop && desktop->is_focusMode()) {
-        pref_root = "/focus/";
-    } else if (desktop && desktop->is_fullscreen()) {
-        pref_root = "/fullscreen/";
-    }
+    Glib::ustring const pref_root = "/window/";
 
     // Initial States of Actions
 

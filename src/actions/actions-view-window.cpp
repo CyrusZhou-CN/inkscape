@@ -24,25 +24,24 @@
 #include "actions/actions-extra-data.h"
 #include "ui/interface.h"  // sp_ui_new_view()
 
-void
-window_previous(InkscapeWindow* win)
+namespace {
+
+void window_previous(InkscapeWindow *win)
 {
     INKSCAPE.switch_desktops_prev();
 }
 
-void
-window_next(InkscapeWindow* win)
+void window_next(InkscapeWindow *win)
 {
     INKSCAPE.switch_desktops_next();
 }
 
-void
-window_new(InkscapeWindow* win)
+void window_new(InkscapeWindow *win)
 {
     sp_ui_new_view();
 }
 
-std::vector<std::vector<Glib::ustring>> raw_data_view_window =
+auto const raw_data_view_window = std::vector<std::vector<Glib::ustring>>
 {
     // clang-format off
     {"win.window-new",                  N_("Duplicate Window"),         "View",             N_("Open a new window with the same document")},
@@ -51,13 +50,14 @@ std::vector<std::vector<Glib::ustring>> raw_data_view_window =
     // clang-format on
 };
 
-void
-add_actions_view_window(InkscapeWindow* win)
+} // namespace
+
+void add_actions_view_window(InkscapeWindow* win)
 {
     // clang-format off
-    win->add_action( "window-new",                  sigc::bind(sigc::ptr_fun(&window_new),       win));
-    win->add_action( "window-previous",             sigc::bind(sigc::ptr_fun(&window_previous),  win));
-    win->add_action( "window-next",                 sigc::bind(sigc::ptr_fun(&window_next),      win));
+    win->add_action("window-new",                  sigc::bind(sigc::ptr_fun(&window_new),       win));
+    win->add_action("window-previous",             sigc::bind(sigc::ptr_fun(&window_previous),  win));
+    win->add_action("window-next",                 sigc::bind(sigc::ptr_fun(&window_next),      win));
     // clang-format on
 
     // Check if there is already an application instance (GUI or non-GUI).

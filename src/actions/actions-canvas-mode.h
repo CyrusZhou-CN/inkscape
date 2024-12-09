@@ -12,9 +12,10 @@
 #define INK_ACTIONS_CANVAS_MODE_H
 
 class InkscapeWindow;
+class SPDesktop;
 
 void add_actions_canvas_mode(InkscapeWindow* win);
-void apply_preferences_canvas_mode(InkscapeWindow *win);
+void apply_preferences_canvas_mode(SPDesktop *desktop);
 
 #endif // INK_ACTIONS_CANVAS_MODE_H
 

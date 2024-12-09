@@ -130,7 +130,7 @@ SPDesktopWidget::SPDesktopWidget(InkscapeWindow *inkscape_window, SPDocument *do
     };
     _tbbox->property_position().signal_changed().connect([=](){ adjust_pos(); });
 
-    snap_toolbar = std::make_unique<Inkscape::UI::Toolbar::SnapToolbar>();
+    snap_toolbar = std::make_unique<Inkscape::UI::Toolbar::SnapToolbar>(_window);
     _hbox->append(*snap_toolbar); // May be moved later.
 
     _tb_snap_pos = prefs->createObserver("/toolbox/simplesnap", sigc::mem_fun(*this, &SPDesktopWidget::repack_snaptoolbar));

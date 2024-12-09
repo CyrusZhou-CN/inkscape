@@ -280,7 +280,7 @@ void ToolbarWidget::_update_menu_btn_image(Gtk::Widget *child)
 {
     Glib::ustring icon_name = "go-down";
 
-    if (auto btn = dynamic_cast<Gtk::Button *>(child)) {
+    if (auto btn = dynamic_cast<Gtk::Button *>(child); btn && _toolbar.get_orientation() == Gtk::Orientation::HORIZONTAL) {
         // Find the icon name from the child image.
         if (auto image = dynamic_cast<Gtk::Image *>(btn->get_child())) {
             auto icon = image->get_icon_name();

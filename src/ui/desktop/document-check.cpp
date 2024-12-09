@@ -21,6 +21,7 @@
 #include <glibmm/ustring.h>
 #include <gtkmm/messagedialog.h>
 
+#include "desktop.h"
 #include "document.h"
 #include "file.h"
 #include "inkscape-window.h"
@@ -61,11 +62,11 @@ static int run_dialog(Gtk::Window &window, char const * const save_text,
  *
  *  Returns true if document should remain open.
  */
-bool
-document_check_for_data_loss(InkscapeWindow* window)
+bool document_check_for_data_loss(SPDesktop *desktop)
 {
-    g_assert(window);
-    auto document = window->get_document();
+    g_assert(desktop);
+    auto document = desktop->getDocument();
+    auto window = desktop->getInkscapeWindow();
 
     if (document->isModifiedSinceSave()) {
         // Document has been modified!
@@ -79,7 +80,7 @@ document_check_for_data_loss(InkscapeWindow* window)
             case GTK_RESPONSE_YES:
             {
                 // Save document
-                sp_namedview_document_from_window(window->get_desktop()); // Save window geometry in document.
+                sp_namedview_document_from_window(desktop); // Save window geometry in document.
                 if (!sp_file_save_document(*window, document)) {
                     // Save dialog cancelled or save failed.
                     return true;
@@ -125,7 +126,6 @@ document_check_for_data_loss(InkscapeWindow* window)
 
     return false;
 }
-
 
 /*
   Local Variables:

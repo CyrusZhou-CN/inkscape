@@ -281,8 +281,6 @@ std::vector<std::vector<Glib::ustring>> raw_data_canvas_mode =
 void
 add_actions_canvas_mode(InkscapeWindow* win)
 {
-    apply_preferences_canvas_mode(win);
-
     // Sync action with desktop variables. TODO: Remove!
     auto prefs = Inkscape::Preferences::get();
 
@@ -307,7 +305,7 @@ add_actions_canvas_mode(InkscapeWindow* win)
     app->get_action_extra_data().add_data(raw_data_canvas_mode);
 }
 
-void apply_preferences_canvas_mode(InkscapeWindow *win)
+void apply_preferences_canvas_mode(SPDesktop *dt)
 {
     // Sync action with desktop variables. TODO: Remove!
     auto prefs = Inkscape::Preferences::get();
@@ -317,12 +315,8 @@ void apply_preferences_canvas_mode(InkscapeWindow *win)
         "/options/displaymode", 0, 0, static_cast<int>(Inkscape::RenderMode::size) - 1); // Default, minimum, maximum
     bool color_manage = prefs->getBool("/options/displayprofile/enable");
 
-    if (auto dt = win->get_desktop()) {
-        dt->setRenderMode(Inkscape::RenderMode(display_mode));
-        dt->getCanvas()->set_cms_active(color_manage);
-    } else {
-        show_output("apply_preferences_canvas_mode: no desktop!");
-    }
+    dt->setRenderMode(Inkscape::RenderMode(display_mode));
+    dt->getCanvas()->set_cms_active(color_manage);
 }
 
 /*

@@ -388,6 +388,7 @@ ${_build_dir}/share/templates/templates.h
 ../src/ui/tools/star-tool.cpp
 ../src/ui/tools/text-tool.cpp
 ../src/ui/tools/tool-base.cpp
+../src/ui/tools/tool-data.cpp
 ../src/ui/tools/tweak-tool.cpp
 ../src/ui/util.cpp
 ../src/ui/widget/canvas-grid.cpp

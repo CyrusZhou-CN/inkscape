@@ -851,7 +851,7 @@ InkscapeApplication::destroy_window(InkscapeWindow* window, bool keep_alive)
         // If only one window for document:
         if (it->second.size() == 1) {
             // Check if document needs saving.
-            bool abort = document_check_for_data_loss(window);
+            bool abort = document_check_for_data_loss(window->get_desktop());
             if (abort) {
                 return false;
             }

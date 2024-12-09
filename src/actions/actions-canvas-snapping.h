@@ -32,6 +32,7 @@ void add_actions_canvas_snapping(Gio::ActionMap* map);
 std::vector<std::vector<Glib::ustring>> get_extra_data_canvas_snapping();
 Inkscape::SnapPreferences& get_snapping_preferences();
 void transition_to_simple_snapping();
+void apply_simple_snap_defaults(Gio::ActionMap &map);
 
 #endif // INK_ACTIONS_CANVAS_SNAPPING_H
 

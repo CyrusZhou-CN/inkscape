@@ -107,6 +107,7 @@ set(ui_SRC
 	tools/star-tool.cpp
 	tools/text-tool.cpp
 	tools/tool-base.cpp
+	tools/tool-data.cpp
 	tools/tweak-tool.cpp
 	tools/zoom-tool.cpp
 
@@ -463,6 +464,7 @@ set(ui_SRC
 	tools/star-tool.h
 	tools/text-tool.h
 	tools/tool-base.h
+	tools/tool-data.h
 	tools/tweak-tool.h
 	tools/zoom-tool.h
 

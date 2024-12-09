@@ -12,10 +12,10 @@
 #define INK_ACTIONS_CANVAS_TRANSFORM_H
 
 class InkscapeWindow;
-class InkscapeApplication;
+class SPDesktop;
 
 void add_actions_canvas_transform(InkscapeWindow* win);
-void apply_preferences_canvas_transform(InkscapeWindow *win);
+void apply_preferences_canvas_transform(SPDesktop *desktop);
 
 #endif // INK_ACTIONS_CANVAS_TRANSFORM_H
 

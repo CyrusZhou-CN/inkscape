@@ -14,36 +14,6 @@
 #include <glibmm.h>
 #include <2geom/point.h>
 
-enum tools_enum {
-  TOOLS_INVALID,
-  TOOLS_SELECT,
-  TOOLS_NODES,
-  TOOLS_BOOLEANS,
-  TOOLS_MARKER,
-  TOOLS_TWEAK,
-  TOOLS_SPRAY,
-  TOOLS_SHAPES_RECT,
-  TOOLS_SHAPES_3DBOX,
-  TOOLS_SHAPES_ARC,
-  TOOLS_SHAPES_STAR,
-  TOOLS_SHAPES_SPIRAL,
-  TOOLS_FREEHAND_PENCIL,
-  TOOLS_FREEHAND_PEN,
-  TOOLS_CALLIGRAPHIC,
-  TOOLS_TEXT,
-  TOOLS_GRADIENT,
-  TOOLS_MESH,
-  TOOLS_ZOOM,
-  TOOLS_MEASURE,
-  TOOLS_DROPPER,
-  TOOLS_CONNECTOR,
-  TOOLS_PAINTBUCKET,
-  TOOLS_ERASER,
-  TOOLS_LPETOOL,
-  TOOLS_PAGES,
-  TOOLS_PICKER
-};
-
 class InkscapeWindow;
 class SPDesktop;
 class SPItem;
@@ -67,7 +37,6 @@ void tool_preferences(Glib::ustring const &tool, InkscapeWindow *win);
 
 // Standard function to add actions.
 void add_actions_tools(InkscapeWindow* win);
-
 
 #endif // INK_ACTIONS_TOOLS_H
 

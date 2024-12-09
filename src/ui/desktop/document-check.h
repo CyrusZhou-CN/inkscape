@@ -10,9 +10,9 @@
 
 #ifndef DOCUMENT_CHECK_H
 
-class InkscapeWindow;
+class SPDesktop;
 
-bool document_check_for_data_loss(InkscapeWindow* window);
+bool document_check_for_data_loss(SPDesktop *desktop);
 
 #endif // DOCUMENT_CHECK_H
 
