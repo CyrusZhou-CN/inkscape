@@ -26,15 +26,15 @@ msgstr ""
 "Project-Id-Version: inkscape\n"
 "Report-Msgid-Bugs-To: inkscape-translator@lists.inkscape.org\n"
 "POT-Creation-Date: 2024-09-28 10:42+0000\n"
-"PO-Revision-Date: 2024-10-03 16:13+0200\n"
-"Last-Translator: Maren Hachmann <marenhachmann@yahoo.com>\n"
+"PO-Revision-Date: 2024-11-19 19:40+0100\n"
+"Last-Translator: Mohammed Chelouti <m.chelouti@bluewin.ch>\n"
 "Language-Team: German <kde-i18n-de@kde.org>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Lokalize 21.12.3\n"
+"X-Generator: Poedit 3.4.2\n"
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SourceCharset: utf-8\n"
 "X-Language: de_DE\n"
@@ -6592,19 +6592,19 @@ msgstr "Einrasten an Textgrundlinien und Textankern de-/aktivieren"
 
 #: ../src/actions/actions-canvas-snapping.cpp:271
 msgid "Snap Page Border"
-msgstr "Am Seitenrand einrasten"
+msgstr "An Seitenkante einrasten"
 
 #: ../src/actions/actions-canvas-snapping.cpp:271
 msgid "Toggle snapping to page border"
-msgstr "Einrasten am Seitenrand de-/aktivieren"
+msgstr "Einrasten an Seitenkante de-/aktivieren"
 
 #: ../src/actions/actions-canvas-snapping.cpp:272
 msgid "Snap Page Margin"
-msgstr "An der Seite einrasten"
+msgstr "Am Seitenrand einrasten"
 
 #: ../src/actions/actions-canvas-snapping.cpp:272
 msgid "Toggle snapping to page margin"
-msgstr "Einrasten an der Seite de-/aktivieren"
+msgstr "Einrasten am Seitenrand de-/aktivieren"
 
 #: ../src/actions/actions-canvas-snapping.cpp:273
 msgid "Snap Grids"
@@ -11038,7 +11038,7 @@ msgstr "Gitter-Hilfslinien-Überschneidung"
 
 #: ../src/display/control/snap-indicator.cpp:92
 msgid "page border"
-msgstr "Seitenrand"
+msgstr "Seitenkante"
 
 #: ../src/display/control/snap-indicator.cpp:93
 msgid "page corner"
@@ -11050,7 +11050,7 @@ msgstr "Seitenmittelpunkt"
 
 #: ../src/display/control/snap-indicator.cpp:95
 msgid "page margin border"
-msgstr "Rand"
+msgstr "Seitenrand"
 
 #: ../src/display/control/snap-indicator.cpp:96
 msgid "page margin corner"
@@ -33525,8 +33525,8 @@ msgid ""
 "insert node, click to select (more: Alt, Shift, Ctrl+Alt)"
 msgstr ""
 "<b>Linear-Segment</b>: Ziehen, um in ein Bézier-Segment zu konvertieren, "
-"Doppelklick um Knoten einzufügen und Klicken zum Auswählen (mehr: Alt,"
-" Umschalt, Strg+Alt)"
+"Doppelklick um Knoten einzufügen und Klicken zum Auswählen (mehr: Alt, "
+"Umschalt, Strg+Alt)"
 
 #: ../src/ui/tool/curve-drag-point.cpp:225
 msgctxt "Path segment tip"
@@ -33535,8 +33535,8 @@ msgid ""
 "node, click to select (more: Alt, Shift, Ctrl+Alt)"
 msgstr ""
 "<b>Bézier-Segment</b>: Ziehen, um das Segment zu formen, Doppelklick zum "
-"Einfügen eines Knotens oder Klicken zum Auswählen (mehr: Alt, Umschalt,"
-" Strg+Alt)"
+"Einfügen eines Knotens oder Klicken zum Auswählen (mehr: Alt, Umschalt, "
+"Strg+Alt)"
 
 #: ../src/ui/tool/multi-path-manipulator.cpp:315
 msgid "Retract handles"
@@ -33846,8 +33846,8 @@ msgid ""
 "<b>%s</b>: drag to shape the path, click to toggle scale/rotation handles. "
 "(more: Shift, Ctrl, Alt)"
 msgstr ""
-"<b>%s</b>:Ziehen, um den Pfad zu formen, klicken schaltet zwischen"
-" Skalieren-/Drehen-Anfassern um (mehr: Umschalt, Strg, Alt)"
+"<b>%s</b>:Ziehen, um den Pfad zu formen, klicken schaltet zwischen "
+"Skalieren-/Drehen-Anfassern um (mehr: Umschalt, Strg, Alt)"
 
 #: ../src/ui/tool/node.cpp:1645
 #, c-format
@@ -34459,7 +34459,7 @@ msgstr "Anschnitt bearbeiten"
 #: ../src/ui/toolbar/page-toolbar.cpp:257
 #: ../src/ui/toolbar/page-toolbar.cpp:286
 msgid "Edit page margin"
-msgstr "Ränder bearbeiten"
+msgstr "Seitenränder bearbeiten"
 
 #: ../src/ui/toolbar/page-toolbar.cpp:445
 msgid "Page label"
@@ -35584,7 +35584,7 @@ msgstr "Seitengröße ändern"
 
 #: ../src/ui/tools/pages-tool.cpp:64
 msgid "Set page margin"
-msgstr "Ränder festlegen"
+msgstr "Seitenränder festlegen"
 
 #: ../src/ui/tools/pen-tool.cpp:156 ../src/ui/tools/pencil-tool.cpp:506
 msgid "Drawing cancelled"
@@ -40377,7 +40377,7 @@ msgstr ""
 
 #: ../share/ui/page-properties.glade:717
 msgid "Page border and drop shadow color"
-msgstr "Farbe des Seitenrands und des Randschattens"
+msgstr "Farbe des Seitenrahmens und -schattens"
 
 #: ../share/ui/page-properties.glade:730
 msgid "Desk background color surrounding pages"
@@ -40385,7 +40385,7 @@ msgstr "Farbe des Hintergrundes, der die Seiten umgibt"
 
 #: ../share/ui/page-properties.glade:742 ../share/ui/page-properties.glade:795
 msgid "Border"
-msgstr "Rand"
+msgstr "Rahmen"
 
 #: ../share/ui/page-properties.glade:764
 msgid "Desk"
@@ -40399,7 +40399,7 @@ msgstr ""
 
 #: ../share/ui/page-properties.glade:798
 msgid "If set, a rectangular page border is shown."
-msgstr "Wenn aktiviert, dann wird ein rechteckiger Seitenrand angezeigt"
+msgstr "Wenn aktiviert, dann wird ein rechteckiger Seitenrahmen angezeigt"
 
 #: ../share/ui/page-properties.glade:809
 msgid "Always on top"
@@ -40407,17 +40407,17 @@ msgstr "Immer oberhalb"
 
 #: ../share/ui/page-properties.glade:812
 msgid "If set, the page border is always on top of the drawing."
-msgstr "Wenn aktiviert, dann ist der Rand immer im Vordergrund"
+msgstr "Wenn aktiviert, dann ist der Rahmen immer im Vordergrund"
 
 #: ../share/ui/page-properties.glade:826
 msgid "Show shadow"
-msgstr "Randschatten anzeigen"
+msgstr "Rahmenschatten anzeigen"
 
 #: ../share/ui/page-properties.glade:829
 msgid "If set, the page border shows a shadow on its right and lower side."
 msgstr ""
-"Wenn aktiviert, dann zeigt der Seitenrand einen Schatten an der rechten und "
-"unteren Seite"
+"Wenn aktiviert, dann wird rechts und unterhalb des Rahmens ein Schatten "
+"angezeigt"
 
 #: ../share/ui/page-properties.glade:843
 msgid "Show big page labels"
@@ -42009,8 +42009,8 @@ msgid ""
 "Reset paint bucket parameters to defaults (use Inkscape Preferences > Tools "
 "to change defaults)"
 msgstr ""
-"Die Parameter des Farbeimers auf Vorgabewerte zurücksetzen (Menü Datei >"
-" Inkscape-Einstellungen > Werkzeuge, um die Vorgabeeinstellungen zu ändern)"
+"Die Parameter des Farbeimers auf Vorgabewerte zurücksetzen (Menü Datei > "
+"Inkscape-Einstellungen > Werkzeuge, um die Vorgabeeinstellungen zu ändern)"
 
 #: ../share/ui/toolbar-pencil.ui:75
 msgid "Mode of new lines drawn by this tool"
@@ -42195,7 +42195,7 @@ msgstr "Hilfslinien"
 
 #: ../share/ui/toolbar-snap.ui:275
 msgid "Page borders"
-msgstr "Seitenränder"
+msgstr "Seitenkanten"
 
 # Alignment (left, center, right, block)
 #: ../share/ui/toolbar-snap.ui:291 ../share/ui/toolbar-snap.ui:908
@@ -42271,8 +42271,8 @@ msgid ""
 "Reset shape parameters to defaults (use Inkscape Preferences > Tools to "
 "change defaults)"
 msgstr ""
-"Die Parameter von Formwerkzeugen auf Vorgabewerte zurücksetzen (Menü Datei "
-"> Inkscape-Einstellungen > Werkzeuge, um die Vorgabeeinstellungen zu ändern)"
+"Die Parameter von Formwerkzeugen auf Vorgabewerte zurücksetzen (Menü Datei > "
+"Inkscape-Einstellungen > Werkzeuge, um die Vorgabeeinstellungen zu ändern)"
 
 #: ../share/ui/toolbar-spray.ui:140
 msgid "Spray copies of the initial selection"
@@ -42778,8 +42778,8 @@ msgid ""
 "Encountered key of unknown format, id={0} while parsing DXF. This is "
 "probably a bug."
 msgstr ""
-"Schlüssel mit unbekanntem Format, id={0}, beim Lesen der DXF-Datei gefunden."
-" Wahrscheinlich ist dies ein Programmfehler."
+"Schlüssel mit unbekanntem Format, id={0}, beim Lesen der DXF-Datei gefunden. "
+"Wahrscheinlich ist dies ein Programmfehler."
 
 #: ../share/extensions/dxf_input.py:1400
 msgid "Binary DXF file has unexpected header."
