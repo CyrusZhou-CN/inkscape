@@ -612,13 +612,10 @@ bool ToolBase::root_handler(CanvasEvent const &event)
 
 
         switch (get_latin_keyval(event)) {
-        // GDK insists on stealing these keys (F1 for no idea what, tab for cycling widgets
-        // in the editing window). So we resteal them back and run our regular shortcut
+        // GDK insists on stealing the tab keys for cycling widgets in the
+        // editing window. So we resteal them back and run our regular shortcut
         // invoker on them. Tab is hardcoded. When actions are triggered by tab,
         // we end up stealing events from GTK widgets.
-        case GDK_KEY_F1:
-            ret = Inkscape::Shortcuts::getInstance().invoke_action(event);
-            break;
         case GDK_KEY_Tab:
             sp_selection_item_next(_desktop);
             ret = true;
