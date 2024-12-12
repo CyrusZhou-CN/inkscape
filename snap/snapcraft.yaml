@@ -25,7 +25,9 @@ slots:
     bus: session
     name: org.inkscape.Inkscape
 
-assumes: [ command-chain ]
+# commented out due to bug https://github.com/canonical/snapcraft/issues/4931
+# will be added automatically by snapcraft anyway
+# assumes: [ command-chain ]
 
 parts:
   inkscape:

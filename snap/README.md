@@ -40,7 +40,10 @@ sudo snap connect inkscape:dot-config-inkscape
 ```
 
 ### Troubleshooting
+#### General
+If the snap fails to build but it worked before, first run `snapcraft clean` and build again and see if the errors disappear. Too often, snapcraft remembers some parts of the previous build, which causes trouble.
 
+#### Snap directory
 ```
 The 'snap' directory is meant specifically for snapcraft, but it contains
 the following non-snapcraft-related paths:
@@ -51,7 +54,7 @@ these files within the 'snap' directory, move them to 'snap/local'
 ```
 Just ignore the message.
 
-
+#### LXD
 ```
 LXD is required but not installed. Do you wish to install LXD and configure it with the defaults? [y/N]:
 ```
@@ -62,3 +65,17 @@ Answer `y` <Enter>.
 craft-providers error: Failed to install LXD: user must be manually added to 'lxd' group before using LXD.
 ```
 Run `sudo adduser $USERNAME lxd` , then log out and log in again.
+
+
+#### Store upload failed
+```
+(on launchpad.net)
+Store upload failed ... Error found while validating
+```
+
+Install review-tools: `sudo snap install review-tools`
+
+Check the produced snap: `review-tools.snap-review inkscape_XXX.snap`
+
+You can ignore all errors stating `Human review required`. Everything else must be fixed.
+
