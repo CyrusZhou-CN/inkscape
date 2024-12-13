@@ -1250,20 +1250,6 @@ void ObjectsPanel::_activateAction(const std::string& layerAction, const std::st
 }
 
 /**
- * Stylizes a button using the given icon name and tooltip
- */
-Gtk::Button* ObjectsPanel::_addBarButton(char const* iconName, char const* tooltip, char const *action_name)
-{
-    auto const btn = Gtk::make_managed<Gtk::Button>();
-    auto const child = sp_get_icon_image(iconName, Gtk::IconSize::NORMAL);
-    btn->set_child(*child);
-    btn->set_has_frame(false);
-    btn->set_tooltip_text(tooltip);
-    btn->set_action_name(action_name);
-    return btn;
-}
-
-/**
  * Sets visibility of items in the tree
  * @param iter Current item in the tree
  */

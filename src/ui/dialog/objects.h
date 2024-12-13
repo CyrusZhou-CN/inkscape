@@ -162,8 +162,6 @@ private:
     Gtk::TreeRow _clicked_item_row;
     UI::Widget::PopoverBin _popoverbin;
 
-    Gtk::Button *_addBarButton(char const* iconName, char const* tooltip, char const *action_name);
-
     void _activateAction(const std::string& layerAction, const std::string& selectionAction);
 
     bool blendModePopup(int x, int y, Gtk::TreeModel::Row row);

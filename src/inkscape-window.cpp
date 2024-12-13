@@ -212,19 +212,8 @@ void InkscapeWindow::change_document(SPDocument *document)
 void
 InkscapeWindow::setup_view()
 {
-    // Make sure the GdkWindow is fully initialized before resizing/moving
-    // (ensures the monitor it'll be shown on is known)
-    Gtk::Widget::realize();
-
     // Resize the window to match the document properties
     sp_namedview_window_from_document(_desktop); // This should probably be a member function here.
-
-    // Must show before setting zoom and view! (crashes otherwise)
-    //
-    // Showing after resizing/moving allows the window manager to correct an invalid size/position of the window
-    // TODO: This does *not* work when called from 'change_document()', i.e. when the window is already visible.
-    //       This can result in off-screen windows! We previously worked around this by hiding and re-showing
-    //       the window, but a call to set_visible(false) causes Inkscape to just exit since the migration to Gtk::Application
     
     _desktop->schedule_zoom_from_document();
     sp_namedview_update_layers_from_document(_desktop);

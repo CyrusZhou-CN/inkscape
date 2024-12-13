@@ -671,10 +671,15 @@ SPDesktop::zoom_selection()
 
 /**
  * Schedule the zoom/view settings from the document to be applied to the desktop
- * at the latest possible moment before the the canvas is next drawn.
+ * just after the canvas is first allocated a size, but before any drawing has started.
  *
- * By doing things this way, we ensure that all necessary size updates have been
- * applied to the canvas, and our calculated zoom/view settings will be correct.
+ * We do things at this point because we need to know the canvas size in order to center the
+ * page correctly, and the page needs to be centered correctly before we start drawing!
+ *
+ * Note that during startup, GTK is supposed to allocate each widget once. In the past,
+ * it was observed doing multiple wrong allocations first, but this no longer happens.
+ * This would be a symptom of a widget (like ToolbarWidget) that tries to change its size
+ * upon being allocated a size.
  */
 void SPDesktop::schedule_zoom_from_document()
 {
@@ -682,7 +687,7 @@ void SPDesktop::schedule_zoom_from_document()
         return;
     }
 
-    _schedule_zoom_from_document_connection = canvas->connectPreDraw([this] {
+    _schedule_zoom_from_document_connection = canvas->connectResize([this] {
         sp_namedview_zoom_and_view_from_document(this);
         _schedule_zoom_from_document_connection.disconnect(); // one-shot
     });

@@ -146,7 +146,7 @@ public:
 
     void enable_autoscroll();
 
-    sigc::connection connectPreDraw(sigc::slot<void ()> &&slot) { return _signal_pre_draw.connect(std::move(slot)); }
+    sigc::connection connectResize(sigc::slot<void ()> &&slot) { return _signal_resize.connect(std::move(slot)); }
     sigc::connection connectFocusIn(sigc::slot<void ()> &&slot) { return _signal_focus_in.connect(std::move(slot)); }
     sigc::connection connectFocusOut(sigc::slot<void ()> &&slot) { return _signal_focus_out.connect(std::move(slot)); }
 
@@ -228,7 +228,7 @@ private:
     bool _split_dragging;
     Geom::IntPoint _split_drag_start;
 
-    sigc::signal<void ()> _signal_pre_draw;
+    sigc::signal<void ()> _signal_resize;
     sigc::signal<void ()> _signal_focus_in;
     sigc::signal<void ()> _signal_focus_out;
 

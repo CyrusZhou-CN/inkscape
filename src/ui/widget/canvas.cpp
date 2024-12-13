@@ -243,7 +243,7 @@ public:
     bool redraw_active = false;
     bool redraw_requested = false;
     sigc::connection schedule_redraw_conn;
-    void schedule_redraw(int priority = Glib::PRIORITY_DEFAULT);
+    void schedule_redraw(bool instant = false);
     void launch_redraw();
     void after_redraw();
     void commit_tiles();
@@ -470,8 +470,7 @@ void CanvasPrivate::activate()
 
     active = true;
 
-    // Run the first redraw at high priority so it happens before the first call to paint_widget().
-    schedule_redraw(Glib::PRIORITY_HIGH);
+    schedule_redraw(true);
 }
 
 void CanvasPrivate::deactivate()
@@ -479,7 +478,7 @@ void CanvasPrivate::deactivate()
     active = false;
 
     if (redraw_active) {
-        if (schedule_redraw_conn.connected()) {
+        if (schedule_redraw_conn) {
             // In first link in chain, from schedule_redraw() to launch_redraw(). Break the link and exit.
             schedule_redraw_conn.disconnect();
         } else {
@@ -495,7 +494,7 @@ void CanvasPrivate::deactivate()
 
         redraw_active = false;
         redraw_requested = false;
-        assert(!schedule_redraw_conn.connected());
+        assert(!schedule_redraw_conn);
     }
 }
 
@@ -554,10 +553,16 @@ void Canvas::on_unrealize()
  */
 
 // Schedule another redraw iteration to take place, waiting for the current one to finish if necessary.
-void CanvasPrivate::schedule_redraw(int priority)
+void CanvasPrivate::schedule_redraw(bool instant)
 {
     if (!active) {
-        // We can safely discard calls until active, because we will run an iteration on activation later in initialisation.
+        // We can safely discard calls until active, because we will call this again later in activate().
+        return;
+    }
+
+    if (q->get_width() == 0 || q->get_height() == 0) {
+        // Similarly, we can safely discard calls until we are assigned a valid size,
+        // because we will call this again when that happens in size_allocate_vfunc().
         return;
     }
 
@@ -565,21 +570,32 @@ void CanvasPrivate::schedule_redraw(int priority)
     redraw_requested = true;
 
     if (redraw_active) {
-        return;
+        if (schedule_redraw_conn && instant) {
+            // skip a scheduled redraw and launch it instantly
+        } else {
+            return;
+        }
     }
 
     redraw_active = true;
 
-    // Call run_redraw() as soon as possible on the main loop. (Cannot run now since CanvasItem tree could be in an invalid intermediate state.)
-    assert(!schedule_redraw_conn.connected());
-    schedule_redraw_conn = Glib::signal_idle().connect([this] {
+    auto callback = [this] {
         if (q->get_opengl_enabled()) {
             q->make_current();
         }
         if (prefs.debug_logging) std::cout << "Redraw start" << std::endl;
         launch_redraw();
-        return false;
-    }, priority); // Usually default priority; any higher results in competition with other idle callbacks => flickering snap indicators.
+    };
+
+    if (instant) {
+        schedule_redraw_conn.disconnect();
+        callback();
+    } else {
+        assert(!schedule_redraw_conn);
+        schedule_redraw_conn = Glib::signal_idle().connect([=] { callback(); return false; });
+        // Note: Any higher priority than default results in competition with other idle callbacks,
+        // causing flickering snap indicators - https://gitlab.com/inkscape/inkscape/-/issues/4242
+    }
 }
 
 // Update state and launch redraw process in background. Requires a current OpenGL context.
@@ -663,6 +679,8 @@ void CanvasPrivate::launch_redraw()
         redraw_active = false;
         return;
     }
+
+    redraw_requested = false;
 
     // Snapshot the CanvasItems and DrawingItems.
     canvasitem_ctx->snapshot();
@@ -1873,18 +1891,16 @@ void Canvas::update_cursor()
 void Canvas::size_allocate_vfunc(int const width, int const height, int const baseline)
 {
     parent_type::size_allocate_vfunc(width, height, baseline);
-    auto const new_dimensions = Geom::IntPoint{width, height};
 
-    // Necessary as GTK seems to somehow invalidate the current pipeline state upon resize.
-    if (d->active) {
-        d->graphics->invalidated_glstate();
+    if (width == 0 || height == 0) {
+        // Widget is being hidden, don't count it.
+        return;
     }
 
-    // Trigger the size update to be applied to the stores before the next redraw of the window.
-    d->schedule_redraw();
+    auto const new_dimensions = Geom::IntPoint{width, height};
 
     // Keep canvas centered and optionally zoomed in.
-    if (_desktop && new_dimensions != d->old_dimensions) {
+    if (_desktop && new_dimensions != d->old_dimensions && d->old_dimensions != Geom::IntPoint{0, 0}) {
         auto const midpoint = _desktop->w2d(_pos + Geom::Point(d->old_dimensions) * 0.5);
         double zoom = _desktop->current_zoom();
 
@@ -1902,6 +1918,10 @@ void Canvas::size_allocate_vfunc(int const width, int const height, int const ba
     }
 
     d->old_dimensions = new_dimensions;
+
+    _signal_resize.emit();
+
+    d->schedule_redraw(true);
 }
 
 Glib::RefPtr<Gdk::GLContext> Canvas::create_context()
@@ -1936,8 +1956,6 @@ void Canvas::paint_widget(Cairo::RefPtr<Cairo::Context> const &cr)
         return;
     }
 
-    _signal_pre_draw.emit();
-
     if constexpr (false) d->canvasitem_ctx->root()->canvas_item_print_tree();
 
     // On activation, launch_redraw() is scheduled at a priority much higher than draw, so it
@@ -1950,16 +1968,14 @@ void Canvas::paint_widget(Cairo::RefPtr<Cairo::Context> const &cr)
 
     // If launch_redraw() has been scheduled but not yet called, call it now so there's no
     // possibility of it getting blocked indefinitely by a busy idle loop.
-    if (d->schedule_redraw_conn.connected()) {
+    if (d->schedule_redraw_conn) {
         // Note: This also works around the bug https://gitlab.com/inkscape/inkscape/-/issues/4696.
         d->launch_redraw();
         d->schedule_redraw_conn.disconnect();
     }
 
     // Commit pending tiles in case GTK called on_draw even though after_redraw() is scheduled at higher priority.
-    if (!d->redraw_active) {
-        d->commit_tiles();
-    }
+    d->commit_tiles();
 
     if (get_opengl_enabled()) {
         bind_framebuffer();

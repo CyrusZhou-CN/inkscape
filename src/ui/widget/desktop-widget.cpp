@@ -357,11 +357,6 @@ void SPDesktopWidget::on_realize()
 
     parent_type::on_realize();
 
-    auto const d = Geom::Rect::from_xywh(Geom::Point{0, 0}, _desktop->doc()->getDimensions());
-    if (d.width() < 1.0 || d.height() < 1.0) return;
-
-    _desktop->set_display_area(d, 10);
-
     updateNamedview();
 
     auto const window = dynamic_cast<Gtk::Window *>(get_root());
