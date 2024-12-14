@@ -2784,6 +2784,8 @@ void InkscapePreferences::initPageBehavior()
                                   SP_CLONE_ORPHANS_UNLINK, true, nullptr);
     _clone_option_delete.init ( _("Are deleted"), "/options/cloneorphans/value",
                                   SP_CLONE_ORPHANS_DELETE, false, &_clone_option_unlink);
+    _clone_option_keep.init ( _("Become orphans"), "/options/cloneorphans/value",
+                                  SP_CLONE_ORPHANS_KEEP, false, &_clone_option_unlink);
 
     _page_clones.add_group_header( _("Moving original: clones and linked offsets"));
     _page_clones.add_line(true, "", _clone_option_parallel, "",
@@ -2797,6 +2799,8 @@ void InkscapePreferences::initPageBehavior()
                            _("Orphaned clones are converted to regular objects"));
     _page_clones.add_line(true, "", _clone_option_delete, "",
                            _("Orphaned clones are deleted along with their original"));
+    _page_clones.add_line(true, "", _clone_option_keep, "",
+                           _("Orphaned clones are not modified"));
 
     _page_clones.add_group_header( _("Duplicating original+clones/linked offset"));
 

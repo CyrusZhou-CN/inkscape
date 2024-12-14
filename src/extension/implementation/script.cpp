@@ -754,14 +754,21 @@ int Script::execute (const std::list<std::string> &in_command,
     int stdout_pipe, stderr_pipe;
 
     try {
+        auto spawn_flags = Glib::SpawnFlags::DEFAULT;
+        if (Glib::getenv("SNAP") != "") {
+            // If we are running within the Linux "snap" package format,
+            // we need different spawn flags to avoid that Inkscape hangs when
+            // starting an extension.
+            spawn_flags = Glib::SpawnFlags::LEAVE_DESCRIPTORS_OPEN;
+        }
         Glib::spawn_async_with_pipes(working_directory, // working directory
-                                     argv,  // arg v
-                                     static_cast<Glib::SpawnFlags>(0), // no flags
-                                     sigc::slot<void ()>(),
-                                     &_pid,          // Pid
-                                     nullptr,           // STDIN
-                                     &stdout_pipe,   // STDOUT
-                                     &stderr_pipe);  // STDERR
+                                     argv,              // arg v
+                                     spawn_flags,       // spawn flags
+                                     sigc::slot<void()>(),
+                                     &_pid,         // Pid
+                                     nullptr,       // STDIN
+                                     &stdout_pipe,  // STDOUT
+                                     &stderr_pipe); // STDERR
     } catch (Glib::Error const &e) {
         g_critical("Script::execute(): failed to execute program '%s'.\n\tReason: %s", program.c_str(), e.what());
         return 0;

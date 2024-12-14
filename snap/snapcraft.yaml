@@ -124,7 +124,6 @@ parts:
       - -lib/inkscape/*.a
       - -*canberra*so* # We don't have sound permissions anyway
       - -usr/lib/*/gtk-2.0
-# TODO removed      patch -p1 --batch --directory=$SNAPCRAFT_PART_SRC --input=$SNAPCRAFT_PART_SRC/snap/local/glib-spawn-no-close.patch
     override-build: |
       sed -i.bak -e 's|Icon=${INKSCAPE_ICONPATH}|Icon=${SNAP}/share/inkscape/branding/inkscape.svg|g' $SNAPCRAFT_PART_SRC/org.inkscape.Inkscape.desktop.template
       snapcraftctl build

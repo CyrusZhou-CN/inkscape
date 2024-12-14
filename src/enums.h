@@ -94,7 +94,7 @@ enum {
 enum {
 	SP_CLONE_ORPHANS_UNLINK,
 	SP_CLONE_ORPHANS_DELETE,
-	SP_CLONE_ORPHANS_ASKME
+	SP_CLONE_ORPHANS_KEEP,
 };
 
 /* "inlayer" preference values */

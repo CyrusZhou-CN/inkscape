@@ -328,6 +328,7 @@ protected:
     UI::Widget::PrefRadioButton _clone_option_transform;
     UI::Widget::PrefRadioButton _clone_option_unlink;
     UI::Widget::PrefRadioButton _clone_option_delete;
+    UI::Widget::PrefRadioButton _clone_option_keep;
     UI::Widget::PrefCheckButton _clone_relink_on_duplicate;
     UI::Widget::PrefCheckButton _clone_to_curves;
     UI::Widget::PrefCheckButton _clone_ignore_to_curves;
