@@ -104,7 +104,6 @@ $ARCH-python-appdirs \
 $ARCH-python-beautifulsoup4 \
 $ARCH-python-filelock \
 $ARCH-python-msgpack \
-$ARCH-python-lockfile \
 $ARCH-python-cachecontrol \
 $ARCH-python-idna \
 $ARCH-python-urllib3 \
