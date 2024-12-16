@@ -310,12 +310,13 @@ void CalligraphicTool::brush()
         auto const drawing = canvas_item_drawing->get_drawing();
 
         // Get average color.
-        double R, G, B, A;
-        drawing->averageColor(area, R, G, B, A);
+        auto avg = drawing->averageColor(area);
+        auto A = avg.stealOpacity();
 
         // Convert to thickness.
-        double const max = std::max({R, G, B});
-        double const min = std::min({R, G, B});
+        std::vector<double> vals = avg.getValues();
+        double max = std::max({vals[0], vals[1], vals[2]});
+        double min = std::min({vals[0], vals[1], vals[2]});
         double const L = A * (max + min) / 2 + (1 - A); // blend with white bg
         trace_thick = 1 - L;
         if constexpr(false) g_print("L %g thick %g\n", L, trace_thick);

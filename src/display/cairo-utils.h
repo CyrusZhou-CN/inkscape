@@ -123,8 +123,7 @@ void ink_cairo_surface_blit(cairo_surface_t *src, cairo_surface_t *dest);
 int ink_cairo_surface_get_width(cairo_surface_t *surface);
 int ink_cairo_surface_get_height(cairo_surface_t *surface);
 guint32 ink_cairo_pattern_get_argb32(cairo_pattern_t *pattern);
-Colors::Color ink_cairo_surface_average_color(cairo_surface_t *surface);
-Colors::Color ink_cairo_surface_average_color_premul(cairo_surface_t *surface);
+Colors::Color ink_cairo_surface_average_color(cairo_surface_t *surface, cairo_surface_t *mask = nullptr);
 
 double srgb_to_linear( const double c );
 int ink_cairo_surface_srgb_to_linear(cairo_surface_t *surface);

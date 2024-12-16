@@ -18,6 +18,7 @@
 
 #include <glibmm/i18n.h>
 #include <gtkmm/box.h>
+#include <gtkmm/button.h>
 #include <gtkmm/label.h>
 #include <gtkmm/stack.h>
 #include <gtkmm/stackswitcher.h>
@@ -168,6 +169,13 @@ void ColorNotebook::_initUI()
     gtk_widget_set_tooltip_text(_btn_picker, _("Pick colors from image"));
     gtk_box_append(rgbabox_box, _btn_picker);
     g_signal_connect(G_OBJECT(_btn_picker), "clicked", G_CALLBACK(ColorNotebook::_onPickerClicked), this);
+
+    auto const pick_under = Gtk::make_managed<Gtk::Button>();
+    pick_under->set_has_frame(false);
+    pick_under->set_action_name("app.chameleon-fill");
+    pick_under->set_icon_name("color-picker-chameleon");
+    pick_under->set_tooltip_text(_("Chameleon Fill"));
+    gtk_box_append(rgbabox_box, GTK_WIDGET(pick_under->gobj()));
 
     /* Create RGBA entry and color preview */
     _rgbal = gtk_label_new_with_mnemonic(_("RGBA_:"));

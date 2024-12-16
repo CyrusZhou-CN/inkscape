@@ -371,17 +371,50 @@ void Drawing::_loadPrefs()
 /*
  * Return average color over area. Used by Calligraphic, Dropper, and Spray tools.
  */
-void Drawing::averageColor(Geom::IntRect const &area, double &R, double &G, double &B, double &A) const
+Colors::Color Drawing::averageColor(Geom::IntRect const &area) const
 {
     auto surface = Cairo::ImageSurface::create(Cairo::Surface::Format::ARGB32, area.width(), area.height());
     auto dc = Inkscape::DrawingContext(surface->cobj(), area.min());
     render(dc, area);
+    return ink_cairo_surface_average_color(surface->cobj());
+}
 
-    auto color = ink_cairo_surface_average_color_premul(surface->cobj());
-    R = color[0];
-    G = color[1];
-    B = color[2];
-    A = color.getOpacity();
+/*
+ * Return the average color inside the given path.
+ */
+Colors::Color Drawing::averageColor(Geom::PathVector const &path, bool evenodd) const
+{
+    auto area = path.boundsExact();
+    if (!area || area->hasZeroArea()) {
+        return Colors::Color(0x0); // Transparent black sRGB
+    }
+
+    // Scale the graphic so there's a predictable number of pixels to choose from
+    static constexpr auto width = 200.0;
+    static constexpr auto height = 200.0;
+
+    auto affine = Geom::Scale(width / area->width(), height / area->height());
+    auto offset = area->min() * affine;
+
+    // Build a mask of pixels to ignore
+    auto mask = Cairo::ImageSurface::create(Cairo::Surface::Format::A8, width, height);
+    auto dc_mask = Inkscape::DrawingContext(mask->cobj(), offset);
+    dc_mask.scale(affine);
+
+    dc_mask.setFillRule(evenodd ? CAIRO_FILL_RULE_EVEN_ODD : CAIRO_FILL_RULE_WINDING);
+    dc_mask.path(path);
+    dc_mask.clip();
+    dc_mask.setSource(1, 1, 1, 1);
+    dc_mask.setOperator(CAIRO_OPERATOR_SOURCE);
+    dc_mask.paint();
+
+    // Render the output, no need to clip as the mask will say what values to use
+    auto image = Cairo::ImageSurface::create(Cairo::Surface::Format::ARGB32, width, height);
+    auto dc = Inkscape::DrawingContext(image->cobj(), offset);
+    dc.scale(affine);
+    render(dc, area->roundOutwards());
+
+    return ink_cairo_surface_average_color(image->cobj(), mask->cobj());
 }
 
 /*

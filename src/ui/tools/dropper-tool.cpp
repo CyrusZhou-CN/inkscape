@@ -213,37 +213,22 @@ bool DropperTool::root_handler(CanvasEvent const &event)
             auto drawing = canvas_item_drawing->get_drawing();
 
             // Get average color of on screen pixels (sRGB)
-            double R2, G2, B2, A2;
-            drawing->averageColor(pick_area, R2, G2, B2, A2);
+            auto avg = drawing->averageColor(pick_area);
 
-            if (pick == PICK_VISIBLE || A2 == 0) {
+            if (pick == PICK_VISIBLE || avg.getOpacity() == 0.0) {
                 // Compose with page color
-                auto bg = _desktop->getDocument()->getPageManager().getDefaultBackgroundColor();
-                R2 = R2 + bg[0] * (1 - A2);
-                G2 = G2 + bg[1] * (1 - A2);
-                B2 = B2 + bg[2] * (1 - A2);
-                A2 = 1.0;
-            } else {
-                // Un-premultiply color channels
-                if (A2 > 0) {
-                    R2 /= A2;
-                    G2 /= A2;
-                    B2 /= A2;
-                }
-            }
-
-            if (std::abs(A2) < 1e-4) {
-                A2 = 0; // Suppress exponentials, CSS does not allow that.
+                auto const &bg = _desktop->getDocument()->getPageManager().getDefaultBackgroundColor();
+                avg = bg.composed(avg);
             }
 
             // Remember color
             if (!dropping) {
-                stored_color = Colors::Color(SP_RGBA32_F_COMPOSE(R2, G2, B2, A2));
+                stored_color = avg;
             }
 
             // Remember color from canvas, even in dropping mode.
             // These values are used by the clipboard.
-            non_dropping_color = Colors::Color(SP_RGBA32_F_COMPOSE(R2, G2, B2, A2));
+            non_dropping_color = avg;
             ret = true;
         },
 

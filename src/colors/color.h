@@ -84,6 +84,9 @@ public:
     void normalize();
     Color normalized() const;
 
+    void compose(Color const &other);
+    Color composed(Color const &other) const;
+
     void average(Color const &other, double pos = 0.5, unsigned int pin = 0);
     Color averaged(Color const &other, double pos = 0.5) const;
 

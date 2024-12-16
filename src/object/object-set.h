@@ -465,6 +465,7 @@ public:
     void editMask(bool clip);
     void unsetMask(const bool apply_clip_path, const bool delete_helper_group, bool remove_original);
     void setClipGroup();
+    void chameleonFill();
     
     // moves
     // in selection-chemistry.cpp

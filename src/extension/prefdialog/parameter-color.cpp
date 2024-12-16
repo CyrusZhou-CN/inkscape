@@ -114,4 +114,16 @@ void ParamColor::_onColorButtonChanged()
     set(Colors::Color(to_guint32(_color_button->get_rgba())));
 }
 
+std::string ParamColor::value_to_string() const
+{
+    return get().toString(true);
+}
+
+void ParamColor::string_to_value(const std::string &in)
+{
+    // Parse color. If parsing fails, return black.
+    static const auto black = Colors::Color(0, false);
+    set(Colors::Color::parse(in).value_or(black));
+}
+
 } // namespace Inkscape::Extension

@@ -30,6 +30,7 @@
 #include <map>
 #include <string>
 
+#include "display/control/canvas-item-drawing.h"
 #include "actions/actions-tools.h" // Switching tools
 #include "context-fns.h"
 #include "desktop-style.h"
@@ -37,6 +38,7 @@
 #include "display/cairo-utils.h"
 #include "display/control/canvas-item-bpath.h"
 #include "display/curve.h"
+#include "display/drawing.h"
 #include "document-undo.h"
 #include "file.h"
 #include "filter-chemistry.h"
@@ -3822,6 +3824,45 @@ void ObjectSet::setClipGroup()
 
     set(outer);
     DocumentUndo::done(doc, _("Create Clip Group"), "");
+}
+
+void ObjectSet::chameleonFill()
+{
+    auto doc = document();
+    doc->ensureUpToDate();
+
+    // Build a new drawing so our manipulations don't corupt to canvas
+    Drawing drawing;
+    unsigned dkey = SPItem::display_key_new(1);
+    auto root = doc->getRoot()->invoke_show(drawing, dkey, SP_ITEM_SHOW_DISPLAY);
+    drawing.setRoot(root);
+
+    // Hide all *SELECTED* objects from the drawing
+    for (auto&& item : items()) {
+        item->invoke_hide(dkey);
+    }
+
+    drawing.update();
+
+    // Now in a new loop, ask for a color to be set for each item.
+    for (auto&& item : items()) {
+        if (auto shape = cast<SPShape>(item)) {
+            bool evenodd = shape->style->fill_rule.computed == SP_WIND_RULE_EVENODD;
+            if (auto curve = shape->curve()) {
+                auto color = drawing.averageColor(curve->get_pathvector() * shape->i2dt_affine(), evenodd);
+                auto style = sp_repr_css_attr_new();
+                sp_repr_css_set_property_double(style, "fill-opacity", color.stealOpacity());
+                sp_repr_css_set_property_string(style, "fill", color.toString(false));
+                sp_desktop_apply_css_recursive(item, style, true);
+                sp_repr_css_attr_unref(style);
+
+            }
+        }
+    }
+
+    doc->getRoot()->invoke_hide(dkey);
+
+    DocumentUndo::done(doc, _("Chameleon Fill"), "");
 }
 
 /**

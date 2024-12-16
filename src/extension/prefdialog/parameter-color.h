@@ -48,6 +48,9 @@ public:
 
     std::unique_ptr<sigc::signal<void ()>> _changeSignal;
 
+    std::string value_to_string() const override;
+    void string_to_value(const std::string &in) override;
+
 private:
     void _onColorChanged();
     void _onColorButtonChanged();

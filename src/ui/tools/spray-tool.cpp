@@ -398,17 +398,16 @@ static guint32 getPickerData(Geom::IntRect area, SPDesktop *desktop)
     Inkscape::Drawing *drawing = canvas_item_drawing->get_drawing();
 
     // Get average color.
-    double R, G, B, A;
-    drawing->averageColor(area, R, G, B, A);
+    auto avg = drawing->averageColor(area);
 
     //this can fix the bug #1511998 if confirmed
-    if ( A < 1e-6) {
-        R = 1.0;
-        G = 1.0;
-        B = 1.0;
+    if (avg.getOpacity() < 1e-6) {
+        avg.set(0, 1.0);
+        avg.set(1, 1.0);
+        avg.set(2, 1.0);
     }
 
-    return SP_RGBA32_F_COMPOSE(R, G, B, A);
+    return avg.toRGBA();
 }
 
 static void showHidden(std::vector<SPItem *> items_down){

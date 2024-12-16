@@ -1271,27 +1271,43 @@ ink_cairo_surface_get_height(cairo_surface_t *surface)
     return cairo_image_surface_get_height(surface);
 }
 
-static int ink_cairo_surface_average_color_internal(cairo_surface_t *surface, double &rf, double &gf, double &bf, double &af)
+static double ink_cairo_surface_average_color_internal(cairo_surface_t *surface, cairo_surface_t *mask, double &rf, double &gf, double &bf, double &af)
 {
     rf = gf = bf = af = 0.0;
+
     cairo_surface_flush(surface);
     int width = cairo_image_surface_get_width(surface);
     int height = cairo_image_surface_get_height(surface);
-    int stride = cairo_image_surface_get_stride(surface);
     unsigned char *data = cairo_image_surface_get_data(surface);
+    double count = 0;
 
-    // TODO parallelize this somehow
-    for (int y = 0; y < height; ++y, data += stride) {
-        for (int x = 0; x < width; ++x) {
-            guint32 px = *reinterpret_cast<guint32*>(data + 4*x);
-            EXTRACT_ARGB32(px, a,r,g,b)
-            rf += r / 255.0;
-            gf += g / 255.0;
-            bf += b / 255.0;
-            af += a / 255.0;
+    if (width * 4 != cairo_image_surface_get_stride(surface)) {
+        g_warning("Stride and width don't match, expect zero buffer for average color.");
+    }
+
+    unsigned char *mask_data = nullptr;
+    if (mask) {
+        cairo_surface_flush(mask);
+        if (width != cairo_image_surface_get_width(mask)
+         || height != cairo_image_surface_get_height(mask)) {
+            g_warning("Mask size must be exactly the same size as the image surface.");
+            mask = nullptr;
+        } else {
+            mask_data = cairo_image_surface_get_data(mask);
         }
     }
-    return width * height;
+
+    for (int p = 0; p < (width * height); ++p, data += 4) {
+        EXTRACT_ARGB32(*reinterpret_cast<guint32*>(data), a, r, g, b)
+
+        double amount = mask_data ? mask_data[p] / 255.0 : 1.0;
+        rf += r / 255.0 * amount;
+        gf += g / 255.0 * amount;
+        bf += b / 255.0 * amount;
+        af += a / 255.0 * amount;
+        count += amount;
+    }
+    return count;
 }
 
 // We extract colors from pattern background, if we need to extract sometimes from a gradient we can add
@@ -1319,20 +1335,17 @@ guint32 ink_cairo_pattern_get_argb32(cairo_pattern_t *pattern)
     return 0;
 }
 
-Colors::Color ink_cairo_surface_average_color(cairo_surface_t *surface)
+/**
+ * Get the average color from the given surface.
+ *
+ * @arg surface - The cairo surface to get data from.
+ * @arg masked - If true, ignores any truely invisible pixels.
+ */
+Colors::Color ink_cairo_surface_average_color(cairo_surface_t *surface, cairo_surface_t * mask)
 {
     double r, g, b, a = 0.0;
-    int count = ink_cairo_surface_average_color_internal(surface, r, g, b, a);
+    double count = ink_cairo_surface_average_color_internal(surface, mask, r, g, b, a);
     auto color = Colors::Color(Colors::Space::Type::RGB, {r / a, g / a, b / a, a / count});
-    color.normalize();
-    return color;
-}
-
-Colors::Color ink_cairo_surface_average_color_premul(cairo_surface_t *surface)
-{
-    double r, g, b, a = 0.0;
-    int count = ink_cairo_surface_average_color_internal(surface, r, g, b, a);
-    auto color = Colors::Color(Colors::Space::Type::RGB, {r / count, g / count, b / count, a / count});
     color.normalize();
     return color;
 }

@@ -503,6 +503,31 @@ void Color::jitter(double force, unsigned int pin)
     normalize();
 }
 
+/**
+ * Put the other color on top of this color, mixing the two according to the alpha.
+ *
+ * @arg other - The other color to compose with this one.
+ */
+void Color::compose(Color const &other)
+{
+    auto alpha = other.getOpacity();
+    _color_mutate_inplace(other, getPin(getOpacityChannel()),
+                          [alpha](auto &value, auto otherValue) { value = value * (1.0 - alpha) + otherValue * alpha; });
+    setOpacity(1.0 - (1.0 - getOpacity()) * (1.0 - alpha));
+}
+
+/**
+ * Return the composition of this color, plus the other color on top.
+ *
+ * @arg other - The other color to compose with this one.
+ */
+Color Color::composed(Color const &other) const
+{
+    Color copy = *this;
+    copy.compose(other);
+    return copy;
+}
+
 /*
  * Modify this color to be the average between two colors, modifying the first.
  *

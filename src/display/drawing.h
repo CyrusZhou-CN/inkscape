@@ -89,7 +89,8 @@ public:
     bool snapshotted() const { return _snapshotted; }
 
     // Convenience
-    void averageColor(Geom::IntRect const &area, double &R, double &G, double &B, double &A) const;
+    Colors::Color averageColor(Geom::IntRect const &area) const;
+    Colors::Color averageColor(Geom::PathVector const &path, bool evenodd) const;
     void setExact();
     void setOpacity(double opacity = 1.0);
 

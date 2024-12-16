@@ -368,6 +368,20 @@ TEST(ColorsColor, jitterColor)
     EXPECT_EQ(color.getOpacity(), 0.5);
 }
 
+TEST(Colorscolor, compose)
+{
+    auto c1 = *Color::parse("#ff0000");
+    auto c2 = *Color::parse("#0000ff");
+    EXPECT_EQ(c1.composed(c2).toString(), "#0000ffff");
+    EXPECT_EQ(c2.composed(c1).toString(), "#ff0000ff");
+    c1.setOpacity(0.5);
+    EXPECT_EQ(c1.composed(c2).toString(), "#0000ffff");
+    EXPECT_EQ(c2.composed(c1).toString(), "#800080ff");
+    c2.setOpacity(0.5);
+    EXPECT_EQ(c1.composed(c2).toString(), "#800080bf");
+    EXPECT_EQ(c2.composed(c1).toString(), "#800080bf");
+}
+
 TEST(ColorsColor, average)
 {
     auto c1 = *Color::parse("#ff0000");

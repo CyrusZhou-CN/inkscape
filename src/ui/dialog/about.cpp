@@ -146,7 +146,7 @@ private:
 
         // calculate footer color: light/dark depending on a theme
         bool dark = INKSCAPE.themecontext->isCurrentThemeDark(this);
-        auto foot = Colors::make_theme_color(ink_cairo_surface_average_color_premul(surface->cobj()), dark);
+        auto foot = Colors::make_theme_color(ink_cairo_surface_average_color(surface->cobj()), dark);
 
         auto style_context = _footer->get_style_context();
         _footer_style = Gtk::CssProvider::create();
