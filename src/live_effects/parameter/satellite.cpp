@@ -11,6 +11,7 @@
 #include <glibmm/i18n.h>
 #include <gtkmm/box.h>
 #include <gtkmm/button.h>
+#include <gtkmm/image.h>
 #include <gtkmm/label.h>
 
 #include "bad-uri-exception.h"

@@ -413,7 +413,7 @@ SVG element positions are expressed in user units.</property>
           </object>
         </child>
         <child>
-          <object class="GtkComboBoxText" id="page-units">
+          <object class="GtkDropDown" id="page-units">
             <property name="tooltip-text" translatable="yes">Document's units used to specify document size only</property>
             <layout>
               <property name="column">2</property>
@@ -601,7 +601,7 @@ SVG element positions are expressed in user units.</property>
           </object>
         </child>
         <child>
-          <object class="GtkComboBoxText" id="display-units">
+          <object class="GtkDropDown" id="display-units">
             <property name="tooltip-text" translatable="yes">Units used throughout the user interface</property>
             <property name="halign">end</property>
             <layout>

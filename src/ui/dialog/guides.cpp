@@ -17,6 +17,7 @@
 #include "guides.h"
 
 #include <glibmm/i18n.h>
+#include <gtkmm/button.h>
 
 #include "desktop.h"
 #include "document-undo.h"

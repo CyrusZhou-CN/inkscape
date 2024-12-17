@@ -24,6 +24,7 @@
 #include <gtkmm/box.h>
 #include <gtkmm/builder.h>
 #include <gtkmm/button.h>
+#include <gtkmm/combobox.h>
 #include <gtkmm/dragsource.h>
 #include <gtkmm/droptarget.h>
 #include <gtkmm/expander.h>

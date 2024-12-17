@@ -11,6 +11,7 @@
 #include "spinbutton.h"
 
 #include <cmath>
+#include <gtkmm/adjustment.h>
 #include <gtkmm/enums.h>
 #include <gtkmm/eventcontrollerfocus.h>
 #include <gtkmm/eventcontrollerkey.h>

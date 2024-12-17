@@ -17,6 +17,7 @@
 #include "registered-widget.h"
 
 #include <glibmm/i18n.h>
+#include <gtkmm/image.h>
 #include <gtkmm/label.h>
 #include <giomm/themedicon.h>
 

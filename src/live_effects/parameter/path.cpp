@@ -16,6 +16,7 @@
 #include <glibmm/utility.h>
 #include <gtkmm/button.h>
 #include <gtkmm/label.h>
+#include <gtkmm/image.h>
 
 #include "bad-uri-exception.h"
 #include "desktop.h"

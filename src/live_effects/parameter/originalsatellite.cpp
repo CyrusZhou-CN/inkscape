@@ -11,6 +11,7 @@
 #include <gtkmm/box.h>
 #include <gtkmm/button.h>
 #include <gtkmm/label.h>
+#include <gtkmm/image.h>
 
 #include "desktop.h"
 #include "display/curve.h"

@@ -394,9 +394,9 @@
                                           </object>
                                         </child>
                                         <child>
-                                          <object class="GtkComboBoxText" id="si_units">
+                                          <object class="GtkDropDown" id="si_units">
                                             <property name="valign">center</property>
-                                            <property name="active">1</property>
+                                            <property name="selected">1</property>
                                           </object>
                                         </child>
                                         <layout>

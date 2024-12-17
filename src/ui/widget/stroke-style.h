@@ -157,6 +157,7 @@ private:
     void _handleDocumentReplaced(SPDesktop *, SPDocument *);
     void enterEditMarkerMode(SPMarkerLoc editMarkerMode);
     sigc::connection _document_replaced_connection;
+    unsigned int _hairline_item;
 };
 
 } // namespace UI::Widget
