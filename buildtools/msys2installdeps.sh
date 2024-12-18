@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 # -------------------------------------------------------------------------------
 # This script installs all dependencies required for building Inkscape with MSYS2.
 #
@@ -68,6 +69,11 @@ $ARCH-boost \
 $ARCH-gtk4 \
 $ARCH-gtk-doc \
 $ARCH-gtkmm4
+
+# install packaging tools (required for dist-win-* targets)
+eval pacman -S $PACMAN_OPTIONS \
+$ARCH-7zip \
+$ARCH-nsis
 
 # install Inkscape dependencies (optional)
 eval pacman -S $PACMAN_OPTIONS \

@@ -2,7 +2,7 @@
 #
 # Installation of WiX v4 toolset for building Windows .MSI packages.
 #
-# Run this as admin!
+# This script is used both by the CI (.gitlab-ci.yml) and for manual installation (main script: windows-deps-clickHere.bat)
 
 # Install DotNet runtime
 winget  install --accept-package-agreements --accept-source-agreements Microsoft.DotNet.SDK.8
