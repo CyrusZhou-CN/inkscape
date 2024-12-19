@@ -1286,13 +1286,11 @@ bool DialogMultipaned::on_append_drag_data(Glib::ValueBase const &value, double 
 // Signals
 DialogMultipaned::DropSignal DialogMultipaned::signal_prepend_drag_data()
 {
-    resize_widget_children(this);
     return _signal_prepend_drag_data;
 }
 
 DialogMultipaned::DropSignal DialogMultipaned::signal_append_drag_data()
 {
-    resize_widget_children(this);
     return _signal_append_drag_data;
 }
 

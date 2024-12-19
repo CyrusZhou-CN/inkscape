@@ -50,10 +50,6 @@ public:
         combobox()->set_active_by_key(key);
     }
 
-    inline const Util::EnumData<E>* get_active_data() {
-        combobox()->get_active_data();
-    }
-
     ComboBoxEnum<E> * combobox() {
         return LabelledComboBoxEnum<E>::getCombobox();
     }
@@ -72,9 +68,9 @@ protected:
 
         RegisteredWidget< LabelledComboBoxEnum<E> >::_wr->setUpdating (true);
 
-        const Util::EnumData<E>* data = combobox()->get_active_data();
-        if (data) {
-            RegisteredWidget< LabelledComboBoxEnum<E> >::write_to_xml(data->key.c_str());
+        auto key = combobox()->get_as_attribute();
+        if (!key.empty()) {
+            RegisteredWidget< LabelledComboBoxEnum<E> >::write_to_xml(key.c_str());
         }
 
         RegisteredWidget< LabelledComboBoxEnum<E> >::_wr->setUpdating (false);

@@ -157,8 +157,6 @@ LivePathEffectEditor::LivePathEffectEditor()
     _LPESelectionInfo(get_widget<Gtk::Label>(_builder, "LPESelectionInfo")),
     converter(Inkscape::LivePathEffect::LPETypeConverter)
 {
-    _LPEContainer.signal_map().connect(sigc::mem_fun(*this, &LivePathEffectEditor::map_handler) );
-
     // hack to fix DnD freezing expander
     auto const click = Gtk::GestureClick::create();
     click->signal_pressed().connect([this](auto &&...) { dnd = false; });
@@ -470,12 +468,6 @@ void LivePathEffectEditor::onAdd(LivePathEffect::EffectType etype)
 }
 
 void
-LivePathEffectEditor::map_handler()
-{
-    ensure_size();
-}
-
-void
 LivePathEffectEditor::selection_info() 
 {
     auto selection = getSelection();
@@ -653,7 +645,6 @@ LivePathEffectEditor::showParams(LPEExpander const &expanderdata, bool const cha
 
             // fixme: add resizing of dialog
             lpe->refresh_widgets = false;
-            ensure_size();
         } else {
             current_lperef = std::make_pair(nullptr, nullptr);
         }
@@ -891,7 +882,6 @@ LivePathEffectEditor::effect_list_reload(SPLPEItem *lpeitem)
     }
 
     selection_info();
-    ensure_size();
 }
 
 void LivePathEffectEditor::expanded_notify(Gtk::Expander *expander) {

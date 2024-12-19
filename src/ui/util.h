@@ -69,9 +69,6 @@ namespace Inkscape::UI {
 void set_icon_sizes(Gtk::Widget *parent, int pixel_size);
 void set_icon_sizes(GtkWidget *parent, int pixel_size);
 
-/// Utility function to ensure correct sizing after adding child widgets.
-void resize_widget_children(Gtk::Widget *widget);
-
 void gui_warning(const std::string &msg, Gtk::Window * parent_window = nullptr);
 
 /// Whether for_each_*() will continue or stop after calling Func per child.

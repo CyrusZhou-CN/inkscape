@@ -36,6 +36,7 @@
 #include <gtkmm/button.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/dragsource.h>
+#include <gtkmm/entry.h>
 #include <gtkmm/enums.h>
 #include <gtkmm/eventcontrollermotion.h>
 #include <gtkmm/frame.h>
@@ -1070,7 +1071,10 @@ private:
     {
         SPFilterPrimitive* prim = _dialog._primitive_list.get_selected();
         if(prim && _funcNode) {
-            _settings.show_and_update(_type.get_active_data()->id, _funcNode);
+            auto id = _type.get_selected_id();
+            if (id.has_value()) {
+                _settings.show_and_update(*id, _funcNode);
+            }
         }
     }
 
@@ -1172,7 +1176,7 @@ private:
             _locked = true;
 
             SPObject* child = prim->firstChild();
-            const int ls = _light_source.get_active_row_number();
+            const int ls = _light_source.get_selected();
             // Check if the light source type has changed
             if(!(ls == -1 && !child) &&
                !(ls == 0 && is<SPFeDistantLight>(child)) &&
@@ -1184,7 +1188,7 @@ private:
 
                 if(ls != -1) {
                     Inkscape::XML::Document *xml_doc = prim->document->getReprDoc();
-                    Inkscape::XML::Node *repr = xml_doc->createElement(_light_source.get_active_data()->key.c_str());
+                    Inkscape::XML::Node *repr = xml_doc->createElement(_light_source.get_as_attribute().c_str());
                     //XML Tree being used directly here while it shouldn't be.
                     prim->getRepr()->appendChild(repr);
                     Inkscape::GC::release(repr);
@@ -1204,7 +1208,10 @@ private:
 
         SPFilterPrimitive* prim = _dialog._primitive_list.get_selected();
         if (prim && prim->firstChild()) {
-            _settings.show_and_update(_light_source.get_active_data()->id, prim->firstChild());
+            auto id = _light_source.get_selected_id();
+            if (id.has_value()) {
+                _settings.show_and_update(*id, prim->firstChild());
+            }
         }
         else {
             _settings.show_current_only();
@@ -2863,7 +2870,6 @@ FilterEffectsDialog::FilterEffectsDialog()
                 get_widget<Gtk::Box>(_builder, "connect-box-wide").remove(*_show_sources);
                 get_widget<Gtk::Box>(_builder, "connect-box").append(*_show_sources);
                 _narrow_dialog = true;
-                ensure_size();
             }
         } else if (ratio > 1 + hysteresis && width > threshold_width) {
             // make wide/short
@@ -2876,7 +2882,6 @@ FilterEffectsDialog::FilterEffectsDialog()
                 get_widget<Gtk::Box>(_builder, "connect-box").remove(*_show_sources);
                 get_widget<Gtk::Box>(_builder, "connect-box-wide").append(*_show_sources);
                 _narrow_dialog = false;
-                ensure_size();
             }
         }
     });
@@ -3051,7 +3056,10 @@ void FilterEffectsDialog::add_filter_primitive(Filters::FilterPrimitiveType type
 
 void FilterEffectsDialog::add_primitive()
 {
-    add_filter_primitive(_add_primitive_type.get_active_data()->id);
+    auto id = _add_primitive_type.get_selected_id();
+    if (id.has_value()) {
+        add_filter_primitive(*id);
+    }
 }
 
 void FilterEffectsDialog::duplicate_primitive()
@@ -3222,8 +3230,6 @@ void FilterEffectsDialog::update_settings_view()
         _filter_general_settings->show_and_update(0, filter);
         _no_filter_selected.set_visible(false);
     }
-
-    ensure_size();
 }
 
 void FilterEffectsDialog::update_settings_sensitivity()

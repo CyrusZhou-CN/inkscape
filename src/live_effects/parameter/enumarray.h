@@ -59,8 +59,11 @@ public:
     };
 
     void _on_change_combo(Inkscape::UI::Widget::RegisteredEnum<E> *regenum) { 
+        auto key = regenum->combobox()->get_as_attribute();
+        if (key.empty()) return;
+
         regenum->combobox()->setProgrammatically = true;
-        _vector[_active_index] = regenum->combobox()->get_active_data()->key.c_str();
+        _vector[_active_index] = key;
         param_set_and_write_new_value(_vector);
     }
 

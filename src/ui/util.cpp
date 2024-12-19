@@ -138,17 +138,6 @@ void gui_warning(const std::string &msg, Gtk::Window *parent_window) {
     }
 }
 
-void resize_widget_children(Gtk::Widget *widget) {
-    /* TODO: GTK4: Figure out if actually needed, and if so, needs reworked.
-    if(widget) {
-        Gtk::Allocation allocation;
-        int             baseline;
-        widget->get_allocated_size(allocation, baseline);
-        widget->size_allocate(allocation, baseline);
-    }
-    */
-}
-
 std::vector<Gtk::Widget *> get_children(Gtk::Widget &widget)
 {
     auto children = std::vector<Gtk::Widget *>{};

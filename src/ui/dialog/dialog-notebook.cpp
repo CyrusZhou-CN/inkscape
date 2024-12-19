@@ -869,9 +869,6 @@ void DialogNotebook::toggle_tab_labels_callback(bool show)
     });
 
     _labels_set_off = _labels_off;
-    if (_prev_alloc_width && prev_tabstatus != tabstatus && (show || tabstatus != TabsStatus::NONE || !_labels_off)) {
-        resize_widget_children(&_notebook);
-    }
     if (show && _single_tab_width) {
         _notebook.set_scrollable(true);
     }
@@ -930,16 +927,6 @@ void DialogNotebook::on_page_switch(Gtk::Widget *curr_page, guint)
     if (_prev_alloc_width) {
         if (!_label_visible) {
             queue_allocate();
-        }
-        auto window = dynamic_cast<DialogWindow*>(_container->get_root());
-        if (window) {
-            resize_widget_children(window->get_container());
-        } else {
-            if (auto desktop = SP_ACTIVE_DESKTOP) {
-                if (auto container = desktop->getContainer()) {
-                    resize_widget_children(container);
-                }
-            }
         }
     }
 }

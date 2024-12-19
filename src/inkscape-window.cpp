@@ -59,12 +59,6 @@ using Inkscape::UI::Dialog::DialogManager;
 using Inkscape::UI::Dialog::DialogContainer;
 using Inkscape::UI::Dialog::DialogWindow;
 
-static gboolean _resize_children(Gtk::Window *win)
-{
-    Inkscape::UI::resize_widget_children(win);
-    return false;
-}
-
 InkscapeWindow::InkscapeWindow(SPDocument *document)
     : _document(document)
 {
@@ -136,9 +130,6 @@ InkscapeWindow::InkscapeWindow(SPDocument *document)
     bool include_short_lived = _app->get_number_of_windows() == 0;
     DialogManager::singleton().restore_dialogs_state(_desktop->getContainer(), include_short_lived);
 
-    // This pokes the window to request the right size for the dialogs once loaded.
-    g_idle_add(GSourceFunc(&_resize_children), this);
-
     // ================= Shift Icons =================
     // Note: The menu is defined at the app level but shifting icons requires actual widgets and
     // must be done on the window level.
@@ -187,10 +178,7 @@ void InkscapeWindow::on_realize()
     );
 }
 
-InkscapeWindow::~InkscapeWindow()
-{
-    g_idle_remove_by_data(this);
-}
+InkscapeWindow::~InkscapeWindow() = default;
 
 // Change a document, leaving desktop/view the same. (Eventually move all code here.)
 void InkscapeWindow::change_document(SPDocument *document)

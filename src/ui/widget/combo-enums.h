@@ -15,12 +15,14 @@
 #include <glibmm/i18n.h>
 #include <glibmm/refptr.h>
 #include <glibmm/ustring.h>
-#include <gtkmm/combobox.h>
+#include <gtkmm/dropdown.h>
 #include <gtkmm/liststore.h>
+#include <gtkmm/stringlist.h>
+#include <gtkmm/stringobject.h>
 #include <gtkmm/treemodel.h>
-#include <sigc++/functors/mem_fun.h>
 
 #include "attr-widget.h"
+#include "template-list.h"
 #include "ui/widget/labelled.h"
 #include "util/enums.h"
 
@@ -30,7 +32,7 @@ namespace Inkscape::UI::Widget {
  * Simplified management of enumerations in the UI as combobox.
  */
 template <typename E> class ComboBoxEnum
-    : public Gtk::ComboBox
+    : public Gtk::DropDown
     , public AttrWidget
 {
 public:
@@ -40,7 +42,6 @@ public:
         : ComboBoxEnum{c, a, sort, translation_context, static_cast<unsigned>(default_value)}
     {
         set_active_by_id(default_value);
-        sort_items();
     }
 
     [[nodiscard]] ComboBoxEnum(Util::EnumDataConverter<E> const &c,
@@ -49,19 +50,29 @@ public:
         : ComboBoxEnum{c, a, sort, translation_context, 0u}
     {
         set_active(0);
-        sort_items();
+    }
+
+    void set_active(unsigned int pos) {
+        set_selected(pos);
+    }
+
+    unsigned int get_active() const {
+        return get_selected();
+    }
+
+    Glib::SignalProxyProperty signal_changed() {
+        return property_selected().signal_changed();
     }
 
 private:
-    [[nodiscard]] int on_sort_compare(Gtk::TreeModel::const_iterator const &a,
-                                      Gtk::TreeModel::const_iterator const &b) const
-    {
-        auto const &an = a->get_value(_columns.label);
-        auto const &bn = b->get_value(_columns.label);
-        return an.compare(bn);
-    }
-
-    bool _sort = true;
+    struct Data {
+        E id;
+        Glib::ustring label;
+        Glib::ustring key;
+        bool separator = false;
+    };
+    std::vector<Data> _enums;
+    Glib::RefPtr<Gtk::SignalListItemFactory> _factory;
 
     [[nodiscard]] ComboBoxEnum(Util::EnumDataConverter<E> const &c,
                                SPAttr const a, bool const sort,
@@ -69,45 +80,67 @@ private:
                                unsigned const default_value)
         : AttrWidget(a, default_value)
         , setProgrammatically(false)
-        , _converter(c)
-        ,_sort{sort}
-    {
-        signal_changed().connect(signal_attr_changed().make_slot());
+        , _converter(c) {
 
-        _model = Gtk::ListStore::create(_columns);
+        property_selected().signal_changed().connect(signal_attr_changed().make_slot());
+
+        _factory = Gtk::SignalListItemFactory::create();
+
+        _factory->signal_setup().connect([this](const Glib::RefPtr<Gtk::ListItem>& list_item) {
+            auto label = Gtk::make_managed<Gtk::Label>();
+            label->set_xalign(0);
+            label->set_valign(Gtk::Align::CENTER);
+            list_item->set_child(*label);
+        });
+
+        _factory->signal_bind().connect([this](const Glib::RefPtr<Gtk::ListItem>& list_item) {
+            auto obj = list_item->get_item();
+            auto& label = dynamic_cast<Gtk::Label&>(*list_item->get_child());
+            auto pos = list_item->get_position();
+            if (pos < _enums.size() && _enums[pos].separator) {
+                label.get_parent()->add_css_class("top-separator");
+            }
+            auto item = std::dynamic_pointer_cast<Gtk::StringObject>(obj);
+            label.set_label(item->get_string());
+        });
+
+        set_list_factory(_factory);
         set_model(_model);
 
-        pack_start(_columns.label);
+        _enums.reserve(_converter._length);
+        bool separator = false;
 
-        for (int i = 0; i < static_cast<int>(_converter._length); ++i) {
-            auto row = *_model->append();
+        for (unsigned int i = 0; i < _converter._length; ++i) {
+            const auto& data = _converter.data(i);
+            if (data.key == "-") {
+                separator = true;
+                continue;
+            }
 
-            auto const data = &_converter.data(i);
-            row.set_value(_columns.data, data);
-
-            auto const &label = _converter.get_label(data->id);
             Glib::ustring translated = translation_context ?
-                g_dpgettext2(nullptr, translation_context, label.c_str()) :
-                gettext(label.c_str());
-            row.set_value(_columns.label, std::move(translated));
-
-            row.set_value(_columns.is_separator, _converter.get_key(data->id) == "-");
+                g_dpgettext2(nullptr, translation_context, data.label.c_str()) :
+                gettext(data.label.c_str());
+            _enums.push_back(Data{data.id, translated, data.key, separator});
+            separator = false;
         }
 
-        set_row_separator_func(sigc::mem_fun(*this, &ComboBoxEnum<E>::combo_separator_func));
-    }
+        if (sort) {
+            std::sort(begin(_enums), end(_enums), [](const auto& a, const auto& b){ return a.label < b.label; });
+        }
 
-    void sort_items() {
-        if (_sort) {
-            _model->set_default_sort_func(sigc::mem_fun(*this, &ComboBoxEnum<E>::on_sort_compare));
-            _model->set_sort_column(_columns.label, Gtk::SortType::ASCENDING);
+        for (auto& el : _enums) {
+            _model->append(el.label);
         }
     }
 
 public:
     [[nodiscard]] Glib::ustring get_as_attribute() const final
     {
-        return get_active_data()->key;
+        auto pos = get_selected();
+        if (pos < _enums.size()) {
+            return _enums[pos].key;
+        }
+        return {};
     }
 
     void set_from_attribute(SPObject * const o) final
@@ -120,31 +153,13 @@ public:
             set_active(get_default()->as_uint());
         }
     }
-    
-    [[nodiscard]] Util::EnumData<E> const *get_active_data() const
-    {
-        if (auto const i = this->get_active()) {
-            return i->get_value(_columns.data);
-        }
-        return nullptr;
-    }
 
-    void add_row(const Glib::ustring& s)
-    {
-        auto row = *_model->append();
-        row.set_value(_columns.data, 0);
-        row.set_value(_columns.label, s);
-    }
-
-    void remove_row(E id) {
-        auto &&children = _model->children();
-        auto const e = children.end();
-        for (auto i = children.begin(); i != e; ++i) {
-            if (auto const data = i->get_value(_columns.data); data->id == id) {
-                _model->erase(i);
-                return;
-            }
+    std::optional<E> get_selected_id() const {
+        auto pos = get_selected();
+        if (pos < _enums.size()) {
+            return _enums[pos].id;
         }
+        return {};
     }
 
     void set_active_by_id(E id) {
@@ -160,44 +175,16 @@ public:
         set_active_by_id( _converter.get_id_from_key(key) );
     };
 
-    bool combo_separator_func(Glib::RefPtr<Gtk::TreeModel> const &model,
-                              Gtk::TreeModel::const_iterator const &iter) const
-    {
-        return iter->get_value(_columns.is_separator);
-    };
-
     bool setProgrammatically = false;
 
 private:
     [[nodiscard]] int get_active_by_id(E const id) const
     {
-        int index = 0;
-        for (auto const &child : _model->children()) {
-            if (auto const data = child.get_value(_columns.data); data->id == id) {
-                return index;
-            }
-            ++index;
-        }
-        return -1;
-    };
+        auto it = std::find_if(begin(_enums), end(_enums), [id](const auto& el){ return el.id == id; });
+        return it == end(_enums) ? -1 : std::distance(begin(_enums), it);
+    }
 
-    class Columns final : public Gtk::TreeModel::ColumnRecord
-    {
-    public:
-        Columns()
-        {
-            add(data);
-            add(label);
-            add(is_separator);
-        }
-
-        Gtk::TreeModelColumn<const Util::EnumData<E>*> data;
-        Gtk::TreeModelColumn<Glib::ustring> label;
-        Gtk::TreeModelColumn<bool> is_separator;
-    };
-
-    Columns _columns;
-    Glib::RefPtr<Gtk::ListStore> _model;
+    Glib::RefPtr<Gtk::StringList> _model = Gtk::StringList::create({});
     const Util::EnumDataConverter<E>& _converter;
 };
 

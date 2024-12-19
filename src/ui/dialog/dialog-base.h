@@ -60,13 +60,6 @@ public:
 
     void on_map() override;
 
-    /*
-     * Often the dialog won't request the right size until the window has
-     * been pushed to resize all it's children. We do this on dialog creation
-     * and destruction.
-     */
-    void ensure_size();
-
     Glib::ustring const &get_name    () const { return _name       ; }
     Glib::ustring const &getPrefsPath() const { return _prefs_path ; }
     Glib::ustring const &get_type    () const { return _dialog_type; }

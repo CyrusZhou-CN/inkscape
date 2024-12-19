@@ -545,8 +545,6 @@ void SPDesktopWidget::layoutWidgets()
     });
 
     repack_snaptoolbar();
-
-    Inkscape::UI::resize_widget_children(_top_toolbars);
 }
 
 Gtk::Widget *SPDesktopWidget::get_toolbar_by_name(const Glib::ustring &name)

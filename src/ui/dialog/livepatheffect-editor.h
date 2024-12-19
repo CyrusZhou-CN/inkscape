@@ -102,7 +102,6 @@ private:
                                Glib::ValueBase const &value, int pos_target);
     void effect_list_reload(SPLPEItem *lpeitem);
     void selection_info();
-    void map_handler();
     void clearMenu();
     void setMenu();
     bool lpeFlatten(PathEffectSharedPtr const &lperef);

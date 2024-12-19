@@ -75,20 +75,9 @@ DialogBase::DialogBase(char const * const prefs_path, Glib::ustring dialog_type)
     add_controller(key);
 }
 
-DialogBase::~DialogBase() {
-#ifdef _WIN32
-    // this is bad, but it supposedly fixes some resizng problem on Windows
-    ensure_size();
-#endif
-
+DialogBase::~DialogBase()
+{
     unsetDesktop();
-};
-
-void DialogBase::ensure_size() {
-    if (desktop) {
-        resize_widget_children(desktop->getInkscapeWindow());
-        resize_widget_children(this);
-    }
 }
 
 void DialogBase::on_map() {
@@ -99,7 +88,6 @@ void DialogBase::on_map() {
     // the time of dialog creation. Formerly used _app.get_active_view() did not at application start-up.
     setDesktop(Inkscape::Application::instance().active_desktop());
     parent_type::on_map();
-    ensure_size();
 }
 
 bool DialogBase::on_key_pressed(Gtk::EventControllerKey const &controller,

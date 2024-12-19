@@ -161,12 +161,8 @@ void SimpleFilterModifier::set_isolation_mode(const SPIsolation val, bool notify
 
 SPBlendMode SimpleFilterModifier::get_blend_mode()
 {
-    const Util::EnumData<SPBlendMode> *d = _blend.get_active_data();
-    if (d) {
-        return _blend.get_active_data()->id;
-    } else {
-        return SP_CSS_BLEND_NORMAL;
-    }
+    auto selected = _blend.get_selected_id();
+    return selected.has_value() ? *selected : SP_CSS_BLEND_NORMAL;
 }
 
 void SimpleFilterModifier::set_blend_mode(const SPBlendMode val, bool notify)
