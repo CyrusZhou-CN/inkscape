@@ -158,6 +158,9 @@ static void rebase_image_href(Inkscape::XML::Node *ir, std::string const &old_ba
 
 void Inkscape::XML::rebase_hrefs(Inkscape::XML::Node *rootxml, gchar const *const old_base, gchar const *const new_base, bool const spns)
 {
+    static GQuark const code_svg_image = g_quark_from_static_string("svg:image");
+    static GQuark const code_svg_use = g_quark_from_static_string("svg:use");
+
     using Inkscape::URI;
 
     std::string old_base_url_str = URI::from_dirname(old_base).str();
@@ -167,8 +170,10 @@ void Inkscape::XML::rebase_hrefs(Inkscape::XML::Node *rootxml, gchar const *cons
         new_base_url_str = URI::from_dirname(new_base).str();
     }
     sp_repr_visit_descendants(rootxml, [&](Inkscape::XML::Node *ir) {
-        if (!strcmp("svg:image", ir->name())) {
+        if (ir->code() == code_svg_image) {
             rebase_image_href(ir, old_base_url_str, new_base_url_str, spns);
+        } else if (ir->code() == code_svg_use) {
+            rebase_image_href(ir, old_base_url_str, new_base_url_str, false);
         }
         return true;
     });

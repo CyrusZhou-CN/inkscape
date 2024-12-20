@@ -52,6 +52,8 @@ constexpr auto docString = R"""(
 <a id="a01" xlink:href=")""" BASE_URL R"""(/other.svg" />
 <a id="a02" xlink:href="http://host/other.svg"></a>
 
+<use id="use01" xlink:href=")""" BASE_URL R"""(/c/b/abs.svg#ext" />
+
 </svg>
 )"""sv;
 
@@ -79,23 +81,27 @@ TEST_F(ObjectTest, RebaseHrefs)
     assert_nonfile_unchanged();
     ASSERT_STREQ(doc->getObjectById("img01")->getAttribute("xlink:href"), "../a.png");
     ASSERT_STREQ(doc->getObjectById("img02")->getAttribute("xlink:href"), "b/a.png");
+    ASSERT_STREQ(doc->getObjectById("use01")->getAttribute("xlink:href"), "b/abs.svg#ext");
 
     // no base
     rebase_hrefs(doc.get(), nullptr, false);
     assert_nonfile_unchanged();
     ASSERT_STREQ(doc->getObjectById("img01")->getAttribute("xlink:href"), BASE_URL "/a.png");
     ASSERT_STREQ(doc->getObjectById("img02")->getAttribute("xlink:href"), BASE_URL "/c/b/a.png");
+    ASSERT_STREQ(doc->getObjectById("use01")->getAttribute("xlink:href"), BASE_URL "/c/b/abs.svg#ext");
 
     rebase_hrefs(doc.get(), BASE_DIR, false);
     assert_nonfile_unchanged();
     ASSERT_STREQ(doc->getObjectById("img01")->getAttribute("xlink:href"), "a.png");
     ASSERT_STREQ(doc->getObjectById("img02")->getAttribute("xlink:href"), "c/b/a.png");
+    ASSERT_STREQ(doc->getObjectById("use01")->getAttribute("xlink:href"), "c/b/abs.svg#ext");
 
     // base with different root
     rebase_hrefs(doc.get(), BASE_DIR_DIFFERENT_ROOT, false);
     assert_nonfile_unchanged();
     ASSERT_STREQ(doc->getObjectById("img01")->getAttribute("xlink:href"), BASE_URL "/a.png");
     ASSERT_STREQ(doc->getObjectById("img02")->getAttribute("xlink:href"), BASE_URL "/c/b/a.png");
+    ASSERT_STREQ(doc->getObjectById("use01")->getAttribute("xlink:href"), BASE_URL "/c/b/abs.svg#ext");
 }
 
 static std::map<std::string, std::string> rebase_attrs_test_helper(SPDocument *doc, char const *id,
@@ -117,6 +123,8 @@ TEST_F(ObjectTest, RebaseHrefAttrs)
     ASSERT_STREQ(amap["xlink:href"].c_str(), "../a.png");
     amap = rebase_attrs_test_helper(doc.get(), "img02", BASE_DIR, BASE_DIR G_DIR_SEPARATOR_S "c");
     ASSERT_STREQ(amap["xlink:href"].c_str(), "b/a.png");
+    amap = rebase_attrs_test_helper(doc.get(), "use01", BASE_DIR, BASE_DIR G_DIR_SEPARATOR_S "c");
+    ASSERT_STREQ(amap["xlink:href"].c_str(), "b/abs.svg#ext");
     amap = rebase_attrs_test_helper(doc.get(), "img06", BASE_DIR, BASE_DIR G_DIR_SEPARATOR_S "c");
     ASSERT_STREQ(amap["xlink:href"].c_str(), "#fragment");
     amap = rebase_attrs_test_helper(doc.get(), "img10", BASE_DIR, BASE_DIR G_DIR_SEPARATOR_S "c");

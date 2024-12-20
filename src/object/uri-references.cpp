@@ -154,7 +154,7 @@ void URIReference::attach(const URI &uri)
     }
 
     gchar const *fragment = uri.getFragment();
-    if (!uri.isRelative() || uri.getQuery() || !fragment) {
+    if (uri.getQuery() || !fragment) {
         throw UnsupportedURIException();
     }
 

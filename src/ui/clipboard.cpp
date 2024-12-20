@@ -1236,10 +1236,16 @@ void ClipboardManagerImpl::_copyCompleteStyle(SPItem *item, Inkscape::XML::Node 
  */
 void ClipboardManagerImpl::_copyUsedDefs(SPItem *item)
 {
-    auto use = cast<SPUse>(item);
-    if (use && use->get_original()) {
-        if(cloned_elements.insert(use->get_original()).second)
-            _copyUsedDefs(use->get_original());
+    bool recurse = true;
+
+    if (auto use = cast<SPUse>(item)) {
+        if (auto original = use->get_original()) {
+            if (original->document != use->document) {
+                recurse = false;
+            } else {
+                cloned_elements.insert(original);
+            }
+        }
     }
 
     // copy fill and stroke styles (patterns and gradients)
@@ -1357,6 +1363,10 @@ void ClipboardManagerImpl::_copyUsedDefs(SPItem *item)
                 }
             }
         }
+    }
+
+    if (!recurse) {
+        return;
     }
 
     // recurse

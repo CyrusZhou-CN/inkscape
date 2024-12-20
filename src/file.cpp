@@ -655,6 +655,8 @@ void sp_import_document(SPDesktop *desktop, SPDocument *clipdoc, bool in_place, 
     auto layer = desktop->layerManager().currentLayer();
     Inkscape::XML::Node *target_parent = layer->getRepr();
 
+    Inkscape::XML::rebase_hrefs(clipdoc, target_document->getDocumentBase(), false);
+
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
 
     // Get page manager for on_page pasting, this must be done before selection changes
