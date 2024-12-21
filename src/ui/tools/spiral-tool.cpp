@@ -341,6 +341,9 @@ void SpiralTool::finishItem() {
     		return;
     	}
 
+        // Set the *transform* center, so select tool rotations work from the spiral's
+        // center instead of the bbox center.
+        spiral->setCenter(center);
         spiral->set_shape();
         spiral->updateRepr(SP_OBJECT_WRITE_EXT);
         // compensate stroke scaling couldn't be done in doWriteTransform

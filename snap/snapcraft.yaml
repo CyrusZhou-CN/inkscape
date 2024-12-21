@@ -37,73 +37,39 @@ parts:
     cmake-parameters:
       - '-DCMAKE_INSTALL_PREFIX='
     build-packages:
-      - build-essential
-      - cmake
+#       NOTE: Most dependencies are already provided by "extension: gnome" (see later).
       - cython3
-      - g++
       - libart-2.0-dev
       - libboost-all-dev
       - libcdr-dev
       - libdouble-conversion-dev
       - libgc-dev
-      - libglib2.0-dev
       - libgsl-dev
       - libgtest-dev
-      - libgtk-4-dev
-      - libgtkmm-4.0-dev
-      - libgtksourceview-5-dev
-      - libharfbuzz-dev
-      - liblcms2-dev
       - libmagick++-dev
-      - libpango1.0-dev
       - libpoppler-glib-dev
       - libpoppler-private-dev
       - libpotrace-dev
       - librevenge-dev
       - libreadline-dev
-      - libsigc++-2.0-dev
       - libspelling-1-dev
-      - libtool
       - libvisio-dev
       - libwpg-dev
       - libxml-parser-perl
-      - libxml2-dev
       - libxslt1-dev
-      - ninja-build
-      - meson
       - ragel
-      - pkg-config
-      - zlib1g-dev
-      - python3-appdirs
-      - python3-cairo
-      - python3-pil
-      - python3-gi
-      - python3-gi-cairo
     stage-packages:
-      - heif-gdk-pixbuf
-      - fcitx5-frontend-gtk4
-      - gir1.2-gtk-3.0
-      - ibus-gtk4
-      - libatkmm-1.6-1v5
+#       NOTE: Most dependencies are already provided by "extension: gnome" (see later).
       - libboost-filesystem1.83.0
-      - libcairomm-1.0-1v5
       - libcdr-0.1-1
       - libdouble-conversion3
       - libgc1
-      - libgdk-pixbuf2.0-0
-      - libglibmm-2.4-1v5
-      - libglib2.0-bin
       - libgsl27
       - libgslcblas0
-      - libgtksourceview-5-common
-      - libgtksourceview-5-0
-      - liblcms2-2
       - libmagick++-6.q16-9
-      - libpangomm-1.4-1v5
       - libpoppler-glib8
       - libpotrace0
       - libproxy1v5
-      - libpsl5
       - librevenge-0.0-0
       - libspelling-1-1
       - libvisio-0.1-1
@@ -115,23 +81,18 @@ parts:
       - transfig
       - libsvg-perl
       - libxml-xql-perl
-      - python3-appdirs
-      - python3-cairo
-      - python3-pil
-      - python3-gi
-      - python3-gi-cairo
     prime:
       - -lib/inkscape/*.a
       - -*canberra*so* # We don't have sound permissions anyway
       - -usr/lib/*/gtk-2.0
     override-build: |
       sed -i.bak -e 's|Icon=${INKSCAPE_ICONPATH}|Icon=${SNAP}/share/inkscape/branding/inkscape.svg|g' $SNAPCRAFT_PART_SRC/org.inkscape.Inkscape.desktop.template
-      snapcraftctl build
+      craftctl default
       INKSCAPE_VERSION=`g++ -I${SNAPCRAFT_PART_SRC}/src ${SNAPCRAFT_PART_BUILD}/src/inkscape-version.cpp ${SNAPCRAFT_PROJECT_DIR}/snap/local/print-inkscape-version.cpp -o print-inkscape-version && ./print-inkscape-version`
       echo "Inkscape Version: ${INKSCAPE_VERSION}"
-      snapcraftctl set-version "${INKSCAPE_VERSION}"
+      craftctl set version="${INKSCAPE_VERSION}"
     override-prime: |
-      snapcraftctl prime
+      craftctl default
       sed -i "s|_have.*$||" $SNAPCRAFT_PRIME/share/bash-completion/completions/inkscape
     parse-info: [ share/metainfo/org.inkscape.Inkscape.appdata.xml ]
     after: [python-deps] # Grab the network stuff first
@@ -139,29 +100,39 @@ parts:
   python-deps:
     plugin: python
     source: ./share/extensions
+#   Unfortunately, snap only supports one pyproject.toml file.
+#   It takes the dependencies from ./share/extensions/pyproject.toml.
+#   The content of other pyproject.toml files is transferred here manually:
+    python-packages:
+#    the following dependencies are taken manually from share/extensions/other/inkman/pyproject.toml:
+      - requests
+      - appdirs
+      - filelock
+      - cachecontrol[filecache]
+#     the following dependencies are taken manually from share/extensions/other/clipart/pyproject.toml:
+      - beautifulsoup4
     stage-packages:
       - optipng
 #     - pstoedit
 #     - texlive-latex-base
-# TODO also process all other pyproject.toml files?
-#     source: ./share/extensions/other/inkman
-#    source: ./share/extensions/other/clipart
   snap-helpers:
     plugin: dump
     source: snap/local/scripts
 
 apps:
   inkscape:
+    # NOTE: The gnome extension provides a lot of magic during build and runtime.
+    # It modifies the behavior of the above "parts" section:
+    # It sets environment variables, installs packages and provides many custom-
+    # built versions of Gtk related libraries. Unfortunately, these libraries
+    # are sometimes incompatible with the system provided APT packages.
+    # In general, it is better to list as few packages as possible in
+    # "build-packages" and "stage-packages" above, so that the versions provided
+    # by the gnome extensions are used instead.
     extensions: [ gnome ]
     command: bin/inkscape
     command-chain: [ inkscape-variables, private-fontcache ]
     plugs:
-      - desktop
-      - desktop-legacy
-      - gsettings
-      - wayland
-      - x11
-      - unity7
       - cups # printing
       - dot-config-inkscape
       - raw-usb # plotter support
@@ -176,12 +147,6 @@ apps:
     command: bin/inkview
     command-chain: [ inkscape-variables, private-fontcache ]
     plugs:
-      - desktop
-      - desktop-legacy
-      - gsettings
-      - wayland
-      - x11
-      - unity7
       - dot-config-inkscape
 
 hooks:
