@@ -21,6 +21,7 @@ pkg_search_module(HARFBUZZ REQUIRED harfbuzz)
 add_rendering_test(test-empty)
 add_rendering_test(test-dont-crash)
 add_rendering_test(test-use FUZZ 0.03)
+add_rendering_test(solid-color-test)
 
 # -- Selector tests --
 add_rendering_test(selector-important-002)

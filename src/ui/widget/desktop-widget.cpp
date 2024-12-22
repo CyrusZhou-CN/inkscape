@@ -87,6 +87,7 @@ SPDesktopWidget::SPDesktopWidget(InkscapeWindow *inkscape_window, SPDocument *do
 
     /* Status bar */
     _statusbar = Gtk::make_managed<Inkscape::UI::Widget::StatusBar>();
+    _statusbar->set_vexpand(false);
     prepend(*_statusbar);
 
     /* Swatch Bar */
@@ -96,9 +97,11 @@ SPDesktopWidget::SPDesktopWidget(InkscapeWindow *inkscape_window, SPDocument *do
 
     /* DesktopHBox (Vertical toolboxes, canvas) */
     _hbox = Gtk::make_managed<Gtk::Box>();
+    _hbox->set_vexpand(true);
     _hbox->set_name("DesktopHbox");
 
     _tbbox = Gtk::make_managed<Gtk::Paned>(Gtk::Orientation::HORIZONTAL);
+    _tbbox->set_vexpand(true);
     _tbbox->set_name("ToolboxCanvasPaned");
     _hbox->append(*_tbbox);
 

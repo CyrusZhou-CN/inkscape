@@ -60,6 +60,7 @@ set(TEST_SOURCES
     async_channel-test
     async_funclog-test
     async_progress-test
+    boolop-attr-test
     colors/cms-test
     colors/color-test
     colors/document-cms-test

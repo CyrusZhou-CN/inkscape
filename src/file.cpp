@@ -309,7 +309,7 @@ file_save(Gtk::Window &parentWindow,
         doc->getReprRoot()->setAttribute("inkscape:version", saved_version.str());
         return false;
     } catch (...) {
-        g_critical("Extension '%s' threw an unspecified exception.", key->get_id());
+        g_critical("Extension '%s' threw an unspecified exception.", key ? key->get_id() : nullptr);
         gchar *text = g_strdup_printf(_("File %s could not be saved."), display_name.c_str());
         SP_ACTIVE_DESKTOP->messageStack()->flash(Inkscape::ERROR_MESSAGE, _("Document not saved."));
         sp_ui_error_dialog(text);
@@ -705,8 +705,6 @@ void sp_import_document(SPDesktop *desktop, SPDocument *clipdoc, bool in_place, 
         node_after = obj_copy;
         Inkscape::GC::release(obj_copy);
 
-        pasted_objects.push_back(obj_copy);
-
         // if we are pasting a clone to an already existing object, its
         // transform is relative to the document, not to its original (see ui/clipboard.cpp)
         auto spobject = target_document->getObjectByRepr(obj_copy);
@@ -717,6 +715,10 @@ void sp_import_document(SPDesktop *desktop, SPDocument *clipdoc, bool in_place, 
                 Geom::Affine relative_use_transform = original->transform.inverse() * use->transform;
                 obj_copy->setAttributeOrRemoveIfEmpty("transform", sp_svg_transform_write(relative_use_transform));
             }
+        }
+
+        if (is<SPItem>(spobject)) {
+            pasted_objects.push_back(obj_copy);
         }
     }
 

@@ -28,6 +28,8 @@ public:
 
     std::unique_ptr<Inkscape::DrawingPaintServer> create_drawing_paintserver() override;
 
+    void update(SPCtx *ctx, guint flags) override;
+
 protected:
     void build(SPDocument* doc, Inkscape::XML::Node* repr) override;
     void set(SPAttr key, char const* value) override;

@@ -1079,6 +1079,7 @@ void ObjectsPanel::documentReplaced()
 void ObjectsPanel::setRootWatcher()
 {
     root_watcher.reset();
+    _idle_connection.disconnect();
 
     auto const document = getDocument();
     if (!document) return;

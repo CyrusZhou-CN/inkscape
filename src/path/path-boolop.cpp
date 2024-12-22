@@ -36,6 +36,7 @@
 #include "object/sp-text.h"
 #include "ui/icon-names.h"
 #include "xml/repr-sorting.h"
+#include "style.h"
 
 using Inkscape::DocumentUndo;
 
@@ -466,14 +467,11 @@ void Inkscape::ObjectSet::_pathBoolOp(BooleanOp bop)
         }
 
         // Get the fill rule.
-        auto css = sp_repr_css_attr(il[0]->getRepr(), "style");
-        auto val = sp_repr_css_property(css, "fill-rule", nullptr);
-        if (val && std::strcmp(val, "evenodd") == 0) {
+        if (item->style->fill_rule.computed == SP_WIND_RULE_EVENODD) {
             operand.fill_rule = fill_oddEven;
         } else {
             operand.fill_rule = fill_nonZero;
         }
-        sp_repr_css_attr_unref(css);
 
         // Get the pathvector.
         auto curve = curve_for_item(item);

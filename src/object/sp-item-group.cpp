@@ -518,6 +518,24 @@ bool equal_clip (SPItem *item, SPObject *clip) {
     return equal;
 }
 
+/**
+ * Unlink all clones of the group.
+ *
+ * @note Should get the same result with `group->_delete_signal.emit(group)` if
+ * "/options/cloneorphans" is SP_CLONE_ORPHANS_UNLINK.
+ */
+static void unlink_clones_of(SPGroup *group)
+{
+    // copy the list because the original may get invalidated
+    auto hrefListCopy = group->hrefList;
+
+    for (auto *cobj : hrefListCopy) {
+        if (auto clone = cast<SPUse>(cobj)) {
+            clone->unlink();
+        }
+    }
+}
+
 void
 sp_item_group_ungroup (SPGroup *group, std::vector<SPItem*> &children)
 {
@@ -585,6 +603,9 @@ sp_item_group_ungroup (SPGroup *group, std::vector<SPItem*> &children)
     std::vector<Inkscape::XML::Node *> items;
     std::vector<Inkscape::XML::Node *> objects;
     Geom::Affine const g = i2anc_affine(group, group->parent);
+
+    // Unlink clones of group before modifying any transforms
+    unlink_clones_of(group);
 
     if (!g.isIdentity()) {
         for (auto &child : group->children) {

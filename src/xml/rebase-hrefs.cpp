@@ -86,6 +86,11 @@ Inkscape::XML::rebase_href_attrs(gchar const *const old_abs_base,
     }
 
     auto uri = URI::from_href_and_basedir(href_it->value.pointer(), old_abs_base);
+    if (!uri.getPath()) {
+        // URI parsing failed
+        return ret;
+    }
+
     auto abs_href = uri.toNativeFilename();
 
     auto absref_it = find_record(absref_key);

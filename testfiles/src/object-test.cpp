@@ -14,6 +14,7 @@
 #include <doc-per-case-test.h>
 #include <src/object/sp-root.h>
 #include <src/object/sp-path.h>
+#include <src/object/sp-rect.h>
 
 using namespace Inkscape;
 using namespace Inkscape::XML;
@@ -69,6 +70,11 @@ public:
     <image id="I" xlink:href="data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjE4MCIgd2lkdGg9IjUwMCI+PHBhdGggZD0iTTAsNDAgNDAsNDAgNDAsODAgODAsODAgODAsMTIwIDEyMCwxMjAgMTIwLDE2MCIgc3R5bGU9ImZpbGw6d2hpdGU7c3Ryb2tlOnJlZDtzdHJva2Utd2lkdGg6NCIvPjwvc3ZnPgo="/>
     <line id="L" x1="20" y1="100" x2="100" y2="20" stroke="black" stroke-width="2"/>
   </g>
+
+  <g id="original" transform="matrix(0.3,0,0,0.15,80,20)">
+    <rect width="200" height="400" x="100" />
+  </g>
+  <use id="clone" xlink:href="#original" transform="translate(-80)" style="fill:blue" />
 </svg>
         )A"sv;
         doc = SPDocument::createNewDocFromMem(docString, false);
@@ -200,4 +206,28 @@ TEST_F(ObjectTest, Objects) {
 
     // Test hrefcount
     EXPECT_TRUE(path->isReferenced());
+}
+
+TEST_F(ObjectTest, UngroupClonedTransformedGroup) {
+    // regression test for "double transform on unlinked groups"
+    // https://gitlab.com/inkscape/inkscape/-/issues/4570
+
+    auto original = cast<SPGroup>(doc->getObjectById("original"));
+    ASSERT_TRUE(original);
+
+    std::vector<SPItem*> ch;
+    sp_item_group_ungroup(original, ch);
+    ASSERT_EQ(ch.size(), 1);
+
+    auto unlinkedclone = cast<SPGroup>(doc->getObjectById("clone"));
+    ASSERT_TRUE(unlinkedclone);
+    ASSERT_STREQ(unlinkedclone->getAttribute("transform"), "matrix(0.3,0,0,0.15,0,20)");
+    ASSERT_EQ(unlinkedclone->children.size(), 1);
+    auto unlinkedrect = cast<SPRect>(unlinkedclone->firstChild());
+    ASSERT_TRUE(unlinkedrect);
+    ASSERT_EQ(unlinkedrect->getAttribute("transform"), nullptr);
+    ASSERT_EQ(unlinkedrect->getIntAttribute("x", 0), 100);
+    ASSERT_EQ(unlinkedrect->getIntAttribute("y", 0), 0);
+    ASSERT_EQ(unlinkedrect->getIntAttribute("width", 0), 200);
+    ASSERT_EQ(unlinkedrect->getIntAttribute("height", 0), 400);
 }

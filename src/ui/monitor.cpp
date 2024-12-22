@@ -72,7 +72,9 @@ Gdk::Rectangle get_monitor_geometry_at_surface(Glib::RefPtr<Gdk::Surface> const 
     Gdk::Rectangle monitor_geometry;
     auto const display = Gdk::Display::get_default();
     auto const monitor = display->get_monitor_at_surface(surface);
-    monitor->get_geometry(monitor_geometry);
+    if (monitor) {
+        monitor->get_geometry(monitor_geometry);
+    }
     return monitor_geometry;
 }
 

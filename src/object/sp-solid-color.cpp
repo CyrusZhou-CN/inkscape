@@ -47,6 +47,15 @@ void SPSolidColor::set(SPAttr key, const gchar* value) {
     }
 }
 
+void SPSolidColor::update(SPCtx *ctx, guint flags)
+{
+    if (flags & SP_OBJECT_STYLE_MODIFIED_FLAG) {
+        style->readFromObject(this);
+    }
+
+    SPPaintServer::update(ctx, flags);
+}
+
 /**
  * Virtual set: set attribute to value.
  */
