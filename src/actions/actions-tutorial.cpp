@@ -40,7 +40,7 @@ void help_open_tutorial(Glib::ustring const &name)
     if (!filename.empty()) {
         auto *app = InkscapeApplication::instance();
         SPDocument* doc = app->document_new(filename);
-        app->window_open(doc);
+        app->desktopOpen(doc);
     } else {
         // TRANSLATORS: Please don't translate link unless the page exists in your language. Add your language code to
         // the link this way: https://inkscape.org/[lang]/learn/tutorials/

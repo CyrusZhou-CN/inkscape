@@ -41,10 +41,11 @@ public:
      */
     void bind_framebuffer() const;
 
+    void snapshot_vfunc(Glib::RefPtr<Gtk::Snapshot> const &snapshot) override;
+
 protected:
     void on_realize() override;
     void on_unrealize() override;
-    void snapshot_vfunc(Glib::RefPtr<Gtk::Snapshot> const &snapshot) override;
 
     /**
      * Reimplement to create the desired OpenGL context. Return nullptr on error.

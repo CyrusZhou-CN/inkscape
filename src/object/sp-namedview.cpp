@@ -891,27 +891,24 @@ void SPNamedView::updateGrids()
 
 void SPNamedView::updateGuides()
 {
-    if (auto saction = std::dynamic_pointer_cast<Gio::SimpleAction>(
-                document->getActionGroup()->lookup_action("show-all-guides"))) {
+    bool const shown = getShowGuides();
+    bool const locked = getLockGuides();
 
-        saction->change_state(getShowGuides());
+    if (auto saction = std::dynamic_pointer_cast<Gio::SimpleAction>(
+                document->getActionGroup()->lookup_action("show-all-guides")))
+    {
+        saction->set_state(Glib::Variant<bool>::create(shown));
     }
 
     if (auto saction = std::dynamic_pointer_cast<Gio::SimpleAction>(
-                document->getActionGroup()->lookup_action("lock-all-guides"))) {
-
-        bool is_locked = getLockGuides();
-        saction->change_state(is_locked);
-
-        for (auto desktop : views) {
-            auto dt_widget = desktop->getDesktopWidget();
-            dt_widget->get_canvas_grid()->GetGuideLock()->set_active(is_locked);
-        }
+                document->getActionGroup()->lookup_action("lock-all-guides")))
+    {
+        saction->set_state(Glib::Variant<bool>::create(locked));
     }
 
-    for (SPGuide *guide : guides) {
+    for (auto guide : guides) {
         setShowGuideSingle(guide);
-        guide->set_locked(this->getLockGuides(), true);
+        guide->set_locked(locked, true);
     }
 }
 

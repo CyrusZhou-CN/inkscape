@@ -164,15 +164,21 @@ void Ruler::set_selection(double lower, double upper)
     }
 }
 
-// Add a widget (i.e. canvas) to monitor. Note, we don't worry about removing this signal as
-// our ruler is tied tightly to the canvas, if one is destroyed, so is the other.
-void
-Ruler::add_track_widget(Gtk::Widget& widget)
+// Add a widget (i.e. canvas) to monitor.
+void Ruler::set_track_widget(Gtk::Widget &widget)
 {
-    auto const motion = Gtk::EventControllerMotion::create();
-    motion->set_propagation_phase(Gtk::PropagationPhase::TARGET);
-    motion->signal_motion().connect([this, &motion = *motion](auto &&...args) { return on_motion(motion, args...); }, false); // before
-    widget.add_controller(motion);
+    assert(!_track_widget_controller);
+    _track_widget_controller = Gtk::EventControllerMotion::create();
+    _track_widget_controller->set_propagation_phase(Gtk::PropagationPhase::TARGET);
+    _track_widget_controller->signal_motion().connect([this] (auto &&...args) { return on_motion(*_track_widget_controller, args...); }, false); // before
+    widget.add_controller(_track_widget_controller);
+}
+
+void Ruler::clear_track_widget()
+{
+    assert(_track_widget_controller);
+    _track_widget_controller->get_widget()->remove_controller(_track_widget_controller);
+    _track_widget_controller = {};
 }
 
 // Draws marker in response to motion events from canvas.  Position is defined in ruler pixel

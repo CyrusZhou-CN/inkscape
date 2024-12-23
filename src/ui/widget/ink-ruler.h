@@ -57,7 +57,8 @@ public:
     void set_page(double lower, double upper);
     void set_selection(double lower, double upper);
 
-    void add_track_widget(Gtk::Widget& widget);
+    void set_track_widget(Gtk::Widget &widget);
+    void clear_track_widget();
 
 private:
     std::pair<int, int> get_drawing_size();
@@ -97,6 +98,8 @@ private:
     Cairo::RectangleInt _rect;
 
     std::unordered_map<int, Cairo::RefPtr<::Cairo::Surface>> _label_cache;
+
+    Glib::RefPtr<Gtk::EventControllerMotion> _track_widget_controller;
 
     // Cached style properties
     Gdk::RGBA _shadow;

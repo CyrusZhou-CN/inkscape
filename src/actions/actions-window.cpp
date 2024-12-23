@@ -23,17 +23,16 @@
 // Actions for window handling (should be integrated with file dialog).
 
 // Open a window for current document
-void
-window_open(InkscapeApplication *app)
+void window_open(InkscapeApplication *app)
 {
-    SPDocument *document = app->get_active_document();
+    auto document = app->get_active_document();
     if (document) {
-        InkscapeWindow* window = app->get_active_window();
-        if (window && window->get_document() && window->get_document()->getVirgin()) {
-            // We have a window with an untouched template document, use this window.
-            app->document_swap (window, document);
+        auto desktop = app->get_active_desktop();
+        if (desktop && desktop->getDocument() && desktop->getDocument()->getVirgin()) {
+            // We have a tab with an untouched template document, use this tab.
+            app->document_swap(desktop, document);
         } else {
-            app->window_open(document);
+            app->desktopOpen(document);
         }
     } else {
         show_output("window_open(): failed to find document!");
@@ -80,7 +79,7 @@ window_set_geometry(const Glib::VariantBase& value, InkscapeApplication *app)
 void
 window_close(InkscapeApplication *app)
 {
-    app->window_close_active();
+    app->desktopCloseActive();
 }
 
 std::vector<std::vector<Glib::ustring>> hint_data_window =

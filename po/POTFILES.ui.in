@@ -32,6 +32,7 @@
 ../share/ui/pattern-edit.glade
 ../share/ui/align-and-distribute.ui
 ../share/ui/dialog-spellcheck.ui
+../share/ui/document-tab.ui
 ../share/ui/menus.ui
 ../share/ui/statusbar.ui
 ../share/ui/toolbar-arc.ui

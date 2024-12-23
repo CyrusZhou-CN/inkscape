@@ -36,6 +36,7 @@ class EventControllerMotion;
 class GestureClick;
 } // namespace Gtk
 
+class SPDesktop;
 class SPDocument;
 class SPDesktopWidget;
 
@@ -55,6 +56,8 @@ namespace Widget {
 class Canvas;
 class CanvasNotice;
 class Ruler;
+class Stack;
+class TabsWidget;
 
 /**
  * A Gtk::Grid widget that contains rulers, scrollbars, buttons, and, of course, the canvas.
@@ -82,7 +85,11 @@ public:
 
     void setPopover(Gtk::Popover *popover) { _popoverbin.setPopover(popover); }
 
-    Inkscape::UI::Widget::Canvas *GetCanvas() { return _canvas.get(); };
+    void addTab(Canvas *canvas);
+    void removeTab(Canvas *canvas);
+    void switchTab(Canvas *canvas);
+
+    Canvas *GetCanvas() { return _canvas; };
 
     // Hopefully temp.
     Inkscape::UI::Widget::Ruler *GetHRuler() { return _vruler.get(); };
@@ -93,6 +100,7 @@ public:
     Gtk::ToggleButton *GetCmsAdjust()  { return &_cms_adjust; }
     Gtk::CheckButton  *GetStickyZoom();
     Dialog::CommandPalette *getCommandPalette() { return _command_palette.get(); }
+    Inkscape::UI::Widget::TabsWidget *getTabsWidget() { return _tabs_widget.get(); }
 
     // Motion event handler, and delayed snap event callback.
     void rulerMotion(MotionEvent const &event, bool horiz);
@@ -107,11 +115,13 @@ private:
 
     // The widgets
     Inkscape::UI::Widget::PopoverBin _popoverbin;
-    std::unique_ptr<Inkscape::UI::Widget::Canvas> _canvas;
+    Inkscape::UI::Widget::Canvas *_canvas = nullptr;
     std::unique_ptr<Dialog::CommandPalette> _command_palette;
     CanvasNotice *_notice;
     Gtk::Overlay _canvas_overlay;
     Gtk::Grid _subgrid;
+    Inkscape::UI::Widget::Stack *_canvas_stack;
+    std::unique_ptr<Inkscape::UI::Widget::TabsWidget> _tabs_widget;
 
     Glib::RefPtr<Gtk::Adjustment> _hadj;
     Glib::RefPtr<Gtk::Adjustment> _vadj;

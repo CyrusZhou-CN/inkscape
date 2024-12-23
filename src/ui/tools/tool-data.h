@@ -45,5 +45,6 @@ struct ToolData
 
 std::map<Glib::ustring, ToolData> const &get_tool_data();
 std::map<Glib::ustring, Glib::ustring> const &get_tool_msg();
+Glib::ustring const &pref_path_to_tool_name(Glib::UStringView pref_path);
 
 #endif // INKSCAPE_UI_TOOLS_TOOL_DATA_H

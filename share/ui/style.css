@@ -1354,7 +1354,7 @@ button.icon-preview {
 /* GtkFrames that formerly had :shadow-type == NONE */
 frame.flat {
     border: none;
- }
+}
 
 /*we dont want higlight with tab order only want checked ones */
 #ToolToolbar flowboxchild:selected { 
@@ -1367,7 +1367,41 @@ frame.flat {
     margin: 0.75em;
 }
 
-/*heper info in popover menu*/
+/* Tabs widget */
+#DocumentTab { padding: 3px; }
+
+#DocumentTab:hover {
+    background-color:shade(@theme_bg_color, 0.97);
+}
+
+#DocumentTab.tab_active {
+    box-shadow: inset 0 -2px @theme_selected_bg_color;
+    background-color:@theme_bg_color;
+}
+
+#DocumentTabsWidget { box-shadow: none; }
+
+@keyframes pulse-border {
+  0% {
+    box-shadow: inset alpha(@theme_selected_bg_color, 0.4) 0px 0px 2px 1px;
+  }
+  50% {
+    box-shadow: inset @theme_selected_bg_color 0px 0px 6px 2px;
+  }
+  100% {
+    box-shadow: inset alpha(@theme_selected_bg_color, 0.4) 0px 0px 2px 1px;
+  }
+}
+
+#DocumentTabsWidget.drop-highlight > #Overlay {
+   box-shadow: inset @theme_selected_bg_color 0px 0px 5px 1px;
+   animation-name: pulse-border;
+   animation-duration: 1s;
+   animation-timing-function: ease;
+   animation-iteration-count: infinite;
+}
+
+/*helper info in popover menu*/
 .menu_search{
     background-color:alpha(@theme_fg_color,0.1);
     margin:0 0 -8px -8px;

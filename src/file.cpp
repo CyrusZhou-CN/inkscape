@@ -90,15 +90,12 @@ SPDesktop *sp_file_new(const std::string &templ)
 {
     auto *app = InkscapeApplication::instance();
 
-    SPDocument* doc = app->document_new (templ);
+    auto doc = app->document_new(templ);
     if (!doc) {
         std::cerr << "sp_file_new: failed to open document: " << templ << std::endl;
     }
-    InkscapeWindow* win = app->window_open (doc);
 
-    SPDesktop* desktop = win->get_desktop();
-
-    return desktop;
+    return app->desktopOpen(doc);
 }
 
 std::string sp_file_default_template_uri()
@@ -828,7 +825,7 @@ file_import(SPDocument *in_doc, const std::string &path, Inkscape::Extension::Ex
         // Opened instead of imported, open and return nothing
         auto *app = InkscapeApplication::instance();
         auto doc_ptr = app->document_add(std::move(doc));
-        app->window_open(doc_ptr);
+        app->desktopOpen(doc_ptr);
         return nullptr;
     } else if (doc) {
         // Always preserve any imported text kerning / formatting

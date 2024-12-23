@@ -107,7 +107,7 @@ document_close(InkscapeWindow* win)
 {
     // Close
     auto app = InkscapeApplication::instance();
-    app->destroy_window(win, true); // true == keep alive last window
+    app->destroyDesktop(win->get_desktop(), true); // true == keep alive last window
 }
 
 std::vector<std::vector<Glib::ustring>> raw_data_dialog_window =

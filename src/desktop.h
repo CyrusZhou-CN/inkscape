@@ -148,7 +148,7 @@ inline constexpr double SP_DESKTOP_ZOOM_MIN =   0.01;
 class SPDesktop
 {
 public:
-    SPDesktop(SPNamedView *nv, Inkscape::UI::Widget::Canvas *canvas, SPDesktopWidget *dtw);
+    SPDesktop(SPNamedView *nv);
     ~SPDesktop();
 
     SPDesktop(SPDesktop const &) = delete;
@@ -160,6 +160,8 @@ public:
     Inkscape::MessageStack *messageStack() const { return _message_stack.get(); }
     Inkscape::MessageContext *tipsMessageContext() const { return _tips_message_context.get(); }
 
+    void setDesktopWidget(SPDesktopWidget *dtw);
+
 private:
     SPDocument *document = nullptr;
     std::unique_ptr<Inkscape::MessageStack> _message_stack;
@@ -168,7 +170,8 @@ private:
 
     sigc::scoped_connection _message_changed_connection;
     sigc::scoped_connection _message_idle_connection;
-    sigc::scoped_connection _document_uri_set_connection;
+    sigc::connection _document_uri_set_connection;
+    sigc::connection _saved_or_modified_conn;
 
     std::unique_ptr<Inkscape::UI::Tools::ToolBase> _tool;
     std::unique_ptr<Inkscape::Display::TemporaryItemList> _temporary_item_list;
@@ -176,18 +179,20 @@ private:
     std::unique_ptr<Inkscape::Display::SnapIndicator> _snapindicator;
 
     SPNamedView *namedview = nullptr;
-    Inkscape::UI::Widget::Canvas *canvas = nullptr;
+    int _view_number{};
+
+    std::unique_ptr<Inkscape::UI::Widget::Canvas> canvas;
 
 public:
     Inkscape::UI::Tools::ToolBase    *getTool         () const { return _tool.get(); }
     Inkscape::Selection              *getSelection    () const { return _selection.get(); }
     SPDocument                       *getDocument     () const { return document; }
-    Inkscape::UI::Widget::Canvas     *getCanvas       () const { return canvas; }
+    Inkscape::UI::Widget::Canvas     *getCanvas       () const { return canvas.get(); }
     SPNamedView                      *getNamedView    () const { return namedview; }
     SPDesktopWidget                  *getDesktopWidget() const { return _widget; }
     Inkscape::Display::SnapIndicator *getSnapIndicator() const { return _snapindicator.get(); }
+    int viewNumber() const { return _view_number; }
 
-    // Move these into UI::Widget::Canvas:
     Inkscape::CanvasItemGroup    *getCanvasControls() const { return _canvas_group_controls; }
     Inkscape::CanvasItemGroup    *getCanvasPagesBg()  const { return _canvas_group_pages_bg; }
     Inkscape::CanvasItemGroup    *getCanvasPagesFg()  const { return _canvas_group_pages_fg; }
@@ -214,6 +219,8 @@ private:
     // Individual items
     Inkscape::CanvasItemCatchall *_canvas_catchall       = nullptr; ///< The bottom item for unclaimed events.
     Inkscape::CanvasItemDrawing  *_canvas_drawing        = nullptr; ///< The actual SVG drawing (a.k.a. arena).
+
+    void _setupCanvasItems();
 
 public:
     SPCSSAttr *current = nullptr;  ///< Current style
@@ -363,7 +370,6 @@ public:
     void scroll_relative_in_svg_coords(double dx, double dy);
     bool scroll_to_point(Geom::Point const &s_dt, double autoscrollspeed = 0);
 
-    void setWindowTitle();
     Geom::IntPoint getWindowSize() const;
     void setWindowSize(Geom::IntPoint const &size);
     void setWindowTransient(Gtk::Window &window, int transient_policy = 1);
@@ -428,6 +434,9 @@ public:
 
 private:
     SPDesktopWidget *_widget = nullptr;
+
+    void _attachDocument();
+    void _detachDocument();
 
     // This simple class ensures that _w2d is always in sync with _rotation and _scale
     // We keep rotation and scale separate to avoid having to extract them from the affine.
@@ -552,7 +561,6 @@ private:
     void on_zoom_end(Gdk::EventSequence *sequence);
 
     void onStatusMessage(Inkscape::MessageType type, char const *message);
-    void onDocumentFilenameSet(char const *filename);
 };
 
 #endif // INKSCAPE_DESKTOP_H

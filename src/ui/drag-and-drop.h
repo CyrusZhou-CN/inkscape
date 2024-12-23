@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#ifndef SEEN_CANVAS_DRAG_AND_DROP_H
-#define SEEN_CANVAS_DRAG_AND_DROP_H
+#ifndef INKSCAPE_UI_DRAG_AND_DROP_H
+#define INKSCAPE_UI_DRAG_AND_DROP_H
 
 /**
  * @file
@@ -17,6 +17,7 @@
 #include <glibmm/ustring.h>
 #include <string>
 
+namespace Gtk { class Widget; }
 class SPDesktopWidget;
 class SPDocument;
 
@@ -30,9 +31,9 @@ struct DnDSymbol
     SPDocument* document = nullptr;
 };
 
-void ink_drag_setup(SPDesktopWidget *);
+void ink_drag_setup(SPDesktopWidget *dtw, Gtk::Widget *widget);
 
-#endif // SEEN_CANVAS_DRAG_AND_DROP_H
+#endif // INKSCAPE_UI_DRAG_AND_DROP_H
 
 /*
   Local Variables:

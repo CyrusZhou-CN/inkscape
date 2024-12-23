@@ -42,28 +42,6 @@
 
 class SPDocument;
 
-void sp_ui_new_view()
-{
-    auto app = InkscapeApplication::instance();
-
-    auto doc = SP_ACTIVE_DOCUMENT;
-    if (!doc) {
-        return;
-    }
-
-    app->window_open(doc);
-}
-
-void sp_ui_close_view()
-{
-    auto app = InkscapeApplication::instance();
-
-    auto window = app->get_active_window();
-    assert(window);
-
-    app->destroy_window(window, true); // Keep inkscape alive!
-}
-
 Glib::ustring getLayoutPrefPath(SPDesktop *desktop)
 {
     if (desktop->is_focusMode()) {

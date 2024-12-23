@@ -42,10 +42,8 @@ class Selection;
 
 class InkscapeApplication
 {
-    Glib::RefPtr<Gio::Application> _gio_application;
-
 public:
-    /// Singleton instance, if it exists (will not create it)
+    /// Singleton instance.
     static InkscapeApplication *instance();
 
     /// Exclusively for the creation of the singleton instance inside main().
@@ -57,9 +55,10 @@ public:
     /// The Gio application instance, never NULL
     Gio::Application *gio_app() { return _gio_application.get(); }
 
-    InkscapeWindow *create_window(SPDocument *document, bool replace);
-    void create_window(const Glib::RefPtr<Gio::File> &file = Glib::RefPtr<Gio::File>());
-    bool destroy_window(InkscapeWindow *window, bool keep_alive = false);
+    SPDesktop *createDesktop(SPDocument *document, bool replace);
+    void create_window(Glib::RefPtr<Gio::File> const &file = {});
+    bool destroyDesktop(SPDesktop *desktop, bool keep_alive = false);
+    void detachDesktopToNewWindow(SPDesktop *desktop);
     bool destroy_all();
     void print_action_list();
     void print_input_type_list() const;
@@ -84,7 +83,7 @@ public:
     // redundant with the selection functions above.
     // Canvas to document transform matrix should be stored in the canvas, itself.
     SPDesktop*            get_active_desktop() { return _active_desktop; }
-    void                  set_active_desktop(SPDesktop* desktop) { _active_desktop = desktop; }
+    void                  set_active_desktop(SPDesktop *desktop);
 
     // The currently focused window (nominally corresponding to _active_document).
     // A window must have a document but a document may have zero, one, or more windows.
@@ -99,20 +98,23 @@ public:
     SPDocument *document_new(std::string const &template_filename = {});
     std::pair<SPDocument *, bool /*cancelled*/> document_open(Glib::RefPtr<Gio::File> const &file);
     SPDocument *document_open(std::span<char const> buffer);
-    bool                  document_swap(InkscapeWindow* window, SPDocument* document);
+    bool                  document_swap(SPDesktop *desktop, SPDocument *document);
     bool                  document_revert(SPDocument* document);
     void                  document_close(SPDocument* document);
 
     /* These require a GUI! */
-    void                  document_fix(InkscapeWindow* window); // MOVE TO ANOTHER FILE
+    void                  document_fix(SPDesktop *desktop);
 
     std::vector<SPDocument *> get_documents();
 
     /******* Window *******/
-    InkscapeWindow*       window_open(SPDocument* document);
-    void                  window_close(InkscapeWindow* window);
-    void                  window_close_active();
-    void                  startup_close();
+    void startup_close();
+    void windowClose(InkscapeWindow *window);
+
+    /******* Desktop *******/
+    SPDesktop *desktopOpen(SPDocument *document);
+    void desktopClose(SPDesktop *desktop);
+    void desktopCloseActive();
 
     /****** Actions *******/
     InkActionExtraData&     get_action_extra_data()     { return _action_extra_data;  }
@@ -126,6 +128,8 @@ public:
     int get_number_of_windows() const;
 
 protected:
+    Glib::RefPtr<Gio::Application> _gio_application;
+
     bool _with_gui    = true;
     bool _batch_process = false; // Temp
     bool _use_shell   = false;
@@ -136,16 +140,17 @@ protected:
     bool _use_command_line_argument = false;
     Glib::ustring _pages;
 
-    // Documents are owned by the application which is responsible for opening/saving/exporting. WIP
-    // std::vector<std::unique_ptr<SPDocument>> _documents;   For a true headless version
+    // Documents are owned by the application which is responsible for opening/saving/exporting.
     // Not supported by Apple Clang yet:
     // std::unordered_map<std::unique_ptr<SPDocument>,
     //                    std::vector<std::unique_ptr<InkscapeWindow>>,
     //                    TransparentPtrHash<SPDocument>,
     //                    TransparentPtrEqual<SPDocument>> _documents;
     std::map<std::unique_ptr<SPDocument>,
-             std::vector<std::unique_ptr<InkscapeWindow>>,
+             std::vector<std::unique_ptr<SPDesktop>>,
              TransparentPtrLess<SPDocument>> _documents;
+
+    std::vector<std::unique_ptr<InkscapeWindow>> _windows;
 
     // We keep track of these things so we don't need a window to find them (for headless operation).
     SPDocument*               _active_document   = nullptr;
@@ -175,7 +180,6 @@ protected:
     void process_document(SPDocument* document, std::string output_path);
     void parse_actions(const Glib::ustring& input, action_vector_t& action_vector);
 
-    void on_about();
     void redirect_output();
     void shell(bool active_window = false);
 

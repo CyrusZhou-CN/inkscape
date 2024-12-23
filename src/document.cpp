@@ -1973,19 +1973,11 @@ unsigned int SPDocument::vacuumDocument()
  *
  * @param[in] modified True if the document has been modified.
  */
-void SPDocument::setModifiedSinceSave(bool modified) {
-    this->modified_since_save = modified;
-    this->modified_since_autosave = modified;
-    if (SP_ACTIVE_DESKTOP) {
-        if (InkscapeWindow *window = SP_ACTIVE_DESKTOP->getInkscapeWindow()) {
-            // During load, SP_ACTIVE_DESKTOP may be != nullptr, but parent might still be nullptr.
-            // Moreover, the desktop widget may still not be fully constructed, in which case
-            // window->get_desktop_widget() will return nullptr.
-            if (auto *dtw = window->get_desktop_widget()) {
-                dtw->updateTitle(getDocumentName());
-            }
-        }
-    }
+void SPDocument::setModifiedSinceSave(bool modified)
+{
+    modified_since_save = modified;
+    modified_since_autosave = modified;
+    _saved_or_modified_signal.emit();
 }
 
 /**
@@ -2251,6 +2243,11 @@ sigc::connection
 SPDocument::connectReconstructionFinish(SPDocument::ReconstructionFinish::slot_type  slot)
 {
     return _reconstruction_finish_signal.connect(slot);
+}
+
+sigc::connection SPDocument::connectSavedOrModified(sigc::slot<void ()> &&slot)
+{
+    return _saved_or_modified_signal.connect(std::move(slot));
 }
 
 void SPDocument::_emitModified() {

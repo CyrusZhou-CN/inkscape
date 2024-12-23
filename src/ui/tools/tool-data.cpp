@@ -74,3 +74,18 @@ std::map<Glib::ustring, Glib::ustring> const &get_tool_msg()
     return tool_msg;
 }
 
+Glib::ustring const &pref_path_to_tool_name(Glib::UStringView pref_path)
+{
+    auto &data = get_tool_data();
+
+    // Todo: Would prefer to identify tools by their enum, not by their name
+    // or prefs path. Then none of this function would even be necessary.
+    for (auto &[name, data] : data) {
+        if (data.pref_path == pref_path) {
+            return name;
+        }
+    }
+
+    static Glib::ustring const empty;
+    return empty;
+}

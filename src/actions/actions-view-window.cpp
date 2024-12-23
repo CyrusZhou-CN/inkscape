@@ -22,7 +22,7 @@
 #include "inkscape-window.h"
 #include "inkscape.h"      // previous/next window
 #include "actions/actions-extra-data.h"
-#include "ui/interface.h"  // sp_ui_new_view()
+#include "ui/widget/desktop-widget.h"
 
 namespace {
 
@@ -38,7 +38,22 @@ void window_next(InkscapeWindow *win)
 
 void window_new(InkscapeWindow *win)
 {
-    sp_ui_new_view();
+    auto app = InkscapeApplication::instance();
+    auto doc = app->get_active_document();
+    if (!doc) {
+        return;
+    }
+    app->desktopOpen(doc);
+}
+
+void tab_previous(InkscapeWindow *win)
+{
+    win->get_desktop_widget()->advanceTab(-1);
+}
+
+void tab_next(InkscapeWindow *win)
+{
+    win->get_desktop_widget()->advanceTab(1);
 }
 
 auto const raw_data_view_window = std::vector<std::vector<Glib::ustring>>
@@ -47,6 +62,8 @@ auto const raw_data_view_window = std::vector<std::vector<Glib::ustring>>
     {"win.window-new",                  N_("Duplicate Window"),         "View",             N_("Open a new window with the same document")},
     {"win.window-previous",             N_("Previous Window"),          "View",             N_("Switch to the previous document window")},
     {"win.window-next",                 N_("Next Window"),              "View",             N_("Switch to the next document window")},
+    {"win.tab-next",                    N_("Next Tab"),                 "View",             N_("Switch to the next document tab")},
+    {"win.tab-previous",                N_("Previous Tab"),             "View",             N_("Switch to the previous document tab")},
     // clang-format on
 };
 
@@ -58,6 +75,8 @@ void add_actions_view_window(InkscapeWindow* win)
     win->add_action("window-new",                  sigc::bind(sigc::ptr_fun(&window_new),       win));
     win->add_action("window-previous",             sigc::bind(sigc::ptr_fun(&window_previous),  win));
     win->add_action("window-next",                 sigc::bind(sigc::ptr_fun(&window_next),      win));
+    win->add_action("tab-next",                    sigc::bind(sigc::ptr_fun(&tab_next),         win));
+    win->add_action("tab-previous",                sigc::bind(sigc::ptr_fun(&tab_previous),     win));
     // clang-format on
 
     // Check if there is already an application instance (GUI or non-GUI).

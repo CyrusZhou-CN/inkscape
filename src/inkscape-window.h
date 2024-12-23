@@ -33,7 +33,7 @@ class SPDesktopWidget;
 class InkscapeWindow : public Gtk::ApplicationWindow
 {
 public:
-    InkscapeWindow(SPDocument *document);
+    InkscapeWindow(SPDesktop *desktop);
     ~InkscapeWindow() override;
 
     SPDocument*      get_document()       { return _document; }
@@ -49,6 +49,8 @@ public:
 
     void toggleFullscreen();
 
+    void setActiveTab(SPDesktop *desktop);
+
 private:
     InkscapeApplication *_app = nullptr;
     SPDocument*          _document = nullptr;
@@ -56,7 +58,6 @@ private:
     SPDesktopWidget*     _desktop_widget = nullptr;
     Glib::RefPtr<Gtk::ShortcutController> _shortcut_controller;
 
-    void setup_view();
     void add_document_actions();
 
     sigc::scoped_connection _toplevel_state_connection;

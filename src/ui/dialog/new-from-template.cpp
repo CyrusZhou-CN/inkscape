@@ -66,8 +66,7 @@ void NewFromTemplate::_createFromTemplate()
         return;
 
     auto app = InkscapeApplication::instance();
-    InkscapeWindow *win = app->window_open(doc);
-    SPDesktop *new_desktop = win->get_desktop();
+    auto new_desktop = app->desktopOpen(doc);
     sp_namedview_window_from_document(new_desktop);
 
     if (old_desktop)

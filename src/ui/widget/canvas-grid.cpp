@@ -35,6 +35,7 @@
 #include "desktop.h"        // Hopefully temp.
 #include "desktop-events.h" // Hopefully temp.
 #include "document-undo.h"
+#include "message-context.h"
 #include "selection.h"
 #include "display/control/canvas-item-guideline.h"
 #include "page-manager.h"
@@ -45,6 +46,7 @@
 #include "ui/builder-utils.h"
 #include "ui/controller.h"
 #include "ui/dialog/command-palette.h"
+#include "ui/drag-and-drop.h"
 #include "ui/tools/tool-base.h"
 #include "ui/util.h"
 #include "ui/widget/canvas.h"
@@ -52,8 +54,9 @@
 #include "ui/widget/events/canvas-event.h"
 #include "ui/widget/canvas-notice.h"
 #include "ui/widget/ink-ruler.h"
+#include "ui/widget/stack.h"
+#include "ui/widget/tabs-widget.h"
 #include "util/units.h"
-
 
 namespace Inkscape::UI::Widget {
 
@@ -62,11 +65,8 @@ CanvasGrid::CanvasGrid(SPDesktopWidget *dtw)
     _dtw = dtw;
     set_name("CanvasGrid");
 
-    // Canvas
-    _canvas = std::make_unique<Inkscape::UI::Widget::Canvas>();
-    _canvas->set_hexpand(true);
-    _canvas->set_vexpand(true);
-    _canvas->set_focusable(true);
+    // Tabs widget
+    _tabs_widget = std::make_unique<Inkscape::UI::Widget::TabsWidget>(dtw);
 
     // Command palette
     _command_palette = std::make_unique<Inkscape::UI::Dialog::CommandPalette>();
@@ -75,33 +75,38 @@ CanvasGrid::CanvasGrid(SPDesktopWidget *dtw)
     _notice = CanvasNotice::create();
 
     // Canvas overlay
-    _popoverbin.setChild(_canvas.get());
     _canvas_overlay.set_child(_popoverbin);
     _canvas_overlay.add_overlay(_command_palette->get_base_widget());
     _canvas_overlay.add_overlay(*_notice);
     _canvas_overlay.set_expand();
 
+    _canvas_stack = Gtk::make_managed<Inkscape::UI::Widget::Stack>();
+    _popoverbin.setChild(_canvas_stack);
+    ink_drag_setup(_dtw, _canvas_stack);
+
     // Horizontal Ruler
     _hruler = std::make_unique<Inkscape::UI::Widget::Ruler>(Gtk::Orientation::HORIZONTAL);
-    _hruler->add_track_widget(*_canvas);
     _hruler->set_hexpand(true);
     // Tooltip/Unit set elsewhere
 
     // Vertical Ruler
     _vruler = std::make_unique<Inkscape::UI::Widget::Ruler>(Gtk::Orientation::VERTICAL);
-    _vruler->add_track_widget(*_canvas);
     _vruler->set_vexpand(true);
     // Tooltip/Unit set elsewhere.
 
     // Guide Lock
     _guide_lock.set_name("LockGuides");
+    _guide_lock.set_action_name("doc.lock-all-guides");
     auto set_lock_icon = [this](){
         _guide_lock.set_image_from_icon_name(_guide_lock.get_active() ? "object-locked" : "object-unlocked");
     };
     // To be replaced by Gio::Action:
     _guide_lock.signal_toggled().connect([=,this](){
         set_lock_icon();
-        _dtw->update_guides_lock();
+    });
+    _guide_lock.signal_clicked().connect([this] {
+        bool down = !_guide_lock.get_active(); // Hack: Reversed since button state only changes after click.
+        _dtw->get_desktop()->guidesMessageContext()->flash(Inkscape::NORMAL_MESSAGE, down ? _("Locked all guides") : _("Unlocked all guides"));
     });
     set_lock_icon();
     _guide_lock.set_tooltip_text(_("Toggle lock of all guides in the document"));
@@ -152,11 +157,12 @@ CanvasGrid::CanvasGrid(SPDesktopWidget *dtw)
     _quick_actions.set_tooltip_text(_("Display options"));
 
     // Main grid
-    attach(_subgrid,       0, 0, 1, 2);
-    attach(_hscrollbar,    0, 2, 1, 1);
-    attach(_cms_adjust,    1, 2, 1, 1);
-    attach(_quick_actions, 1, 0, 1, 1);
-    attach(_vscrollbar,    1, 1, 1, 1);
+    attach(*_tabs_widget,  0, 0);
+    attach(_subgrid,       0, 1, 1, 2);
+    attach(_hscrollbar,    0, 3, 1, 1);
+    attach(_cms_adjust,    1, 3, 1, 1);
+    attach(_quick_actions, 1, 1, 1, 1);
+    attach(_vscrollbar,    1, 2, 1, 1);
 
     // For creating guides, etc.
     auto const bind_controllers = [&](auto& ruler, RulerOrientation orientation) {
@@ -177,57 +183,95 @@ CanvasGrid::CanvasGrid(SPDesktopWidget *dtw)
 
 CanvasGrid::~CanvasGrid() = default;
 
-void CanvasGrid::on_realize() {
+void CanvasGrid::addTab(Canvas *canvas)
+{
+    canvas->set_hexpand(true);
+    canvas->set_vexpand(true);
+    canvas->set_focusable(true);
+    _canvas_stack->add(*canvas);
+}
+
+void CanvasGrid::removeTab(Canvas *canvas)
+{
+    _canvas_stack->remove(*canvas);
+}
+
+void CanvasGrid::switchTab(Canvas *canvas)
+{
+    if (_canvas) {
+        _hruler->clear_track_widget();
+        _vruler->clear_track_widget();
+    }
+
+    _canvas = canvas;
+
+    _canvas_stack->setActive(_canvas);
+
+    if (_canvas) {
+        _hruler->set_track_widget(*_canvas);
+        _vruler->set_track_widget(*_canvas);
+    }
+}
+
+void CanvasGrid::on_realize()
+{
     // actions should be available now
-
-    if (auto map = _dtw->get_action_map()) {
-        auto set_display_icon = [this]() {
-            Glib::ustring id;
-            auto mode = _canvas->get_render_mode();
-            switch (mode) {
-                case RenderMode::NORMAL: id = "display";
-                    break;
-                case RenderMode::OUTLINE: id = "display-outline";
-                    break;
-                case RenderMode::OUTLINE_OVERLAY: id = "display-outline-overlay";
-                    break;
-                case RenderMode::VISIBLE_HAIRLINES: id = "display-enhance-stroke";
-                    break;
-                case RenderMode::NO_FILTERS: id = "display-no-filter";
-                    break;
-                default:
-                    g_warning("Unknown display mode in canvas-grid");
-                    break;
-            }
-
-            if (!id.empty()) {
-                // if CMS is ON show alternative icons
-                if (_canvas->get_cms_active()) {
-                    id += "-alt";
-                }
-                _quick_actions.set_icon_name(id + "-symbolic");
-            }
-        };
-
-        set_display_icon();
-
-        // when display mode state changes, update icon
-        auto cms_action = std::dynamic_pointer_cast<Gio::SimpleAction>(map->lookup_action("canvas-color-manage"));
-        auto disp_action = std::dynamic_pointer_cast<Gio::SimpleAction>(map->lookup_action("canvas-display-mode"));
-
-        if (cms_action && disp_action) {
-            disp_action->signal_activate().connect([=](const Glib::VariantBase& state){ set_display_icon(); });
-            cms_action-> signal_activate().connect([=](const Glib::VariantBase& state){ set_display_icon(); });
-        }
-        else {
-            g_warning("No canvas-display-mode and/or canvas-color-manage action available to canvas-grid");
-        }
-    }
-    else {
-        g_warning("No action map available to canvas-grid");
-    }
-
     parent_type::on_realize();
+
+    auto const map = _dtw->get_action_map();
+    if (!map) {
+        g_warning("No action map available to canvas-grid");
+        return;
+    }
+
+    auto const cms_action = std::dynamic_pointer_cast<Gio::SimpleAction>(map->lookup_action("canvas-color-manage"));
+    auto const disp_action = std::dynamic_pointer_cast<Gio::SimpleAction>(map->lookup_action("canvas-display-mode"));
+    if (!cms_action || !disp_action) {
+        g_warning("No canvas-display-mode and/or canvas-color-manage action available to canvas-grid");
+        return;
+    }
+
+    auto set_display_icon = [=, this] {
+        int display_mode;
+        disp_action->get_state<int>(display_mode);
+
+        Glib::ustring id;
+        switch (static_cast<Inkscape::RenderMode>(display_mode)) {
+            case RenderMode::NORMAL:
+                id = "display";
+                break;
+            case RenderMode::OUTLINE:
+                id = "display-outline";
+                break;
+            case RenderMode::OUTLINE_OVERLAY:
+                id = "display-outline-overlay";
+                break;
+            case RenderMode::VISIBLE_HAIRLINES:
+                id = "display-enhance-stroke";
+                break;
+            case RenderMode::NO_FILTERS:
+                id = "display-no-filter";
+                break;
+            default:
+                g_warning("Unknown display mode in canvas-grid");
+                return;
+        }
+
+        bool cms_mode;
+        cms_action->get_state<bool>(cms_mode);
+
+        // if CMS is ON show alternative icons
+        if (cms_mode) {
+            id += "-alt";
+        }
+
+        _quick_actions.set_icon_name(id + "-symbolic");
+    };
+
+    // when display mode state changes, update icon
+    disp_action->property_state().signal_changed().connect([=] { set_display_icon(); });
+    cms_action-> property_state().signal_changed().connect([=] { set_display_icon(); });
+    set_display_icon();
 }
 
 // TODO: remove when sticky zoom gets replaced by Gio::Action:
@@ -335,8 +379,7 @@ CanvasGrid::ShowRulers(bool state)
     _guide_lock.set_visible(_show_rulers);
 }
 
-void
-CanvasGrid::ToggleRulers()
+void CanvasGrid::ToggleRulers()
 {
     _show_rulers = !_show_rulers;
     ShowRulers(_show_rulers);
@@ -347,8 +390,7 @@ CanvasGrid::ToggleRulers()
     prefs->setBool("/window/rulers/state", _show_rulers);
 }
 
-void
-CanvasGrid::ToggleCommandPalette()
+void CanvasGrid::ToggleCommandPalette()
 {
     _command_palette->toggle();
 }

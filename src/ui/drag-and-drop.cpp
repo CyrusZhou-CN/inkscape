@@ -43,6 +43,7 @@
 #include "ui/clipboard.h"
 #include "ui/interface.h"
 #include "ui/tools/tool-base.h"
+#include "ui/widget/canvas-grid.h"
 #include "ui/widget/canvas.h"  // Target, canvas to world transform.
 #include "ui/widget/desktop-widget.h"
 #include "util/value-utils.h"
@@ -365,12 +366,12 @@ bool on_drop(Glib::ValueBase const &value, double x, double y, SPDesktopWidget *
 
 } // namespace
 
-void ink_drag_setup(SPDesktopWidget *dtw)
+void ink_drag_setup(SPDesktopWidget *dtw, Gtk::Widget *widget)
 {
     auto drop_target = Gtk::DropTarget::create(G_TYPE_INVALID, Gdk::DragAction::COPY | Gdk::DragAction::MOVE);
     drop_target->set_gtypes(get_drop_types());
     drop_target->signal_drop().connect(sigc::bind(&on_drop, dtw, drop_target), false);
-    dtw->get_canvas()->add_controller(drop_target);
+    widget->add_controller(drop_target);
 }
 
 /*

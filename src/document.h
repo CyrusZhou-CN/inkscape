@@ -467,6 +467,7 @@ private:
     sigc::connection _desktop_activated_connection;
 
     sigc::signal<void ()> destroySignal;
+    sigc::signal<void ()> _saved_or_modified_signal;
 
 public:
     /**
@@ -486,6 +487,7 @@ public:
     sigc::connection connectResourcesChanged(char const *key, SPDocument::ResourcesChangedSignal::slot_type slot);
     sigc::connection connectReconstructionStart(ReconstructionStart::slot_type slot);
     sigc::connection connectReconstructionFinish(ReconstructionFinish::slot_type slot);
+    sigc::connection connectSavedOrModified(sigc::slot<void ()> &&slot);
 
     /* Resources */
     std::map<std::string, std::vector<SPObject *> > resources;

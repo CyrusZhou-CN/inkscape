@@ -952,11 +952,12 @@ bool Shortcuts::_add_shortcut(Glib::ustring const &detailed_action_name, Glib::u
     Glib::VariantBase target;
     Gio::SimpleAction::parse_detailed_name_variant(detailed_action_name, action_name, target);
 
-    if (!_list_action_names(cache_action_names).contains(action_name.raw())) {
+    // Note: Commented out because actions are now installed later, so this check actually breaks all shortcuts,
+    /*if (!_list_action_names(cache_action_names).contains(action_name.raw())) {
         // Oops, not an action!
         std::cerr << "Shortcuts::_add_shortcut: No Action for " << detailed_action_name.raw() << std::endl;
         return false;
-    }
+    }*/
 
     // Remove previous use of trigger.
     [[maybe_unused]] auto const removed = _remove_shortcut_trigger(trigger_normalized);

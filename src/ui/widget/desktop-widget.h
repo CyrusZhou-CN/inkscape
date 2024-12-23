@@ -77,6 +77,7 @@ namespace Toolbar {
 class Toolbars;
 class CommandToolbar;
 class SnapToolbar;
+class ToolToolbar;
 } // namespace Toolbars
 
 namespace Widget {
@@ -95,27 +96,34 @@ class SPDesktopWidget : public Gtk::Box
     using parent_type = Gtk::Box;
 
 public:
-    SPDesktopWidget(InkscapeWindow *inkscape_window, SPDocument *document);
+    SPDesktopWidget(InkscapeWindow *inkscape_window);
     ~SPDesktopWidget() override;
 
     Inkscape::UI::Widget::CanvasGrid *get_canvas_grid()  { return _canvas_grid; }  // Temp, I hope!
     Inkscape::UI::Widget::Canvas     *get_canvas()       { return _canvas; }
-    SPDesktop                        *get_desktop()      { return _desktop.get(); }
+    std::vector<SPDesktop *> const   &get_desktops() const { return _desktops; }
+    SPDesktop                        *get_desktop()      { return _desktop; }
     InkscapeWindow             const *get_window() const { return _window; }
     InkscapeWindow                   *get_window()       { return _window; }
     double                            get_dt2r()   const { return _dt2r; }
-
-    void set_window(InkscapeWindow * const window) { _window = window; }
 
     Gio::ActionMap *get_action_map();
 
     void on_realize() override;
     void on_unrealize() override;
 
+    void addDesktop(SPDesktop *desktop, int pos = -1);
+    void removeDesktop(SPDesktop *desktop);
+    void switchDesktop(SPDesktop *desktop);
+
+    void advanceTab(int by);
+
 private:
     sigc::scoped_connection modified_connection;
 
-    std::unique_ptr<SPDesktop> _desktop;
+    std::vector<SPDesktop *> _desktops;
+    SPDesktop *_desktop = nullptr;
+
     InkscapeWindow *_window = nullptr;
 
     Gtk::Paned *_tbbox = nullptr;
@@ -133,6 +141,8 @@ private:
     double _dt2r;
     Inkscape::UI::Widget::Canvas *_canvas = nullptr;
 
+    sigc::scoped_connection _tool_changed_conn;
+
 public:
     void setMessage(Inkscape::MessageType type, char const *message);
     void viewSetPosition (Geom::Point p);
@@ -149,13 +159,12 @@ public:
     void setToolboxAdjustmentValue(char const *id, double value);
     bool isToolboxButtonActive(char const *id) const;
     void setCoordinateStatus(Geom::Point p);
-    void updateTitle(char const *uri);
     void onFocus(bool has_focus);
     Inkscape::UI::Dialog::DialogContainer *getDialogContainer();
     void showNotice(Glib::ustring const &msg, int timeout = 0);
 
-    void updateNamedview();
-    void update_guides_lock();
+    void desktopChangedDocument(SPDesktop *desktop);
+    void desktopChangedTitle(SPDesktop *desktop);
 
     // Canvas Grid Widget
     void update_zoom();
@@ -170,7 +179,7 @@ public:
     void sticky_zoom_updated();
 
 private:
-    Gtk::Widget *tool_toolbox;
+    Inkscape::UI::Toolbar::ToolToolbar *tool_toolbox;
     std::unique_ptr<Inkscape::UI::Toolbar::Toolbars> tool_toolbars;
     std::unique_ptr<Inkscape::UI::Toolbar::CommandToolbar> command_toolbar;
     std::unique_ptr<Inkscape::UI::Toolbar::SnapToolbar> snap_toolbar;
@@ -180,7 +189,9 @@ private:
     Inkscape::PrefObserver _tb_visible_buttons;
     Inkscape::PrefObserver _ds_sticky_zoom;
 
-    void namedviewModified(SPObject *obj, unsigned flags);
+    void _updateUnit();
+    void _updateNamedview();
+    void _updateTitle();
     void apply_ctrlbar_settings();
     void remove_from_top_toolbar_or_hbox(Gtk::Widget &widget);
 };
