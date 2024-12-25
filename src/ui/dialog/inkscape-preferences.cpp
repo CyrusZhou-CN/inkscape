@@ -1602,6 +1602,7 @@ void InkscapePreferences::initPageUI()
     }
 
     _ui_languages.init( "/ui/language", languages, langValues, languages[0]);
+    _ui_languages.enable_search();
     _page_ui.add_line( false, _("Language:"), _ui_languages, "",
                               _("Set the language for menus and number formats"), false, reset_icon());
 

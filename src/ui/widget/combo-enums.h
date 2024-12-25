@@ -15,14 +15,14 @@
 #include <glibmm/i18n.h>
 #include <glibmm/refptr.h>
 #include <glibmm/ustring.h>
-#include <gtkmm/dropdown.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/stringlist.h>
 #include <gtkmm/stringobject.h>
 #include <gtkmm/treemodel.h>
 
 #include "attr-widget.h"
-#include "template-list.h"
+// #include "template-list.h"
+#include "ui/widget/drop-down-list.h"
 #include "ui/widget/labelled.h"
 #include "util/enums.h"
 
@@ -32,7 +32,7 @@ namespace Inkscape::UI::Widget {
  * Simplified management of enumerations in the UI as combobox.
  */
 template <typename E> class ComboBoxEnum
-    : public Gtk::DropDown
+    : public DropDownList
     , public AttrWidget
 {
 public:
@@ -60,10 +60,6 @@ public:
         return get_selected();
     }
 
-    Glib::SignalProxyProperty signal_changed() {
-        return property_selected().signal_changed();
-    }
-
 private:
     struct Data {
         E id;
@@ -72,7 +68,6 @@ private:
         bool separator = false;
     };
     std::vector<Data> _enums;
-    Glib::RefPtr<Gtk::SignalListItemFactory> _factory;
 
     [[nodiscard]] ComboBoxEnum(Util::EnumDataConverter<E> const &c,
                                SPAttr const a, bool const sort,
@@ -83,29 +78,6 @@ private:
         , _converter(c) {
 
         property_selected().signal_changed().connect(signal_attr_changed().make_slot());
-
-        _factory = Gtk::SignalListItemFactory::create();
-
-        _factory->signal_setup().connect([this](const Glib::RefPtr<Gtk::ListItem>& list_item) {
-            auto label = Gtk::make_managed<Gtk::Label>();
-            label->set_xalign(0);
-            label->set_valign(Gtk::Align::CENTER);
-            list_item->set_child(*label);
-        });
-
-        _factory->signal_bind().connect([this](const Glib::RefPtr<Gtk::ListItem>& list_item) {
-            auto obj = list_item->get_item();
-            auto& label = dynamic_cast<Gtk::Label&>(*list_item->get_child());
-            auto pos = list_item->get_position();
-            if (pos < _enums.size() && _enums[pos].separator) {
-                label.get_parent()->add_css_class("top-separator");
-            }
-            auto item = std::dynamic_pointer_cast<Gtk::StringObject>(obj);
-            label.set_label(item->get_string());
-        });
-
-        set_list_factory(_factory);
-        set_model(_model);
 
         _enums.reserve(_converter._length);
         bool separator = false;
@@ -128,8 +100,12 @@ private:
             std::sort(begin(_enums), end(_enums), [](const auto& a, const auto& b){ return a.label < b.label; });
         }
 
+        set_row_separator_func([this](unsigned int pos){
+            return pos < _enums.size() && _enums[pos].separator;
+        });
+
         for (auto& el : _enums) {
-            _model->append(el.label);
+            append(el.label);
         }
     }
 
@@ -184,7 +160,6 @@ private:
         return it == end(_enums) ? -1 : std::distance(begin(_enums), it);
     }
 
-    Glib::RefPtr<Gtk::StringList> _model = Gtk::StringList::create({});
     const Util::EnumDataConverter<E>& _converter;
 };
 

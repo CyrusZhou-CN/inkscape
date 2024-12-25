@@ -1515,3 +1515,8 @@ listview row.top-separator {
     /* choose separator color that's going to be visible in a popup with both light and dark theme */
     box-shadow: 0 -4px alpha(@theme_fg_color, 0.2), 0 -3px @theme_base_color;
 }
+
+/* Eliminate mysterious blue frame that shows up in a list popup of the dropdownlist widget */
+#DropDownList listview row:focus {
+    outline: none;
+}

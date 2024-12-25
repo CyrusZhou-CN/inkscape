@@ -22,13 +22,15 @@
 #include <sigc++/signal.h>
 #include <glibmm/refptr.h>
 #include <gtkmm/checkbutton.h>
-#include <gtkmm/comboboxtext.h>
 #include <gtkmm/drawingarea.h>
+#include <gtkmm/entry.h>
 #include <gtkmm/grid.h>
 #include <gtkmm/scrolledwindow.h>
+#include <gtkmm/signallistitemfactory.h>
 #include <gtkmm/textview.h>
 
 #include "ui/widget/color-picker.h"
+#include "ui/widget/drop-down-list.h"
 #include "ui/widget/unit-menu.h"
 #include "ui/widget/spinbutton.h"
 #include "ui/widget/scalar-unit.h"
@@ -186,7 +188,7 @@ private:
     bool freeze; // used to block recursive updates of slider and spinbutton
 };
 
-class PrefCombo : public Gtk::ComboBoxText
+class PrefCombo : public DropDownList
 {
 public:
     void init(Glib::ustring const &prefs_path,
@@ -203,7 +205,7 @@ private:
     Glib::ustring _prefs_path;
     std::vector<int> _values;
     std::vector<Glib::ustring> _ustr_values;    ///< string key values used optionally instead of numeric _values
-    void on_changed() override;
+    void on_changed();
 };
 
 class PrefEntry : public Gtk::Entry

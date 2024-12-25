@@ -16,17 +16,15 @@ namespace Inkscape::UI::Widget {
 
 UnitMenu::UnitMenu() : _type(UNIT_TYPE_NONE)
 {
-    set_model(_model);
     set_selected(0);
     property_selected().signal_changed().connect([this](){ on_changed(); });
 }
 
 UnitMenu::UnitMenu(BaseObjectType * const cobject, Glib::RefPtr<Gtk::Builder> const &builder)
-    : Gtk::DropDown{cobject}
+    : DropDownList{cobject, builder}
 {
     // We assume the UI file sets the active item & thus we do not do that here.
 
-    set_model(_model);
     property_selected().signal_changed().connect([this](){ on_changed(); });
 }
 
@@ -41,7 +39,7 @@ bool UnitMenu::setUnitType(UnitType unit_type, bool svg_length)
     for (auto & i : m) {
         // We block the use of non SVG units if requested
         if (!svg_length || i.second.svgUnit() > 0) {
-            _model->append(i.first);
+            append(i.first);
         }
     }
     _type = unit_type;
@@ -52,7 +50,7 @@ bool UnitMenu::setUnitType(UnitType unit_type, bool svg_length)
 
 bool UnitMenu::resetUnitType(UnitType unit_type, bool svg_length)
 {
-    _model->splice(0, _model->get_n_items(), {});
+    remove_all();
 
     return setUnitType(unit_type, svg_length);
 }
@@ -60,13 +58,7 @@ bool UnitMenu::resetUnitType(UnitType unit_type, bool svg_length)
 void UnitMenu::addUnit(Unit const& u)
 {
     Util::UnitTable::get().addUnit(u, false);
-    _model->append(u.abbr);
-}
-
-unsigned int UnitMenu::append(const Glib::ustring& name) {
-    auto n = _model->get_n_items();
-    _model->append(name);
-    return n;
+    append(u.abbr);
 }
 
 Unit const * UnitMenu::getUnit() const
@@ -88,8 +80,8 @@ bool UnitMenu::setUnit(Glib::ustring const & unit)
     // search for "unit" string
     // Note: find() method is not yet available (https://docs.gtk.org/gtk4/method.StringList.find.html), so use the loop
     // TODO: replace with "find" when it becomes practical to do so
-    for (int i = 0; i < _model->get_n_items(); ++i) {
-        if (_model->get_string(i) == unit) {
+    for (int i = 0; i < get_item_count(); ++i) {
+        if (get_string(i) == unit) {
             set_selected(i);
             break;
         }
@@ -171,7 +163,7 @@ void UnitMenu::on_changed() {
 
 Glib::ustring UnitMenu::get_selected_string() const {
     auto n = get_selected();
-    return _model->get_string(n);
+    return get_string(n);
 }
 
 } // namespace Inkscape::UI::Widget

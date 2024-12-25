@@ -207,6 +207,7 @@ set(ui_SRC
 	widget/custom-tooltip.cpp
 	widget/dash-selector.cpp
 	widget/desktop-widget.cpp
+	widget/drop-down-list.cpp
 	widget/entity-entry.cpp
 	widget/entry.cpp
 	widget/export-lists.cpp
@@ -510,6 +511,7 @@ set(ui_SRC
 	widget/custom-tooltip.h
 	widget/dash-selector.h
 	widget/desktop-widget.h
+	widget/drop-down-list.h
 	widget/entity-entry.h
 	widget/entry.h
 	widget/events/canvas-event.h

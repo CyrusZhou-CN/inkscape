@@ -12,10 +12,9 @@
 #define INKSCAPE_UI_WIDGET_UNIT_H
 
 #include <glibmm/refptr.h>
-#include <gtkmm/dropdown.h>
-#include <gtkmm/stringlist.h>
 
 #include "util/units.h"
+#include "ui/widget/drop-down-list.h"
 
 namespace Gtk {
 class Builder;
@@ -28,7 +27,7 @@ namespace Inkscape::UI::Widget {
 /**
  * A drop down menu for choosing unit types.
  */
-class UnitMenu : public Gtk::DropDown
+class UnitMenu : public DropDownList
 {
 public:
     /**
@@ -37,7 +36,7 @@ public:
     UnitMenu();
 
     /* GtkBuilder constructor */
-    UnitMenu(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> const & /*builder*/);
+    UnitMenu(DropDown::BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> const & /*builder*/);
 
     ~UnitMenu() override;
 
@@ -66,9 +65,6 @@ public:
      * Adds a unit, possibly user-defined, to the menu.
      */
     void          addUnit(Unit const& u);
-
-    // append a custom item outside of the unit system
-    unsigned int append(const Glib::ustring& name);
 
     /**
      * Sets the dropdown widget to the given unit abbreviation. 
@@ -142,7 +138,6 @@ public:
 private:
     Glib::ustring get_selected_string() const;
     UnitType          _type;
-    Glib::RefPtr<Gtk::StringList> _model = Gtk::StringList::create({});
 };
 
 } // namespace Inkscape::UI::Widget

@@ -13,6 +13,8 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#include <glibmm/ustring.h>
+#include <gtkmm/stringobject.h>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -583,8 +585,7 @@ bool PrefSlider::on_mnemonic_activate ( bool group_cycling )
     return _sb ? _sb->mnemonic_activate ( group_cycling ) : false;
 }
 
-void
-PrefSlider::init(Glib::ustring const &prefs_path,
+void PrefSlider::init(Glib::ustring const &prefs_path,
                  double lower, double upper, double step_increment, double page_increment, double default_value, int digits)
 {
     _prefs_path = prefs_path;
@@ -634,17 +635,19 @@ void PrefCombo::init(Glib::ustring const &prefs_path,
     }
 
     _prefs_path = prefs_path;
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    auto prefs = Inkscape::Preferences::get();
     int row = 0;
     int value = prefs->getInt(_prefs_path, default_value);
 
     for (int i = 0; i < labels_size; ++i) {
-        this->append(labels[i]);
+        append(labels[i]);
         _values.push_back(values[i]);
-        if (value == values[i])
+        if (value == values[i]) {
             row = i;
+        }
     }
-    this->set_active(row);
+    set_selected(row);
+    property_selected().signal_changed().connect([this](){ on_changed(); });
 }
 
 void PrefCombo::init(Glib::ustring const &prefs_path,
@@ -661,7 +664,7 @@ void PrefCombo::init(Glib::ustring const &prefs_path,
     }
 
     _prefs_path = prefs_path;
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    auto prefs = Inkscape::Preferences::get();
     int row = 0;
     Glib::ustring value = prefs->getString(_prefs_path);
     if (value.empty()) {
@@ -669,27 +672,27 @@ void PrefCombo::init(Glib::ustring const &prefs_path,
     }
 
     for (int i = 0; i < labels_size; ++i) {
-        this->append(labels[i]);
+        append(labels[i]);
         _ustr_values.push_back(values[i]);
-        if (value == values[i])
+        if (value == values[i]) {
             row = i;
+        }
     }
-    this->set_active(row);
+    set_selected(row);
+    property_selected().signal_changed().connect([this](){ on_changed(); });
 }
 
 void PrefCombo::on_changed()
 {
-    if (this->get_visible()) //only take action if user changed value
-    {
-        Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-        if(!_values.empty())
-        {
-            prefs->setInt(_prefs_path, _values[this->get_active_row_number()]);
-        }
-        else
-        {
-            prefs->setString(_prefs_path, _ustr_values[this->get_active_row_number()]);
-        }
+    if (!get_visible()) return; //only take action if user changed value
+
+    auto prefs = Inkscape::Preferences::get();
+    auto row = get_selected();
+    if (!_values.empty()) {
+        prefs->setInt(_prefs_path, _values.at(row));
+    }
+    else {
+        prefs->setString(_prefs_path, _ustr_values.at(row));
     }
 }
 
