@@ -659,7 +659,7 @@ void
 StartScreen::refresh_keys_warning()
 {
     auto prefs = Inkscape::Preferences::get();
-    auto current_file = prefs->getString("/options/kbshortcuts/shortcutfile");
+    auto current_file = prefs->getString("/options/kbshortcuts/shortcutfile", "inkscape.xml");
     auto &keys_warning = get_widget<Gtk::InfoBar>(builder, "keys_warning");
     if (current_file != "inkscape.xml" && current_file != "default.xml") {
         keys_warning.set_visible(true);
