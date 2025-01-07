@@ -102,6 +102,8 @@ void BatchItem::update_label()
     set_tooltip_text(label);
 }
 
+/// @brief Set "Export selected only"
+/// @param isolate true if only selected items should be shown in export
 void BatchItem::setIsolateItem(bool isolate)
 {
     if (_isolate_item != isolate) {
@@ -279,10 +281,23 @@ void BatchItem::setDrawing(std::shared_ptr<PreviewDrawing> drawing)
 
 /**
  * Add and remove batch items and their previews carefully and insert new ones into the container FlowBox
+ *
+ * @param items List of batch-items (e.g. layers) in the batch dialog. Is updated by this function.
+ * @param objects New list of objects (e.g. layers). Taken as input.
+ * @param container GUI widget containing the selection of batch items. Is updated by this function.
+ * @param isolate_items true if only the given (selected) items should be shown in export
  */
 void BatchItem::syncItems(BatchItems &items, std::map<std::string, SPObject*> const &objects, Gtk::FlowBox &container, std::shared_ptr<PreviewDrawing> preview, bool isolate_items)
 {
-    // Remove any items not in objects
+    // Pre- and post-condition of this function is that
+    // `items` and `container.children` have the same content.
+    // (They have different types and contain slightly different information,
+    // but there is still a 1:1 correspondence.)
+    //
+    // We update `items` so that it matches `objects`.
+    // Any necessary change to `items` is also applied to `container.children`.
+
+    // a) Remove any items not in objects
     for (auto it = items.begin(); it != items.end();) {
         if (!objects.contains(it->first)) {
             container.remove(*it->second);
@@ -293,10 +308,11 @@ void BatchItem::syncItems(BatchItems &items, std::map<std::string, SPObject*> co
         }
     }
 
+    // b) Add any objects not in items
+
     // A special container for pages allows them to be sorted correctly
     std::set<SPPage *, SPPage::PageIndexOrder> pages;
 
-    // Add any objects not in items
     for (auto &[id, obj] : objects) {
         if (auto page = cast<SPPage>(obj)) {
             if (!items[id] || items[id]->getPage() != page)
@@ -310,6 +326,11 @@ void BatchItem::syncItems(BatchItems &items, std::map<std::string, SPObject*> co
         if (items[id] && items[id]->getItem() == item)
             continue;
 
+        if (items[id]) {
+            // Remove existing item with same id
+            // (can occur when switching between document tabs)
+            container.remove(*items[id]);
+        }
         // Add new item to the end of list
         items[id] = std::make_unique<BatchItem>(item, isolate_items, preview);
         container.insert(*items[id], -1);
@@ -318,11 +339,18 @@ void BatchItem::syncItems(BatchItems &items, std::map<std::string, SPObject*> co
 
     for (auto &page : pages) {
         if (auto id = page->getId()) {
+            if (items[id]) {
+                container.remove(*items[id]);
+            }
             items[id] = std::make_unique<BatchItem>(page, preview);
             container.insert(*items[id], -1);
             items[id]->set_selected(true);
         }
     }
+
+    // Check postconditions
+    g_assert(items.size() == objects.size());
+    g_assert(container.get_children().size() == items.size());
 }
 
 BatchExport::BatchExport(BaseObjectType * const cobject, Glib::RefPtr<Gtk::Builder> const &builder)

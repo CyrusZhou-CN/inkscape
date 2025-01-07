@@ -82,6 +82,9 @@ public:
     void on_mode_changed(Gtk::SelectionMode mode);
     void set_selected(bool selected);
     void update_selected();
+
+    /// @brief Get "Export selected only" setting
+    /// @returns true if only selected items are shown in export
     bool isolateItem() const { return _isolate_item; }
     void setIsolateItem(bool isolate);
 
