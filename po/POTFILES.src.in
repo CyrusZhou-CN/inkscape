@@ -267,6 +267,7 @@ ${_build_dir}/share/templates/templates.h
 ../src/rdf.cpp
 ../src/selection-chemistry.cpp
 ../src/selection-describer.cpp
+../src/selection.cpp
 ../src/seltrans-handles.cpp
 ../src/seltrans.cpp
 ../src/text-chemistry.cpp

@@ -1880,7 +1880,7 @@ void ObjectSet::setScaleAbsolute(double x0, double x1,double y0, double y1)
     applyAffine(final);
 }
 
-void ObjectSet::setScaleRelative(Geom::Point const &align, Geom::Scale const &scale)
+void ObjectSet::scaleRelative(Geom::Point const &align, Geom::Scale const &scale)
 {
     if (isEmpty())
         return;
@@ -1932,30 +1932,6 @@ void ObjectSet::moveRelative(Geom::Point const &move, bool compensate)
 void ObjectSet::moveRelative(double dx, double dy)
 {
     applyAffine(Geom::Affine(Geom::Translate(dx, dy)));
-}
-
-void ObjectSet::rotate(gdouble const angle_degrees)
-{
-    if (isEmpty())
-        return;
-
-    std::optional<Geom::Point> center_ = center();
-    if (!center_) {
-        return;
-    }
-    rotateRelative(*center_, angle_degrees);
-
-    if (document()) {
-        if (angle_degrees == 90.0) {
-            DocumentUndo::done(document(), _("Rotate 90\xc2\xb0 CW"), INKSCAPE_ICON("object-rotate-right"));
-        } else if (angle_degrees == -90.0) {
-            DocumentUndo::done(document(), _("Rotate 90\xc2\xb0 CCW"), INKSCAPE_ICON("object-rotate-left"));
-        } else {
-            DocumentUndo::maybeDone(document(),
-                                ( ( angle_degrees > 0 )? "selector:rotate:ccw": "selector:rotate:cw" ),
-                                _("Rotate"), INKSCAPE_ICON("tool-pointer"));
-        }
-    }
 }
 
 /*
@@ -2273,100 +2249,6 @@ std::vector<SPItem*> sp_get_same_style(SPItem *sel, std::vector<SPItem*> &src, S
 
     if( sel_style_for_width != nullptr ) delete sel_style_for_width;
     return matches;
-}
-
-// helper function:
-static
-Geom::Point
-cornerFarthestFrom(Geom::Rect const &r, Geom::Point const &p){
-    Geom::Point m = r.midpoint();
-    unsigned i = 0;
-    if (p[X] < m[X]) {
-        i = 1;
-    }
-    if (p[Y] < m[Y]) {
-        i = 3 - i;
-    }
-    return r.corner(i);
-}
-
-/**
-\param  angle   the angle in "angular pixels", i.e. how many visible pixels must move the outermost point of the rotated object
-*/
-void ObjectSet::rotateScreen(double angle)
-{
-    if (isEmpty()||!desktop())
-        return;
-
-    Geom::OptRect bbox = visualBounds();
-    std::optional<Geom::Point> center_ = center();
-
-    if ( !bbox || !center_ ) {
-        return;
-    }
-
-    gdouble const zoom = desktop()->current_zoom();
-    gdouble const zmove = angle / zoom;
-    gdouble const r = Geom::L2(cornerFarthestFrom(*bbox, *center_) - *center_);
-
-    gdouble const zangle = 180 * atan2(zmove, r) / M_PI;
-
-    rotateRelative(*center_, zangle);
-
-    DocumentUndo::maybeDone(document(),
-                            ( (angle > 0) ? "selector:rotate:ccw": "selector:rotate:cw" ),
-                            _("Rotate by pixels"), INKSCAPE_ICON("tool-pointer"));
-}
-
-void ObjectSet::scaleGrow(double grow)
-{
-    if (isEmpty())
-        return;
-
-    Geom::OptRect bbox = visualBounds();
-    if (!bbox) {
-        return;
-    }
-
-    Geom::Point const center_(bbox->midpoint());
-
-    // you can't scale "do nizhe pola" (below zero)
-    double const max_len = bbox->maxExtent();
-    if ( max_len + grow <= 1e-3 ) {
-        return;
-    }
-
-    double const times = 1.0 + grow / max_len;
-    setScaleRelative(center_, Geom::Scale(times, times));
-
-    if (document()) {
-            DocumentUndo::maybeDone(document(),
-                                    ((grow > 0) ? "selector:grow:larger" : "selector:grow:smaller" ),
-                                    ((grow > 0) ? _("Grow") : _("Shrink")), INKSCAPE_ICON("tool-pointer"));
-    }
-}
-
-void ObjectSet::scaleScreen(double grow_pixels)
-{
-    if(!desktop())
-        return;
-    scaleGrow(grow_pixels / desktop()->current_zoom());
-}
-
-void ObjectSet::scale(double times)
-{
-    if (isEmpty())
-        return;
-
-    Geom::OptRect sel_bbox = visualBounds();
-
-    if (!sel_bbox) {
-        return;
-    }
-
-    Geom::Point const center_(sel_bbox->midpoint());
-    setScaleRelative(center_, Geom::Scale(times, times));
-    DocumentUndo::done(document(), _("Scale by whole factor"), INKSCAPE_ICON("tool-pointer"));
 }
 
 void ObjectSet::move(double dx, double dy)

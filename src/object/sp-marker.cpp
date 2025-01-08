@@ -635,7 +635,7 @@ void sp_marker_flip_horizontally(SPMarker* marker) {
     set.addList(marker->item_list());
     Geom::OptRect bbox = set.visualBounds();
     if (bbox) {
-        set.setScaleRelative(bbox->midpoint(), Geom::Scale(-1.0, 1.0));
+        set.scaleRelative(bbox->midpoint(), Geom::Scale(-1.0, 1.0));
         if (marker->document) {
             DocumentUndo::maybeDone(marker->document, "marker", _("Flip marker horizontally"), INKSCAPE_ICON("dialog-fill-and-stroke"));
         }

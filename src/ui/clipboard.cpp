@@ -884,7 +884,7 @@ bool ClipboardManagerImpl::pasteSize(ObjectSet *set, bool separately, bool apply
         // resize the selection as a whole
         Geom::OptRect sel_size = set->preferredBounds();
         if (sel_size) {
-            set->setScaleRelative(sel_size->midpoint(),
+            set->scaleRelative(sel_size->midpoint(),
                                          _getScale(set->desktop(), min, max, *sel_size, apply_x, apply_y));
         }
     }
