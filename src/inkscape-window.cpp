@@ -139,7 +139,7 @@ InkscapeWindow::InkscapeWindow(SPDesktop *desktop)
     // ================== Shortcuts ==================
     auto& shortcuts_instance = Inkscape::Shortcuts::getInstance();
     _shortcut_controller = Gtk::ShortcutController::create(shortcuts_instance.get_liststore());
-    _shortcut_controller->set_scope(Gtk::ShortcutScope::GLOBAL);
+    _shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
     _shortcut_controller->set_propagation_phase(Gtk::PropagationPhase::BUBBLE);
     add_controller(_shortcut_controller);
 

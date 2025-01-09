@@ -223,7 +223,7 @@ void Selection::rotateAnchored(double angle_degrees, double zoom)
         auto center = has_anchor ? bbox->min() + bbox->dimensions() * Geom::Scale(anchor) : mid;
 
         if (auto d = desktop()) {
-            angle_degrees = d->yaxisdir();
+            angle_degrees = d->yaxisdir() ? angle_degrees : -angle_degrees;
         }
 
         if (zoom != 1.0) {
