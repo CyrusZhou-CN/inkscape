@@ -5,7 +5,8 @@
 //
 
 #include "ink-spin-button.h"
-#include <assert.h>
+
+#include <cassert>
 #include <iomanip>
 
 #include "ui/containerize.h"
