@@ -46,6 +46,7 @@
 #include "ui/dialog/icon-preview.h"
 #include "ui/dialog/inkscape-preferences.h"
 #include "ui/dialog/livepatheffect-editor.h"
+#include "ui/dialog/measure-tool-settings.h"
 #include "ui/dialog/object-attributes.h"
 #include "ui/dialog/objects.h"
 #include "ui/dialog/paint-servers.h"
@@ -127,6 +128,7 @@ std::unique_ptr<DialogBase> DialogContainer::dialog_factory(Glib::ustring const 
     else if (dialog_type == "Glyphs")             return std::make_unique<GlyphsPanel>();
     else if (dialog_type == "IconPreview")        return std::make_unique<IconPreviewPanel>();
     else if (dialog_type == "LivePathEffect")     return std::make_unique<LivePathEffectEditor>();
+    else if (dialog_type == "MeasureToolSettings")return std::make_unique<MeasureToolSettingsDialog>();
     else if (dialog_type == "ObjectProperties")   return std::make_unique<ObjectAttributes>();
     else if (dialog_type == "Objects")            return std::make_unique<ObjectsPanel>();
     else if (dialog_type == "PaintServers")       return std::make_unique<PaintServersDialog>();

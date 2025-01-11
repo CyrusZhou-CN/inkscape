@@ -760,6 +760,18 @@ button.square-button image {
 .heading.top {
     margin-top: 0.2em;
 }
+/* slightly smaller (sub)heading label in dialogs */
+.heading1 {
+    font-weight: bold;
+    font-size: 1em; /* make it optically comparable with non-bold */
+    margin-top: 0.5em;
+}
+/* smaller (sub)heading label in dialogs */
+.heading2 {
+    font-weight: bold;
+    font-size: 0.9em; /* make it optically comparable with non-bold */
+    margin-top: 0.45em;
+}
 
 /* single-level indentation for labels in a dialog */
 .indent {

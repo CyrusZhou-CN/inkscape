@@ -296,6 +296,27 @@
         </child>
       </object>
     </child>
+    <child>
+      <object class="GtkSeparator">
+      </object>
+    </child>
+    <child>
+      <object class="GtkButton" id="settings_btn">
+        <property name="valign">center</property>
+        <property name="focusable">True</property>
+        <property name="receives-default">True</property>
+        <property name="tooltip-text" translatable="yes">Other settings</property>
+        <property name="has-frame">True</property>
+        <child>
+          <object class="GtkImage" id="image_settings">
+            <property name="icon-name">settings</property>
+          </object>
+        </child>
+        <style>
+            <class name="priority1"/>
+        </style>
+      </object>
+    </child>
     <style>
       <class name="inkscape-toolbar"/>
     </style>

@@ -87,6 +87,7 @@ private:
     void to_guides();
     void to_item();
     void to_mark_dimension();
+    void settings_btn_click();
 };
 
 } // namespace Inkscape::UI::Toolbar

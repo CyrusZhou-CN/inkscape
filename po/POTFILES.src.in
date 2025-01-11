@@ -376,6 +376,7 @@ ${_build_dir}/share/templates/templates.h
 ../src/ui/tools/gradient-tool.cpp
 ../src/ui/tools/lpe-tool.cpp
 ../src/ui/tools/measure-tool.cpp
+../src/ui/tools/measure-tool.h
 ../src/ui/tools/mesh-tool.cpp
 ../src/ui/tools/node-tool.cpp
 ../src/ui/tools/pages-tool.cpp
