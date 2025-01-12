@@ -1428,7 +1428,7 @@ void SPDocument::setupViewport(SPItemCtx *ctx)
  * been brought fully up to date.
  */
 bool
-SPDocument::_updateDocument(int update_flags)
+SPDocument::_updateDocument(int update_flags, unsigned int object_modified_tag)
 {
     /* Process updates */
     if (this->root->uflags || this->root->mflags) {
@@ -1440,7 +1440,7 @@ SPDocument::_updateDocument(int update_flags)
 
             this->root->updateDisplay((SPCtx *)&ctx, update_flags);
         }
-        this->_emitModified();
+        this->_emitModified(object_modified_tag);
     }
 
     return !(this->root->uflags || this->root->mflags);
@@ -1452,8 +1452,10 @@ SPDocument::_updateDocument(int update_flags)
  * usually should not take more than a few loops, and certainly never
  * more than 32 iterations.  So we bail out if we hit 32 iterations,
  * since this typically indicates we're stuck in an update loop.
+ * Optional 'object_modified_tag' (see sp-object.h) can be passed to
+ * report along with modification flags.
  */
-gint SPDocument::ensureUpToDate()
+gint SPDocument::ensureUpToDate(unsigned int object_modified_tag)
 {
     // Bring the document up-to-date, specifically via the following:
     //   1a) Process all document updates.
@@ -1462,7 +1464,7 @@ gint SPDocument::ensureUpToDate()
     int counter = 32;
     for (unsigned int pass = 1; pass <= 2; ++pass) {
         // Process document updates.
-        while (!_updateDocument(0)) {
+        while (!_updateDocument(0, object_modified_tag)) {
             if (counter == 0) {
                 g_warning("More than 32 iteration while updating document '%s'", document_filename);
                 break;
@@ -2250,9 +2252,9 @@ sigc::connection SPDocument::connectSavedOrModified(sigc::slot<void ()> &&slot)
     return _saved_or_modified_signal.connect(std::move(slot));
 }
 
-void SPDocument::_emitModified() {
+void SPDocument::_emitModified(unsigned int object_modified_tag) {
     static guint const flags = SP_OBJECT_MODIFIED_FLAG | SP_OBJECT_CHILD_MODIFIED_FLAG | SP_OBJECT_PARENT_MODIFIED_FLAG;
-    root->emitModified(0);
+    root->emitModified(object_modified_tag);
     modified_signal.emit(flags);
     clearNodeCache();
 }

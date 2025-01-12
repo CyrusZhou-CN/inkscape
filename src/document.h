@@ -145,8 +145,8 @@ public:
     bool rerouting_handler();
 
     void requestModified();
-    bool _updateDocument(int flags); // Used by stand-alone sp_document_idle_handler
-    int ensureUpToDate();
+    bool _updateDocument(int flags, unsigned int object_modified_tag = 0); // Used by stand-alone sp_document_idle_handler
+    int ensureUpToDate(unsigned int object_modified_tag = 0);
 
     bool addResource(char const *key, SPObject *object);
     bool removeResource(char const *key, SPObject *object);
@@ -493,7 +493,7 @@ public:
     std::map<std::string, std::vector<SPObject *> > resources;
     ResourcesChangedSignalMap resources_changed_signals; // Used by Extension::Internal::Filter
 
-    void _emitModified();  // Used by SPItem
+    void _emitModified(unsigned int object_modified_tag = 0);  // Used by SPItem
     void emitReconstructionStart();
     void emitReconstructionFinish();
 };
