@@ -27,7 +27,6 @@
 #include <gtkmm/notebook.h>
 #include <gtkmm/overlay.h>
 #include <gtkmm/picture.h>
-#include <gtkmm/recentmanager.h>
 #include <gtkmm/settings.h>
 #include <gtkmm/stack.h>
 #include <gtkmm/styleprovider.h>
@@ -39,6 +38,7 @@
 #include "inkscape.h"
 #include "inkscape-version.h"
 #include "inkscape-version-info.h"
+#include "io/recent-files.h"
 #include "io/resource.h"
 #include "preferences.h"
 #include "ui/builder-utils.h"
@@ -319,27 +319,22 @@ StartScreen::enlist_recent_files()
     first_row[cols.col_dt] = std::numeric_limits<gint64>::max();
     recent_treeview.get_selection()->select(store->get_path(first_row.get_iter()));
 
-    Glib::RefPtr<Gtk::RecentManager> manager = Gtk::RecentManager::get_default();
-    for (auto item : manager->get_items()) {
-        if (item->has_application(g_get_prgname())
-            || item->has_application("org.inkscape.Inkscape")
-            || item->has_application("inkscape")
-            || item->has_application("inkscape.exe")
-           ) {
-            // This uri is a GVFS uri, so parse it with that or it will fail.
-            auto file = Gio::File::create_for_uri(item->get_uri());
-            std::string path = file->get_path();
-            // Note: Do not check if the file exists, to avoid long delays. See https://gitlab.com/inkscape/inkscape/-/issues/2348 .
-            if (!path.empty() && item->get_mime_type() == "image/svg+xml") {
-                Gtk::TreeModel::Row row = *(store->append());
-                row[cols.col_name] = item->get_display_name();
-                row[cols.col_id] = item->get_uri();
-                row[cols.col_dt] = item->get_modified().to_unix();
-                row[cols.col_crash] = item->has_group("Crash");
-            }
+    auto recent_files = Inkscape::getInkscapeRecentFiles();
+    auto shortened_path_map = Inkscape::getShortenedPathMap(recent_files);
+
+    for (auto const &recent_file : recent_files) {
+        // This uri is a GVFS uri, so parse it with that or it will fail.
+        auto file = Gio::File::create_for_uri(recent_file->get_uri());
+        std::string path = file->get_path();
+        // Note: Do not check if the file exists, to avoid long delays. See https://gitlab.com/inkscape/inkscape/-/issues/2348 .
+        if (!path.empty() && recent_file->get_mime_type() == "image/svg+xml") {
+            Gtk::TreeModel::Row row = *(store->append());
+            row[cols.col_name] = shortened_path_map[recent_file->get_uri_display()];
+            row[cols.col_id] = recent_file->get_uri();
+            row[cols.col_dt] = recent_file->get_modified().to_unix();
+            row[cols.col_crash] = recent_file->has_group("Crash");
         }
     }
-
 }
 
 /**

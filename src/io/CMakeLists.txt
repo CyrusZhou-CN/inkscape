@@ -4,6 +4,7 @@ set(io_SRC
   dir-util.cpp
   file.cpp
   file-export-cmd.cpp
+  recent-files.cpp
   resource.cpp
   fix-broken-links.cpp
   stream/bufferstream.cpp
@@ -19,6 +20,7 @@ set(io_SRC
   dir-util.h
   file.h
   file-export-cmd.h
+  recent-files.h
   resource.h
   fix-broken-links.h
   stream/bufferstream.h
