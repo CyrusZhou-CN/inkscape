@@ -539,11 +539,16 @@ void CanvasItemGridTiles::_update(bool) {
     _world_origin = _origin * affine();
     auto tile = _spacing;
     auto pitch = tile + _gap;
+    // flip Y sign if Y axis is pointing up
+    auto abs = [](Geom::Point p) {
+        if (p.y() < 0) { p.y() = -p.y(); }
+        return p;
+    };
 
-    _world_pitch = Geom::Point(pitch.x(), pitch.y()) * affine().withoutTranslation();
-    _world_tile = Geom::Point(tile.x(), tile.y()) * affine().withoutTranslation();
-    _world_gap = Geom::Point(_gap.x(), _gap.y()) * affine().withoutTranslation();
-    _world_margin = Geom::Point(_margin.x(), _margin.y()) * affine().withoutTranslation();
+    _world_pitch = abs(pitch * affine().withoutTranslation());
+    _world_tile = abs(tile * affine().withoutTranslation());
+    _world_gap = abs(_gap * affine().withoutTranslation());
+    _world_margin = abs(_margin * affine().withoutTranslation());
 
     request_redraw();
 }

@@ -781,7 +781,7 @@ void SvgBuilder::addShadedFill(GfxShading *shading, const Geom::Affine shading_t
 void SvgBuilder::setClip(GfxState *state, GfxClipType clip, bool is_bbox)
 {
     // When there's already a clip path, we add clipping groups to handle them.
-    if (!is_bbox && _clip_history->hasClipPath() && !_clip_history->isCopied()) {
+    if (!is_bbox && _clip_history->hasClipPath()) {
         _pushContainer("svg:g");
         _clip_groups++;
     }
