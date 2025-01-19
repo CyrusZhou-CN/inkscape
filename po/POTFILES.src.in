@@ -44,7 +44,6 @@ ${_build_dir}/share/templates/templates.h
 ../src/colors/spaces/components.cpp
 ../src/context-fns.cpp
 ../src/desktop-events.cpp
-../src/desktop-style.cpp
 ../src/desktop.cpp
 ../src/display/control/canvas-item-text.cpp
 ../src/display/control/ctrl-handle-manager.cpp
