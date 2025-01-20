@@ -1152,6 +1152,7 @@ void ClipboardManagerImpl::_copySelection(ObjectSet *selection)
             auto &group = groups[item->parent];
             if (!group) {
                 group = _doc->createElement("svg:g");
+                group->setAttribute("id", item->parent->getId()); // avoid getting a clashing id
                 _root->appendChild(group);
                 Inkscape::GC::release(group);
 
