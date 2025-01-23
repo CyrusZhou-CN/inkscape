@@ -2873,22 +2873,12 @@ void ObjectSet::cloneOriginal()
     auto use = cast<SPUse>(item);
     if (use) {
         original = use->get_original();
-    } else {
-        auto offset = cast<SPOffset>(item);
-        if (offset && offset->sourceHref) {
-            original = sp_offset_get_source(offset);
-        } else {
-            auto text = cast<SPText>(item);
-            SPTextPath *textpath = (text) ? cast<SPTextPath>(text->firstChild()) : nullptr;
-            if (text && textpath) {
-                original = sp_textpath_get_path_item(textpath);
-            } else {
-                auto flowtext = cast<SPFlowtext>(item);
-                if (flowtext) {
-                    original = flowtext->get_frame(nullptr); // first frame only
-                }
-            }
-        }
+    } else if (auto offset = cast<SPOffset>(item)) {
+        original = sp_offset_get_source(offset);
+    } else if (auto text = cast<SPText>(item)) {
+        original = text->get_first_shape_dependency();
+    } else if (auto flowtext = cast<SPFlowtext>(item)) {
+        original = flowtext->get_frame(nullptr); // first frame only
     }
 
     if (original == nullptr) { // it's an object that we don't know what to do with
