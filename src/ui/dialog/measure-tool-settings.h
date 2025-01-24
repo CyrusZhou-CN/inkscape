@@ -31,7 +31,7 @@ class MeasureToolSettingsDialog final : public DialogBase
 {
 public:
     MeasureToolSettingsDialog(const char* _prefPath = "/dialogs/measureToolSettings");
-    ~MeasureToolSettingsDialog();
+    ~MeasureToolSettingsDialog() override;
 
 protected:
     Glib::RefPtr<Gtk::Builder> builder;

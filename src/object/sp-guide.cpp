@@ -197,6 +197,14 @@ void SPGuide::set(SPAttr key, const gchar *value) {
     }
 }
 
+void SPGuide::fix_orientation() {
+    if (!document) return;
+
+    // refresh orientation and position taking current Y-axis orientation into account
+    readAttr(SPAttr::ORIENTATION);
+    readAttr(SPAttr::POSITION);
+}
+
 /* Only used internally and in sp-line.cpp */
 SPGuide *SPGuide::createSPGuide(SPDocument *doc, Geom::Point const &pt1, Geom::Point const &pt2)
 {

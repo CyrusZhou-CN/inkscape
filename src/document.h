@@ -179,6 +179,12 @@ private:
     std::deque<SPItem*> const &get_flat_item_list(unsigned int dkey, bool into_groups, bool active_only) const;
 
     SPDocument *_searchForChild(std::string const &filename, SPDocument const *avoid = nullptr);
+    /** Detect Y-axis orientation change.
+     * \return true if change has been detected */
+    bool has_yaxis_orientation_changed();
+    /** Update desktop transform after Y-axis orientation change.
+     * \return shift to apply to display to keep content from scrolling */
+    double update_desktop_affine();
 
 public:
     void clearNodeCache() { _node_cache.clear(); }
@@ -269,6 +275,11 @@ public:
     bool is_yaxisdown() const { return yaxisdir() > 0; }
     /// "1" if the desktop Y-axis points down, "-1" if it points up.
     double yaxisdir() const { return _doc2dt[3]; }
+    // return true if coordinate system origin needs to move to current page
+    bool get_origin_follows_page();
+    void set_origin_follows_page(bool on);
+    // signal emitted when Y-axis orientation gets flipped
+    sigc::signal<void (double)> get_y_axis_flipped() { return _y_axis_flipped; }
 
     // Find items -----------------------------
     void bindObjectToId(char const *id, SPObject *object);
@@ -468,6 +479,7 @@ private:
 
     sigc::signal<void ()> destroySignal;
     sigc::signal<void ()> _saved_or_modified_signal;
+    sigc::signal<void (double)> _y_axis_flipped;
 
 public:
     /**

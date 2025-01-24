@@ -308,7 +308,7 @@ void CanvasGrid::updateRulers()
 
     Geom::Rect viewbox = _canvas->get_area_world();
     Geom::Rect startbox = viewbox;
-    if (prefs->getBool("/options/origincorrection/page", true)) {
+    if (document->get_origin_follows_page()) {
         // Move viewbox according to the selected page's position (if any)
         auto page_transform = pm.getSelectedPageAffine().inverse() * desktop->d2w();
         startbox += page_transform.translation();

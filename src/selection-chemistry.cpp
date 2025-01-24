@@ -3563,7 +3563,16 @@ void ObjectSet::createBitmapCopy()
         bbox = bbox->roundOutwards();
     }
 
-    Inkscape::Pixbuf *pb = sp_generate_internal_bitmap(doc, *bbox, res, items_);
+    // anti-aliasing override
+    std::optional<Antialiasing> antialias;
+    if (auto nv = doc->getNamedView()) {
+        // if off, then disable antialiasing; if on, then let SVG dictate what it is
+        if (!nv->antialias_rendering) {
+            antialias = Antialiasing::None;
+        }
+    }
+
+    Inkscape::Pixbuf *pb = sp_generate_internal_bitmap(doc, *bbox, res, items_, false, nullptr, 1, antialias);
 
     if (pb) {
         // Create the repr for the image

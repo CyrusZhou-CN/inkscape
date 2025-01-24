@@ -560,6 +560,13 @@ void DocumentProperties::build_page()
                 break;
             case PageProperties::Check::PageLabelStyle:
                 set_namedview_bool(_wr.desktop(), _("Toggle page label style"), SPAttr::PAGELABELSTYLE, checked);
+                break;
+        case PageProperties::Check::YAxisPointsDown:
+            set_namedview_bool(_wr.desktop(), _("Toggle system coordinate Y axis orientation"), SPAttr::INKSCAPE_Y_AXIS_DOWN, checked);
+            break;
+        case PageProperties::Check::OriginCurrentPage:
+            set_namedview_bool(_wr.desktop(), _("Toggle system coordinate origin correction"), SPAttr::INKSCAPE_ORIGIN_CORRECTION, checked);
+            break;
         }
         _wr.setUpdating(false);
     });
@@ -1537,6 +1544,8 @@ void DocumentProperties::update_widgets()
     _page->set_check(PageProperties::Check::PageLabelStyle, page_manager.label_style != "default");
     _page->set_check(PageProperties::Check::AntiAlias, nv->antialias_rendering);
     _page->set_check(PageProperties::Check::ClipToPage, nv->clip_to_page);
+    _page->set_check(PageProperties::Check::YAxisPointsDown, nv->is_y_axis_down());
+    _page->set_check(PageProperties::Check::OriginCurrentPage, nv->get_origin_follows_page());
 
     //-----------------------------------------------------------guide page
 

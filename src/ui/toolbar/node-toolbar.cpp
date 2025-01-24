@@ -225,8 +225,6 @@ void NodeToolbar::value_changed(Glib::ustring const &name, Glib::RefPtr<Gtk::Adj
     // in turn, prevent XML listener from responding
     auto guard = _blocker.block();
 
-    auto prefs = Preferences::get();
-
     auto const unit = _tracker->getActiveUnit();
 
     auto nt = get_node_tool();
@@ -250,7 +248,7 @@ void NodeToolbar::value_changed(Glib::ustring const &name, Glib::RefPtr<Gtk::Adj
 
         // Adjust the coordinate to the current page, if needed
         auto &pm = _desktop->getDocument()->getPageManager();
-        if (prefs->getBool("/options/origincorrection/page", true)) {
+        if (_desktop->getDocument()->get_origin_follows_page()) {
             auto page = pm.getSelectedPageRect();
             oldval -= page.corner(0)[d];
         }
@@ -305,7 +303,7 @@ void NodeToolbar::coord_changed(ControlPointSelection *selected_nodes)
         Geom::Point mid = selected_nodes->pointwiseBounds()->midpoint();
 
         // Adjust shown coordinate according to the selected page
-        if (Preferences::get()->getBool("/options/origincorrection/page", true)) {
+        if (_desktop->getDocument()->get_origin_follows_page()) {
             auto &pm = _desktop->getDocument()->getPageManager();
             mid *= pm.getSelectedPageAffine().inverse();
         }

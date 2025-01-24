@@ -1628,13 +1628,6 @@ void InkscapePreferences::initPageUI()
     _ui_realworldzoom.init( _("Show zoom percentage corrected by factor"), "/options/zoomcorrection/shown", true);
     _page_ui.add_line( false, "", _ui_realworldzoom, "", _("Zoom percentage can be either by the physical units or by pixels."));
 
-    _ui_pageorigin.init( _("Origin always on current page"), "/options/origincorrection/page", true);
-    _page_ui.add_line( false, "", _ui_pageorigin, "", _("Rulers and tools will display position information relative to the current page, instead of the position on the canvas (corresponding to the first page's position)."));
-
-    _ui_yaxisdown.init( _("Origin at upper left with y-axis pointing down"), "/options/yaxisdown", true);
-    _page_ui.add_line( false, "", _ui_yaxisdown, "",
-                       _("When off, origin is at lower left corner and y-axis points up"), false, reset_icon());
-
     _ui_rotationlock.init(_("Lock canvas rotation by default"), "/options/rotationlock", false);
     _page_ui.add_line(false, "", _ui_rotationlock, "",
                        _("Prevent accidental canvas rotation by disabling on-canvas keyboard and mouse actions for rotation"), true);

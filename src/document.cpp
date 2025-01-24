@@ -131,10 +131,6 @@ SPDocument::SPDocument() :
 
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
 
-    if (!prefs->getBool("/options/yaxisdown", true)) {
-        _doc2dt[3] = -1;
-    }
-
     // Penalise libavoid for choosing paths with needless extra segments.
     // This results in much better looking orthogonal connector paths.
     _router->setRoutingPenalty(Avoid::segmentPenalty);
@@ -244,7 +240,8 @@ SPNamedView *SPDocument::getNamedView()
         rroot->addChildAtPos(xml, 0);
         Inkscape::GC::release(xml);
     }
-    return cast<SPNamedView> (getObjectByRepr(xml));
+    auto nv = getObjectByRepr(xml);
+    return cast<SPNamedView>(nv);
 }
 
 SPDefs *SPDocument::getDefs()
@@ -1422,28 +1419,70 @@ void SPDocument::setupViewport(SPItemCtx *ctx)
     ctx->i2vp = Geom::identity();
 }
 
+bool SPDocument::has_yaxis_orientation_changed() {
+    if (!root) return false;
+
+    // detect Y-axis orientation change
+    if (auto nv = getNamedView(); nv && is_yaxisdown() != nv->is_y_axis_down()) {
+        return true;
+    }
+
+    return false;
+}
+
+double SPDocument::update_desktop_affine() {
+    if (!root) return 0;
+
+    auto nv = getNamedView();
+    auto shift = _doc2dt[5];
+    if (nv->is_y_axis_down()) {
+        _doc2dt[3] = 1;
+        _doc2dt[5] = 0;
+    }
+    else {
+        _doc2dt[3] = -1;
+        _doc2dt[5] = root->height.computed;
+    }
+
+    return shift - _doc2dt[5];
+}
+
 /**
  * Tries to update the document state based on the modified and
  * "update required" flags, and return true if the document has
  * been brought fully up to date.
  */
-bool
-SPDocument::_updateDocument(int update_flags, unsigned int object_modified_tag)
+bool SPDocument::_updateDocument(int update_flags, unsigned int object_modified_tag)
 {
+    if (has_yaxis_orientation_changed()) {
+        auto shift = update_desktop_affine();
+
+        // fix elements that rely on Y-axis orientation having certain value
+        auto nv = getNamedView();
+        nv->fix_guidelines();
+        nv->updateViewPort();
+        // repaint pages
+        for (auto& child : nv->children) {
+            child.requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+        }
+        // refresh display
+        _y_axis_flipped.emit(shift);
+    }
+
     /* Process updates */
-    if (this->root->uflags || this->root->mflags) {
-        if (this->root->uflags) {
+    if (root->uflags || root->mflags) {
+        if (root->uflags) {
             SPItemCtx ctx;
             setupViewport(&ctx);
 
             DocumentUndo::ScopedInsensitive _no_undo(this);
 
-            this->root->updateDisplay((SPCtx *)&ctx, update_flags);
+            root->updateDisplay(&ctx, update_flags);
         }
-        this->_emitModified(object_modified_tag);
+        _emitModified(object_modified_tag);
     }
 
-    return !(this->root->uflags || this->root->mflags);
+    return !(root->uflags || root->mflags);
 }
 
 /**
@@ -2297,6 +2336,18 @@ SPDocument::install_reference_document::install_reference_document(SPDocument* i
 
 SPDocument::install_reference_document::~install_reference_document() {
     _parent->set_reference_document(nullptr);
+}
+
+bool SPDocument::get_origin_follows_page() {
+    if (auto nv = getNamedView()) {
+        return nv->get_origin_follows_page();
+    }
+    // named view not ready yet during document build; sp-grid may ask for origin correction
+    return true;
+}
+
+void SPDocument::set_origin_follows_page(bool on) {
+    getNamedView()->set_origin_follows_page(on);
 }
 
 /*

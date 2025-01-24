@@ -1529,8 +1529,10 @@ bool ClipboardManagerImpl::_pasteImage(SPDocument *doc)
     auto prefs = Preferences::get();
     auto attr_saved = prefs->getString("/dialogs/import/link");
     bool ask_saved = prefs->getBool("/dialogs/import/ask");
+    auto mode_saved = prefs->getString("/dialogs/import/import_mode_svg");
     prefs->setString("/dialogs/import/link", "embed");
     prefs->setBool("/dialogs/import/ask", false);
+    prefs->setString("/dialogs/import/import_mode_svg", "embed");
 
     auto png = Extension::find_by_mime("image/png");
     png->set_gui(false);
@@ -1538,6 +1540,7 @@ bool ClipboardManagerImpl::_pasteImage(SPDocument *doc)
 
     prefs->setString("/dialogs/import/link", attr_saved);
     prefs->setBool("/dialogs/import/ask", ask_saved);
+    prefs->setString("/dialogs/import/import_mode_svg", mode_saved);
     png->set_gui(true);
 
     unlink(filename.c_str());

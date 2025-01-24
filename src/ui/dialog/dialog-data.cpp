@@ -43,7 +43,6 @@ std::map<std::string, DialogData> const &get_dialog_data()
     {"Glyphs",             {_("_Unicode Characters"),   INKSCAPE_ICON("accessories-character-map"),   DialogData::Basic,          ScrollProvider::NOPROVIDE }},
     {"IconPreview",        {_("Icon Preview"),          INKSCAPE_ICON("dialog-icon-preview"),         DialogData::Basic,          ScrollProvider::NOPROVIDE }},
     {"LivePathEffect",     {_("Path E_ffects"),         INKSCAPE_ICON("dialog-path-effects"),         DialogData::Advanced,       ScrollProvider::NOPROVIDE }},
-    {"MeasureToolSettings",{_("Measure tool settings"), INKSCAPE_ICON("tool-measure"),                DialogData::Settings,       ScrollProvider::NOPROVIDE }},
     {"ObjectProperties",   {_("_Object Properties"),    INKSCAPE_ICON("dialog-object-properties"),    DialogData::Settings,       ScrollProvider::NOPROVIDE }},
     {"Objects",            {_("Layers and Object_s"),   INKSCAPE_ICON("dialog-objects"),              DialogData::Basic,          ScrollProvider::PROVIDE   }},
     {"PaintServers",       {_("_Paint Servers"),        INKSCAPE_ICON("dialog-paint-server"),         DialogData::Advanced,       ScrollProvider::PROVIDE   }},

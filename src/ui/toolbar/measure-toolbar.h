@@ -29,6 +29,7 @@
  */
 
 #include "toolbar.h"
+#include "ui/dialog/measure-tool-settings.h"
 
 namespace Gtk {
 class Builder;
@@ -88,6 +89,8 @@ private:
     void to_item();
     void to_mark_dimension();
     void settings_btn_click();
+
+    Dialog::MeasureToolSettingsDialog _settings;
 };
 
 } // namespace Inkscape::UI::Toolbar

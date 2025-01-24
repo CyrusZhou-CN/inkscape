@@ -179,7 +179,7 @@ void SelectToolbar::any_value_changed(Glib::RefPtr<Gtk::Adjustment> const &adj)
     auto document = _desktop->getDocument();
     auto &pm = document->getPageManager();
     auto page = pm.getSelectedPageRect();
-    auto page_correction = prefs->getBool("/options/origincorrection/page", true);
+    auto page_correction = document->get_origin_follows_page();
 
     document->ensureUpToDate();
 
@@ -302,7 +302,7 @@ void SelectToolbar::layout_widget_update(Selection *sel)
             auto x = bbox->left() + width * sel->anchor.x();
             auto y = bbox->top() + height * sel->anchor.y();
 
-            if (Preferences::get()->getBool("/options/origincorrection/page", true)) {
+            if (_desktop->getDocument()->get_origin_follows_page()) {
                 auto &pm = _desktop->getDocument()->getPageManager();
                 auto page = pm.getSelectedPageRect();
                 x -= page.left();

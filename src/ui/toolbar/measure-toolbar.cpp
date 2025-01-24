@@ -41,6 +41,7 @@
 #include "ui/tools/measure-tool.h"
 #include "ui/util.h"
 #include "ui/widget/combo-tool-item.h"
+#include "ui/widget/ink-spin-button.h"
 #include "ui/widget/spinbutton.h"
 #include "ui/widget/unit-tracker.h"
 
@@ -110,9 +111,8 @@ MeasureToolbar::MeasureToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
     _all_layers_btn.set_active(prefs->getBool("/tools/measure/all_layers", true));
     _all_layers_btn.signal_toggled().connect(sigc::mem_fun(*this, &MeasureToolbar::toggle_all_layers));
 
-     get_widget<Gtk::Button>(builder, "settings_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &MeasureToolbar::settings_btn_click));
+    auto& settings = get_widget<Gtk::Popover>(builder, "settings-popover");
+    settings.set_child(_settings);
 
     get_widget<Gtk::Button>(builder, "reverse_btn")
         .signal_clicked()
@@ -150,6 +150,7 @@ void MeasureToolbar::setDesktop(SPDesktop *desktop)
             _unit_set = true;
         }
     }
+    _settings.setDesktop(desktop);
 }
 
 void MeasureToolbar::setup_derived_spin_button(UI::Widget::SpinButton &btn, Glib::ustring const &name,
@@ -300,13 +301,6 @@ void MeasureToolbar::to_mark_dimension()
         mt->toMarkDimension();
     }
 }
-
- void MeasureToolbar::settings_btn_click()
-{
-    UI::Dialog::DialogContainer *container = _desktop->getContainer();
-    container->new_dialog("MeasureToolSettings");
-    container->update_dialogs();
-} 
 
 } // namespace Inkscape::UI::Toolbar
 

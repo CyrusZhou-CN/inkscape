@@ -27,6 +27,9 @@
     <property name="step-increment">1</property>
     <property name="page-increment">4</property>
   </object>
+  <object class="GtkPopover" id="settings-popover">
+  </object>
+
   <object class="GtkBox" id="measure-toolbar">
     <property name="halign">start</property>
     <property name="valign">center</property>
@@ -301,15 +304,31 @@
       </object>
     </child>
     <child>
-      <object class="GtkButton" id="settings_btn">
+      <object class="GtkMenuButton" id="settings_btn">
         <property name="valign">center</property>
         <property name="focusable">True</property>
+        <property name="focus-on-click">False</property>
         <property name="receives-default">True</property>
-        <property name="tooltip-text" translatable="yes">Other settings</property>
+        <property name="tooltip-text" translatable="yes">Measurement settings</property>
+        <property name="popover">settings-popover</property>
         <property name="has-frame">True</property>
+        <property name="direction">down</property>
         <child>
-          <object class="GtkImage" id="image_settings">
-            <property name="icon-name">settings</property>
+          <object class="GtkBox">
+            <property name="spacing">2</property>
+            <child>
+              <object class="GtkImage">
+                <property name="icon-name">settings</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkImage">
+                <property name="icon-name">pan-down-symbolic</property>
+                <style>
+                  <class name="arrow"/>
+                </style>
+              </object>
+            </child>
           </object>
         </child>
         <style>

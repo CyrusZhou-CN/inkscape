@@ -60,10 +60,10 @@
         </child>
         <child>
           <object class="GtkCheckButton" id="deltas_label_btn">
-            <property name="label" translatable="yes">Show deltas labels</property>
+            <property name="label" translatable="yes">Show delta labels</property>
             <property name="halign">start</property>
             <property name="focusable">True</property>
-            <property name="tooltip-text" translatable="yes">Add labels to the deltas measurements</property>
+            <property name="tooltip-text" translatable="yes">Add labels to the delta measurements</property>
             <layout>
               <property name="column">0</property>
               <property name="row">3</property>
@@ -73,7 +73,7 @@
         </child>
         <child>
           <object class="GtkCheckButton" id="segments_label_btn">
-            <property name="label" translatable="yes">Show segments labels</property>
+            <property name="label" translatable="yes">Show segment labels</property>
             <property name="halign">start</property>
             <property name="focusable">True</property>
             <property name="tooltip-text" translatable="yes">Add labels to the intersection segments</property>
@@ -86,7 +86,7 @@
         </child>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Segments min. length</property>
+            <property name="label" translatable="yes">Min. segment length</property>
             <property name="halign">start</property>
             <layout>
               <property name="column">0</property>
@@ -103,7 +103,7 @@
             <property name="digits">2</property>
             <property name="climb-rate">0.10</property>
             <property name="adjustment">seg_min_length_adj</property>
-            <property name="tooltip-text" translatable="yes">Intersection segments shorter than this length will not to be shown</property>
+            <property name="tooltip-text" translatable="yes">Intersection segments shorter than this length will not be shown</property>
             <layout>
               <property name="column">1</property>
               <property name="row">5</property>
@@ -125,7 +125,7 @@
         <property name="column-spacing">5</property>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Copy to clipboard options</property>
+            <property name="label" translatable="yes">Copy measurements as text</property>
             <property name="halign">start</property>
             <style>
               <class name="heading"/>
@@ -139,7 +139,7 @@
         </child>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">String formatting:</property>
+            <property name="label" translatable="yes">String formatting</property>
             <property name="halign">start</property>
             <style>
               <class name="heading1"/>
@@ -177,7 +177,7 @@
         </child>
         <child>
           <object class="GtkCheckButton" id="tabs">
-            <property name="label" translatable="yes">Tab separated string</property>
+            <property name="label" translatable="yes">Tab-separated string</property>
             <property name="focusable">True</property>
             <property name="halign">start</property>
             <layout>
@@ -189,7 +189,7 @@
         </child>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Measurements to copy:</property>
+            <property name="label" translatable="yes">Measurements to copy</property>
             <property name="halign">start</property>
             <style>
               <class name="heading1"/>
@@ -263,7 +263,7 @@
         </child>
         <child>
           <object class="GtkCheckButton" id="segments">
-            <property name="label" translatable="yes">In between segments</property>
+            <property name="label" translatable="yes">In-between segments</property>
             <property name="focusable">True</property>
             <property name="halign">start</property>
             <layout>
@@ -275,10 +275,10 @@
         </child>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Shape info:</property>
+            <property name="label" translatable="yes">Shape info</property>
             <property name="halign">start</property>
             <style>
-              <class name="heading2"/>
+              <class name="heading1"/>
             </style>
             <layout>
               <property name="column">0</property>
@@ -344,6 +344,19 @@
               <property name="column">0</property>
               <property name="row">13</property>
               <property name="column-span">1</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="GtkButton" id="copy-to-clipboard">
+            <property name="label" translatable="yes">Copy</property>
+            <property name="focusable">True</property>
+            <property name="halign">center</property>
+            <property name="width-request">80</property>
+            <layout>
+              <property name="column">0</property>
+              <property name="row">14</property>
+              <property name="column-span">5</property>
             </layout>
           </object>
         </child> 

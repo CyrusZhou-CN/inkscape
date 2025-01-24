@@ -18,6 +18,9 @@
 #include <gtkmm/box.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/adjustment.h>
+#include <gtkmm/button.h>
+
+#include "desktop.h"
 #include "ui/widget/spinbutton.h"
 #include "ui/builder-utils.h"
 
@@ -91,6 +94,14 @@ MeasureToolSettingsDialog::MeasureToolSettingsDialog(const char* _prefPath)
     _shape_Y_btn.signal_toggled().connect(sigc::mem_fun(*this, &MeasureToolSettingsDialog::shape_Y_btn_change));
     _shape_length_btn.set_active(prefs->getBool(_prefs_path + "/shape_length", true));
     _shape_length_btn.signal_toggled().connect(sigc::mem_fun(*this, &MeasureToolSettingsDialog::shape_length_btn_change));
+
+    get_widget<Gtk::Button>(builder, "copy-to-clipboard").signal_clicked().connect([this]() {
+        if (auto desktop = getDesktop()) {
+            if (auto tool = dynamic_cast<Tools::MeasureTool*>(desktop->getTool())) {
+                tool->copyToClipboard();
+            }
+        }
+    });
 
     append(_main);
 }
