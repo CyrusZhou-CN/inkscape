@@ -25,6 +25,7 @@
 #include <gtkmm/togglebutton.h>
 
 #include "display/control/canvas-item-ptr.h"
+#include "preferences.h"
 #include <sigc++/scoped_connection.h>
 #include "ui/widget/popover-bin.h"
 
@@ -112,6 +113,8 @@ private:
     // Signal callbacks
     void size_allocate_vfunc(int width, int height, int baseline) override;
     void on_realize() override;
+
+    PrefObserver _box_observer;
 
     // The widgets
     Inkscape::UI::Widget::PopoverBin _popoverbin;

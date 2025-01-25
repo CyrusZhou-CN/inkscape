@@ -179,6 +179,11 @@ CanvasGrid::CanvasGrid(SPDesktopWidget *dtw)
 
     bind_controllers(_hruler, RulerOrientation::horizontal);
     bind_controllers(_vruler, RulerOrientation::vertical);
+
+    auto prefs = Inkscape::Preferences::get();
+    _box_observer = prefs->createObserver("/tools/bounding_box", [this](const Preferences::Entry& entry) {
+        updateRulers();
+    });
 }
 
 CanvasGrid::~CanvasGrid() = default;
@@ -283,7 +288,6 @@ Gtk::CheckButton *CanvasGrid::GetStickyZoom() {
 // get_display_area should be a member of _canvas.
 void CanvasGrid::updateRulers()
 {
-    auto prefs = Inkscape::Preferences::get();
     auto const desktop = _dtw->get_desktop();
     auto document = desktop->getDocument();
     auto &pm = document->getPageManager();

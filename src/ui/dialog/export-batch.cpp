@@ -11,42 +11,45 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#include <regex>
-#include <utility>
+#include "ui/dialog/export-batch.h"
+
 #include <glibmm/convert.h>
+#include <glibmm/fileutils.h>
 #include <glibmm/i18n.h>
 #include <glibmm/main.h>
 #include <glibmm/miscutils.h>
 #include <gtkmm/builder.h>
 #include <gtkmm/button.h>
 #include <gtkmm/error.h>
-#include <gtkmm/flowbox.h>
 #include <gtkmm/filedialog.h>
+#include <gtkmm/flowbox.h>
 #include <gtkmm/messagedialog.h>
 #include <gtkmm/progressbar.h>
 #include <gtkmm/widget.h>
 #include <png.h>
+#include <regex>
+#include <sigc++/scoped_connection.h>
+#include <utility>
 
 #include "desktop.h"
 #include "document-undo.h"
 #include "document.h"
+#include "export-batch.h"
+#include "extension/output.h"
 #include "inkscape-window.h"
+#include "io/fix-broken-links.h"
+#include "io/sandbox.h"
 #include "io/sys.h"
 #include "layer-manager.h"
 #include "message-stack.h"
-#include "page-manager.h"
-#include "preferences.h"
-#include "selection.h"
-
-#include "extension/output.h"
-#include <sigc++/scoped_connection.h>
-#include "io/fix-broken-links.h"
 #include "object/sp-namedview.h"
 #include "object/sp-page.h"
 #include "object/sp-root.h"
+#include "page-manager.h"
+#include "preferences.h"
+#include "selection.h"
 #include "ui/builder-utils.h"
 #include "ui/dialog-run.h"
-#include "ui/dialog/export-batch.h"
 #include "ui/dialog/export.h"
 #include "ui/icon-names.h"
 #include "ui/widget/color-picker.h"
@@ -544,11 +547,24 @@ void BatchExport::refreshPreview()
         val->refresh(!preview, _background_color.get_current_color().toRGBA());
     }
 }
+/**
+ * Get the currently selected batch path.
+ * If it is not set, fall back to the last used one (see getPreviousBatchPath()).
+ *
+ * @returns Path, UTF8 encoded.
+ */
+std::optional<Glib::RefPtr<Gio::File const>> BatchExport::getBatchPath() const
+{
+    if (export_path.has_value()) {
+        return export_path;
+    }
+    return getPreviousBatchPath();
+}
 
 /**
  * Get the last used batch path for the document:
  *
- * @returns one of:
+ * @returns One of:
  *   1. An absolute path in the document's export-batch-path attribute
  *   2. An absolute path in the preference /dialogs/export/batch/path
  *   3. A relative attribute path from the document's location
@@ -556,35 +572,63 @@ void BatchExport::refreshPreview()
  *   5. The document's location
  *   6. Empty string.
  */
-Glib::ustring BatchExport::getBatchPath() const
+std::optional<Glib::RefPtr<Gio::File const>> BatchExport::getPreviousBatchPath() const
 {
     auto path = prefs->getString("/dialogs/export/batch/path");
     if (auto attr = _document->getRoot()->getAttribute("inkscape:export-batch-path")) {
         path = attr;
     }
     if (!path.empty() && Glib::path_is_absolute(Glib::filename_from_utf8(path))) {
-        return path;
+        return Gio::File::create_for_parse_name(path);
     }
+
+    if (Inkscape::IO::Sandbox::filesystem_is_sandboxed()) {
+        // With a sandboxed filesystem, automatically determined paths typically won't work.
+        // We give up instead of guessing some relative paths.
+        return std::nullopt;
+    }
+
     // Relative to the document's position
+    // TODO: it is unclear which encoding `getDocumentFilename()` has. We assume it is platform-native.
     if (const char *doc_filename = _document->getDocumentFilename()) {
         auto doc_path = Glib::path_get_dirname(doc_filename);
+
         if (!path.empty()) {
-            return Glib::canonicalize_filename(path.raw(), doc_path);
+            return Gio::File::create_for_path(Glib::canonicalize_filename(path.raw(), doc_path));
         }
-        return doc_path;
+        return Gio::File::create_for_path(doc_path);
     }
-    return "";
+    return std::nullopt;
 }
 
-void BatchExport::setBatchPath(Glib::ustring const &path)
+/**
+ * Set batch export folder.
+ * @param path Folder path.
+ */
+void BatchExport::setBatchPath(std::optional<Glib::RefPtr<Gio::File const>> path)
 {
-    Glib::ustring new_path = path;
-    if (const char *doc_filename = _document->getDocumentFilename()) {
-        auto doc_path = Glib::path_get_dirname(doc_filename);
-        new_path = Inkscape::optimizePath(path, doc_path, 2);
+    export_path = path;
+    Glib::ustring path_utf8 = "";
+    if (path.has_value()) {
+        path_utf8 = path.value()->get_parse_name();
     }
-    prefs->setString("/dialogs/export/batch/path", new_path);
-    _document->getRoot()->setAttribute("inkscape:export-batch-path", new_path);
+
+    Glib::ustring path_label = Inkscape::IO::Sandbox::filesystem_get_display_path(export_path, _("Choose folder..."));
+
+    if (!Inkscape::IO::Sandbox::filesystem_is_sandboxed()) {
+        // We have direct access to the filesystem.
+        // Clean up the path (convert to relative directory).
+        // Show this path to the user.
+        if (const char *doc_filename = _document->getDocumentFilename()) {
+            auto doc_path = Glib::path_get_dirname(doc_filename);
+            path_utf8 = Inkscape::optimizePath(path_utf8, doc_path, 2);
+            path_label = path_utf8;
+        }
+    }
+    prefs->setString("/dialogs/export/batch/path", path_utf8);
+    _document->getRoot()->setAttribute("inkscape:export-batch-path", path_utf8);
+
+    path_chooser.set_label(path_label);
 }
 
 /**
@@ -617,9 +661,8 @@ void BatchExport::loadExportHints(bool rename_file)
 {
     if (!_desktop) return;
 
-    if (path_chooser.get_label().empty()) {
-        path_chooser.set_label(getBatchPath());
-    }
+    // update labels
+    setBatchPath(getBatchPath());
 
     if (name_text.get_text().empty()) {
         auto const name = getBatchName(rename_file);
@@ -634,12 +677,11 @@ void BatchExport::pickBatchPath()
     dialog->select_folder(dynamic_cast<Gtk::Window &>(*get_root()), sigc::track_object([&dialog = *dialog, this] (auto &result) {
         try {
             if (auto old_file = dialog.select_folder_finish(result)) {
-                path_chooser.set_label(Glib::filename_to_utf8(old_file->get_path()));
+                setBatchPath(old_file);
                 return;
             }
         } catch (Gtk::DialogError const &) {
         }
-        path_chooser.set_label(getBatchPath());
     }, *this), {});
 }
 
@@ -680,25 +722,28 @@ void BatchExport::onExport()
 
     setExporting(true);
 
-    std::string path = Glib::filename_from_utf8(path_chooser.get_label());
+    auto path = getBatchPath();
+    if (!path.has_value()) {
+        return;
+    }
     std::string name = name_text.get_text();
 
-    if (!Inkscape::IO::file_test(path.c_str(), (GFileTest)(G_FILE_TEST_IS_DIR))) {
+    if (path.value()->query_file_type() != Gio::FileType::DIRECTORY) {
         auto const window = _desktop->getInkscapeWindow();
-        if (Inkscape::IO::file_test(path.c_str(), (GFileTest)(G_FILE_TEST_EXISTS))) {
+        if (path.value()->query_exists()) {
             auto dialog = Gtk::MessageDialog(*window, _("Can not save to a directory that is actually a file."), true, Gtk::MessageType::ERROR, Gtk::ButtonsType::OK);
             UI::dialog_run(dialog);
             return;
         }
         Glib::ustring message = g_markup_printf_escaped(
             _("<span weight=\"bold\" size=\"larger\">Directory \"%s\" doesn't exist. Create it now?</span>"),
-               path.c_str());
+            path.value()->get_parse_name().c_str());
 
         auto dialog = Gtk::MessageDialog(*window, message, true, Gtk::MessageType::WARNING, Gtk::ButtonsType::YES_NO);
         if (UI::dialog_run(dialog) != Gtk::ResponseType::YES) {
             return;
         }
-        g_mkdir_with_parents(path.c_str(), S_IRWXU);
+        path.value()->dup()->make_directory_with_parents();
     }
 
     setBatchPath(path);
@@ -806,7 +851,8 @@ void BatchExport::onExport()
             }
 
             // Add the path last so item_name has a chance to be filled without path confusion
-            std::string item_filename = Glib::build_filename(path, item_name);
+            /// Filename for export item, in platform-native encoding.
+            std::string item_filename = Glib::build_filename(path.value()->get_path(), item_name);
             if (!ow) {
                 if (!Export::unConflictFilename(_document, item_filename, ext->get_extension())) {
                     continue;
@@ -814,29 +860,29 @@ void BatchExport::onExport()
             } else {
                 item_filename += ext->get_extension();
             }
+            auto item_file = Gio::File::create_for_path(item_filename);
+            auto item_filename_utf8 = Glib::filename_to_utf8(item_filename);
+            auto item_filename_label = Inkscape::IO::Sandbox::filesystem_get_display_path(item_file);
 
             // Set the progress bar with our updated information
             double progress = (((double)count / num) + j) / num_rows;
             _prog_batch.set_fraction(progress);
 
-            setExporting(true,
-                         Glib::ustring::compose(_("Exporting %1"), Glib::filename_to_utf8(item_filename)),
+            setExporting(true, Glib::ustring::compose(_("Exporting %1"), item_filename_label),
                          Glib::ustring::compose(_("Format %1, Selection %2"), j + 1, count));
-
 
             if (ext->is_raster()) {
                 unsigned long int width = (int)(area.width() * dpi / DPI_BASE + 0.5);
                 unsigned long int height = (int)(area.height() * dpi / DPI_BASE + 0.5);
 
-                Export::exportRaster(
-                    area, width, height, dpi, _background_color.get_current_color().toRGBA(),
-                    item_filename, true, onProgressCallback, this, ext, &show_only);
+                Export::exportRaster(area, width, height, dpi, _background_color.get_current_color().toRGBA(),
+                                     item_filename_utf8, true, onProgressCallback, this, ext, &show_only);
             } else if (page || !show_only.empty()) {
                 auto copy_doc = _document->copy();
-                Export::exportVector(ext, copy_doc.get(), item_filename, true, show_only, page);
+                Export::exportVector(ext, copy_doc.get(), item_filename_utf8, true, show_only, page);
             } else {
                 auto copy_doc = _document->copy();
-                Export::exportVector(ext, copy_doc.get(), item_filename, true, area);
+                Export::exportVector(ext, copy_doc.get(), item_filename_utf8, true, area);
             }
         }
     }

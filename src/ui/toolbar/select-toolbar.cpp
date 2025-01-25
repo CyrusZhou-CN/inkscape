@@ -32,7 +32,6 @@
 #include "object/sp-item-transform.h"
 #include "object/sp-namedview.h"
 #include "page-manager.h"
-#include "preferences.h"
 #include "selection.h"
 #include "ui/builder-utils.h"
 #include "ui/icon-names.h"
@@ -107,6 +106,12 @@ SelectToolbar::SelectToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
     _lock_btn.set_active(prefs->getBool("/tools/select/lock_aspect_ratio", false));
     toggle_lock();
 
+    _box_observer = prefs->createObserver("/tools/bounding_box", [this](const Preferences::Entry& entry) {
+        if (_desktop) {
+            layout_widget_update(_desktop->getSelection());
+        }
+    });
+
     _initMenuBtns();
 }
 
@@ -167,7 +172,7 @@ void SelectToolbar::_sensitize()
 void SelectToolbar::any_value_changed(Glib::RefPtr<Gtk::Adjustment> const &adj)
 {
     // quit if run by the XML listener or a unit change
-    if (_blocker.pending() || _tracker->isUpdating()) {
+    if (_blocker.pending() || _tracker->isUpdating() || !_desktop) {
         return;
     }
 
