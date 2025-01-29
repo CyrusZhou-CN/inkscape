@@ -141,7 +141,7 @@ StartScreen::StartScreen()
     : Gtk::Dialog()
     , builder(create_builder("inkscape-start.glade"))
     , tabs           (get_widget<Gtk::Notebook>        (builder, "tabs"))
-    , templates      (get_derived_widget<TemplateList> (builder, "kinds"))
+    , _kinds         (get_widget<Gtk::Notebook>        (builder, "kinds"))
     , banners        (get_widget<Gtk::Overlay>         (builder, "banner"))
     , themes         (get_widget<Gtk::ComboBox>        (builder, "themes"))
     , recent_treeview(get_widget<Gtk::TreeView>        (builder, "recent_treeview"))
@@ -159,7 +159,7 @@ StartScreen::StartScreen()
     set_default_size(700, 360);
 
     // Populate with template extensions
-    templates.init(Inkscape::Extension::TEMPLATE_NEW_WELCOME);
+    templates.init(Inkscape::Extension::TEMPLATE_NEW_WELCOME, TemplateList::All, true);
 
     // Get references to various widget used locally. (In order of appearance.)
     auto canvas      = &get_widget<Gtk::ComboBox>    (builder, "canvas");
@@ -223,10 +223,21 @@ StartScreen::StartScreen()
 
     show_toggle->signal_toggled().connect(sigc::mem_fun(*this, &StartScreen::show_toggle));
     load_btn.signal_clicked().connect(sigc::mem_fun(*this, &StartScreen::load_document));
-    templates.connectItemSelected(sigc::mem_fun(*this, &StartScreen::new_document));
+    templates.connectItemSelected([this](int){ new_document(); });
     new_btn->signal_clicked().connect(sigc::mem_fun(*this, &StartScreen::new_document));
     close_btn->signal_clicked().connect([this] { response(GTK_RESPONSE_CLOSE); });
-
+    // move pages from stack to our notebook
+    for (auto cat : templates.get_categories()) {
+        if (auto page = templates.get_child_by_name(cat)) {
+            page->reference();
+            templates.remove(*page);
+            _kinds.append_page(*page, cat);
+            page->unreference();
+        }
+    }
+    _kinds.signal_switch_page().connect([this](Gtk::Widget* page, auto) {
+        templates.reset_selection(page); //_kinds.get_nth_page(_kinds.get_current_page()));
+    });
     // Parent to our dialog window
     set_titlebar(banners);
     Gtk::Box* box = get_content_area();
@@ -349,9 +360,9 @@ StartScreen::on_recent_changed()
 /**
  * Called when the left side tabs are changed.
  */
-void StartScreen::on_kind_changed(Gtk::Widget *tab, unsigned page_num)
+void StartScreen::on_kind_changed(const Glib::ustring& name)
 {
-    load_btn.set_visible(page_num == 0);
+    load_btn.set_visible(name == "???");
 }
 
 /**
@@ -361,7 +372,7 @@ void
 StartScreen::new_document()
 {
     // Generate a new document from the selected template.
-    _document = templates.new_document();
+    _document = templates.new_document(_kinds.get_nth_page(_kinds.get_current_page()));
     if (_document) {
     // Quit welcome screen if options not 'canceled'
         response(GTK_RESPONSE_APPLY);
@@ -467,7 +478,7 @@ StartScreen::on_response(int response_id)
     }
     if (response_id != GTK_RESPONSE_OK && !_document) {
         // Last ditch attempt to generate a new document while exiting.
-        _document = templates.new_document();
+        _document = templates.new_document(_kinds.get_nth_page(_kinds.get_current_page()));
     }
 }
 

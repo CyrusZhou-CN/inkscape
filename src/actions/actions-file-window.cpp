@@ -35,7 +35,9 @@ document_new(InkscapeWindow* win)
 void
 document_dialog_templates(InkscapeWindow* win)
 {
-    Inkscape::UI::NewFromTemplate::load_new_from_template();
+    if (win) {
+        Inkscape::UI::NewFromTemplate::load_new_from_template(*win);
+    }
 }
 
 void

@@ -1526,3 +1526,13 @@ listview row.top-separator {
 #DropDownList listview row:focus {
     outline: none;
 }
+
+/* Giving dialog buttons sending responses min size to keep them wider */
+.dialog-cmd-button {
+    min-width: 5em;
+}
+
+/* Limit max size of rows in a stack sidebar to something more compact */
+.compact-stack-sidebar list row {
+    min-height: 2.25em;
+}

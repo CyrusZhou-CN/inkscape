@@ -1953,6 +1953,7 @@ GridWidget::GridWidget(SPGrid *grid)
     box->append(*_id);
     _grid_type.set_hexpand();
     _grid_type.set_halign(Gtk::Align::END);
+    _grid_type.set_active_by_id(static_cast<int>(_grid->getType()));
     _grid_type.signal_changed().connect([&,this](int index){
         // change grid type
         if (index < 0) return;

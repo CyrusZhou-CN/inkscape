@@ -156,6 +156,20 @@ CanvasGrid::CanvasGrid(SPDesktopWidget *dtw)
     _quick_actions.set_direction(Gtk::ArrowType::LEFT);
     _quick_actions.set_tooltip_text(_("Display options"));
 
+    _quick_preview_label = &get_widget<Gtk::Label>(_builder_display_popup, "quick_preview_label");
+    _quick_zoom_label = &get_widget<Gtk::Label>(_builder_display_popup, "quick_zoom_label");
+
+    _quick_preview_label->set_label("<b>" + _preview_accel.getShortcutText()[0] + "</b>");
+    _quick_zoom_label->set_label("<b>" + _zoom_accel.getShortcutText()[0] + "</b>");
+
+    _update_preview_connection = _preview_accel.connectModified([this]() {
+        _quick_preview_label->set_label("<b>" + _preview_accel.getShortcutText()[0] + "</b>");
+    });
+
+    _update_zoom_connection = _zoom_accel.connectModified([this]() {
+        _quick_zoom_label->set_label("<b>" + _zoom_accel.getShortcutText()[0] + "</b>");
+    });
+
     // Main grid
     attach(*_tabs_widget,  0, 0);
     attach(_subgrid,       0, 1, 1, 2);

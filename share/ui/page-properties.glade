@@ -416,7 +416,7 @@
 SVG element positions are expressed in user units.</property>
             <property name="width-chars">9</property>
             <property name="adjustment">adj-scale-x</property>
-            <property name="digits">6</property>
+            <property name="digits">10</property>
             <layout>
               <property name="column">1</property>
               <property name="row">12</property>
