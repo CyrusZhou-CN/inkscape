@@ -370,7 +370,6 @@ std::shared_ptr<const std::vector<FontInfo>> get_all_fonts(Async::Progress<doubl
                         if (glyph) {
                             // bbox: L T R B
                             caps_height = glyph->bbox[3] - glyph->bbox[1]; // caps height normalized to 0..1
-                            auto& path = glyph->pathvector;
                         }
                     }
                 }

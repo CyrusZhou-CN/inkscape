@@ -84,8 +84,6 @@ document_save_template(InkscapeWindow* win)
 void
 document_import(InkscapeWindow* win)
 {
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-
     sp_file_import(*win);
 }
 

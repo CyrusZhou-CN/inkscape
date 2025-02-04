@@ -400,7 +400,7 @@ public:
             if (auto grid = dynamic_cast<Gtk::Grid*>(_table->get_first_child())) {
                 auto op_button = Gtk::make_managed<Gtk::ToggleButton>();
                 op_button->set_active(false);
-                op_button->set_tooltip_markup("<b>Picker Tool</b>\nSelect objects on canvas");
+                op_button->set_tooltip_markup(_("<b>Picker Tool</b>\nSelect objects on canvas"));
                 op_button->set_margin_start(4);
                 op_button->set_image_from_icon_name("object-pick");
 

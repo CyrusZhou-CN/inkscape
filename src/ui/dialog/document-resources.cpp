@@ -7,7 +7,6 @@
 
 #include "document-resources.h"
 
-#include <atomic>
 #include <cairo.h>
 #include <cairomm/enums.h>
 #include <cairomm/refptr.h>

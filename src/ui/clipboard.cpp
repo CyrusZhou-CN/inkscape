@@ -99,6 +99,7 @@
 #undef NOGDI
 #include <windows.h>
 #endif
+#include <glibmm/convert.h>
 
 using namespace Inkscape::Util;
 
@@ -178,6 +179,13 @@ void pump_until(F const &f)
 }
 
 // Fixme: Get rid of temporary files hack.
+/** Get a temporary file name.
+ * 
+ * @arg suffix file suffix. May only contain ASCII characters.
+ * 
+ * @returns Filename with absolute path.
+ * Value is in platform-native encoding (see Glib::filename_to_utf8).
+ */
 std::string get_tmp_filename(char const *suffix)
 {
     return Glib::build_filename(Glib::get_user_cache_dir(), suffix);
@@ -1793,7 +1801,7 @@ void ClipboardManagerImpl::_onGet(char const *mime_type, Glib::RefPtr<Gio::Outpu
             auto height = static_cast<unsigned long>(area.height() + 0.5);
 
             // read from namedview
-            auto const raster_file = get_tmp_filename("inkscape-clipboard-export-raster");
+            auto const raster_file = Glib::filename_to_utf8(get_tmp_filename("inkscape-clipboard-export-raster"));
             sp_export_png_file(_clipboardSPDoc.get(), raster_file.c_str(), area, width, height, dpi, dpi, bgcolor, nullptr, nullptr, true, {});
             (*out)->export_raster(_clipboardSPDoc.get(), raster_file.c_str(), filename.c_str(), true);
             unlink(raster_file.c_str());

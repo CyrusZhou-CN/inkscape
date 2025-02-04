@@ -92,7 +92,7 @@ void SPGuide::set(SPAttr key, const gchar *value) {
         if (auto c = Inkscape::Colors::Color::parse(value)) {
             if (!c->hasOpacity())
                 c->addOpacity(0.5);
-            color = c->toRGBA();
+            setColor(c->toRGBA());
         }
         break;
     case SPAttr::INKSCAPE_LABEL:

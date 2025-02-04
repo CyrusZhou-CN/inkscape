@@ -84,8 +84,6 @@ NodeToolbar::NodeToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
     setup_derived_spin_button(_nodes_x_item, "x");
     setup_derived_spin_button(_nodes_y_item, "y");
     setup_derived_spin_button(_nodes_d_item, "d");
-    _nodes_x_item.set_sensitive(false);
-    _nodes_y_item.set_sensitive(false);
 
     auto unit_menu = _tracker->create_tool_item(_("Units"), (""));
     get_widget<Gtk::Box>(builder, "unit_menu_box").append(*unit_menu);
@@ -184,6 +182,7 @@ void NodeToolbar::setDesktop(SPDesktop *desktop)
         });
 
         sel_changed(desktop->getSelection());
+        coord_changed(get_node_tool()->_selected_nodes);
     }
 }
 
