@@ -13,6 +13,8 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
+#include <locale>
+#include <sstream>
 #ifdef HAVE_CONFIG_H
 # include "config.h"  // only include where actually required!
 #endif
@@ -99,6 +101,44 @@ CairoRenderContext CairoRenderer::createContext()
 {
     return CairoRenderContext{this};
 }
+
+/** CairoTagNumpunct and CairoTagStringStream below are used for number to string formatting when
+ * setting tag's attribute for Cairo.
+ *
+ * Cairo 1.16 has a bug and requires the decimal separator to be the one of the current C locale.
+ * 
+ * For later versions of Cairo, we always use "." as a decimal separator.
+ *
+ * @see https://gitlab.freedesktop.org/cairo/cairo/-/issues/347
+ * @see https://gitlab.com/inkscape/inkscape/-/issues/5354
+ */
+#if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 16, 0) && CAIRO_VERSION < CAIRO_VERSION_ENCODE(1, 17, 0)
+#define _CAIRO_1_16
+/** This facet causes the decimal separator to be the one of the current C locale.
+ */
+struct CairoTagNumpunct : std::numpunct<char>
+{
+    protected:
+      char do_decimal_point() const override {
+        return *std::localeconv()->decimal_point;
+      }
+};
+#endif
+
+/** Used for formatting number to string when sending tag' attributes to Cairo.
+ */
+class CairoTagStringStream : public std::ostringstream
+{
+public:
+    CairoTagStringStream()
+    {
+        #if defined _CAIRO_1_16
+        imbue(std::locale(std::locale::classic(), new CairoTagNumpunct));
+        #else
+        imbue(std::locale::classic());
+        #endif
+    }
+};
 
 /* The below functions are copy&pasted plus slightly modified from *_invoke_print functions. */
 static void sp_item_invoke_render(SPItem const *item, CairoRenderContext *ctx, SPItem const *origin = nullptr, SPPage const *page = nullptr);
@@ -446,10 +486,12 @@ static void sp_anchor_render(SPAnchor const *a, CairoRenderContext *ctx, SPItem 
         }
         // Write a box for this hyperlink so it's contained and positioned correctly.
         if (auto vbox = a->visualBounds()) {
-            // Convert from 92dpi (svg) to 72dpi (pdf) and apply item transforms as we are writing out the box directly.
-            auto static doc_scale = Geom::Scale(72.0 / 96.0);
-            auto bbox = *vbox * ctx->getItemTransform() * doc_scale;
-            link += Glib::ustring::compose(" rect=[%1 %2 %3 %4]", bbox.left(), bbox.top(), bbox.width(), bbox.height());
+            CairoTagStringStream os;
+
+            // Apply transforms as we are writing out the box directly.
+            auto bbox = *vbox * ctx->getTransform();
+            os << " rect=[" << bbox.left() << " " << bbox.top() << " " <<  bbox.width() << " " << bbox.height() << "]";
+            link += os.str();
         }
         ctx->tagBegin(link.c_str());
     }
