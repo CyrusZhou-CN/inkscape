@@ -159,8 +159,16 @@ CanvasGrid::CanvasGrid(SPDesktopWidget *dtw)
     _quick_preview_label = &get_widget<Gtk::Label>(_builder_display_popup, "quick_preview_label");
     _quick_zoom_label = &get_widget<Gtk::Label>(_builder_display_popup, "quick_zoom_label");
 
-    _quick_preview_label->set_label("<b>" + _preview_accel.getShortcutText()[0] + "</b>");
-    _quick_zoom_label->set_label("<b>" + _zoom_accel.getShortcutText()[0] + "</b>");
+    auto quick_preview_shortcut = _preview_accel.getShortcutText();
+    auto quick_zoom_shortcut = _zoom_accel.getShortcutText();
+
+    if (!quick_preview_shortcut.empty()) {
+        _quick_preview_label->set_label("<b>" + quick_preview_shortcut[0] + "</b>");
+    }
+
+    if (!quick_zoom_shortcut.empty()) {
+        _quick_zoom_label->set_label("<b>" + quick_zoom_shortcut[0] + "</b>");
+    }
 
     _update_preview_connection = _preview_accel.connectModified([this]() {
         _quick_preview_label->set_label("<b>" + _preview_accel.getShortcutText()[0] + "</b>");
