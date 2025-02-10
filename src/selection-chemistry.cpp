@@ -697,7 +697,8 @@ static void sp_edit_select_all_full(SPDesktop *dt, bool force_all_layers, bool i
                 return;
             }
 
-            for (auto item : layer->item_list() | boost::adaptors::reversed) {
+            auto const item_list = layer->item_list();
+            for (auto item : item_list | boost::adaptors::reversed) {
                 if (item && (!onlysensitive || !item->isLocked())) {
                     if (!onlyvisible || !dt->itemIsHidden(item)) {
                         if (!dt->layerManager().isLayer(item)) {
@@ -1164,7 +1165,7 @@ void ObjectSet::stackUp(bool skip_undo) {
     std::vector<SPItem*> selection(items().begin(), items().end());
     sort(selection.begin(), selection.end(), sp_item_repr_compare_position_bool);
 
-    for (auto item: selection | boost::adaptors::reversed) {
+    for (auto item : selection | boost::adaptors::reversed) {
         if (!item->raiseOne()) { // stop if top was reached
             if(document() && !skip_undo)
                 DocumentUndo::cancel(document());
@@ -1234,18 +1235,17 @@ take_style_from_item(SPObject *object)
 
     // write the complete cascaded style, context-free
     SPCSSAttr *css = sp_css_attr_from_object(object, SP_STYLE_FLAG_ALWAYS);
-    if (css == nullptr)
+    if (!css) {
         return nullptr;
+    }
 
     if ((is<SPGroup>(object) && object->firstChild()) ||
         (is<SPText>(object) && object->firstChild() && !object->firstChild()->getNext())) {
         // if this is a text with exactly one tspan child, merge the style of that tspan as well
         // If this is a group, merge the style of its topmost (last) child with style
-        auto list = object->children | boost::adaptors::reversed;
-        for (auto& element: list) {
-            if (element.style ) {
-                SPCSSAttr *temp = sp_css_attr_from_object(&element, SP_STYLE_FLAG_IFSET);
-                if (temp) {
+        for (auto &element : object->children | boost::adaptors::reversed) {
+            if (element.style) {
+                if (auto temp = sp_css_attr_from_object(&element, SP_STYLE_FLAG_IFSET)) {
                     sp_repr_css_merge(css, temp);
                     sp_repr_css_attr_unref(temp);
                 }
