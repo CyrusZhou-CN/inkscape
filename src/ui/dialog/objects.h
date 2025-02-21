@@ -30,6 +30,7 @@
 #include <gtkmm/treeview.h>
 
 #include <sigc++/scoped_connection.h>
+#include "object/weakptr.h"
 #include "preferences.h"
 #include "selection.h"
 #include "style-enums.h"
@@ -77,10 +78,11 @@ enum {COL_LABEL, COL_VISIBLE, COL_LOCKED};
 
 using SelectionState = int;
 enum SelectionStates : SelectionState {
-    SELECTED_NOT = 0,     // Object is NOT in desktop's selection
-    SELECTED_OBJECT = 1,  // Object is in the desktop's selection
-    LAYER_FOCUSED = 2,    // This layer is the desktop's focused layer
-    LAYER_FOCUS_CHILD = 4 // This object is a child of the focused layer
+    SELECTED_NOT = 0,      // Object is NOT in desktop's selection
+    SELECTED_OBJECT = 1,   // Object is in the desktop's selection
+    LAYER_FOCUSED = 2,     // This layer is the desktop's focused layer
+    LAYER_FOCUS_CHILD = 4, // This object is a child of the focused layer
+    GROUP_SELECT_CHILD = 8 // This object is a child of the selected object
 };
 
 /**
@@ -127,7 +129,7 @@ private:
     SPItem *current_item = nullptr;
     Gtk::TreeModel::Path _initial_path;
     bool _start_new_range = true;
-    std::vector<SPObject *> _prev_range;
+    std::vector<SPWeakPtr<SPObject>> _prev_range;
 
     sigc::scoped_connection layer_changed;
     SPObject *_layer;
