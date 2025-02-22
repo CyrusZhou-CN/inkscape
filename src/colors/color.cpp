@@ -633,7 +633,7 @@ void Color::_color_mutate_inplace(Color const &other, unsigned int pin, Func fun
 
     // Both are good, so average each channel
     for (unsigned int i = 0; i < _values.size(); i++) {
-        if (pin & (1 << i)) {
+        if (pin & (1 << i)) {A
             continue;
         }
         func(_values[i], other[i]);
