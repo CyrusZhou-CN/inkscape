@@ -513,8 +513,6 @@
                       <object class="GtkPicture" id="preview">
                         <property name="hexpand">True</property>
                         <property name="focusable">False</property>
-                        <property name="focus-on-click">False</property>
-                        <property name="hscrollbar-policy">never</property>
                       </object>
                     </property>
                   </object>
