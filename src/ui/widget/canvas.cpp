@@ -260,7 +260,7 @@ public:
 
     // Various state affecting what is drawn.
     uint32_t desk   = 0xffffffff; // The background colour, with the alpha channel used to control checkerboard.
-    uint32_t border = 0x000000ff; // The border colour, used only to control shadow colour.
+    uint32_t border = 0x00000000; // The border colour, used only to control shadow colour.
     uint32_t page   = 0xffffffff; // The page colour, also with alpha channel used to control checkerboard.
 
     bool clip_to_page = false; // Whether to enable clip-to-page mode.
