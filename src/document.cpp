@@ -2272,9 +2272,10 @@ sigc::connection SPDocument::connectResourcesChanged(gchar const *key,
     return resources_changed_signals[q].connect(slot);
 }
 
-sigc::connection
-SPDocument::connectReconstructionStart(SPDocument::ReconstructionStart::slot_type slot)
+sigc::connection SPDocument::connectReconstructionStart(SPDocument::ReconstructionStart::slot_type slot, bool first)
 {
+    if (first)
+        return _reconstruction_start_signal.connect_first(slot);
     return _reconstruction_start_signal.connect(slot);
 }
 

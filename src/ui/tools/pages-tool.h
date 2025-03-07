@@ -13,9 +13,12 @@
  * Released under GNU GPL v2+, read the file 'COPYING' for more information.
  */
 
-#include "ui/tools/tool-base.h"
 #include <2geom/rect.h>
+#include <memory>
+
 #include "display/control/canvas-item-ptr.h"
+#include "selection.h"
+#include "ui/tools/tool-base.h"
 
 #define SP_PAGES_CONTEXT(obj) (dynamic_cast<Inkscape::UI::Tools::PagesTool *>((Inkscape::UI::Tools::ToolBase *)obj))
 #define SP_IS_PAGES_CONTEXT(obj) \
@@ -91,6 +94,7 @@ private:
     CanvasItemPtr<CanvasItemGroup> drag_group;
     std::vector<Inkscape::CanvasItemBpath *> drag_shapes;
     std::vector<Inkscape::SnapCandidatePoint> _bbox_points;
+    std::unique_ptr<Inkscape::SelectionState> _selection_state;
 
     static Geom::Point middleOfSide(int side, const Geom::Rect &rect);
 };

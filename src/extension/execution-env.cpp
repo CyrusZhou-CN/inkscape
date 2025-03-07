@@ -174,10 +174,9 @@ ExecutionEnv::commit () {
 
 void
 ExecutionEnv::reselect () {
-    if(_desktop) {
-        Inkscape::Selection *selection = _desktop->getSelection();
-        if (selection) {
-            selection->restoreBackup();
+    if (_desktop && _selectionState) {
+        if (auto selection = _desktop->getSelection()) {
+            selection->setState(*_selectionState);
         }
     }
     return;
@@ -192,7 +191,8 @@ ExecutionEnv::run () {
             createWorkingDialog();
         }
         auto selection = _desktop->getSelection();
-        selection->setBackup();
+        // Save selection state
+        _selectionState = std::make_unique<Inkscape::SelectionState>(selection->getState());
         if (_show_working) {
             _desktop->setWaitingCursor();
         }
@@ -200,7 +200,9 @@ ExecutionEnv::run () {
         if (_show_working) {
             _desktop->clearWaitingCursor();
         }
-        selection->restoreBackup();
+        // Restore selection state
+        selection->setState(*_selectionState);
+        _selectionState.reset();
     } else {
         _effect->get_imp()->effect(_effect, this, _document);
     }

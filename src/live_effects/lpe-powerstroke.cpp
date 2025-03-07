@@ -628,6 +628,10 @@ LPEPowerStroke::doEffect_path (Geom::PathVector const & path_in)
     offset_points.set_pwd2(pwd2_in , n);
     size_t pathindex = 0;
     for (auto path : pathv) {
+        if (path.empty()) {
+            std::cerr << "LPEPowerStroke::doEffect_path: empty sub-path!" << std::endl;
+            continue;
+        }
         size_t psize = count_pathvector_curves(path);
         path_init += psize;
         if (!offset_points.unplaced && 

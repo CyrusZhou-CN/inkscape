@@ -232,42 +232,6 @@ select_list(InkscapeApplication* app)
     }
 }
 
-void
-selection_set_backup(InkscapeApplication* app)
-{
-    SPDocument* document = nullptr;
-    Inkscape::Selection* selection = nullptr;
-    if (!get_document_and_selection(app, &document, &selection)) {
-        return;
-    }
-
-    selection->setBackup();
-}
-
-void
-selection_restore_backup(InkscapeApplication* app)
-{
-    SPDocument* document = nullptr;
-    Inkscape::Selection* selection = nullptr;
-    if (!get_document_and_selection(app, &document, &selection)) {
-        return;
-    }
-
-    selection->restoreBackup();
-}
-
-void
-selection_empty_backup(InkscapeApplication* app)
-{
-    SPDocument* document = nullptr;
-    Inkscape::Selection* selection = nullptr;
-    if (!get_document_and_selection(app, &document, &selection)) {
-        return;
-    }
-
-    selection->emptyBackup();
-}
-
 const Glib::ustring SECTION = NC_("Action Section", "Select");
 
 std::vector<std::vector<Glib::ustring>> raw_data_selection =
@@ -283,9 +247,6 @@ std::vector<std::vector<Glib::ustring>> raw_data_selection =
     {"app.select-by-selector",       N_("Select by Selector"),       SECTION, N_("Select by CSS selector")},
     {"app.select-all",               N_("Select All Objects"),       SECTION, N_("Select all; options: 'all' (every object including groups), 'layers', 'no-layers' (top level objects in layers), 'groups' (all groups including layers), 'no-groups' (all objects other than groups and layers, default)")},
     {"app.select-list",              N_("List Selection"),           SECTION, N_("Print a list of objects in current selection")},
-    {"app.selection-set-backup",     N_("Set selection backup"),     SECTION, N_("Set backup of current selection of objects or nodes")},
-    {"app.selection-restore-backup", N_("Restore selection backup"), SECTION, N_("Restore backup of stored selection of objects or nodes")},
-    {"app.selection-empty-backup",   N_("Empty selection backup"),   SECTION, N_("Empty stored backup of selection of objects or nodes")},
     // clang-format on
 };
 
@@ -306,9 +267,6 @@ add_actions_selection(InkscapeApplication* app)
     gapp->add_action_radio_string(  "select-all",                   sigc::bind(sigc::ptr_fun(&select_all),               app), "null");
     gapp->add_action_radio_string(  "select-invert",                sigc::bind(sigc::ptr_fun(&select_invert),            app), "null");
     gapp->add_action(               "select-list",                  sigc::bind(sigc::ptr_fun(&select_list),              app)        );
-    gapp->add_action(               "selection-set-backup",         sigc::bind(sigc::ptr_fun(&selection_set_backup),     app)        );
-    gapp->add_action(               "selection-restore-backup",     sigc::bind(sigc::ptr_fun(&selection_restore_backup), app)        );
-    gapp->add_action(               "selection-empty-backup",       sigc::bind(sigc::ptr_fun(&selection_empty_backup),   app)        );
     // clang-format on
 
     app->get_action_extra_data().add_data(raw_data_selection);

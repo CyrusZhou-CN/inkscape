@@ -497,7 +497,7 @@ public:
     sigc::connection connectBeforeCommit(BeforeCommitSignal::slot_type slot);
     sigc::connection connectIdChanged(const char *id, IDChangedSignal::slot_type slot);
     sigc::connection connectResourcesChanged(char const *key, SPDocument::ResourcesChangedSignal::slot_type slot);
-    sigc::connection connectReconstructionStart(ReconstructionStart::slot_type slot);
+    sigc::connection connectReconstructionStart(ReconstructionStart::slot_type slot, bool first = false);
     sigc::connection connectReconstructionFinish(ReconstructionFinish::slot_type slot);
     sigc::connection connectSavedOrModified(sigc::slot<void ()> &&slot);
 

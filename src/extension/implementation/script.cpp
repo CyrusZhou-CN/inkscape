@@ -578,10 +578,22 @@ void Script::effect(Inkscape::Extension::Effect *module, ExecutionEnv *execution
 
     std::list<std::string> params;
     if (desktop) {
-        Inkscape::Selection * selection = desktop->getSelection();
-        if (selection) {
-            params = selection->params;
-            selection->clear();
+        if (auto selection = desktop->getSelection()) {
+            // Get current selection state
+            auto state = selection->getState();
+
+            // Add selected object IDs
+            for (auto const &id : state.selected_ids) {
+                std::string selected_id = "--id=";
+                selected_id += id;
+                params.push_back(std::move(selected_id));
+            }
+
+            // Add selected nodes
+            for (auto const &node : state.selected_nodes) {
+                params.push_back(Glib::ustring::compose("--selected-nodes=%1:%2:%3", node.path_id, node.subpath_index,
+                                                        node.node_index));
+            }
         }
     }
     _change_extension(module, executionEnv, desktop->getDocument(), params, module->ignore_stderr, module->pipe_diffs);
@@ -819,11 +831,10 @@ int Script::execute(std::list<std::string> const &in_command, std::list<std::str
         stdin_channel->set_buffered(false);
 
         watch.emplace(std::move(stdin_channel));
-        document->addUndoObserver(*watch);
-
+        (*watch).connect(desktop, document);
         auto on_lose_document = [&] {
             KILL_PROCESS(local_pid);
-            document->removeUndoObserver(*watch);
+            (*watch).disconnect(document);
             lost_document = true;
             conns.clear();
         };
@@ -836,7 +847,7 @@ int Script::execute(std::list<std::string> const &in_command, std::list<std::str
     _main_loop->run();
 
     if (pipe_diffs && !lost_document) {
-        document->removeUndoObserver(*watch);
+        (*watch).disconnect(document);
     }
 
     // Ensure all the data is out of the pipe
@@ -930,6 +941,63 @@ Script::PreviewObserver::PreviewObserver(Glib::RefPtr<Glib::IOChannel> channel)
     : _channel{std::move(channel)}
 {}
 
+void Script::PreviewObserver::connect(SPDesktop const *desktop, SPDocument *document)
+{
+    document->addUndoObserver(*this);
+    auto selection = desktop->getSelection();
+    _select_changed =
+        selection->connectChanged([this](Inkscape::Selection *selection) { selectionChanged(selection); });
+    // We don't want to spam deselect / select events
+    // while document reconstruction is ongoing.
+    // The selection is restored after the reconstruction, so
+    // we will emit an event there anyway.
+    _reconstruction_start_connection =
+        document->connectReconstructionStart([this]() { _pause_select_events = true; }, true);
+    _reconstruction_finish_connection =
+        document->connectReconstructionFinish([this]() { _pause_select_events = false; });
+}
+
+void Script::PreviewObserver::disconnect(SPDocument *document)
+{
+    document->removeUndoObserver(*this);
+    _select_changed.disconnect();
+    _reconstruction_start_connection.disconnect();
+    _reconstruction_finish_connection.disconnect();
+}
+
+void Script::PreviewObserver::createAndSendEvent(
+    std::function<void(Inkscape::XML::Document *, Inkscape::XML::Node *)> const &eventPopulator)
+{
+    Inkscape::XML::Document *doc = new Inkscape::XML::SimpleDocument();
+    Inkscape::XML::Node *event_node = doc->createElement("event");
+    doc->addChildAtPos(event_node, 0);
+    Inkscape::GC::release(event_node);
+
+    eventPopulator(doc, event_node);
+
+    Glib::ustring xml_output = sp_repr_write_buf(event_node, 0, true, GQuark(0), 0, 0);
+    _channel->write(xml_output + "\n");
+
+    Inkscape::GC::release(doc);
+    delete doc;
+}
+
+void Script::PreviewObserver::selectionChanged(Inkscape::Selection *selection)
+{
+    if (_pause_select_events) {
+        return;
+    }
+    createAndSendEvent([&](Inkscape::XML::Document *doc, Inkscape::XML::Node *event_node) {
+        event_node->setAttribute("type", "updateSelection");
+        for (auto objsel : selection->objects()) {
+            Inkscape::XML::Node *item = event_node->document()->createElement("selObj");
+            item->setAttribute("id", objsel->getId());
+            event_node->appendChild(item);
+            Inkscape::GC::release(item);
+        }
+    });
+}
+
 void Script::PreviewObserver::notifyUndoCommitEvent(Event *ee)
 {
     std::vector<XML::Event *> events;
@@ -941,80 +1009,70 @@ void Script::PreviewObserver::notifyUndoCommitEvent(Event *ee)
 
     // Process events in reverse order (chronological order)
     for (auto e : events | boost::adaptors::reversed) {
-        Inkscape::XML::Document *doc = new Inkscape::XML::SimpleDocument();
-        XML::Node *event_node = doc->createElement("event");
-        doc->addChildAtPos(event_node, 0);
-        Inkscape::GC::release(event_node);
+        createAndSendEvent([&](Inkscape::XML::Document *doc, Inkscape::XML::Node *event_node) {
+            if (auto eadd = dynamic_cast<XML::EventAdd *>(e)) {
+                event_node->setAttribute("type", "add");
+                if (eadd->ref) {
+                    event_node->setAttribute("after", eadd->ref->attribute("id"));
+                }
+                if (eadd->child) {
+                    Inkscape::XML::Node *new_child = eadd->child->duplicate(doc);
 
-        // Add type and element ID
-        if (auto eadd = dynamic_cast<XML::EventAdd *>(e)) {
-            event_node->setAttribute("type", "add");
-            if (eadd->ref) {
-                event_node->setAttribute("after", eadd->ref->attribute("id"));
+                    event_node->appendChild(new_child);
+                    Inkscape::GC::release(new_child);
+                }
+                if (eadd->repr) {
+                    event_node->setAttribute("parent", eadd->repr->attribute("id"));
+                }
+            } else if (auto edel = dynamic_cast<XML::EventDel *>(e)) {
+                event_node->setAttribute("type", "delete");
+                if (edel->repr && edel->repr->attribute("id")) {
+                    event_node->setAttribute("parent", edel->repr->attribute("id"));
+                }
+                if (edel->ref) {
+                    event_node->setAttribute("after", edel->ref->attribute("id"));
+                }
+                if (edel->child) {
+                    event_node->setAttribute("child", edel->child->attribute("id"));
+                }
+            } else if (auto echga = dynamic_cast<XML::EventChgAttr *>(e)) {
+                event_node->setAttribute("type", "attribute_change");
+                if (echga->repr && e->repr->attribute("id")) {
+                    event_node->setAttribute("element-id", echga->repr->attribute("id"));
+                }
+                event_node->setAttribute("attribute-name", g_quark_to_string(echga->key));
+                event_node->setAttribute("old-value", &*(echga->oldval));
+                event_node->setAttribute("new-value", &*(echga->newval));
+            } else if (auto echgc = dynamic_cast<XML::EventChgContent *>(e)) {
+                event_node->setAttribute("type", "content_change");
+                if (e->repr && e->repr->attribute("id")) {
+                    event_node->setAttribute("element-id", e->repr->attribute("id"));
+                }
+                event_node->setAttribute("old-content", &*(echgc->oldval));
+                event_node->setAttribute("new-content", &*(echgc->newval));
+            } else if (auto echgo = dynamic_cast<XML::EventChgOrder *>(e)) {
+                event_node->setAttribute("type", "order_change");
+                if (echgo->repr && echgo->repr->attribute("id")) {
+                    event_node->setAttribute("element-id", e->repr->attribute("id"));
+                }
+                event_node->setAttribute("child", echgo->child->attribute("id"));
+                if (echgo->oldref) {
+                    event_node->setAttribute("old-ref", echgo->oldref->attribute("id"));
+                }
+                if (echgo->newref) {
+                    event_node->setAttribute("new-ref", echgo->newref->attribute("id"));
+                }
+            } else if (auto echgn = dynamic_cast<XML::EventChgElementName *>(e)) {
+                event_node->setAttribute("type", "element_name_change");
+                if (echgn->repr && echgn->repr->attribute("id")) {
+                    event_node->setAttribute("element-id", e->repr->attribute("id"));
+                }
+                event_node->setAttribute("old-name", g_quark_to_string(echgn->old_name));
+                event_node->setAttribute("new-name", g_quark_to_string(echgn->new_name));
+            } else {
+                event_node->setAttribute("type", "unknown");
             }
-            if (eadd->child) {
-                Inkscape::XML::Node *new_child = eadd->child->duplicate(doc);
-
-                event_node->appendChild(new_child);
-                Inkscape::GC::release(new_child);
-            }
-            if (eadd->repr) {
-                event_node->setAttribute("parent", eadd->repr->attribute("id"));
-            }
-        } else if (auto edel = dynamic_cast<XML::EventDel *>(e)) {
-            event_node->setAttribute("type", "delete");
-            if (edel->repr && edel->repr->attribute("id")) {
-                event_node->setAttribute("parent", edel->repr->attribute("id"));
-            }
-            if (edel->ref) {
-                event_node->setAttribute("after", edel->ref->attribute("id"));
-            }
-            if (edel->child) {
-                event_node->setAttribute("child", edel->child->attribute("id"));
-            }
-        } else if (auto echga = dynamic_cast<XML::EventChgAttr *>(e)) {
-            event_node->setAttribute("type", "attribute_change");
-            if (echga->repr && e->repr->attribute("id")) {
-                event_node->setAttribute("element-id", echga->repr->attribute("id"));
-            }
-            event_node->setAttribute("attribute-name", g_quark_to_string(echga->key));
-            event_node->setAttribute("old-value", &*(echga->oldval));
-            event_node->setAttribute("new-value", &*(echga->newval));
-        } else if (auto echgc = dynamic_cast<XML::EventChgContent *>(e)) {
-            event_node->setAttribute("type", "content_change");
-            if (e->repr && e->repr->attribute("id")) {
-                event_node->setAttribute("element-id", e->repr->attribute("id"));
-            }
-            event_node->setAttribute("old-content", &*(echgc->oldval));
-            event_node->setAttribute("new-content", &*(echgc->newval));
-        } else if (auto echgo = dynamic_cast<XML::EventChgOrder *>(e)) {
-            event_node->setAttribute("type", "order_change");
-            if (echgo->repr && echgo->repr->attribute("id")) {
-                event_node->setAttribute("element-id", e->repr->attribute("id"));
-            }
-            event_node->setAttribute("child", echgo->child->attribute("id"));
-            if (echgo->oldref) {
-                event_node->setAttribute("old-ref", echgo->oldref->attribute("id"));
-            }
-            if (echgo->newref) {
-                event_node->setAttribute("new-ref", echgo->newref->attribute("id"));
-            }
-        } else if (auto echgn = dynamic_cast<XML::EventChgElementName *>(e)) {
-            event_node->setAttribute("type", "element_name_change");
-            if (echgn->repr && echgn->repr->attribute("id")) {
-                event_node->setAttribute("element-id", e->repr->attribute("id"));
-            }
-            event_node->setAttribute("old-name", g_quark_to_string(echgn->old_name));
-            event_node->setAttribute("new-name", g_quark_to_string(echgn->new_name));
-        } else {
-            event_node->setAttribute("type", "unknown");
-        }
-
-        Glib::ustring xml_output = sp_repr_write_buf(event_node, 0, true, GQuark(0), 0, 0);
-        _channel->write(xml_output + "\n");
-
-        Inkscape::GC::release(doc);
-        delete doc;
+        });
     }
 }
 

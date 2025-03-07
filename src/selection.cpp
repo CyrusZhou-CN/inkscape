@@ -291,78 +291,64 @@ void Selection::_releaseSignals(SPObject *object) {
     _modified_connections.erase(object);
 }
 
-void
-Selection::emptyBackup(){
-    _selected_ids.clear();
-    _seldata.clear();
-    params.clear();
-}
-
-void
-Selection::setBackup ()
+SelectionState Selection::getState()
 {
-    SPDesktop *desktop = this->desktop();
-    Inkscape::UI::Tools::NodeTool *tool = nullptr;
-    if (desktop) {
-        if (auto nt = dynamic_cast<Inkscape::UI::Tools::NodeTool*>(desktop->getTool())) {
-            tool = nt;
-        }
-    }
+    SelectionState state;
 
-    emptyBackup();
-
+    // Get IDs of selected objects
     for (auto const * const item : items()) {
-        auto id = item->getId();
-        if (!id) continue;
-
-        std::string selected_id;
-        selected_id += "--id=";
-        selected_id += id;
-        params.push_back(std::move(selected_id));
-
-        _selected_ids.emplace_back(std::move(id));
+        if (auto id = item->getId()) {
+            state.selected_ids.emplace_back(id);
+        }
     }
 
-    if (!tool) return;
+    // If node tool is active, get selected nodes
+    if (SPDesktop *desktop = this->desktop()) {
+        if (auto tool = dynamic_cast<Inkscape::UI::Tools::NodeTool *>(desktop->getTool())) {
+            for (auto const point : tool->_selected_nodes->_points_list) {
+                auto const node = dynamic_cast<Inkscape::UI::Node const *>(point);
+                if (!node)
+                    continue;
 
-    for (auto const point : tool->_selected_nodes->_points_list) {
-        auto const node = dynamic_cast<Inkscape::UI::Node const *>(point);
-        if (!node) continue;
+                auto const &nodeList = node->nodeList();
+                auto const &subpathList = nodeList.subpathList();
 
-        auto const &nodeList = node->nodeList();
-        auto const &subpathList = nodeList.subpathList();
+                // Find subpath index
+                int sp = 0;
+                bool found_sp = false;
+                for (auto i = subpathList.begin(), e = subpathList.end(); i != e; ++i, ++sp) {
+                    if (&**i == &nodeList) {
+                        found_sp = true;
+                        break;
+                    }
+                }
 
-        int sp = 0;
-        bool found_sp = false;
-        for (auto i = subpathList.begin(), e = subpathList.end(); i != e; ++i, ++sp) {
-            if (&**i == &nodeList) {
-                found_sp = true;
-                break;
+                // Find node index
+                int nl = 0;
+                bool found_nl = false;
+                for (auto j = nodeList.begin(), e = nodeList.end(); j != e; ++j, ++nl) {
+                    if (&*j == node) {
+                        found_nl = true;
+                        break;
+                    }
+                }
+
+                if (!(found_nl && found_sp)) {
+                    g_warning("Something went wrong while trying to get node info. Please report a bug.");
+                    continue;
+                }
+
+                if (auto id = subpathList.pm().item()->getId()) {
+                    state.selected_nodes.emplace_back(id, sp, nl);
+                }
             }
         }
-
-        int nl = 0;
-        bool found_nl = false;
-        for (auto j = nodeList.begin(), e = nodeList.end(); j != e; ++j, ++nl) {
-            if (&*j == node){
-                found_nl = true;
-                break;
-            }
-        }
-
-        if (!(found_nl && found_sp)) {
-            g_warning("Something went wrong while trying to pass selected nodes to extension. Please report a bug.");
-            return;
-        }
-
-        auto id = subpathList.pm().item()->getId();
-        params.push_back(Glib::ustring::compose("--selected-nodes=%1:%2:%3", id, sp, nl));
-        _seldata.emplace_back(std::move(id), std::make_pair(sp, nl));
     }
+
+    return state;
 }
 
-void
-Selection::restoreBackup()
+void Selection::setState(SelectionState const &state)
 {
     SPDesktop *desktop = this->desktop();
     SPDocument *document = SP_ACTIVE_DOCUMENT;
@@ -376,13 +362,14 @@ Selection::restoreBackup()
 
     // update selection
     std::vector<SPItem *> new_selection;
-    for (auto const &selected_id : _selected_ids) {
+    for (auto const &selected_id : state.selected_ids) {
         auto const item = cast<SPItem>(document->getObjectById(selected_id.c_str()));
         if (item && !defs->isAncestorOf(item)) {
             new_selection.push_back(item);
         }
     }
-    clear();
+    if (size())
+        clear();
     add(new_selection.begin(), new_selection.end());
     new_selection.clear();
 
@@ -398,14 +385,15 @@ Selection::restoreBackup()
     if (!node) return;
 
     auto const &sp = node->nodeList().subpathList();
-    for (auto & l : _seldata) {
+    for (auto const &node_state : state.selected_nodes) {
         int sp_count = 0;
         for (auto j = sp.begin(); j != sp.end(); ++j, ++sp_count) {
-            if (sp_count != l.second.first) continue;
+            if (sp_count != node_state.subpath_index)
+                continue;
 
             int nt_count = 0;
             for (auto k = (*j)->begin(); k != (*j)->end(); ++k, ++nt_count) {
-                if (nt_count == l.second.second) {
+                if (nt_count == node_state.node_index) {
                     cps->insert(k.ptr());
                     break;
                 }

@@ -44,8 +44,8 @@ namespace Inkscape::UI::Tools {
 PagesTool::PagesTool(SPDesktop *desktop)
     : ToolBase(desktop, "/tools/pages", "select.svg")
 {
-    // Stash the regular object selection so we don't modify them in base-tools root handler.
-    desktop->getSelection()->setBackup();
+    // Save selection state and clear selection before using the tool
+    _selection_state = std::make_unique<Inkscape::SelectionState>(desktop->getSelection()->getState());
     desktop->getSelection()->clear();
 
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
@@ -433,7 +433,10 @@ void PagesTool::menu_popup(CanvasEvent const &event, SPObject *obj)
 
 void PagesTool::switching_away(std::string const &)
 {
-    _desktop->getSelection()->restoreBackup();
+    if (_selection_state) {
+        _desktop->getSelection()->setState(*_selection_state);
+        _selection_state.reset();
+    }
 }
 
 /**

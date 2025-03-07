@@ -35,6 +35,31 @@ class Node;
 } // namespace XML
 
 /**
+ * Represents a selected node in a path
+ */
+struct PathNodeState
+{
+    std::string path_id; // ID of the path containing the node
+    int subpath_index;   // Index of the subpath
+    int node_index;      // Index of the node within the subpath
+
+    PathNodeState(std::string id, int sp, int n)
+        : path_id(std::move(id))
+        , subpath_index(sp)
+        , node_index(n)
+    {}
+};
+
+/**
+ * Complete state of a selection, including selected objects and nodes
+ */
+struct SelectionState
+{
+    std::vector<std::string> selected_ids;     // IDs of selected objects
+    std::vector<PathNodeState> selected_nodes; // Selected path nodes (when node tool is active)
+};
+
+/**
  * The set of selected SPObjects for a given document and layer model.
  *
  * This class represents the set of selected SPItems for a given
@@ -216,21 +241,14 @@ public:
     }
 
     /**
-     * Set a backup of current selection and store it also to be command line readable by extension system
+     * Returns the current selection state including selected objects and nodes
      */
-    void setBackup();
+    SelectionState getState();
+
     /**
-     * Clear backup of current selection
+     * Restores a selection state previously obtained from getState()
      */
-    void emptyBackup();
-    /**
-     * Restore a selection from a existing backup
-     */
-    void restoreBackup();
-    /**
-     * Here store a paramlist when set backup
-     */
-    std::list<std::string> params;
+    void setState(SelectionState const &state);
 
     /**
      * Decide if the selection changing should change the layer and page selection too
@@ -262,8 +280,6 @@ private:
     unsigned _idle = 0;
     bool _change_layer = true;
     bool _change_page = true;
-    std::vector<std::pair<std::string, std::pair<int, int>>> _seldata;
-    std::vector<std::string> _selected_ids;
     std::unordered_map<SPObject *, sigc::scoped_connection> _modified_connections;
     sigc::scoped_connection _context_release_connection;
 

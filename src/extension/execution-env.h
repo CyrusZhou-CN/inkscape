@@ -13,8 +13,10 @@
 
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
-
 #include <gtkmm/dialog.h>
+#include <memory>
+
+#include "selection.h"
 
 class SPDesktop;
 class SPDocument;
@@ -52,6 +54,9 @@ private:
     SPDocument *_document = nullptr;
     /** \brief  A document cache if we were passed one. */
     Implementation::ImplementationDocumentCache * _docCache;
+
+    /** \brief  Saved selection state before running the effect. */
+    std::unique_ptr<Inkscape::SelectionState> _selectionState;
 
     /** \brief  The effect that we're executing in this context. */
     Effect * _effect;
