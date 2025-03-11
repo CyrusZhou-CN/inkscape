@@ -45,7 +45,6 @@ list(APPEND INKSCAPE_CXX_FLAGS "-Werror=ignored-qualifiers")    # e.g.: const in
 list(APPEND INKSCAPE_CXX_FLAGS "-Werror=return-type")           # non-void functions that don't return a value
 list(APPEND INKSCAPE_CXX_FLAGS "-Wno-switch")                   # See !849 for discussion
 list(APPEND INKSCAPE_CXX_FLAGS "-Wmisleading-indentation")
-list(APPEND INKSCAPE_CXX_FLAGS_DEBUG "-Og")                     # -Og for _FORTIFY_SOURCE. One could add -Weffc++ here to see approx. 6000 warnings
 list(APPEND INKSCAPE_CXX_FLAGS_DEBUG "-Wcomment")
 list(APPEND INKSCAPE_CXX_FLAGS_DEBUG "-Wunused-function")
 list(APPEND INKSCAPE_CXX_FLAGS_DEBUG "-Wunused-variable")
