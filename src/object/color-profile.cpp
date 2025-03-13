@@ -189,7 +189,7 @@ ColorProfile *ColorProfile::createFromProfile(SPDocument *doc, Colors::CMS::Prof
         case ColorProfileStorage::HREF_FILE: {
             auto uri = Inkscape::URI::from_native_filename(profile.getPath().c_str());
             auto fn = doc->getDocumentFilename();
-            Inkscape::setHrefAttribute(*repr, fn ? (uri.str((std::string("file://") + fn).c_str())) : nullptr);
+            Inkscape::setHrefAttribute(*repr, uri.str(fn ? (std::string("file://") + fn).c_str() : nullptr));
         } break;
     }
     // Complete the creation by appending to the defs. This must be done last.

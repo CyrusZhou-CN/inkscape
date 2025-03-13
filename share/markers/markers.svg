@@ -219,8 +219,6 @@
        viewBox="0 0 1 1">
       <g transform="scale(0.6)">
         <path
-           d="m 0,-40 v 0" />
-        <path
            d="M 0,0 8,5 V -5 Z"
            style="fill:context-stroke;fill-rule:evenodd;stroke:none"
            sodipodi:nodetypes="ccccc" />
@@ -240,8 +238,6 @@
        markerHeight="1"
        viewBox="0 0 1 1">
       <g transform="scale(0.6)">
-        <path
-           d="m 0,-40 v 0" />
         <path
            d="M 0,0 -8,5 V -5 Z"
            style="fill:context-stroke;fill-rule:evenodd;stroke:none" />

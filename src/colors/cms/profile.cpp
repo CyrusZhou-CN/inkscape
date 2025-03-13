@@ -10,6 +10,7 @@
 
 #include "profile.h"
 
+#include <codecvt>
 #include <fcntl.h>
 #include <glib/gstdio.h>
 #include <glibmm.h>
@@ -120,20 +121,17 @@ static void sanitize_name(std::string &str)
 std::string Profile::getName(bool sanitize) const
 {
     std::string name;
-    cmsUInt32Number byteLen = cmsGetProfileInfoASCII(_handle, cmsInfoDescription, "en", "US", nullptr, 0);
+    cmsUInt32Number byteLen = cmsGetProfileInfo(_handle, cmsInfoDescription, "en", "US", nullptr, 0);
     if (byteLen > 0) {
-        std::vector<char> data(byteLen);
+        std::vector<wchar_t> data(byteLen);
         cmsUInt32Number readLen =
-            cmsGetProfileInfoASCII(_handle, cmsInfoDescription, "en", "US", data.data(), data.size());
+            cmsGetProfileInfo(_handle, cmsInfoDescription, "en", "US", data.data(), data.size());
         if (readLen < data.size()) {
             g_warning("Profile::get_name(): icc data read less than expected!");
             data.resize(readLen);
         }
-        // Remove nulls at end which will cause an invalid utf8 string.
-        while (!data.empty() && data.back() == 0) {
-            data.pop_back();
-        }
-        name = std::string(data.begin(), data.end());
+        std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+        name = converter.to_bytes(data.data());
     }
     if (sanitize)
         sanitize_name(name);

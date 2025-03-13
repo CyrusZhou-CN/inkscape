@@ -639,6 +639,7 @@ void DocumentProperties::populate_available_profiles(){
     bool home = true; // initial value doesn't matter, it's just to avoid a compiler warning
     bool first = true;
     auto &cms_system = Inkscape::Colors::CMS::System::get();
+    cms_system.refreshProfiles();
     for (auto const &profile: cms_system.getProfiles()) {
         Gtk::TreeModel::Row row;
 
@@ -711,8 +712,7 @@ void DocumentProperties::linkSelectedProfile()
         Glib::ustring file = (*iter)[_AvailableProfilesListColumns.fileColumn];
         Glib::ustring name = (*iter)[_AvailableProfilesListColumns.nameColumn];
 
-        auto filename = Glib::filename_to_uri(Glib::filename_from_utf8(file));
-        document->getDocumentCMS().attachProfileToDoc(filename, ColorProfileStorage::HREF_FILE, Colors::RenderingIntent::AUTO, name);
+        document->getDocumentCMS().attachProfileToDoc(file, ColorProfileStorage::HREF_FILE, Colors::RenderingIntent::AUTO, name);
         // inform the document, so we can undo
         DocumentUndo::done(document, _("Link Color Profile"), "");
 
