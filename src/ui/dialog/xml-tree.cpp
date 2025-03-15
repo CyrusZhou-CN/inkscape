@@ -100,7 +100,7 @@ XmlTree::XmlTree()
 
     Gtk::ScrolledWindow& tree_scroller = get_widget<Gtk::ScrolledWindow>(_builder, "tree-wnd");
     tree_scroller.set_child(*_xml_treeview);
-    fix_inner_scroll(&tree_scroller);
+    fix_inner_scroll(tree_scroller);
 
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
 

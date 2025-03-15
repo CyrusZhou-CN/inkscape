@@ -21,7 +21,8 @@
 
 namespace Gtk {
 class EventControllerKey;
-}
+class ScrolledWindow;
+} // namespace Gtk
 
 class SPDesktop;
 
@@ -72,7 +73,8 @@ public:
     void defocus_dialog();
     bool getShowing() { return _showing; }
     // fix children scrolled windows to send outer scroll when his own reach limits
-    void fix_inner_scroll(Gtk::Widget *child);
+    void fix_inner_scroll(Gtk::ScrolledWindow &scrollwin);
+
     // Too many dialogs have unprotected calls to ask for this data
     SPDesktop *getDesktop() const { return desktop; }
 

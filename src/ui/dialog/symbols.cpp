@@ -391,7 +391,7 @@ SymbolsDialog::SymbolsDialog(const char* prefsPath)
     // here we fix scoller to allow pass the scroll to parent scroll when reach upper or lower limit
     // this must be added to al scrolleing window in dialogs. We dont do auto because dialogs can be recreated
     // in the dialog code so think is safer call inside
-    fix_inner_scroll(scroller);
+    fix_inner_scroll(*scroller);
 
     overlay = &get_widget<Gtk::Overlay>(_builder, "overlay");
 

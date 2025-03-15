@@ -12,21 +12,22 @@
 
 #include "dialog-base.h"
 
-#include <utility>
 #include <glibmm/i18n.h>
 #include <glibmm/main.h>
 #include <glibmm/refptr.h>
 #include <gtkmm/adjustment.h>
 #include <gtkmm/cssprovider.h>
 #include <gtkmm/eventcontrollerkey.h>
+#include <gtkmm/eventcontrollerscroll.h>
 #include <gtkmm/notebook.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/viewport.h>
 #include <gtkmm/window.h>
+#include <utility>
 
-#include "inkscape.h"
-#include "inkscape-window.h"
 #include "desktop.h"
+#include "inkscape-window.h"
+#include "inkscape.h"
 #include "selection.h"
 #include "ui/dialog-events.h"
 #include "ui/dialog/dialog-data.h"
@@ -204,38 +205,42 @@ void DialogBase::setDesktop(SPDesktop *new_desktop)
     desktopReplaced();
 }
 
-void DialogBase::fix_inner_scroll(Gtk::Widget * const widget)
+void DialogBase::fix_inner_scroll(Gtk::ScrolledWindow &scrollwin)
 {
-#if 0 // Todo: Is this needed anymore?
-    auto const scrollwin = dynamic_cast<Gtk::ScrolledWindow *>(widget);
-    if (!scrollwin) return;
-
     Gtk::Widget *child = nullptr;
-    if (auto const viewport = dynamic_cast<Gtk::Viewport *>(scrollwin->get_child())) {
+    if (auto const viewport = dynamic_cast<Gtk::Viewport *>(scrollwin.get_child())) {
         child = viewport->get_child();
     } else {
-        child = scrollwin->get_child();
+        child = scrollwin.get_child();
     }
-    if (!child) return;
+    if (!child) {
+        return;
+    }
 
-    child->signal_scroll_event().connect([this, adj = scrollwin->get_vadjustment()]
-                                         (GdkEventScroll * const event)
-    {
-        auto const children = UI::get_children(*this);
-        if (children.empty()) return false;
+    auto controller = Gtk::EventControllerScroll::create();
+    controller->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
+    controller->signal_scroll().connect(
+        [this, adj = scrollwin.get_vadjustment()](double dx, double dy) -> bool {
+            auto const parentscroll = dynamic_cast<Gtk::ScrolledWindow *>(get_first_child());
+            if (!parentscroll) {
+                return false;
+            }
 
-        auto const parentscroll = dynamic_cast<Gtk::ScrolledWindow *>(children.at(0));
-        if (!parentscroll) return false;
-
-        if (event->delta_y > 0 && adj->get_value() + adj->get_page_size() == adj->get_upper() ||
-            event->delta_y < 0 && adj->get_value() == adj->get_lower())
-        {
-            parentscroll->event(reinterpret_cast<GdkEvent *>(event));
-            return true;
-        }
-        return false;
-    });
-#endif
+            if (dy > 0 && adj->get_value() + adj->get_page_size() == adj->get_upper() ||
+                dy < 0 && adj->get_value() == adj->get_lower()) {
+                auto parent_adj = parentscroll->get_vadjustment();
+                if (parent_adj) {
+                    double new_value = parent_adj->get_value() + dy * parent_adj->get_step_increment();
+                    new_value = std::max(parent_adj->get_lower(),
+                                         std::min(parent_adj->get_upper() - parent_adj->get_page_size(), new_value));
+                    parent_adj->set_value(new_value);
+                }
+                return true;
+            }
+            return false;
+        },
+        false);
+    child->add_controller(controller);
 }
 
 /**
