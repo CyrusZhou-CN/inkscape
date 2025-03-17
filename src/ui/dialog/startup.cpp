@@ -22,6 +22,7 @@
 #include <gtkmm/combobox.h>
 #include <gtkmm/cssprovider.h>
 #include <gtkmm/eventcontrollerkey.h>
+#include <gtkmm/filefilter.h>
 #include <gtkmm/infobar.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/notebook.h>
@@ -43,7 +44,8 @@
 #include "preferences.h"
 #include "ui/builder-utils.h"
 #include "ui/controller.h"
-#include "ui/dialog/filedialog.h"
+#include "ui/dialog/choose-file.h"
+#include "ui/dialog/choose-file-utils.h"
 #include "ui/shortcuts.h"
 #include "ui/themes.h"
 #include "ui/util.h"
@@ -402,17 +404,18 @@ StartScreen::load_document()
                 std::string open_path;
                 get_start_directory(open_path, "/dialogs/open/path");
 
-                auto browser = Inkscape::UI::Dialog::FileOpenDialog::create(
-                    *this, open_path, Inkscape::UI::Dialog::SVG_TYPES, _("Open a different file"));
-                browser->setSelectMultiple(false); // We can only handle one document via start up screen!
+                std::string current_folder;
+                get_start_directory(current_folder, "/dialogs/open/path");
 
-                if (browser->show()) {
-                    auto prefs = Inkscape::Preferences::get();
-                    prefs->setString("/dialogs/open/path", Glib::filename_to_utf8(browser->getCurrentDirectory()->get_path()));
-                    file = browser->getFile();
-                } else {
+                auto filters = create_open_filters();
+                file = choose_file_open(_("Open a different file"), this, filters, current_folder);
+
+                if (!file) {
                     return; // Cancel
                 }
+
+                auto prefs = Inkscape::Preferences::get();
+                prefs->setString("/dialogs/open/path", current_folder);
             }
 
             // Now we have file, open document.

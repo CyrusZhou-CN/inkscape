@@ -172,7 +172,7 @@ groups with mixed element types.
 ### Path Library Improvements 
 
 -   Estimation of difficulty: Hard - Long (350h)
--   Potential mentors: Tavmjong Bah, KK
+-   Potential mentors: Tavmjong Bah
 -   Programming skills: C++
 -   Prerequisites: Strong math skills, specifically in (computational) geometry.
 
@@ -248,6 +248,27 @@ Here**](https://gitlab.com/inkscape/inbox/-/issues/6095)
 -   fast editing of color in whole project without the need for swatches
 -   easier way to make colors harmonize in a project
 -   Faster iteration and visioning of designs
+
+### On-canvas spell checking
+
+-   Estimation of difficulty: Variable - Short or Medium (90h or 175h)
+-   Potential mentors: Tavmjong, ?
+-   Programming skills: C++
+-   Prerequisites: Some knowledge of GTK. Ability to work with UI designors.
+ 
+**Detailed Description:** Currently one can spell-check text via either using
+a dedicated `Check Spelling` dialog or using the `Text` tab of the `Text and Font`
+dialog. Neither are ideal solutions. In particular, using the `Text` tab can
+remove style information.
+
+This project would be to flag misspelled words on the canvas. It requires:
+
+-   Enabling/disabling.
+-   Selecting language(s).
+-   A visual indicator of suspected misspelled words.
+-   A pop-up to display and select alternative spellings (or to set an ignore flag).
+
+A successful proposal would include a UI plan worked out ahead of time with the UI team.
 
 ## Python projects
 

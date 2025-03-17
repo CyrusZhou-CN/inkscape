@@ -83,7 +83,8 @@
 #include "ui/builder-utils.h"
 #include "ui/column-menu-builder.h"
 #include "ui/controller.h"
-#include "ui/dialog/filedialog.h"
+#include "ui/dialog/choose-file.h"
+#include "ui/dialog/choose-file-utils.h"
 #include "ui/icon-names.h"
 #include "ui/pack.h"
 #include "ui/util.h"
@@ -573,8 +574,6 @@ private:
     Gtk::Label _label;
 };
 
-static Inkscape::UI::Dialog::FileOpenDialog * selectFeImageFileInstance = nullptr;
-
 //Displays a chooser for feImage input
 //It may be a filename or the id for an SVG Element
 //described in xlink:href syntax
@@ -640,38 +639,17 @@ private:
         std::string open_path;
         get_start_directory(open_path, "/dialogs/open/path");
 
-        // Create a dialog if we don't already have one.
-        if (!selectFeImageFileInstance) {
-            selectFeImageFileInstance =
-                Inkscape::UI::Dialog::FileOpenDialog::create(
-                    *_dialog.getDesktop()->getInkscapeWindow(),
-                    open_path,
-                    Inkscape::UI::Dialog::SVG_TYPES, /* TODO: any image, not just svg */
-                    (char const *)_("Select an image to be used as input.")).release();
-        }
+        // Create a dialog.
+        auto window = _dialog.getDesktop()->getInkscapeWindow();
+        auto filters = create_open_filters();
+        auto file = choose_file_open(_("Select an image to be used as input."), window, filters, open_path);
 
-        // Show the dialog.
-        bool const success = selectFeImageFileInstance->show();
-        if (!success) {
-            return;
-        }
-
-        // User selected something.  Get name and type.
-        auto file = selectFeImageFileInstance->getFile();
         if (!file) {
-            return;
+            return; // Cancel
         }
-
-        auto path = selectFeImageFileInstance->getCurrentDirectory();
-        if (!path) {
-            return;
-        }
-
-        open_path = path->get_path();
-        open_path.append(G_DIR_SEPARATOR_S);
 
         Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-        prefs->setString("/dialogs/open/path", open_path);
+        prefs->setString("/dialogs/open/path", file->get_path());
 
         _entry.set_text(file->get_parse_name());
     }

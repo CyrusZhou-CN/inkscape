@@ -61,11 +61,7 @@ void sp_file_exit ();
 ## O P E N
 ######################*/
 
-/**
- * Displays a file open dialog. Calls sp_file_open on
- * an OK.
- */
-void sp_file_open_dialog (Gtk::Window &parentWindow, void* object, void* data);
+// See src/actions/actions-file-window.h
 
 /**
  * Reverts file to disk-copy on "YES"
@@ -117,11 +113,7 @@ bool sp_file_save_dialog (Gtk::Window &parentWindow, SPDocument *doc, Inkscape::
 
 void sp_import_document(SPDesktop *desktop, SPDocument *clipdoc, bool in_place, bool on_page = false);
 
-/**
- * Displays a file selector dialog, to allow the
- * user to import data into the current document.
- */
-void sp_file_import (Gtk::Window &parentWindow);
+// See src/actions/actions-file-window.h
 
 /**
  * Imports pages into the document.

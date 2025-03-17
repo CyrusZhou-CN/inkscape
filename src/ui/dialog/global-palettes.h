@@ -17,9 +17,14 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+#include <glibmm/refptr.h>
 #include <glibmm/ustring.h>
 
 #include "colors/color.h"
+
+namespace Gio {
+class File;
+} // namespace Gio
 
 namespace Gtk {
 class Window;
@@ -89,7 +94,7 @@ struct PaletteResult { // todo: replace with std::expected when it becomes avail
 PaletteResult load_palette(std::string const &path);
 
 // Show file chooser and select color palette file
-std::string choose_palette_file(Gtk::Window* window);
+Glib::RefPtr<Gio::File> choose_palette_file(Gtk::Window* window);
 
 } // namespace Inkscape::UI::Dialog
 

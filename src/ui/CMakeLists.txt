@@ -113,12 +113,15 @@ set(ui_SRC
 
 	dialog/about.cpp
 	dialog/align-and-distribute.cpp
+	dialog/attrdialog.cpp
 	dialog/calligraphic-profile-rename.cpp
 	dialog/clonetiler.cpp
 	dialog/color-item.cpp
 	dialog/command-palette.cpp
 	dialog/attrdialog.cpp
+	dialog/choose-file.cpp
 	dialog/debug.cpp
+	dialog/choose-file-utils.cpp
 	dialog/dialog-base.cpp
 	dialog/dialog-container.cpp
 	dialog/dialog-data.cpp
@@ -132,8 +135,6 @@ set(ui_SRC
 	dialog/export-batch.cpp
 	dialog/export-single.cpp
 	dialog/extensions-gallery.cpp
-	dialog/filedialog.cpp
-	dialog/filedialogimpl-gtkmm.cpp
 	dialog/fill-and-stroke.cpp
 	dialog/filter-effects-dialog.cpp
 	dialog/find.cpp
@@ -158,6 +159,7 @@ set(ui_SRC
 	dialog/polar-arrange-tab.cpp
 	dialog/print.cpp
 	dialog/prototype.cpp
+	dialog/save-image.cpp
 	dialog/selectorsdialog.cpp
 	dialog/startup.cpp
 	dialog/styledialog.cpp
@@ -329,6 +331,8 @@ set(ui_SRC
 	dialog/align-and-distribute.h
 	dialog/arrange-tab.h
 	dialog/calligraphic-profile-rename.h
+	dialog/choose-file.h
+	dialog/choose-file-utils.h
 	dialog/clonetiler.h
 	dialog/color-item.h
 	dialog/command-palette.h
@@ -347,8 +351,6 @@ set(ui_SRC
 	dialog/export-batch.h
 	dialog/export-single.h
 	dialog/extensions-gallery.h
-	dialog/filedialog.h
-	dialog/filedialogimpl-gtkmm.h
 	dialog/fill-and-stroke.h
 	dialog/filter-effects-dialog.h
 	dialog/find.h
@@ -373,6 +375,7 @@ set(ui_SRC
 	dialog/polar-arrange-tab.h
 	dialog/print.h
 	dialog/prototype.h
+	dialog/save-image.h
 	dialog/selectorsdialog.h
 	dialog/startup.h
 	dialog/styledialog.h

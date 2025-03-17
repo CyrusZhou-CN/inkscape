@@ -35,7 +35,8 @@
 #include "selection-chemistry.h"
 #include "include/gtkmm_version.h"
 #include "io/sys.h"
-#include "ui/dialog/filedialog.h"
+#include "ui/dialog/choose-file.h"
+#include "ui/dialog/choose-file-utils.h"
 #include "ui/icon-loader.h"
 #include "ui/pack.h"
 #include "ui/util.h"
@@ -776,50 +777,44 @@ void PrefEntryFileButtonHBox::onRelatedEntryChangedCallback()
     }
 }
 
-static Inkscape::UI::Dialog::FileOpenDialog * selectPrefsFileInstance = nullptr;
-
 void PrefEntryFileButtonHBox::onRelatedButtonClickedCallback()
 {
     if (this->get_visible()) { // Only take action if user changed value.
 
         // Get the current directory for finding files.
-        static std::string open_path;
-        Inkscape::UI::Dialog::get_start_directory(open_path, _prefs_path, true);
+        static std::string current_folder;
+        Inkscape::UI::Dialog::get_start_directory(current_folder, _prefs_path, true);
+
+        auto filters = Gio::ListStore<Gtk::FileFilter>::create();
+
+        // Create a filter to limit options to executables.
+        // (Only used to select Bitmap and SVG editors.)
+        auto filter_app = Gtk::FileFilter::create();
+        filter_app->set_name(_("Applications"));
+        filter_app->add_mime_type("application/x-executable"); // Linux (xdg-mime query filetype)
+        filter_app->add_mime_type("application/x-pie-executable"); // Linux (filetype --mime-type)
+        filter_app->add_mime_type("application/x-mach-binary"); // MacOS
+        filter_app->add_mime_type("application/vnd.microsoft.portable-executable"); // Windows
+        filter_app->add_suffix("exe"); // Windows
+        filters->append(filter_app);
+
+        // Just in case...
+        auto filter_all = Gtk::FileFilter::create();
+        filter_all->set_name(_("All Files"));
+        filter_all->add_pattern("*");
+        filters->append(filter_all);
 
         // Create a dialog.
         SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-        if (!selectPrefsFileInstance) {
-            selectPrefsFileInstance =
-                Inkscape::UI::Dialog::FileOpenDialog::create(
-                    *desktop->getInkscapeWindow(),
-                    open_path,
-                    Inkscape::UI::Dialog::EXE_TYPES,
-                    _("Select a bitmap editor")).release();
-        }
-        
-        // Show the dialog.
-        bool const success = selectPrefsFileInstance->show();
-        
-        if (!success) {
-            return;
-        }
-        
-        // User selected something, get file.
-        auto file = selectPrefsFileInstance->getFile();
+        auto window = desktop->getInkscapeWindow();
+        auto file = choose_file_open(_("Select an editor"), window, filters, current_folder, _("Select"));
+
         if (!file) {
-            return;
+            return; // Cancel
         }
 
-        auto path = file->get_path();
-        if (!path.empty()) {
-            open_path = path;;
-        }
-
-        if (!open_path.empty()) {
-            Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-            prefs->setString(_prefs_path, open_path);
-        }
-        
+        Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+        prefs->setString(_prefs_path, file->get_path());
         relatedEntry->set_text(file->get_parse_name());
     }
 }

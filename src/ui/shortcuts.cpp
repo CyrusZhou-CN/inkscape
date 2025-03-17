@@ -38,7 +38,7 @@
 #include "io/sys.h"
 #include "ui/modifiers.h"
 #include "ui/tools/tool-base.h"    // For latin keyval
-#include "ui/dialog/filedialog.h"  // Importing/exporting files.
+#include "ui/dialog/choose-file.h" // Importing/exporting shortcut files.
 #include "ui/util.h"
 #include "ui/widget/events/canvas-event.h"
 #include "xml/simple-document.h"
@@ -599,7 +599,7 @@ Shortcuts::get_file_names()
 bool
 Shortcuts::import_shortcuts() {
     // Users key directory.
-    auto const &directory = get_path_string(USER, KEYS, {});
+    auto directory = get_path_string(USER, KEYS, {});
 
     // Create and show the dialog
     Gtk::Window* window = app->get_active_window();
@@ -607,19 +607,20 @@ Shortcuts::import_shortcuts() {
         return false;
     }
 
-    auto const importFileDialog = std::unique_ptr<UI::Dialog::FileOpenDialog>{
-        UI::Dialog::FileOpenDialog::create(*window, directory, Inkscape::UI::Dialog::CUSTOM_TYPE,
-                                           _("Select a file to import"))};
-    importFileDialog->addFilterMenu(_("Inkscape shortcuts (*.xml)"), "*.xml");
-    bool const success = importFileDialog->show();
+    static std::vector<std::pair<Glib::ustring, Glib::ustring>> const filters {
+        {_("Inkscape shortcuts (*.xml)"), "*.xml"}
+    };
 
-    if (!success) {
-        return false;
+    auto file = choose_file_open(_("Select a file to import"),
+                                 window,
+                                 filters,
+                                 directory);
+    if (!file) {
+        return false; // Cancel
     }
 
-    // Get file and read.
-    auto file_read = importFileDialog->getFile();
-    if (!_read(file_read, true)) {
+    // Read
+    if (!_read(file, true)) {
         std::cerr << "Shortcuts::import_shortcuts: Failed to read file!" << std::endl;
         return false;
     }
@@ -631,7 +632,7 @@ Shortcuts::import_shortcuts() {
 bool
 Shortcuts::export_shortcuts() {
     // Users key directory.
-    auto const &directory = get_path_string(USER, KEYS, {});
+    auto directory = get_path_string(USER, KEYS, {});
 
     // Create and show the dialog
     Gtk::Window* window = app->get_active_window();
@@ -639,22 +640,21 @@ Shortcuts::export_shortcuts() {
         return false;
     }
 
-    auto const saveFileDialog = std::unique_ptr<UI::Dialog::FileSaveDialog>{
-        UI::Dialog::FileSaveDialog::create(*window, directory, Inkscape::UI::Dialog::CUSTOM_TYPE,
-                                           _("Select a filename for export"),
-                                           {}, {}, Inkscape::Extension::FILE_SAVE_METHOD_SAVE_AS)};
-    saveFileDialog->addFilterMenu(_("Inkscape shortcuts (*.xml)"), "*.xml");
-    saveFileDialog->setCurrentName("shortcuts.xml");
-    bool success = saveFileDialog->show();
+    auto file = choose_file_save(_("Select a filename for export"),
+                                 window,
+                                 "text/xml",      // Mime type
+                                 "shortcuts.xml", // Initial filename
+                                 directory);      // Initial directory
 
-    // Get file name and write.
-    if (success) {
-        auto file = saveFileDialog->getFile();
-        success = _write(file, User);
-        if (!success) {
-            std::cerr << "Shortcuts::export_shortcuts: Failed to save file!" << std::endl;
-        }
+    if (!file) {
+        return false; // Cancel
     }
+
+    auto success = _write(file, User);
+    if (!success) {
+        std::cerr << "Shortcuts::export_shortcuts: Failed to save file!" << std::endl;
+    }
+
     return success;
 };
 

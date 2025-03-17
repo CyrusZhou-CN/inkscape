@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "save-image.h"
-#include <glib/gi18n.h>
+
 #include <string>
+
+#include <giomm/file.h>
+#include <glib/gi18n.h>
+
 #include "display/cairo-utils.h"
-#include "helper/choose-file.h"
 #include "object/sp-image.h"
+#include "ui/dialog/choose-file.h"
 
 namespace Inkscape {
 
@@ -30,11 +34,11 @@ bool extract_image(Gtk::Window* parent, SPImage* image) {
     if (!image || !image->pixbuf || !parent) return false;
 
     std::string current_dir;
-    auto fname = choose_file_save(_("Extract Image"), parent, "image/png", "image.png", current_dir);
-    if (fname.empty()) return false;
+    auto file = choose_file_save(_("Extract Image"), parent, "image/png", "image.png", current_dir);
+    if (!file) return false;
 
     // save image
-    return save_image(fname, image->pixbuf.get());
+    return save_image(file->get_path(), image->pixbuf.get());
 }
 
 } // namespace Inkscape

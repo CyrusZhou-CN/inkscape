@@ -36,10 +36,10 @@
 #include "colors/manager.h"
 #include "colors/spaces/enum.h"
 
-#include "helper/choose-file.h"
 #include "colors/spaces/lab.h"
 #include "io/resource.h"
 #include "io/sys.h"
+#include "ui/dialog/choose-file.h"
 #include "util/delete-with.h"
 #include "util-string/ustring-format.h"
 using Inkscape::Util::delete_with;
@@ -416,7 +416,7 @@ const PaletteFileData* GlobalPalettes::find_palette(const Glib::ustring& id) con
     return p != _access.end() ? p->second : nullptr;
 }
 
-std::string choose_palette_file(Gtk::Window* window) {
+Glib::RefPtr<Gio::File> choose_palette_file(Gtk::Window* window) {
     static std::string current_folder;
     static std::vector<std::pair<Glib::ustring, Glib::ustring>> const filters{
         {_("Gimp Color Palette"), "*.gpl"},

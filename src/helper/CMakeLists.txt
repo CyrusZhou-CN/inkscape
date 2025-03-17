@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 set(helper_SRC
-	choose-file.cpp
 	geom.cpp
 	geom-nodetype.cpp
 	geom-pathstroke.cpp
@@ -10,13 +9,11 @@ set(helper_SRC
 	gettext.cpp
 	pixbuf-ops.cpp
 	png-write.cpp
-	save-image.cpp
 	stock-items.cpp
 	#units-test.cpp
 
 	# -------
 	# Headers
-	choose-file.h
 	geom-curves.h
 	geom-nodetype.h
 	geom-pathstroke.h
@@ -27,7 +24,6 @@ set(helper_SRC
 	mathfns.h
 	pixbuf-ops.h
 	png-write.h
-    save-image.h
 	stock-items.h
 )
 

@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 #include <cairomm/context.h>
+#include <giomm/file.h>
 #include <glib/gi18n.h>
 #include <glibmm/convert.h>
 #include <glibmm/markup.h>
@@ -30,10 +31,10 @@
 #include "display/cairo-utils.h"
 #include "document-undo.h"
 #include "enums.h"
-#include "helper/choose-file.h"
-#include "helper/save-image.h"
 #include "object/sp-image.h"
 #include "ui/builder-utils.h"
+#include "ui/dialog/choose-file.h"
+#include "ui/dialog/save-image.h"
 #include "ui/icon-names.h"
 #include "ui/pack.h"
 #include "ui/util.h"
@@ -67,20 +68,11 @@ void link_image(Gtk::Window* window, SPImage* image) {
         "image/png", "image/jpeg", "image/gif", "image/bmp", "image/tiff"
     };
     auto file = choose_file_open(_("Change Image"), window, mime_types, current_folder);
-    if (file.empty()) return;
+    if (!file) return;
 
-    // link image now
-    // todo: set/calc dpi?
-    // todo: set color profile?
-    try {
-        // convert filename to uri
-        auto uri = Glib::filename_to_uri(file);
-        setHrefAttribute(*image->getRepr(), uri);
-    }
-    catch (Glib::ConvertError const &e) {
-        g_warning("Error converting path to URI: %s", e.what());
-        setHrefAttribute(*image->getRepr(), file);
-    }
+    auto uri = file->get_uri();
+    setHrefAttribute(*image->getRepr(), uri);
+
     // SPImage modifies size when href changes; trigger it now before undo concludes
     // TODO: this needs to be fixed in SPImage
     image->document->_updateDocument(0);

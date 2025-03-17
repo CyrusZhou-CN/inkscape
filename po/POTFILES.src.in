@@ -143,10 +143,8 @@ ${_build_dir}/share/templates/templates.h
 ../src/filter-enums.cpp
 ../src/gradient-chemistry.cpp
 ../src/gradient-drag.cpp
-../src/helper/choose-file.cpp
 ../src/helper/gettext.cpp
 ../src/helper/gettext.h
-../src/helper/save-image.cpp
 ../src/inkscape-application.cpp
 ../src/inkscape.cpp
 ../src/inkview-application.cpp
@@ -278,6 +276,8 @@ ${_build_dir}/share/templates/templates.h
 ../src/ui/desktop/menubar.cpp
 ../src/ui/dialog/attrdialog.cpp
 ../src/ui/dialog/calligraphic-profile-rename.cpp
+../src/ui/dialog/choose-file-utils.cpp
+../src/ui/dialog/choose-file.cpp
 ../src/ui/dialog/clonetiler.cpp
 ../src/ui/dialog/color-item.cpp
 ../src/ui/dialog/command-palette.cpp
@@ -292,7 +292,6 @@ ${_build_dir}/share/templates/templates.h
 ../src/ui/dialog/export-single.cpp
 ../src/ui/dialog/export.cpp
 ../src/ui/dialog/extensions-gallery.cpp
-../src/ui/dialog/filedialogimpl-gtkmm.cpp
 ../src/ui/dialog/fill-and-stroke.cpp
 ../src/ui/dialog/filter-effects-dialog.cpp
 ../src/ui/dialog/find.cpp
@@ -317,6 +316,7 @@ ${_build_dir}/share/templates/templates.h
 ../src/ui/dialog/paint-servers.cpp
 ../src/ui/dialog/polar-arrange-tab.cpp
 ../src/ui/dialog/print.cpp
+../src/ui/dialog/save-image.cpp
 ../src/ui/dialog/save-template-dialog.cpp
 ../src/ui/dialog/save-template-dialog.h
 ../src/ui/dialog/selectorsdialog.cpp

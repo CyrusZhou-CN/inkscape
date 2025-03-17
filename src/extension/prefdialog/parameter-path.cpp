@@ -37,8 +37,8 @@
 #include <sigc++/functors/mem_fun.h>
 
 #include "extension/extension.h"
-#include "helper/choose-file.h"
 #include "preferences.h"
+#include "ui/dialog/choose-file.h"
 #include "ui/pack.h"
 #include "xml/node.h"
 

@@ -13,12 +13,16 @@
 
 #include "export-single.h"
 
+#include <cassert>
+#include <png.h>
+
 #include <glibmm/convert.h>
 #include <glibmm/i18n.h>
 #include <glibmm/miscutils.h>
 #include <gtkmm/builder.h>
 #include <gtkmm/button.h>
 #include <gtkmm/checkbutton.h>
+#include <gtkmm/filefilter.h>
 #include <gtkmm/flowbox.h>
 #include <gtkmm/grid.h>
 #include <gtkmm/label.h>
@@ -46,7 +50,8 @@
 #include "selection.h"
 #include "ui/builder-utils.h"
 #include "ui/dialog/export.h"
-#include "ui/dialog/filedialog.h"
+#include "ui/dialog/choose-file.h"
+#include "ui/dialog/choose-file-utils.h"
 #include "ui/icon-names.h"
 #include "ui/util.h"
 #include "ui/widget/color-picker.h"
@@ -654,6 +659,11 @@ void SingleExport::onFilenameModified()
         si_extension_cb.setExtensionFromFilename(filename);
     }
 
+    // This will not change the output extension if filename extension is same as previously
+    // selected extension's filename extension.  In otherwords, selecting "SVG" in file dialog
+    // won't override "Plain SVG" in export dialog.
+    si_extension_cb.setExtensionFromFilename(filename);
+
     extensionConn.unblock();
 }
 
@@ -687,6 +697,7 @@ void SingleExport::onExport()
     bool exportSuccessful = false;
     auto omod = si_extension_cb.getExtension();
     if (!omod) {
+        std::cerr << "SingleExport::onExport(): Cannot find export extension!" << std::endl;
         return;
     }
 
@@ -802,36 +813,28 @@ void SingleExport::onBrowse()
     Gtk::Window *window = _app->get_active_window();
 
     browseConn.block();
+    auto omod = si_extension_cb.getExtension();
+    assert(omod);
 
-    auto previous_filename = filepath_native;
-    if (previous_filename.empty()) {
-        previous_filename = Export::defaultFilename(_document, filepath_native, ".png");
+    std::string filename = Glib::filename_from_utf8(si_filename_entry.get_text());
+
+    if (filename.empty()) {
+        filename = Export::defaultFilename(_document, filename, omod->get_extension());
     }
 
-    auto dialog = Inkscape::UI::Dialog::FileSaveDialog::create(
-        *window, previous_filename, Inkscape::UI::Dialog::EXPORT_TYPES, _("Select a filename for exporting"), "", "",
-        Inkscape::Extension::FILE_SAVE_METHOD_EXPORT);
+    // Note, there are currently multiple modules per filename extension (.svg, .dxf, .zip).
+    // We cannot distinguish between them.
+    std::string basename = Glib::path_get_basename(filename);
+    std::string dirname = Glib::path_get_dirname(filename);
+    auto file = choose_file_save( _("Select a filename for exporting"), window,
+                                  create_export_filters(), // {}, // mimetype
+                                  basename,
+                                  dirname);
 
-    // Tell the browse dialog what extension to start with
-    if (auto omod = si_extension_cb.getExtension()) {
-        dialog->setExtension(omod);
-    }
-
-    if (dialog->show()) {
-        auto file = dialog->getFile();
-        if (file) {
-            auto filename = file->get_path();
-            // Once complete, we use the extension selected to save the file
-            if (auto ext = dialog->getExtension()) {
-                si_extension_cb.set_active_id(ext->get_id());
-            } else {
-                si_extension_cb.setExtensionFromFilename(filename);
-            }
-            setFilename(filename, true);
-        }
-
-        // deleting dialog before exporting is important
-        dialog.reset();
+    if (file) {
+        Glib::ustring filename_utf8 = file->get_parse_name();
+        si_filename_entry.set_text(filename_utf8);
+        si_filename_entry.set_position(filename_utf8.length());
         onExport();
     }
 
