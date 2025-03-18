@@ -49,6 +49,13 @@ path_simplify(SPItem *item, float threshold, bool justCoalesce, double size)
         return 0;
     }
 
+    std::string orig_path_str;
+    if (path->getRepr()->attribute("d")) {
+        orig_path_str = path->getRepr()->attribute("d");
+    }
+
+    int nodes_before_simplify = path->nodesInPath();
+
     // There is actually no option in the preferences dialog for this!
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
     bool simplifyIndividualPaths = prefs->getBool("/options/simplifyindividualpaths/value");
@@ -90,15 +97,15 @@ path_simplify(SPItem *item, float threshold, bool justCoalesce, double size)
     }
 
     // Path
-    auto str = orig->svg_dump_path();
+    auto simplified_path_str = orig->svg_dump_path();
 
     // SPLivarot: End  -------------------
 
     char const *patheffect = item->getRepr()->attribute("inkscape:path-effect");
     if (patheffect) {
-        item->setAttribute("inkscape:original-d", str.c_str());
+        item->setAttribute("inkscape:original-d", simplified_path_str.c_str());
     } else {
-        item->setAttribute("d", str.c_str());
+        item->setAttribute("d", simplified_path_str.c_str());
     }
 
     // reapply the transform
@@ -106,6 +113,17 @@ path_simplify(SPItem *item, float threshold, bool justCoalesce, double size)
 
     // remove irrelevant old nodetypes attibute
     item->removeAttribute("sodipodi:nodetypes");
+
+    int nodes_after_simplify = path->nodesInPath();
+
+    if (nodes_before_simplify < nodes_after_simplify) {
+        if (patheffect) {
+            item->setAttribute("inkscape:original-d", orig_path_str.c_str());
+        } else {
+            item->setAttribute("d", orig_path_str.c_str());
+        }
+        return 0;
+    }
 
     return 1;
 }
