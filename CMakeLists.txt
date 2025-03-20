@@ -65,9 +65,6 @@ else()
     SET(CMAKE_INSTALL_RPATH "$ORIGIN/${INKSCAPE_INSTALL_LIBDIR_RELATIVE_TO_BINDIR}")
 endif()
 
-# this can be removed if/when cmake 3.1 is made the minimum required version
-set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH ON)
-
 # console output is slow as hell on Windows and as a result status messages of the "install" target slow down
 # the whole build process considerably (especially since we also copy a lot of files from the devlibs)
 # TODO: Is this worth to be configurable / also applicable to other platforms?

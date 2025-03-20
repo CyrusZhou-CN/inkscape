@@ -99,10 +99,10 @@ private:
     void sel_modified(Selection *selection, unsigned flags);
     void coord_changed(ControlPointSelection* selected_nodes);
     void edit_add();
-    void edit_add_min_x();
-    void edit_add_max_x();
-    void edit_add_min_y();
-    void edit_add_max_y();
+    void edit_add_leftmost();
+    void edit_add_rightmost();
+    void edit_add_topmost();
+    void edit_add_bottommost();
     void edit_delete();
     void edit_join();
     void edit_break();

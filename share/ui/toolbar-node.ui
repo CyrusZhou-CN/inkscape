@@ -22,20 +22,20 @@
   <menu id="insert_node_menu">
     <section>
       <item>
-        <attribute name="label" translatable="yes">Insert node at min X</attribute>
-        <attribute name="action">node-toolbar.insert-min-x</attribute>
+        <attribute name="label" translatable="yes">Add node to Left</attribute>
+        <attribute name="action">node-toolbar.insert-leftmost</attribute>
       </item>
       <item>
-        <attribute name="label" translatable="yes">Insert node at max X</attribute>
-        <attribute name="action">node-toolbar.insert-max-x</attribute>
+        <attribute name="label" translatable="yes">Add node to Right</attribute>
+        <attribute name="action">node-toolbar.insert-rightmost</attribute>
       </item>
       <item>
-        <attribute name="label" translatable="yes">Insert node at min Y</attribute>
-        <attribute name="action">node-toolbar.insert-min-y</attribute>
+        <attribute name="label" translatable="yes">Add node to Top</attribute>
+        <attribute name="action">node-toolbar.insert-topmost</attribute>
       </item>
       <item>
-        <attribute name="label" translatable="yes">Insert node at max Y</attribute>
-        <attribute name="action">node-toolbar.insert-max-y</attribute>
+        <attribute name="label" translatable="yes">Add node to Bottom</attribute>
+        <attribute name="action">node-toolbar.insert-bottommost</attribute>
       </item>
     </section>
   </menu>
@@ -345,13 +345,13 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">X:</property>
+            <property name="label" translatable="yes">X</property>
           </object>
         </child>
         <child>
           <object class="GtkSpinButton" id="_nodes_x_item">
             <property name="focusable">True</property>
-            <property name="tooltip-text" translatable="yes">X coordinate of selected node(s)</property>
+            <property name="tooltip-text" translatable="yes">X - Horizontal position of selected node(s)</property>
             <property name="width-chars">7</property>
             <property name="adjustment">_nodes_x_adj</property>
             <property name="climb-rate">0.10</property>
@@ -368,13 +368,13 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Y:</property>
+            <property name="label" translatable="yes">Y</property>
           </object>
         </child>
         <child>
           <object class="GtkSpinButton" id="_nodes_y_item">
             <property name="focusable">True</property>
-            <property name="tooltip-text" translatable="yes">Y coordinate of selected node(s)</property>
+            <property name="tooltip-text" translatable="yes">Y - Vertical position of selected node(s)</property>
             <property name="width-chars">7</property>
             <property name="text">0.000</property>
             <property name="adjustment">_nodes_y_adj</property>
@@ -392,7 +392,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">D:</property>
+            <property name="label" translatable="yes">D</property>
           </object>
         </child>
         <child>

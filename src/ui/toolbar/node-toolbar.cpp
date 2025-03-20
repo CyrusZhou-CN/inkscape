@@ -207,10 +207,10 @@ void NodeToolbar::setup_insert_node_menu()
 {
     // insert_node_menu
     auto const actions = Gio::SimpleActionGroup::create();
-    actions->add_action("insert-min-x", sigc::mem_fun(*this, &NodeToolbar::edit_add_min_x));
-    actions->add_action("insert-max-x", sigc::mem_fun(*this, &NodeToolbar::edit_add_max_x));
-    actions->add_action("insert-min-y", sigc::mem_fun(*this, &NodeToolbar::edit_add_min_y));
-    actions->add_action("insert-max-y", sigc::mem_fun(*this, &NodeToolbar::edit_add_max_y));
+    actions->add_action("insert-leftmost", sigc::mem_fun(*this, &NodeToolbar::edit_add_leftmost));
+    actions->add_action("insert-rightmost", sigc::mem_fun(*this, &NodeToolbar::edit_add_rightmost));
+    actions->add_action("insert-topmost", sigc::mem_fun(*this, &NodeToolbar::edit_add_topmost));
+    actions->add_action("insert-bottommost", sigc::mem_fun(*this, &NodeToolbar::edit_add_bottommost));
     insert_action_group("node-toolbar", actions);
 }
 
@@ -337,31 +337,41 @@ void NodeToolbar::edit_add()
     }
 }
 
-void NodeToolbar::edit_add_min_x()
+/* add a node at the left-most point on selected path(s)*/
+void NodeToolbar::edit_add_leftmost()
 {
     if (auto nt = get_node_tool()) {
         nt->_multipath->insertNodesAtExtrema(PointManipulator::EXTR_MIN_X);
     }
 }
 
-void NodeToolbar::edit_add_max_x()
+/* add a node at the right-most point on selected path(s)*/
+void NodeToolbar::edit_add_rightmost()
 {
     if (auto nt = get_node_tool()) {
         nt->_multipath->insertNodesAtExtrema(PointManipulator::EXTR_MAX_X);
     }
 }
 
-void NodeToolbar::edit_add_min_y()
+/* add a node at the top-most point on selected path(s)*/
+void NodeToolbar::edit_add_topmost()
 {
+    const auto extrema = _desktop->is_yaxisdown()
+                         ? PointManipulator::EXTR_MIN_Y
+                         : PointManipulator::EXTR_MAX_Y;
     if (auto nt = get_node_tool()) {
-        nt->_multipath->insertNodesAtExtrema(PointManipulator::EXTR_MIN_Y);
+        nt->_multipath->insertNodesAtExtrema(extrema);
     }
 }
 
-void NodeToolbar::edit_add_max_y()
+/* add a node at the bottom-most point on selected path(s)*/
+void NodeToolbar::edit_add_bottommost()
 {
+    const auto extrema = _desktop->is_yaxisdown()
+                         ? PointManipulator::EXTR_MAX_Y
+                         : PointManipulator::EXTR_MIN_Y;
     if (auto nt = get_node_tool()) {
-        nt->_multipath->insertNodesAtExtrema(PointManipulator::EXTR_MAX_Y);
+        nt->_multipath->insertNodesAtExtrema(extrema);
     }
 }
 
