@@ -165,7 +165,7 @@
                   <object class="GtkBox">
                     <child>
                       <object class="GtkLabel">
-                        <property name="label" translatable="yes">Relative to:</property>
+                        <property name="label" translatable="yes">Relative to</property>
                       </object>
                     </child>
                     <child>
@@ -798,7 +798,7 @@
             <property name="spacing">4</property>
             <child>
               <object class="GtkLabel">
-                <property name="label" translatable="yes" context="Abbreviation of Horizontal">H:</property>
+                <property name="label" translatable="yes" context="Abbreviation of Horizontal">H</property>
               </object>
             </child>
             <child>
@@ -812,7 +812,7 @@
             <child>
               <object class="GtkLabel">
                 <property name="margin-start">4</property>
-                <property name="label" translatable="yes">V:</property>
+                <property name="label" translatable="yes">V</property>
               </object>
             </child>
             <child>

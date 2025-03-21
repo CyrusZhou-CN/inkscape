@@ -137,7 +137,7 @@
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="halign">end</property>
-        <property name="label" translatable="yes">L:</property>
+        <property name="label" translatable="yes">L</property>
         <property name="justify">right</property>
         <layout>
           <property name="column">0</property>
@@ -150,7 +150,7 @@
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="halign">end</property>
-        <property name="label" translatable="yes">L:</property>
+        <property name="label" translatable="yes">L</property>
         <property name="use-markup">True</property>
         <property name="justify">right</property>
         <layout>
@@ -164,7 +164,7 @@
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="halign">end</property>
-        <property name="label" translatable="yes">L:</property>
+        <property name="label" translatable="yes">L</property>
         <property name="use-markup">True</property>
         <property name="justify">right</property>
         <layout>
@@ -178,7 +178,7 @@
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="halign">end</property>
-        <property name="label" translatable="yes">L:</property>
+        <property name="label" translatable="yes">L</property>
         <property name="use-markup">True</property>
         <property name="justify">right</property>
         <layout>
@@ -192,7 +192,7 @@
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="halign">end</property>
-        <property name="label" translatable="yes">L:</property>
+        <property name="label" translatable="yes">L</property>
         <property name="use-markup">True</property>
         <property name="justify">right</property>
         <layout>
@@ -206,7 +206,7 @@
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="halign">end</property>
-        <property name="label" translatable="yes">L:</property>
+        <property name="label" translatable="yes">L</property>
         <property name="use-markup">True</property>
         <property name="justify">right</property>
         <layout>

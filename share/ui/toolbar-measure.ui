@@ -39,7 +39,7 @@
         <property name="tooltip-text" translatable="yes">The font size to be used in the measurement labels</property>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Font Size:</property>
+            <property name="label" translatable="yes">Font Size</property>
           </object>
         </child>
         <child>
@@ -60,7 +60,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Precision:</property>
+            <property name="label" translatable="yes">Precision</property>
           </object>
         </child>
         <child>
@@ -83,7 +83,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Scale %:</property>
+            <property name="label" translatable="yes">Scale %</property>
           </object>
         </child>
         <child>
@@ -105,7 +105,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Units:</property>
+            <property name="label" translatable="yes">Units</property>
             <property name="use-markup">True</property>
           </object>
         </child>
@@ -284,7 +284,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Offset:</property>
+            <property name="label" translatable="yes">Offset</property>
           </object>
         </child>
         <child>

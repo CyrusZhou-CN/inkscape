@@ -116,7 +116,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Offset:</property>
+            <property name="label" translatable="yes">Offset</property>
           </object>
         </child>
         <child>

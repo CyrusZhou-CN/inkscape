@@ -39,7 +39,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Rx:</property>
+            <property name="label" translatable="yes">Rx</property>
           </object>
         </child>
         <child>
@@ -59,7 +59,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Ry:</property>
+            <property name="label" translatable="yes">Ry</property>
           </object>
         </child>
         <child>
@@ -88,7 +88,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Start:</property>
+            <property name="label" translatable="yes">Start</property>
           </object>
         </child>
         <child>
@@ -109,7 +109,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">End:</property>
+            <property name="label" translatable="yes">End</property>
           </object>
         </child>
         <child>

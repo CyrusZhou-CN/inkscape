@@ -28,7 +28,7 @@
         <property name="tooltip-text" translatable="yes">Angle of perspective lines in x-direction</property>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Angle X:</property>
+            <property name="label" translatable="yes">Angle X</property>
           </object>
         </child>
         <child>
@@ -62,7 +62,7 @@
         <property name="tooltip-text" translatable="yes">Angle of perspective lines in y-direction</property>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Angle Y:</property>
+            <property name="label" translatable="yes">Angle Y</property>
           </object>
         </child>
         <child>
@@ -96,7 +96,7 @@
         <property name="tooltip-text" translatable="yes">Angle of perspective lines in z-direction</property>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Angle Z:</property>
+            <property name="label" translatable="yes">Angle Z</property>
           </object>
         </child>
         <child>

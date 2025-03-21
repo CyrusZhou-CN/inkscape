@@ -33,7 +33,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Turns:</property>
+            <property name="label" translatable="yes">Turns</property>
           </object>
         </child>
         <child>
@@ -75,7 +75,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Inner Radius:</property>
+            <property name="label" translatable="yes">Inner Radius</property>
           </object>
         </child>
         <child>

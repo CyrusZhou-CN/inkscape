@@ -37,7 +37,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">W:</property>
+            <property name="label" translatable="yes">W</property>
           </object>
         </child>
         <child>
@@ -58,7 +58,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes" context="Abbreviation of Height">H:</property>
+            <property name="label" translatable="yes" context="Abbreviation of Height">H</property>
           </object>
         </child>
         <child>
@@ -82,7 +82,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Rx:</property>
+            <property name="label" translatable="yes">Rx</property>
           </object>
         </child>
         <child>
@@ -105,7 +105,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Ry:</property>
+            <property name="label" translatable="yes">Ry</property>
           </object>
         </child>
         <child>

@@ -35,7 +35,7 @@
                     <property name="reorderable">False</property>
                     <child>
                       <object class="GtkColumnViewColumn">
-                        <property name="title" translatable="yes">Suggestions:</property>
+                        <property name="title" translatable="yes">Suggestions</property>
                         <property name="expand">True</property>
                         <property name="factory">
                           <object class="GtkBuilderListItemFactory">

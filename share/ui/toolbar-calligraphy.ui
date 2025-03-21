@@ -78,7 +78,7 @@
         <property name="tooltip-text" translatable="yes">The width of the calligraphic pen (relative to the visible canvas area)</property>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Width:</property>
+            <property name="label" translatable="yes">Width</property>
           </object>
         </child>
         <child>
@@ -139,7 +139,7 @@
         </style>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Thinning:</property>
+            <property name="label" translatable="yes">Thinning</property>
           </object>
         </child>
         <child>
@@ -161,7 +161,7 @@
         </style>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Mass:</property>
+            <property name="label" translatable="yes">Mass</property>
           </object>
         </child>
         <child>
@@ -192,7 +192,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-end">3</property>
-            <property name="label" translatable="yes">Angle:</property>
+            <property name="label" translatable="yes">Angle</property>
           </object>
         </child>
         <child>
@@ -235,7 +235,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-end">3</property>
-            <property name="label" translatable="yes">Fixation:</property>
+            <property name="label" translatable="yes">Fixation</property>
           </object>
         </child>
         <child>
@@ -267,7 +267,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-end">3</property>
-            <property name="label" translatable="yes">Caps:</property>
+            <property name="label" translatable="yes">Caps</property>
           </object>
         </child>
         <child>
@@ -301,7 +301,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-end">3</property>
-            <property name="label" translatable="yes">Tremor:</property>
+            <property name="label" translatable="yes">Tremor</property>
           </object>
         </child>
         <child>
@@ -324,7 +324,7 @@
         </style>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Wiggle:</property>
+            <property name="label" translatable="yes">Wiggle</property>
           </object>
         </child>
         <child>

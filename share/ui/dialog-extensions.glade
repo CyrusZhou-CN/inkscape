@@ -16,7 +16,7 @@
         <property name="spacing">4</property>
         <child>
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Thumbnail size:</property>
+            <property name="label" translatable="yes">Thumbnail size</property>
           </object>
         </child>
         <child>

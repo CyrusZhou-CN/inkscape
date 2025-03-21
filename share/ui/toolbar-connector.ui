@@ -73,7 +73,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Curvature:</property>
+            <property name="label" translatable="yes">Curvature</property>
           </object>
         </child>
         <child>
@@ -93,7 +93,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Spacing:</property>
+            <property name="label" translatable="yes">Spacing</property>
           </object>
         </child>
         <child>
@@ -134,7 +134,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Length:</property>
+            <property name="label" translatable="yes">Length</property>
           </object>
         </child>
         <child>

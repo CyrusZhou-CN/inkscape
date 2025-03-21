@@ -59,7 +59,7 @@ Linked&lt;/small&gt;</property>
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">URL:</property>
+        <property name="label" translatable="yes">URL</property>
         <layout>
           <property name="column">0</property>
           <property name="row">2</property>
@@ -146,7 +146,7 @@ Linked&lt;/small&gt;</property>
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">Aspect ratio:</property>
+        <property name="label" translatable="yes">Aspect ratio</property>
         <layout>
           <property name="column">0</property>
           <property name="row">4</property>
@@ -183,7 +183,7 @@ Linked&lt;/small&gt;</property>
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">Rendering:</property>
+        <property name="label" translatable="yes">Rendering</property>
         <layout>
           <property name="column">0</property>
           <property name="row">5</property>

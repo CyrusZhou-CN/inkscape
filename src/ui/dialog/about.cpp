@@ -68,7 +68,9 @@ public:
         }
 
         _viewer1 = &get_widget<Gtk::Picture>(builder, "viewer1");
+        _viewer1->set_layout_manager(Gtk::BinLayout::create());
         _viewer2 = &get_widget<Gtk::Picture>(builder, "viewer2");
+        _viewer2->set_layout_manager(Gtk::BinLayout::create());
         _frame = &get_widget<Gtk::AspectFrame>(builder, "aspect-frame");
         _footer = &get_widget<Gtk::Box>(builder, "dialog-footer");
     }

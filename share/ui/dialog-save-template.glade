@@ -15,7 +15,7 @@
             <child>
               <object class="GtkLabel">
                 <property name="halign">start</property>
-                <property name="label" translatable="yes">Name: </property>
+                <property name="label" translatable="yes">Name</property>
                 <layout>
                   <property name="column">0</property>
                   <property name="row">0</property>
@@ -25,7 +25,7 @@
             <child>
               <object class="GtkLabel">
                 <property name="halign">start</property>
-                <property name="label" translatable="yes">Author: </property>
+                <property name="label" translatable="yes">Author</property>
                 <layout>
                   <property name="column">0</property>
                   <property name="row">1</property>
@@ -35,7 +35,7 @@
             <child>
               <object class="GtkLabel">
                 <property name="halign">start</property>
-                <property name="label" translatable="yes">Description: </property>
+                <property name="label" translatable="yes">Description</property>
                 <layout>
                   <property name="column">0</property>
                   <property name="row">2</property>
@@ -45,7 +45,7 @@
             <child>
               <object class="GtkLabel">
                 <property name="halign">start</property>
-                <property name="label" translatable="yes">Keywords: </property>
+                <property name="label" translatable="yes">Keywords</property>
                 <layout>
                   <property name="column">0</property>
                   <property name="row">3</property>

@@ -1950,7 +1950,9 @@ void InkscapePreferences::initPageUI()
                 auto path = Inkscape::UI::Toolbar::ToolToolbar::get_tool_visible_button_path(action_name);
                 auto visible = Inkscape::Preferences::get()->getBool(path, true);
                 button->set_active(visible);
-                button->signal_toggled().connect([=](){
+                button->signal_clicked().connect([=](){
+                    bool new_state = !button->get_active();
+                    button->set_active(new_state);                    
                     Inkscape::Preferences::get()->setBool(path, button->get_active());
                 });
                 auto *iapp = InkscapeApplication::instance();

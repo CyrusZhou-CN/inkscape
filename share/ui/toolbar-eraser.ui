@@ -83,7 +83,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Width:</property>
+            <property name="label" translatable="yes">Width</property>
           </object>
         </child>
         <child>
@@ -120,7 +120,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Thinning:</property>
+            <property name="label" translatable="yes">Thinning</property>
           </object>
         </child>
         <child>
@@ -143,7 +143,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Caps:</property>
+            <property name="label" translatable="yes">Caps</property>
           </object>
         </child>
         <child>
@@ -166,7 +166,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Tremor:</property>
+            <property name="label" translatable="yes">Tremor</property>
           </object>
         </child>
         <child>
@@ -189,7 +189,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Mass:</property>
+            <property name="label" translatable="yes">Mass</property>
           </object>
         </child>
         <child>

@@ -45,7 +45,7 @@
     <property name="hexpand">True</property>
     <child>
       <object class="GtkLabel">
-        <property name="label" translatable="yes">Mode:</property>
+        <property name="label" translatable="yes">Mode</property>
       </object>
     </child>
     <child>
@@ -102,7 +102,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Width:</property>
+            <property name="label" translatable="yes">Width</property>
           </object>
         </child>
         <child>
@@ -133,7 +133,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Amount:</property>
+            <property name="label" translatable="yes">Amount</property>
           </object>
         </child>
         <child>
@@ -171,7 +171,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Rotation:</property>
+            <property name="label" translatable="yes">Rotation</property>
           </object>
         </child>
         <child>
@@ -194,7 +194,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Scale:</property>
+            <property name="label" translatable="yes">Scale</property>
           </object>
         </child>
         <child>
@@ -237,7 +237,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Scatter:</property>
+            <property name="label" translatable="yes">Scatter</property>
           </object>
         </child>
         <child>
@@ -260,7 +260,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Focus:</property>
+            <property name="label" translatable="yes">Focus</property>
           </object>
         </child>
         <child>
@@ -342,7 +342,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Offset:</property>
+            <property name="label" translatable="yes">Offset</property>
           </object>
         </child>
         <child>

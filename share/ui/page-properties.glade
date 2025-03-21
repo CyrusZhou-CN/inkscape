@@ -75,7 +75,7 @@
           <object class="GtkLabel">
             <property name="halign">start</property>
             <property name="valign">center</property>
-            <property name="label" translatable="yes">Format:</property>
+            <property name="label" translatable="yes">Format</property>
             <property name="tooltip-text" translatable="yes">Predefined paper sizes to choose from</property>
             <layout>
               <property name="column">0</property>
@@ -136,7 +136,7 @@
           <object class="GtkLabel">
             <property name="halign">start</property>
             <property name="valign">center</property>
-            <property name="label" translatable="yes">Width:</property>
+            <property name="label" translatable="yes">Width</property>
             <layout>
               <property name="column">0</property>
               <property name="row">2</property>
@@ -182,7 +182,7 @@
           <object class="GtkLabel">
             <property name="halign">start</property>
             <property name="valign">center</property>
-            <property name="label" translatable="yes">Height:</property>
+            <property name="label" translatable="yes">Height</property>
             <layout>
               <property name="column">0</property>
               <property name="row">3</property>
@@ -228,7 +228,7 @@
               <object class="GtkLabel">
                 <property name="halign">start</property>
                 <property name="valign">center</property>
-                <property name="label" translatable="yes">Orientation:</property>
+                <property name="label" translatable="yes">Orientation</property>
               </object>
             </child>
             <child>
@@ -270,7 +270,7 @@
           <object class="GtkLabel">
             <property name="halign">start</property>
             <property name="valign">center</property>
-            <property name="label" translatable="yes">Resize to content:</property>
+            <property name="label" translatable="yes">Resize to content</property>
             <layout>
               <property name="column">0</property>
               <property name="row">6</property>
@@ -331,7 +331,7 @@
               <object class="GtkLabel">
                 <property name="halign">start</property>
                 <property name="valign">center</property>
-                <property name="label" translatable="yes">Origin:</property>
+                <property name="label" translatable="yes">Origin</property>
               </object>
             </child>
             <child>
@@ -401,7 +401,7 @@
           <object class="GtkLabel" id="scale-x-label">
             <property name="halign">start</property>
             <property name="valign">center</property>
-            <property name="label" translatable="yes">Scale:</property>
+            <property name="label" translatable="yes">Scale</property>
             <layout>
               <property name="column">0</property>
               <property name="row">12</property>
@@ -428,7 +428,7 @@ SVG element positions are expressed in user units.</property>
           <object class="GtkLabel">
             <property name="halign">start</property>
             <property name="valign">center</property>
-            <property name="label" translatable="yes">X:</property>
+            <property name="label" translatable="yes">X</property>
             <style>
               <class name="viewbox"/>
             </style>
@@ -442,7 +442,7 @@ SVG element positions are expressed in user units.</property>
           <object class="GtkLabel">
             <property name="halign">start</property>
             <property name="valign">center</property>
-            <property name="label" translatable="yes">Y:</property>
+            <property name="label" translatable="yes">Y</property>
             <style>
               <class name="viewbox"/>
             </style>
@@ -456,7 +456,7 @@ SVG element positions are expressed in user units.</property>
           <object class="GtkLabel">
             <property name="halign">start</property>
             <property name="valign">center</property>
-            <property name="label" translatable="yes">Width:</property>
+            <property name="label" translatable="yes">Width</property>
             <style>
               <class name="viewbox"/>
             </style>
@@ -470,7 +470,7 @@ SVG element positions are expressed in user units.</property>
           <object class="GtkLabel">
             <property name="halign">start</property>
             <property name="valign">center</property>
-            <property name="label" translatable="yes">Height:</property>
+            <property name="label" translatable="yes">Height</property>
             <style>
               <class name="viewbox"/>
             </style>
@@ -701,7 +701,7 @@ SVG element positions are expressed in user units.</property>
           <object class="GtkLabel">
             <property name="halign">start</property>
             <property name="valign">center</property>
-            <property name="label" translatable="yes">Display units:</property>
+            <property name="label" translatable="yes">Display units</property>
             <layout>
               <property name="column">0</property>
               <property name="row">1</property>

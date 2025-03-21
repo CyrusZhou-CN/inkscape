@@ -9,7 +9,7 @@
     <property name="column-spacing">4</property>
     <child>
       <object class="GtkLabel" id="ServerLabel">
-        <property name="label" translatable="yes">Server:</property>
+        <property name="label" translatable="yes">Server</property>
         <property name="justify">right</property>
         <layout>
           <property name="column">0</property>
@@ -28,7 +28,7 @@
     </child>
     <child>
       <object class="GtkLabel" id="TargetLabel">
-        <property name="label" translatable="yes">Change:</property>
+        <property name="label" translatable="yes">Change</property>
         <property name="justify">right</property>
         <layout>
           <property name="column">0</property>

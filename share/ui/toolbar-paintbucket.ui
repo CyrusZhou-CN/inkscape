@@ -30,7 +30,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Threshold:</property>
+            <property name="label" translatable="yes">Threshold</property>
           </object>
         </child>
         <child>
@@ -50,7 +50,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Grow/shrink by:</property>
+            <property name="label" translatable="yes">Grow/shrink by</property>
           </object>
         </child>
         <child>

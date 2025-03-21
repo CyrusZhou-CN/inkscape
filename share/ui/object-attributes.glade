@@ -105,7 +105,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">Rx:</property>
+        <property name="label" translatable="yes">Rx</property>
         <layout>
           <property name="column">0</property>
           <property name="row">1</property>
@@ -129,7 +129,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">Ry:</property>
+        <property name="label" translatable="yes">Ry</property>
         <layout>
           <property name="column">2</property>
           <property name="row">1</property>
@@ -165,7 +165,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">Start:</property>
+        <property name="label" translatable="yes">Start</property>
         <layout>
           <property name="column">0</property>
           <property name="row">3</property>
@@ -174,7 +174,7 @@
     </child>
     <child>
       <object class="GtkLabel">
-        <property name="label" translatable="yes">End:</property>
+        <property name="label" translatable="yes">End</property>
         <layout>
           <property name="column">2</property>
           <property name="row">3</property>
@@ -344,7 +344,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">W:</property>
+        <property name="label" translatable="yes">W</property>
         <layout>
           <property name="column">0</property>
           <property name="row">1</property>
@@ -368,7 +368,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes" context="Abbreviation of Height">H:</property>
+        <property name="label" translatable="yes" context="Abbreviation of Height">H</property>
         <layout>
           <property name="column">2</property>
           <property name="row">1</property>
@@ -404,7 +404,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">Rx:</property>
+        <property name="label" translatable="yes">Rx</property>
         <layout>
           <property name="column">0</property>
           <property name="row">3</property>
@@ -428,7 +428,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">Ry:</property>
+        <property name="label" translatable="yes">Ry</property>
         <layout>
           <property name="column">2</property>
           <property name="row">3</property>
@@ -576,7 +576,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">Corner:</property>
+        <property name="label" translatable="yes">Corner</property>
         <layout>
           <property name="column">0</property>
           <property name="row">1</property>
@@ -586,7 +586,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">Rounded:</property>
+        <property name="label" translatable="yes">Rounded</property>
         <layout>
           <property name="column">0</property>
           <property name="row">3</property>
@@ -596,7 +596,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">Randomized:</property>
+        <property name="label" translatable="yes">Randomized</property>
         <layout>
           <property name="column">0</property>
           <property name="row">4</property>
@@ -688,7 +688,7 @@
     <child>
       <object class="GtkLabel" id="star-ratio-label">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">Spoke ratio:</property>
+        <property name="label" translatable="yes">Spoke ratio</property>
         <layout>
           <property name="column">0</property>
           <property name="row">2</property>
@@ -837,7 +837,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">Y:</property>
+        <property name="label" translatable="yes">Y</property>
         <layout>
           <property name="column">2</property>
           <property name="row">1</property>
@@ -862,7 +862,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">X:</property>
+        <property name="label" translatable="yes">X</property>
         <layout>
           <property name="column">0</property>
           <property name="row">1</property>
@@ -894,7 +894,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes">W:</property>
+        <property name="label" translatable="yes">W</property>
         <layout>
           <property name="column">0</property>
           <property name="row">3</property>
@@ -919,7 +919,7 @@
     <child>
       <object class="GtkLabel">
         <property name="halign">start</property>
-        <property name="label" translatable="yes" context="Abbreviation of Height">H:</property>
+        <property name="label" translatable="yes" context="Abbreviation of Height">H</property>
         <layout>
           <property name="column">2</property>
           <property name="row">3</property>

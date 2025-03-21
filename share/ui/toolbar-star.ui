@@ -91,7 +91,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Corners:</property>
+            <property name="label" translatable="yes">Corners</property>
           </object>
         </child>
         <child>
@@ -114,7 +114,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">2</property>
-            <property name="label" translatable="yes">Spoke Ratio:</property>
+            <property name="label" translatable="yes">Spoke Ratio</property>
           </object>
         </child>
         <child>
@@ -138,7 +138,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Rounded:</property>
+            <property name="label" translatable="yes">Rounded</property>
           </object>
         </child>
         <child>
@@ -161,7 +161,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Randomized:</property>
+            <property name="label" translatable="yes">Randomized</property>
           </object>
         </child>
         <child>
@@ -206,7 +206,7 @@
         <child>
           <object class="GtkLabel">
             <property name="margin-start">5</property>
-            <property name="label" translatable="yes">Edge:</property>
+            <property name="label" translatable="yes">Edge</property>
           </object>
         </child>
         <child>
