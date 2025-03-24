@@ -7,7 +7,7 @@
 #
 # This script is CI-only, you will encounter errors if you run it on your
 # local machine. If you want to build Inkscape locally, see
-# https://gitlab.com/inkscape/deps/macos
+# https://gitlab.com/inkscape/infra/inkscape-ci-macos
 #
 
 # toolset release to build Inkscape
@@ -17,7 +17,7 @@ VERSION=1.2
 SELF_DIR=$(dirname "${BASH_SOURCE[0]}")
 MIBAP_DIR=$SELF_DIR/mibap
 
-git clone --single-branch https://gitlab.com/inkscape/deps/macos "$MIBAP_DIR"
+git clone --single-branch https://gitlab.com/inkscape/infra/inkscape-ci-macos "$MIBAP_DIR"
 
 if git -C "$MIBAP_DIR" checkout v"$VERSION"; then
   git -C "$MIBAP_DIR" submodule update --init --recursive

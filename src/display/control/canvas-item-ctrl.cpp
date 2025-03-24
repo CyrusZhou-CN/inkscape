@@ -379,7 +379,7 @@ void CanvasItemCtrl::_update(bool)
     case CANVAS_ITEM_CTRL_SHAPE_CARROW:
     case CANVAS_ITEM_CTRL_SHAPE_SALIGN:
     case CANVAS_ITEM_CTRL_SHAPE_CALIGN: {
-        double angle = int{_anchor} * M_PI_4 + angle_of(affine());
+        double angle = (affine().flips() ? -1 : 1) * int{_anchor} * M_PI_4 + angle_of(affine());
         double const half = width / 2.0;
 
         dx = -(half + 2) * cos(angle); // Add a bit to prevent tip from overlapping due to rounding errors.
