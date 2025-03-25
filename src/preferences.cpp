@@ -767,12 +767,136 @@ void Preferences::_setRawValue(Glib::ustring const &path, Glib::ustring const &v
     node->setAttribute(attr_key, value);
 }
 
+// The Entry::isValid* methods check if the preference exists, and then verify if the data would be
+// correctly converted to the requested type.
+
+bool Preferences::Entry::isValidBool() const
+{
+    if (!isSet()) {
+        return false;
+    }
+    auto const &s = _value.value().raw();
+    // format is currently "0"/"1", may change to "true"/"false" in the future
+    // see Preferences::setBool()
+    return (s == "1" || s == "0" || s == "true" || s == "false");
+}
+
+bool Preferences::Entry::isValidInt() const
+{
+    if (!isSet()) {
+        return false;
+    }
+
+    auto const &s = _value.value().raw();
+
+    // true, false are treated as 1, 0 by getInt(), even though it's not entirely appropriate
+    // we're gonna treat them as valid integers here
+    if (s == "true" || s == "false") {
+        // warn that we're treating "true" and "false" as integers
+        g_warning("Integer preference value are set as boolean: '%s', treating it as %d: %s", s.c_str(),
+                  s == "true" ? 1 : 0, _pref_path.c_str());
+        return true;
+    }
+
+    errno = 0;
+    
+    const char* cstr = s.c_str();
+    char* endPtr = nullptr;
+    long value = strtol(cstr, &endPtr, 0);
+    if (endPtr == cstr) {
+        // no valid number found
+        return false;
+    }
+    // checking for overflow is unecessary because long is the same size
+    // as int on all modern platforms, this is somewhat pedantic
+    if (errno == ERANGE || value < INT_MIN || value > INT_MAX) {
+        return false; // overflow
+    }
+
+    // getInt() will also happily retrieve unsigned integers as overflow them
+    // However we have a getUInt() method for that, we're gonna therefore
+    // treat them as invalid.
+
+    return true;
+}
+
+bool Preferences::Entry::isValidUInt() const
+{
+    if (!isSet()) {
+        return false;
+    }
+
+    auto const &s = _value.value().raw();
+
+    errno = 0;
+    const char* cstr = s.c_str();
+    char* end_ptr = nullptr;
+    unsigned long value = strtoul(cstr, &end_ptr, 0);
+    if (end_ptr == cstr) {
+        return false;
+    }
+    if (errno == ERANGE || value > UINT_MAX) {
+        return false; // overflow
+    }
+
+    return true;
+}
+
+bool Preferences::Entry::isValidDouble() const
+{
+    if (!isSet()) {
+        return false;
+    }
+
+    auto const &value_str = _value.value().raw();
+    std::string::size_type end_index = 0;
+
+    try {
+        Glib::Ascii::strtod(value_str, end_index, 0);
+    } catch (std::runtime_error const &e) {
+        return false;
+    }
+
+    if(end_index == 0) {
+        return false; // failed to read anything numeric
+    }
+
+    // extract the unit if any, and check if it's a valid unit
+    auto unit = value_str.substr(end_index);
+    if(!unit.empty()) {
+        return Util::UnitTable::get().hasUnit(unit);
+    }
+
+    return true;
+}
+
+bool Preferences::Entry::isConvertibleTo(Glib::ustring const &type) const
+{
+    auto from = getUnit();
+    if (!from.empty()) {
+        auto to = Util::UnitTable::get().getUnit(type);
+        return to->compatibleWith(from);
+    }
+
+    // if the unit is empty 
+    return false;
+}
+
+bool Preferences::Entry::isValidColor() const
+{
+    if (!isSet()) {
+        return false;
+    }
+
+    return Colors::Color::parse(_value.value().raw()).has_value();
+}
+
 // The Entry::get* methods convert the preference string from the XML file back to the original value.
 // The conversions here are the inverse of Preferences::set*.
 
 bool Preferences::Entry::getBool(bool def) const
 {
-    if (!isValid()) {
+    if (!isSet()) {
         return def;
     }
     if (cached_bool) {
@@ -796,7 +920,7 @@ bool Preferences::Entry::getBool(bool def) const
 
 Colors::Color Preferences::Entry::getColor(std::string const &def) const
 {
-    if (isValid()) {
+    if (isSet()) {
         // Note: we don't cache the resulting Color object
         // because this function is called rarely and therefore not performance-relevant
         // (exemplary Inkscape startup: 40 calls to getColor vs. 10k calls to getBool())
@@ -813,7 +937,7 @@ Colors::Color Preferences::Entry::getColor(std::string const &def) const
 
 int Preferences::Entry::getInt(int def) const
 {
-    if (!isValid()) {
+    if (!isSet()) {
         return def;
     }
     if (cached_int) {
@@ -823,8 +947,10 @@ int Preferences::Entry::getInt(int def) const
     // .raw() is only for performance reasons (std::string comparison is faster than Glib::ustr)
     auto const &s = _value.value().raw();
     if (s == "true") {
+        g_warning("Integer preference value is set as true, treating it as 1: %s", _pref_path.c_str());
         value_int = 1;
     } else if (s == "false") {
+        g_warning("Integer preference value is set as false, treating it as 0: %s", _pref_path.c_str());
         value_int = 0;
     } else {
         int val = 0;
@@ -855,7 +981,7 @@ int Preferences::Entry::getIntLimited(int def, int min, int max) const
 
 unsigned int Preferences::Entry::getUInt(unsigned int def) const
 {
-    if (!isValid()) {
+    if (!isSet()) {
         return def;
     }
     if (cached_uint) {
@@ -897,7 +1023,7 @@ double Preferences::Entry::_getDoubleAssumeExisting() const
 
 double Preferences::Entry::getDouble(double def, Glib::ustring const &requested_unit) const
 {
-    if (!isValid()) {
+    if (!isSet()) {
         return def;
     }
 
@@ -922,7 +1048,7 @@ Glib::ustring Preferences::Entry::getString(Glib::ustring const &def) const
 
 Glib::ustring Preferences::Entry::getUnit() const
 {
-    if (!isValid()) {
+    if (!isSet()) {
         return "";
     }
     if (cached_unit) {
@@ -940,7 +1066,7 @@ Glib::ustring Preferences::Entry::getUnit() const
     }
     if (end_index == 0) {
         [[unlikely]];
-        // isValid()==true but the string
+        // isSet() == true but the string is:
         // - is empty
         // - or does not start with a numeric value
         // - or the number is out of range (double over/underflow)
@@ -958,7 +1084,7 @@ Glib::ustring Preferences::Entry::getUnit() const
 
 SPCSSAttr *Preferences::Entry::getStyle() const
 {
-    if (!isValid()) {
+    if (!isSet()) {
         return sp_repr_css_attr_new();
     }
     // Note: the resulting style object is not cached.
@@ -974,7 +1100,7 @@ SPCSSAttr *Preferences::Entry::getInheritedStyle() const
     // This method is quite "dirty". We ignore whatever is stored this Entry
     // and just get the style from Preferences.
     // A more beautiful solution would need major refactoring of Entry and Preferences.
-    if (!isValid()) {
+    if (!isSet()) {
         return sp_repr_css_attr_new();
     }
 

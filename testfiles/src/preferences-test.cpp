@@ -26,11 +26,11 @@ public:
     {
         value = val.getInt();
         value_str = val.getString();
-        value_valid = val.isValid();
+        value_set = val.isSet();
     }
     int value;
     std::string value_str;
-    bool value_valid;
+    bool value_set;
 };
 
 class PreferencesTest : public ::testing::Test
@@ -158,6 +158,49 @@ TEST_F(PreferencesTest, testColorDefaultReturn)
     ASSERT_EQ(prefs->getColor("/test/colorvalueNonExistent", "green"), green);
 }
 
+TEST_F(PreferencesTest, testIsValidBool)
+{
+    prefs->setBool("/test/boolvalue", true);
+    ASSERT_TRUE(prefs->getEntry("/test/boolvalue").isValidBool());
+    prefs->setString("/test/boolvalue", "invalid");
+    ASSERT_FALSE(prefs->getEntry("/test/boolvalue").isValidBool());
+}
+
+TEST_F(PreferencesTest, testIsValidInt)
+{
+    prefs->setInt("/test/intvalue", 123);
+    ASSERT_TRUE(prefs->getEntry("/test/intvalue").isValidInt());
+    prefs->setString("/test/intvalue", "invalid");
+    ASSERT_FALSE(prefs->getEntry("/test/intvalue").isValidInt());
+}
+
+TEST_F(PreferencesTest, testIsValidUInt)
+{
+    prefs->setUInt("/test/uintvalue", 123u);
+    ASSERT_TRUE(prefs->getEntry("/test/uintvalue").isValidUInt());
+    prefs->setString("/test/uintvalue", "-123");
+    ASSERT_FALSE(prefs->getEntry("/test/uintvalue").isValidUInt());
+}
+
+TEST_F(PreferencesTest, testIsValidDouble)
+{
+    prefs->setDouble("/test/doublevalue", 123.456);
+    ASSERT_TRUE(prefs->getEntry("/test/doublevalue").isValidDouble());
+    prefs->setString("/test/doublevalue", "invalid");
+    ASSERT_FALSE(prefs->getEntry("/test/doublevalue").isValidDouble());
+}
+
+TEST_F(PreferencesTest, testIsValidColor)
+{
+    prefs->setColor("/test/colorvalue", Inkscape::Colors::Color::parse("blue").value());
+    ASSERT_TRUE(prefs->getEntry("/test/colorvalue").isValidColor());
+    prefs->setString("/test/colorvalue", "#2E3436ff");
+    ASSERT_TRUE(prefs->getEntry("/test/colorvalue").isValidColor());
+
+    prefs->setString("/test/colorvalue", "22px");
+    ASSERT_FALSE(prefs->getEntry("/test/colorvalue").isValidColor());
+}
+
 TEST_F(PreferencesTest, testKeyObserverNotification)
 {
     Glib::ustring const path = "/some/random/path";
@@ -169,7 +212,7 @@ TEST_F(PreferencesTest, testKeyObserverNotification)
     prefs->addObserver(obs);
     prefs->setInt(path, 10);
     ASSERT_EQ(obs.value, 10);
-    ASSERT_TRUE(obs.value_valid);
+    ASSERT_TRUE(obs.value_set);
     prefs->setInt("/some/other/random/path", 42);
     ASSERT_EQ(obs.value, 10); // value should not change
 
@@ -193,17 +236,17 @@ TEST_F(PreferencesTest, testKeyObserverNotificationAddRemove)
     // value is added (set for the first time)
     prefs->setInt(path, 10);
     ASSERT_EQ(obs.value, 10);
-    ASSERT_TRUE(obs.value_valid);
+    ASSERT_TRUE(obs.value_set);
 
     // set to empty string --> observer should still receive a valid (but empty) entry
     prefs->setString(path, "");
     ASSERT_EQ(obs.value_str, "");
     ASSERT_EQ(obs.value, 0); // fallback value for int
-    ASSERT_TRUE(obs.value_valid);
+    ASSERT_TRUE(obs.value_set);
 
     // remove preference --> observer should still receive a non-existing entry (isValid==false)
     prefs->remove(path);
-    ASSERT_FALSE(obs.value_valid);
+    ASSERT_FALSE(obs.value_set);
 
     // Remove key and then set again.
     // In this case the observer may stop working.
@@ -234,12 +277,12 @@ TEST_F(PreferencesTest, testEntryObserverNotificationAddRemove)
 
     prefs->addObserver(obs);
     prefs->setInt(path, 10);
-    ASSERT_TRUE(obs.value_valid);
+    ASSERT_TRUE(obs.value_set);
     ASSERT_EQ(obs.value, 10);
 
     // empty string (not the same as removed)
     prefs->setString(path, "");
-    ASSERT_TRUE(obs.value_valid);
+    ASSERT_TRUE(obs.value_set);
     ASSERT_EQ(obs.value_str, "");
     ASSERT_EQ(obs.value, 0); // fallback value for int conversion
 
@@ -247,7 +290,7 @@ TEST_F(PreferencesTest, testEntryObserverNotificationAddRemove)
     ASSERT_EQ(obs.value, 15);
 
     prefs->remove(path);
-    ASSERT_FALSE(obs.value_valid);
+    ASSERT_FALSE(obs.value_set);
 
     // Note: Here we are re-adding a removed preference.
     // The observer still works, but would also be allowed to fail, see Preferences::addObserver.
@@ -288,7 +331,7 @@ TEST_F(PreferencesTest, testPreferencesEntryMethods)
 {
     prefs->setInt("/test/prefentry", 100);
     Inkscape::Preferences::Entry val = prefs->getEntry("/test/prefentry");
-    ASSERT_TRUE(val.isValid());
+    ASSERT_TRUE(val.isSet());
     ASSERT_EQ(val.getPath(), "/test/prefentry");
     ASSERT_EQ(val.getEntryName(), "prefentry");
     ASSERT_EQ(val.getInt(), 100);

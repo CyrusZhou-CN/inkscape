@@ -101,7 +101,8 @@ void LPERoughen::doOnApply(SPLPEItem const *lpeitem)
             auto const pref_path = Glib::ustring::compose("/live_effects/%1/%2",
                                                           LPETypeConverter.get_key(effectType()),
                                                           param->param_key);
-            if (prefs->getEntry(pref_path).isValid()) continue;
+            if (prefs->getEntry(pref_path).isSet()) 
+                continue;
 
             if (param->param_key == "max_segment_size") {
                 auto const minor = std::min(bbox->width(), bbox->height());

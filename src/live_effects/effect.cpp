@@ -1677,7 +1677,7 @@ Effect::readallParameters(Inkscape::XML::Node const* repr)
                                        (Glib::ustring)LPETypeConverter.get_key(effectType()).c_str() +
                                        (Glib::ustring)"/" +
                                        (Glib::ustring)key;
-            bool valid = prefs->getEntry(pref_path).isValid();
+            bool valid = prefs->getEntry(pref_path).isSet();
             if(valid){
                 param->param_update_default(prefs->getString(pref_path).c_str());
             } else {
@@ -1874,7 +1874,7 @@ Effect::hasDefaultParameters()
         pref_path += effectkey;
         pref_path +="/";
         pref_path += key;
-        if (prefs->getEntry(pref_path).isValid()) {
+        if (prefs->getEntry(pref_path).isSet()) {
             return true;
         }
         ++it;
@@ -1926,7 +1926,7 @@ void Effect::unsetDefaultParam(Glib::ustring pref_path,Parameter *param)
     Glib::ustring value = param->param_getSVGValue();
     Glib::ustring defvalue  = param->param_getDefaultSVGValue();
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-    if (prefs->getEntry(pref_path).isValid()) {
+    if (prefs->getEntry(pref_path).isSet()) {
         prefs->remove(pref_path);
     }
 }

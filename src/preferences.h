@@ -172,14 +172,53 @@ public:
         Entry(Entry const &other) = default;
 
         /**
-         * Check whether the received entry is valid.
+         * Check whether the received entry is set.
          * This means that the requested preference path exists.
          *
          * If not, then the get...() functions will return the default value.
          *
-         * @return True if the entry valid.
+         * @return True if the entry exists.
          */
-        bool isValid() const { return _value.has_value(); }
+        bool isSet() const { return _value.has_value(); }
+
+        /**
+         * Check if the preference value can be interpreted as a Boolean.
+         */
+        bool isValidBool() const;
+
+        /**
+         * Check if the preference value can be interpreted as an integer without any overflow.
+         * It also treats true and false as valid values.
+         */
+        bool isValidInt() const;
+
+        /**
+         * Check if the preference value can be interpreted as an unsigned integer.
+         */
+        bool isValidUInt() const;
+
+        /**
+         * Check if the preference value can be interpreted as a floating point value.
+         * This will also return true if the value is a valid unit. (eg: "1.0pt")
+         */
+        bool isValidDouble() const;
+
+        /**
+         * Check if the preference value can be converted to a particular unit.
+         */
+
+        bool isConvertibleTo(Glib::ustring const &unit) const;
+
+        /**
+         * Check if the preference value can be interpreted as a color.
+         */
+        bool isValidColor() const;
+
+        /**
+         * Check if the preference value is a valid String
+         * @return True if the preference is set, as all data is stored as strings.
+         */
+        bool isValidString() const { return isSet(); };
 
         /**
          * Interpret the preference as a Boolean value.
@@ -378,7 +417,7 @@ public:
      * @param pref_path Path to preference to check.
      */
     bool hasPref(Glib::ustring const &pref_path) {
-        return getEntry(pref_path).isValid();
+        return getEntry(pref_path).isSet();
     }
 
     /**

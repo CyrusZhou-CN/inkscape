@@ -164,17 +164,29 @@ CanvasGrid::CanvasGrid(SPDesktopWidget *dtw)
 
     if (!quick_preview_shortcut.empty()) {
         _quick_preview_label->set_label("<b>" + quick_preview_shortcut[0] + "</b>");
+    } else {
+        _quick_preview_label->set_label("");
     }
 
     if (!quick_zoom_shortcut.empty()) {
         _quick_zoom_label->set_label("<b>" + quick_zoom_shortcut[0] + "</b>");
+    } else {
+        _quick_zoom_label->set_label("");
     }
 
     _update_preview_connection = _preview_accel.connectModified([this]() {
+        if(_preview_accel.getShortcutText().empty()) {
+            _quick_preview_label->set_label("");
+            return;
+        }
         _quick_preview_label->set_label("<b>" + _preview_accel.getShortcutText()[0] + "</b>");
     });
 
     _update_zoom_connection = _zoom_accel.connectModified([this]() {
+        if(_zoom_accel.getShortcutText().empty()) {
+            _quick_zoom_label->set_label("");
+            return;
+        }
         _quick_zoom_label->set_label("<b>" + _zoom_accel.getShortcutText()[0] + "</b>");
     });
 

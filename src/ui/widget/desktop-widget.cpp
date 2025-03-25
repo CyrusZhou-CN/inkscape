@@ -146,7 +146,7 @@ SPDesktopWidget::SPDesktopWidget(InkscapeWindow *inkscape_window)
     repack_snaptoolbar();
 
     auto tbox_width = prefs->getEntry("/toolbox/tools/width");
-    if (tbox_width.isValid()) {
+    if (tbox_width.isSet()) {
         _tbbox->set_position(tbox_width.getIntLimited(32, 8, 500));
     }
 

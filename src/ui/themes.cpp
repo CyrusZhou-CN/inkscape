@@ -414,7 +414,7 @@ void ThemeContext::add_gtk_css(bool only_providers, bool cached)
     // note: ideally we should remove the callback during destruction, but ThemeContext is never deleted
     prefs->addObserver(*_spinbutton_observer);
     // establish default value, so both this setting here and checkbox in preferences are in sync
-    if (!prefs->getEntry(_spinbutton_observer->observed_path).isValid()) {
+    if (!prefs->getEntry(_spinbutton_observer->observed_path).isValidBool()) {
         prefs->setBool(_spinbutton_observer->observed_path, true);
     }
     _spinbutton_observer->notify(prefs->getEntry(_spinbutton_observer->observed_path));

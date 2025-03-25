@@ -96,7 +96,7 @@ void LPEJoinType::doOnApply(SPLPEItem const* lpeitem)
                                     (Glib::ustring)"/" + 
                                     (Glib::ustring)"line_width";
 
-    bool valid = prefs->getEntry(pref_path).isValid();
+    bool valid = prefs->getEntry(pref_path).isValidDouble();
 
     if (!valid) {
         line_width.param_set_value(width);

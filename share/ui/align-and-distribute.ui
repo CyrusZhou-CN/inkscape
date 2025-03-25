@@ -812,7 +812,7 @@
             <child>
               <object class="GtkLabel">
                 <property name="margin-start">4</property>
-                <property name="label" translatable="yes">V</property>
+                <property name="label" translatable="yes" context="Abbreviation of Vertical">V</property>
               </object>
             </child>
             <child>

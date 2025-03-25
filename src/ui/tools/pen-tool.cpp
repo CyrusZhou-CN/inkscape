@@ -1622,11 +1622,8 @@ void PenTool::_bsplineSpiroBuild()
         if (bspline) {
             Inkscape::Preferences *prefs = Inkscape::Preferences::get();
             Geom::PathVector hp;
-            bool uniform = false;
             Glib::ustring pref_path = "/live_effects/bspline/uniform";
-            if (prefs->getEntry(pref_path).isValid()) {
-                uniform = prefs->getString(pref_path) == "true";
-            }
+            bool uniform = prefs->getBool(pref_path, false);
             LivePathEffect::sp_bspline_do_effect(curve, 0, hp, uniform); 
         } else {
             LivePathEffect::sp_spiro_do_effect(curve);

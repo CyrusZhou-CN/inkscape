@@ -713,17 +713,17 @@ void PencilTool::addPowerStrokePencil()
                 if (simplify) {
                     sp_lpe_item_enable_path_effects(lpeitem, false);
                     Glib::ustring pref_path = "/live_effects/simplify/smooth_angles";
-                    bool valid = prefs->getEntry(pref_path).isValid();
+                    bool valid = prefs->getEntry(pref_path).isValidDouble();
                     if (!valid) {
                         lpe->getRepr()->setAttribute("smooth_angles", "0");
                     }
                     pref_path = "/live_effects/simplify/helper_size";
-                    valid = prefs->getEntry(pref_path).isValid();
+                    valid = prefs->getEntry(pref_path).isValidDouble();
                     if (!valid) {
                         lpe->getRepr()->setAttribute("helper_size", "0");
                     }
                     pref_path = "/live_effects/simplify/step";
-                    valid = prefs->getEntry(pref_path).isValid();
+                    valid = prefs->getEntry(pref_path).isValidDouble();
                     if (!valid) {
                         lpe->getRepr()->setAttribute("step", "1");
                     }
@@ -749,17 +749,17 @@ void PencilTool::addPowerStrokePencil()
             if (pspreview) {
                 sp_lpe_item_enable_path_effects(lpeitem, false);
                 Glib::ustring pref_path = "/live_effects/powerstroke/interpolator_type";
-                bool valid = prefs->getEntry(pref_path).isValid();
+                bool valid = prefs->getEntry(pref_path).isValidString();
                 if (!valid) {
                     pspreview->getRepr()->setAttribute("interpolator_type", "CentripetalCatmullRom");
                 }
                 pref_path = "/live_effects/powerstroke/linejoin_type";
-                valid = prefs->getEntry(pref_path).isValid();
+                valid = prefs->getEntry(pref_path).isValidString();
                 if (!valid) {
                     pspreview->getRepr()->setAttribute("linejoin_type", "spiro");
                 }
                 pref_path = "/live_effects/powerstroke/interpolator_beta";
-                valid = prefs->getEntry(pref_path).isValid();
+                valid = prefs->getEntry(pref_path).isValidDouble();
                 if (!valid) {
                     pspreview->getRepr()->setAttribute("interpolator_beta", "0.75");
                 }

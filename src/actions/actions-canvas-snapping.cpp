@@ -131,7 +131,7 @@ SnapPreferences& get_snapping_preferences() {
         }
 
         auto simple = prefs->getEntry("/toolbox/simplesnap");
-        if (!simple.isValid()) {
+        if (!simple.isSet()) {
             // first time up after creating preferences; apply "simple" snapping defaults
             prefs->setBool(simple.getPath(), true);
             transition_to_simple_snapping();

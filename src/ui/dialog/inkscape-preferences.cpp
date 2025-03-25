@@ -1230,7 +1230,7 @@ void InkscapePreferences::resetIconsColors(bool themechange)
     auto doChangeIconsColors = false;
 
     if (prefs->getBool("/theme/symbolicDefaultBaseColors", true) ||
-        !prefs->getEntry("/theme/" + themeiconname + "/symbolicBaseColor").isValid()) {
+        !prefs->getEntry("/theme/" + themeiconname + "/symbolicBaseColor").isValidUInt()) {
         auto const display = Gdk::Display::get_default();
         if (INKSCAPE.themecontext->getColorizeProvider()) {
             Gtk::StyleProvider::remove_provider_for_display(display, INKSCAPE.themecontext->getColorizeProvider());
@@ -1343,7 +1343,7 @@ void InkscapePreferences::toggleSymbolic()
         _symbolic_highlight_colors.set_sensitive(true);
         Glib::ustring themeiconname = prefs->getString("/theme/iconTheme", prefs->getString("/theme/defaultIconTheme", ""));
         if (prefs->getBool("/theme/symbolicDefaultColors", true) ||
-            !prefs->getEntry("/theme/" + themeiconname + "/symbolicBaseColor").isValid()) {
+            !prefs->getEntry("/theme/" + themeiconname + "/symbolicBaseColor").isValidUInt()) {
             resetIconsColors();
         } else {
             changeIconsColors();
@@ -1490,7 +1490,7 @@ void InkscapePreferences::symbolicThemeCheck()
     if (symbolic) {
         if (prefs->getBool("/theme/symbolicDefaultHighColors", true) ||
             prefs->getBool("/theme/symbolicDefaultBaseColors", true) ||
-            !prefs->getEntry("/theme/" + themeiconname + "/symbolicBaseColor").isValid()) {
+            !prefs->getEntry("/theme/" + themeiconname + "/symbolicBaseColor").isValidUInt()) {
             resetIconsColors();
         } else {
             changeIconsColors();

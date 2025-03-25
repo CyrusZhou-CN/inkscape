@@ -106,7 +106,7 @@
           <object class="GtkLabel" id="statusbar-label-z">
             <property name="name">StatusbarZoomLabel</property>
             <property name="halign">start</property>
-            <property name="label" translatable="yes">Z</property>
+            <property name="label" translatable="yes" context="Abbreviation for canvas zoom level">Z</property>
             <property name="margin-start">2</property>
             <property name="margin-end">4</property>
           </object>
@@ -130,7 +130,7 @@
           <object class="GtkLabel" id="statusbar-label-R">
             <property name="name">StatusbarRotateLabel</property>
             <property name="halign">start</property>
-            <property name="label" translatable="yes">R</property>
+            <property name="label" translatable="yes" context="Abbreviation for canvas rotation">R</property>
             <property name="margin-start">10</property>
             <property name="margin-end">4</property>
           </object>
