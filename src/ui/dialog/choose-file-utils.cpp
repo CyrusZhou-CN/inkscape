@@ -166,7 +166,7 @@ create_export_filters(bool for_save) {
             // std::cout << "Duplicate extension: " << file_extension << std::endl;
             continue;
         }
-        file_extensions.push_back(extension);
+        file_extensions.emplace_back(extension);
 
 
         // For duplicate filename extensions, use simplified name.

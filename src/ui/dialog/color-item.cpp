@@ -168,6 +168,7 @@ void ColorItem::common_setup()
     add_controller(motion);
 
     auto const click = Gtk::GestureClick::create();
+    click->set_button(0); // any
     click->signal_pressed().connect(Controller::use_state([this](auto& controller, auto &&...) { return on_click_pressed(controller); }, *click));
     click->signal_released().connect(Controller::use_state([this](auto& controller, auto &&...) { return on_click_released(controller); }, *click));
     add_controller(click);

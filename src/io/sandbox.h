@@ -32,7 +32,6 @@
 #include <glibmm/refptr.h>
 #include <glibmm/ustring.h>
 #include <optional>
-#include <string>
 
 namespace Inkscape::IO::Sandbox {
 
@@ -48,7 +47,7 @@ namespace Inkscape::IO::Sandbox {
  *     - The user should not be able to manually enter or edit paths in a textbox,
  *       because we don't have access to these without calling the file chooser.
  */
-bool filesystem_is_sandboxed(void);
+bool filesystem_is_sandboxed();
 
 /**
  * Translate raw filesystem path to a path suitable for display.

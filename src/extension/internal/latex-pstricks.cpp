@@ -43,12 +43,6 @@ PrintLatex::PrintLatex ():
 PrintLatex::~PrintLatex ()
 {
     if (_stream) fclose(_stream);
-
-    /* restore default signal handling for SIGPIPE */
-#if !defined(_WIN32) && !defined(__WIN32__)
-    (void) signal(SIGPIPE, SIG_DFL);
-#endif
-	return;
 }
 
 unsigned int PrintLatex::setup(Inkscape::Extension::Print * /*mod*/)
@@ -90,11 +84,6 @@ unsigned int PrintLatex::begin (Inkscape::Extension::Print *mod, SPDocument *doc
     }
 
     g_free(local_fn);
-
-    /* fixme: this is kinda icky */
-#if !defined(_WIN32) && !defined(__WIN32__)
-    (void) signal(SIGPIPE, SIG_IGN);
-#endif
 
     res = fprintf(_stream, "%%LaTeX with PSTricks extensions\n");
     /* flush this to test output stream as early as possible */

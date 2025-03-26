@@ -167,6 +167,11 @@ int main(int argc, char *argv[])
 {
     Gtk::Application::wrap_in_search_entry2();
 
+#if !defined(_WIN32)
+    // Opt into handling EPIPE locally, rather than crashing.
+    signal(SIGPIPE, SIG_IGN);
+#endif
+
     convert_legacy_options(argc, argv);
 
 #ifdef __APPLE__

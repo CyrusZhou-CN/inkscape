@@ -39,14 +39,7 @@ U_COLORREF toColorRef(std::optional<Colors::Color> color)
 }
 
 
-PrintMetafile::~PrintMetafile()
-{
-#ifndef G_OS_WIN32
-    // restore default signal handling for SIGPIPE
-    (void) signal(SIGPIPE, SIG_DFL);
-#endif
-    return;
-}
+PrintMetafile::~PrintMetafile() = default;
 
 static std::map<Glib::ustring, FontfixParams> const &get_ppt_fixable_fonts()
 {

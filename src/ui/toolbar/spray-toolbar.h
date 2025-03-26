@@ -96,7 +96,6 @@ private:
     void update_widgets();
     void scale_value_changed();
     void offset_value_changed();
-    void on_pref_toggled(bool active, const Glib::ustring &path);
     void toggle_no_overlap();
     void toggle_pressure_scale();
     void toggle_picker();

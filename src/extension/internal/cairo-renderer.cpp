@@ -89,13 +89,7 @@ namespace Internal {
 
 CairoRenderer::CairoRenderer() = default;
 
-CairoRenderer::~CairoRenderer()
-{
-    /* restore default signal handling for SIGPIPE */
-#if !defined(_WIN32) && !defined(__WIN32__)
-    (void) signal(SIGPIPE, SIG_DFL);
-#endif
-}
+CairoRenderer::~CairoRenderer() = default;
 
 CairoRenderContext CairoRenderer::createContext()
 {

@@ -838,9 +838,9 @@ int Script::execute(std::list<std::string> const &in_command, std::list<std::str
             lost_document = true;
             conns.clear();
         };
-        conns.push_back(desktop->connectDestroy([=] (auto...) { on_lose_document(); }));
-        conns.push_back(desktop->connectDocumentReplaced([=] (auto...) { on_lose_document(); }));
-        conns.push_back(document->connectDestroy(on_lose_document));
+        conns.emplace_back(desktop->connectDestroy([=] (auto...) { on_lose_document(); }));
+        conns.emplace_back(desktop->connectDocumentReplaced([=] (auto...) { on_lose_document(); }));
+        conns.emplace_back(document->connectDestroy(on_lose_document));
     }
 
     _canceled = false;

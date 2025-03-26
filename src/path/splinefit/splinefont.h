@@ -5,6 +5,8 @@
 
 #include <glib.h>
 
+G_BEGIN_DECLS
+
 typedef double real;
 typedef double bigreal;
 typedef double extended;
@@ -187,5 +189,7 @@ enum pconvert_flags {
 };
 
 void SplinesRemoveBetween(SplinePoint *from, SplinePoint *to, int type);
+
+G_END_DECLS
 
 #endif // _SEEN_SPLINEFONT_H_

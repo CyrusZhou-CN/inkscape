@@ -377,13 +377,6 @@ bool CairoRenderContext::_setVectorTarget(gchar const *utf8_fn)
 
     g_free(local_fn);
 
-    if (_stream) {
-        /* fixme: this is kinda icky */
-#if !defined(_WIN32) && !defined(__WIN32__)
-        (void) signal(SIGPIPE, SIG_IGN);
-#endif
-    }
-
     return true;
 }
 

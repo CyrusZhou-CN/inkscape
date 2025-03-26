@@ -95,16 +95,9 @@ LaTeXTextRenderer::~LaTeXTextRenderer()
         fclose(_stream);
     }
 
-    /* restore default signal handling for SIGPIPE */
-#if !defined(_WIN32) && !defined(__WIN32__)
-    (void) signal(SIGPIPE, SIG_DFL);
-#endif
-
     if (_filename) {
         g_free(_filename);
     }
-
-    return;
 }
 
 /** This should create the output LaTeX file, and assign it to _stream.
@@ -128,11 +121,6 @@ LaTeXTextRenderer::setTargetFile(gchar const *filename) {
         _stream = osf;
         g_free(filename_ext);
     }
-
-    /* fixme: this is kinda icky */
-#if !defined(_WIN32) && !defined(__WIN32__)
-    (void) signal(SIGPIPE, SIG_IGN);
-#endif
 
     fprintf(_stream, "%%%% Creator: Inkscape %s, www.inkscape.org\n", Inkscape::version_string);
     fprintf(_stream, "%%%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010\n");

@@ -179,20 +179,20 @@ SprayToolbar::SprayToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
         return ForEachResult::_continue;
     });
 
+    auto prefs = Inkscape::Preferences::get();
+
     // Width pressure button.
     _use_pressure_width_pusher = std::make_unique<UI::SimplePrefPusher>(use_pressure_width_btn, "/tools/spray/usepressurewidth");
-    use_pressure_width_btn->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &SprayToolbar::on_pref_toggled),
-                                                                use_pressure_width_btn->get_active(),
-                                                                "/tools/spray/usepressurewidth"));
+    use_pressure_width_btn->signal_toggled().connect([prefs, use_pressure_width_btn]() {
+        prefs->setBool("/tools/spray/over_no_transparent", use_pressure_width_btn->get_active());
+    });
 
     // Population pressure button.
     _use_pressure_population_pusher = std::make_unique<UI::SimplePrefPusher>
         (use_pressure_population_btn, "/tools/spray/usepressurepopulation");
-    use_pressure_population_btn->signal_toggled().connect(
-        sigc::bind(sigc::mem_fun(*this, &SprayToolbar::on_pref_toggled), use_pressure_population_btn->get_active(),
-                   "/tools/spray/usepressurepopulation"));
-
-    auto prefs = Preferences::get();
+    use_pressure_population_btn->signal_toggled().connect([prefs, use_pressure_population_btn]() {
+        prefs->setBool("/tools/spray/usepressurepopulation", use_pressure_population_btn->get_active());
+    });
 
     // Scale pressure button.
     _use_pressure_scale_btn.set_active(prefs->getBool("/tools/spray/usepressurescale", false));
@@ -200,21 +200,21 @@ SprayToolbar::SprayToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
 
     // Over no transparent button.
     _over_no_transparent_btn.set_active(prefs->getBool("/tools/spray/over_no_transparent", true));
-    _over_no_transparent_btn.signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &SprayToolbar::on_pref_toggled),
-                                                                 _over_no_transparent_btn.get_active(),
-                                                                 "/tools/spray/over_no_transparent"));
+    _over_no_transparent_btn.signal_toggled().connect([prefs, this]() {
+        prefs->setBool("/tools/spray/over_no_transparent", _over_no_transparent_btn.get_active());
+    });
 
     // Over transparent button.
     _over_transparent_btn.set_active(prefs->getBool("/tools/spray/over_transparent", true));
-    _over_transparent_btn.signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &SprayToolbar::on_pref_toggled),
-                                                              _over_transparent_btn.get_active(),
-                                                              "/tools/spray/over_transparent"));
+    _over_transparent_btn.signal_toggled().connect([prefs, this]() {
+        prefs->setBool("/tools/spray/over_transparent", _over_transparent_btn.get_active());
+    });
 
     // Pick no overlap button.
     _pick_no_overlap_btn.set_active(prefs->getBool("/tools/spray/pick_no_overlap", false));
-    _pick_no_overlap_btn.signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &SprayToolbar::on_pref_toggled),
-                                                             _pick_no_overlap_btn.get_active(),
-                                                             "/tools/spray/pick_no_overlap"));
+    _pick_no_overlap_btn.signal_toggled().connect([prefs, this]() {
+        prefs->setBool("/tools/spray/pick_no_overlap", _pick_no_overlap_btn.get_active());
+    });
 
     // Overlap button.
     _no_overlap_btn.set_active(prefs->getBool("/tools/spray/no_overlap", false));
@@ -226,24 +226,27 @@ SprayToolbar::SprayToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
 
     // Pick fill button.
     _pick_fill_btn.set_active(prefs->getBool("/tools/spray/pick_fill", false));
-    _pick_fill_btn.signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &SprayToolbar::on_pref_toggled),
-                                                       _pick_fill_btn.get_active(), "/tools/spray/pick_fill"));
+    _pick_fill_btn.signal_toggled().connect([prefs, this]() {
+        prefs->setBool("/tools/spray/pick_fill", _pick_fill_btn.get_active());
+    });
 
     // Pick stroke button.
     _pick_stroke_btn.set_active(prefs->getBool("/tools/spray/pick_stroke", false));
-    _pick_stroke_btn.signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &SprayToolbar::on_pref_toggled),
-                                                         _pick_stroke_btn.get_active(), "/tools/spray/pick_stroke"));
+    _pick_stroke_btn.signal_toggled().connect([prefs, this]() {
+        prefs->setBool("/tools/spray/pick_stroke", _pick_stroke_btn.get_active());
+    });
 
     // Inverse value size button.
     _pick_inverse_value_btn.set_active(prefs->getBool("/tools/spray/pick_inverse_value", false));
-    _pick_inverse_value_btn.signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &SprayToolbar::on_pref_toggled),
-                                                                _pick_inverse_value_btn.get_active(),
-                                                                "/tools/spray/pick_inverse_value"));
+    _pick_inverse_value_btn.signal_toggled().connect([prefs, this]() {
+        prefs->setBool("/tools/spray/pick_inverse_value", _pick_inverse_value_btn.get_active());
+    });
 
     // Pick from center button.
     _pick_center_btn.set_active(prefs->getBool("/tools/spray/pick_center", true));
-    _pick_center_btn.signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &SprayToolbar::on_pref_toggled),
-                                                         _pick_center_btn.get_active(), "/tools/spray/pick_center"));
+    _pick_center_btn.signal_toggled().connect([prefs, this]() {
+        prefs->setBool("/tools/spray/pick_center", _pick_center_btn.get_active());
+    });
 
 
     int mode = prefs->getIntLimited("/tools/spray/mode", 1, 0, _mode_buttons.size() - 1);
@@ -390,11 +393,6 @@ void SprayToolbar::toggle_picker()
         }
     }
     update_widgets();
-}
-
-void SprayToolbar::on_pref_toggled(bool active, Glib::ustring const &path)
-{
-    Preferences::get()->setBool(path, active);
 }
 
 void SprayToolbar::setMode(int mode)

@@ -14,7 +14,7 @@
 
 namespace Inkscape::IO::Sandbox {
 
-bool filesystem_is_sandboxed(void)
+bool filesystem_is_sandboxed()
 {
     // Simplification: Whenever xdg portal is active, we assume that the full filesystem is hidden behind the portal.
     // In reality, it may be more complex, e.g., we could have access to the home directory but not to external media.

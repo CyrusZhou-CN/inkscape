@@ -27,6 +27,11 @@ int main(int argc, char *argv[])
 {
     Gtk::Application::wrap_in_search_entry2();
 
+#if !defined(_WIN32)
+    // Opt into handling EPIPE locally, rather than crashing.
+    signal(SIGPIPE, SIG_IGN);
+#endif
+
 #ifdef _WIN32
     // temporarily switch console encoding to UTF8 while Inkview runs
     // as everything else is a mess and it seems to work just fine

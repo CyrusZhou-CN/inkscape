@@ -6,10 +6,8 @@
 #include <2geom/bezier-utils.h>
 #include <2geom/point.h>
 
-extern "C" {
-    #include "splinefit.h"
-    #include "splinefont.h"
-}
+#include "splinefit.h"
+#include "splinefont.h"
 
 int bezier_fit(Geom::Point bezier[4], const std::vector<InputPoint>& data) {
 
