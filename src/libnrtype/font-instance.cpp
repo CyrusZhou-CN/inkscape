@@ -158,16 +158,11 @@ void FontInstance::acquire(PangoFont *p_font_, PangoFontDescription *descr_)
     }
     hb_face = hb_font_get_face(hb_font);
 
-#if HB_VERSION_ATLEAST(2,6,5)
     // hb_font is immutable, yet we need to act on it (with set_funcs) to extract the freetype face
     hb_font_copy = hb_font_create_sub_font(hb_font);
     hb_ft_font_set_funcs(hb_font_copy);
     face = hb_ft_font_lock_face(hb_font_copy);
-#else
-    if (face) {
-        pango_fc_font_unlock_face(PANGO_FC_FONT(p_font));
-    }
-#endif
+
     if (!face) {
         release();
         throw CtorException("Failed to get freetype face");
@@ -177,18 +172,13 @@ void FontInstance::acquire(PangoFont *p_font_, PangoFontDescription *descr_)
 // Release the resources acquired by acquire().
 void FontInstance::release()
 {
-#if HB_VERSION_ATLEAST(2,6,5)
     if (hb_font_copy) {
         if (face) {
             hb_ft_font_unlock_face(hb_font_copy);
         }
         hb_font_destroy(hb_font_copy);
     }
-#else
-    if (face) {
-        pango_fc_font_unlock_face(PANGO_FC_FONT(p_font));
-    }
-#endif
+
     pango_font_description_free(descr);
     g_object_unref(p_font);
 }

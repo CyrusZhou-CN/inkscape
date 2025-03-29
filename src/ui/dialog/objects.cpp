@@ -1028,9 +1028,10 @@ ObjectsPanel::ObjectsPanel()
 
     auto enter_layer_label_editing_mode = [this]() {
         layerChanged(getDesktop()->layerManager().currentLayer());
-        auto path = getWatcher(_layer->getRepr())->getTreePath();
-        _tree.set_cursor(path, *_tree.get_column(0), true /* start_editing */);
-        _is_editing = true;
+        if (auto watcher = getWatcher(_layer->getRepr())) {
+            _tree.set_cursor(watcher->getTreePath(), *_tree.get_column(0), true);
+            _is_editing = true;
+        }
     };
     auto& add_layer_btn = get_widget<Gtk::Button>(_builder, "insert-layer");
     add_layer_btn.signal_clicked().connect(enter_layer_label_editing_mode);
