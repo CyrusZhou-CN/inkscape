@@ -113,6 +113,11 @@ void Inkscape::DocumentUndo::resetKey( SPDocument *doc )
     doc->actionkey.clear();
 }
 
+void Inkscape::DocumentUndo::setKeyExpires(SPDocument *doc, double seconds)
+{
+    doc->action_expires = seconds;
+}
+
 namespace {
 
 using Inkscape::Debug::Event;
@@ -183,7 +188,8 @@ void Inkscape::DocumentUndo::maybeDone(SPDocument *doc,
         return;
     }
 
-    if (key && !doc->actionkey.empty() && (doc->actionkey == key) && !doc->undo.empty()) {
+    bool expired = doc->undo_timer.is_active() && doc->undo_timer.elapsed() > doc->action_expires;
+    if (key && !expired && !doc->actionkey.empty() && (doc->actionkey == key) && !doc->undo.empty()) {
         (doc->undo.back())->event = sp_repr_coalesce_log ((doc->undo.back())->event, log);
     } else {
         Inkscape::Event *event = new Inkscape::Event(log, event_description, icon_name);
@@ -193,8 +199,12 @@ void Inkscape::DocumentUndo::maybeDone(SPDocument *doc,
 
     if ( key ) {
         doc->actionkey = key;
+        // Action key will expire in 10 seconds by default
+        doc->undo_timer.start();
+        doc->action_expires = 10.0;
     } else {
         doc->actionkey.clear();
+        doc->undo_timer.stop();
     }
 
     doc->virgin = FALSE;

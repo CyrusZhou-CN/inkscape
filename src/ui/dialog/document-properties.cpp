@@ -1994,7 +1994,11 @@ GridWidget::GridWidget(SPGrid *grid)
     left_col->attach(*_no_of_lines, 0, row++, 2);
 
     _modified_signal = grid->connectModified([this, grid](SPObject const * /*obj*/, unsigned /*flags*/) {
-        update();
+        if (!_wr.isUpdating()) {
+            _modified_signal.block();
+            update();
+            _modified_signal.unblock();
+        }
     });
     update();
 
@@ -2093,7 +2097,7 @@ void GridWidget::update()
     _id->set_label(id);
     _id->set_tooltip_text(id);
 
-    _wr.setUpdating (false);
+    _wr.setUpdating(false);
 }
 
 } // namespace Widget

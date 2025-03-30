@@ -50,6 +50,11 @@ private:
 public:
     static void resetKey(SPDocument *document);
 
+    /**
+     * Set the timeout for the last maybeDone call.
+     */
+    static void setKeyExpires(SPDocument *document, double timeout);
+
     static void cancel(SPDocument *document);
 
     static gboolean undo(SPDocument *document);

@@ -32,6 +32,7 @@
 #include <giomm/simpleactiongroup.h>           // for SimpleActionGroup
 #include <glib.h>                              // for GQuark, gboolean, gchar
 #include <glibmm/refptr.h>                     // for RefPtr
+#include <glibmm/timer.h>
 #include <glibmm/ustring.h>                    // for ustring
 #include <sigc++/connection.h>                 // for connection
 #include <sigc++/signal.h>                     // for signal
@@ -441,6 +442,8 @@ private:
     bool seeking; // Related to undo/redo/unique id
     unsigned long _serial; // Unique document number (used by undo/redo).
     Glib::ustring actionkey; // Last action key, used to combine actions in undo.
+    double action_expires; // Expire time for last action key
+    Glib::Timer undo_timer; // Timer for last action key
     unsigned long object_id_counter; // Steadily-incrementing counter used to assign unique ids to objects.
 
     // Garbage collecting ----------------------
