@@ -430,8 +430,12 @@ void MultiPathManipulator::breakNodes()
     _done(_("Break nodes"), true);
 }
 
-void MultiPathManipulator::deleteNodes(bool keep_shape) {
-    deleteNodes(keep_shape ? NodeDeleteMode::curve_fit : NodeDeleteMode::line_segment);
+/**
+ * Delete nodes, use the preference to decide which mode to use.
+ */
+void MultiPathManipulator::deleteNodes() {
+    auto prefs = Inkscape::Preferences::get();
+    deleteNodes((NodeDeleteMode)prefs->getInt("/tools/nodes/delete_mode", 0));
 }
 
 void MultiPathManipulator::deleteNodes(NodeDeleteMode mode)
@@ -645,6 +649,8 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
 
     inspect_event(event,
     [&] (KeyPressEvent const &event) {
+        Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+
         switch (key) {
         case GDK_KEY_Insert:
         case GDK_KEY_KP_Insert:
@@ -694,44 +700,6 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
                 return;
             }
             break;
-        case GDK_KEY_Delete:
-        case GDK_KEY_KP_Delete:
-        case GDK_KEY_BackSpace:
-            if (held_shift(event)) break;
-            if (held_alt(event)) {
-                // Alt+Delete - delete segments
-                deleteSegments();
-            } else {
-                Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-                bool del_preserves_shape = prefs->getBool("/tools/nodes/delete_preserves_shape", true);
-                //MK: how can multi-path-manipulator know it is dealing with a bspline if it's checking tool mode???
-                /*
-                // pass keep_shape = true when:
-                // a) del preserves shape, and control is not pressed
-                // b) ctrl+del preserves shape (del_preserves_shape is false), and control is pressed
-                // Hence xor
-                guint mode = prefs->getInt("/tools/freehand/pen/freehand-mode", 0);
-                //if the trace is bspline ( mode 2)
-                if(mode==2){
-                    //  is this correct ?
-                    if(del_preserves_shape ^ held_control(event)){
-                        deleteNodes(false);
-                    } else {
-                        deleteNodes(true);
-                    }
-                } else {
-                */
-                auto mode =
-                    held_ctrl(event) ?
-                        (del_preserves_shape ? NodeDeleteMode::inverse_auto : NodeDeleteMode::curve_fit) :
-                        (del_preserves_shape ? NodeDeleteMode::automatic : NodeDeleteMode::line_segment);
-                deleteNodes(mode);
-
-                // Delete any selected gradient nodes as well
-                tool->deleteSelectedDrag(held_ctrl(event));
-            }
-            ret = true;
-            return;
         case GDK_KEY_c:
         case GDK_KEY_C:
             if (held_only_shift(event)) {
@@ -793,6 +761,24 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
                 ret = true;
                 return;
             }
+        case GDK_KEY_Delete:
+        case GDK_KEY_KP_Delete:
+        case GDK_KEY_BackSpace:
+            if (held_shift(event)) {
+                deleteNodes((NodeDeleteMode)prefs->getInt("/tools/node/delete-mode-shift", (int)NodeDeleteMode::inverse_auto));
+            } else if (held_alt(event)) {
+                deleteNodes((NodeDeleteMode)prefs->getInt("/tools/node/delete-mode-alt", (int)NodeDeleteMode::gap_nodes));
+            } else if (held_ctrl(event)) {
+                deleteNodes((NodeDeleteMode)prefs->getInt("/tools/node/delete-mode-ctrl", (int)NodeDeleteMode::line_segment));
+            } else {
+                deleteNodes((NodeDeleteMode)prefs->getInt("/tools/node/delete-mode-default", (int)NodeDeleteMode::automatic));
+            }
+
+            // Delete any selected gradient nodes as well
+            tool->deleteSelectedDrag(held_ctrl(event));
+
+            ret = true;
+            return;
         default:
             break;
         }

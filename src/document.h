@@ -361,6 +361,7 @@ public:
     bool isSeeking() const {return seeking;} // In a transition between two "good" states of document?
     bool isPartial() const {return partial != nullptr;} // In partianl undo/redo transaction
     void reset_key(void *dummy) { actionkey.clear(); }
+    Glib::ustring const &action_key() const { return actionkey; }
     bool isSensitive() const { return sensitive; }
 
     // Garbage collecting ----------------------

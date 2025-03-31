@@ -89,6 +89,7 @@
 #include "ui/icon-names.h"
 #include "ui/tool/control-point-selection.h"
 #include "ui/tool/multi-path-manipulator.h"
+#include "ui/tool/path-manipulator.h"
 #include "ui/tools/connector-tool.h"
 #include "ui/tools/dropper-tool.h"
 #include "ui/tools/gradient-tool.h"
@@ -1217,7 +1218,7 @@ void ObjectSet::cut()
     if (node_tool && node_tool->_selected_nodes) {
         auto prefs = Preferences::get();
         // This takes care of undo internally
-        node_tool->_multipath->deleteNodes(prefs->getBool("/tools/nodes/delete_preserves_shape", true));
+        node_tool->_multipath->deleteNodes((Inkscape::UI::NodeDeleteMode)prefs->getInt("/tools/node/delete-mode-cut", (int)Inkscape::UI::NodeDeleteMode::gap_lines));
         return;
     }
 

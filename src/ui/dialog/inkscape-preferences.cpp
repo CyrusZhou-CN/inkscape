@@ -96,6 +96,7 @@
 #include "ui/pack.h"
 #include "ui/shortcuts.h"
 #include "ui/themes.h"
+#include "ui/tool/path-manipulator.h"
 #include "ui/toolbar/tool-toolbar.h"
 #include "ui/toolbar/toolbar-constants.h"
 #include "ui/util.h"
@@ -1005,10 +1006,43 @@ void InkscapePreferences::initPageTools()
     _page_node.add_group_header(_("Editing preferences"));
     _t_node_single_node_transform_handles.init(_("Show transform handles for single nodes"), "/tools/nodes/single_node_transform_handles", false);
     _page_node.add_line( true, "", _t_node_single_node_transform_handles, "", _("Show transform handles even when only a single node is selected"));
-    _t_node_delete_preserves_shape.init(_("Deleting nodes preserves shape"), "/tools/nodes/delete_preserves_shape", true);
-    _page_node.add_line( true, "", _t_node_delete_preserves_shape, "", _("Move handles next to deleted nodes to resemble original shape; hold Ctrl to get the other behavior"));
     _t_node_delete_flat_corner.init("/tools/node/flat-cusp-angle", 0, 180, 1, 5, 135, false, false);
     _page_node.add_line(true, _("Cusp considered flat for deletion:"), _t_node_delete_flat_corner, "degrees or more", _("Preserve shape when deleting flat nodes.\nInsert segments for sharp ones."), false);
+
+    _page_node.add_group_header(_("Delete Modes"));
+
+    auto prep_del_combo = [](std::string const &name, UI::Widget::PrefCombo &widget, UI::NodeDeleteMode initial) {
+        Glib::ustring const labels[] = {
+            _("Preserve curves only"),
+            _("Preserve cusps only"),
+            _("Preserve both"),
+            _("Straight lines"),
+            _("Remove nodes and leave a gap"),
+            _("Remove lines and leave a gap")
+        };
+        int const values[] = {
+            // See ui/tool/path-manipulator.h
+            (int)UI::NodeDeleteMode::automatic,
+            (int)UI::NodeDeleteMode::inverse_auto,
+            (int)UI::NodeDeleteMode::curve_fit,
+            (int)UI::NodeDeleteMode::line_segment,
+            (int)UI::NodeDeleteMode::gap_nodes,
+            (int)UI::NodeDeleteMode::gap_lines
+        };
+        widget.init("/tools/node/delete-mode-" + name, labels, values, (int)initial);
+    };
+
+    prep_del_combo("default", _t_node_delete_mode, UI::NodeDeleteMode::automatic);
+    prep_del_combo("ctrl", _t_node_delete_mode1, UI::NodeDeleteMode::line_segment);
+    prep_del_combo("alt", _t_node_delete_mode2, UI::NodeDeleteMode::gap_nodes);
+    prep_del_combo("shift", _t_node_delete_mode3, UI::NodeDeleteMode::curve_fit);
+    prep_del_combo("cut", _t_node_cut_mode, UI::NodeDeleteMode::gap_lines);
+
+    _page_node.add_line( false, _("_Delete Modes:"), _t_node_delete_mode, "", _("What happens when nodes are deleted."), false);
+    _page_node.add_line( false, "+ Ctrl", _t_node_delete_mode1, "", _("What happens when nodes are deleted while ctrl is held."), false);
+    _page_node.add_line( false, "+ Alt", _t_node_delete_mode2, "", _("What happens when nodes are deleted while alt is held."), false);
+    _page_node.add_line( false, "+ Shift", _t_node_delete_mode3, "", _("What happens when nodes are deleted while shift is held."), false);
+    _page_node.add_line( false, _("Cut Mode:"), _t_node_cut_mode, "", _("What happens when nodes cut deleted."), false);
 
     //Tweak
     this->AddNewObjectsStyle(_page_tweak, "/tools/tweak", _("Object paint style"));

@@ -573,7 +573,7 @@ void PathManipulator::weldSegments()
 }
 
 /** Break the subpath at selected nodes. It also works for single node closed paths. */
-void PathManipulator::breakNodes()
+void PathManipulator::breakNodes(bool new_nodes)
 {
     for (SubpathList::iterator i = _subpaths.begin(); i != _subpaths.end(); ++i) {
         SubpathPtr sp = *i;
@@ -603,12 +603,18 @@ void PathManipulator::breakNodes()
                 ins = new_sp;
             }
 
-            Node *n = new Node(_multi_path_manipulator._path_data.node_data, cur->position());
-            ins->insert(ins->end(), n);
-            cur->setType(NODE_CUSP, false);
-            n->back()->setRelativePos(cur->back()->relativePos());
-            cur->back()->retract();
-            n->sink();
+            // When cutting nodes, we don't want to make new nodes, they'd just be deleted anyway
+            if (new_nodes) {
+                Node *n = new Node(_multi_path_manipulator._path_data.node_data, cur->position());
+                ins->insert(ins->end(), n);
+                cur->setType(NODE_CUSP, false);
+                n->back()->setRelativePos(cur->back()->relativePos());
+                cur->back()->retract();
+                n->sink();
+            } else {
+                cur->setType(NODE_CUSP, false);
+                cur->back()->retract();
+            }
 
             if (becomes_open) {
                 cur = sp->begin(); // this will be increased to ++sp->begin()
@@ -620,10 +626,19 @@ void PathManipulator::breakNodes()
 
 /** Delete selected nodes in the path, optionally substituting deleted segments with bezier curves
  * in a way that attempts to preserve the original shape of the curve. */
-void PathManipulator::deleteNodes(NodeDeleteMode keep_shape)
+void PathManipulator::deleteNodes(NodeDeleteMode delete_mode)
 {
     if (_selection.empty()) return;
     hideDragPoint();
+
+    if (delete_mode == NodeDeleteMode::gap_nodes) {
+        // Break nodes first to create gaps
+        breakNodes(false);
+    } else if (delete_mode == NodeDeleteMode::gap_lines) {
+        // Delete nodes but preserve end points
+        _deleteSegments(true);
+        return;
+    }
 
     for (SubpathList::iterator i = _subpaths.begin(); i != _subpaths.end();) {
         SubpathPtr sp = *i;
@@ -662,7 +677,7 @@ void PathManipulator::deleteNodes(NodeDeleteMode keep_shape)
                 sel_end = sel_end.next();
             }
             
-            num_selected -= _deleteStretch(sel_beg, sel_end, keep_shape);
+            num_selected -= _deleteStretch(sel_beg, sel_end, delete_mode);
             sel_beg = sel_end;
         }
         ++i;
@@ -684,8 +699,8 @@ double get_angle(const Geom::Point& p0, const Geom::Point& p1, const Geom::Point
  * The given range can cross the beginning of the subpath in closed subpaths.
  * @param start      Beginning of the range to delete
  * @param end        End of the range
- * @param keep_shape Whether to fit the handles at surrounding nodes to approximate
- *                   the shape before deletion
+ * @param mode       Various delete methods, see NodeDeleteMode enum
+ *
  * @return Number of deleted nodes
  */
 unsigned PathManipulator::_deleteStretch(NodeList::iterator start, NodeList::iterator end, NodeDeleteMode mode)
@@ -778,13 +793,28 @@ unsigned PathManipulator::_deleteStretch(NodeList::iterator start, NodeList::ite
             double bspline_weight = _bsplineHandlePosition(end->front(), false);
             end->back()->setPosition(_bsplineHandleReposition(end->back(),bspline_weight));
         }
+    } else if (mode == NodeDeleteMode::line_segment) {
+        // Handle line straigtening
+        if (start.prev()) {
+            start.prev()->setType(NodeType::NODE_CUSP);
+            start.prev()->front()->move(start.prev()->position());
+        }
+        if (end) {
+            end->setType(NodeType::NODE_CUSP);
+            end->back()->move(end->position());
+        }
     }
 
     return del_len;
 }
 
-/** Removes selected segments */
 void PathManipulator::deleteSegments()
+{
+    _deleteSegments(false);
+}
+
+/** Removes selected segments */
+void PathManipulator::_deleteSegments(bool delete_singles)
 {
     if (_selection.empty()) return;
     hideDragPoint();
@@ -820,7 +850,7 @@ void PathManipulator::deleteSegments()
                 sel_end = sel_end.next();
                 ++num_points;
             }
-            if (num_points >= 2) {
+            if (num_points >= (2 - delete_singles)) {
                 // Retract end handles
                 sel_end.prev()->setType(NODE_CUSP, false);
                 sel_end.prev()->back()->retract();

@@ -61,8 +61,8 @@ public:
     void copySelectedPath(Geom::PathBuilder *builder);
     void joinNodes();
     void breakNodes();
+    void deleteNodes();
     void deleteNodes(NodeDeleteMode mode);
-    void deleteNodes(bool keep_shape);
     void joinSegments();
     void deleteSegments();
     void alignNodes(Geom::Dim2 d, AlignTargetNode target = AlignTargetNode::MID_NODE);

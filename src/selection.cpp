@@ -192,6 +192,9 @@ void Selection::setAnchor(double x, double y, bool set)
         anchor = pt;
         has_anchor = set;
         _emitModified(SP_OBJECT_MODIFIED_FLAG);
+
+        // This allows each anchored-event to have it's own maybeDone
+        DocumentUndo::resetKey(document());
     }
 }
 
@@ -219,8 +222,15 @@ void Selection::scaleAnchored(double amount, bool fixed)
 void Selection::rotateAnchored(double angle_degrees, double zoom)
 {
     if (Geom::OptRect bbox = visualBounds()) {
+        auto actionkey = document()->action_key();
+
         auto mid = center() ? *center() : bbox->midpoint();
         auto center = has_anchor ? bbox->min() + bbox->dimensions() * Geom::Scale(anchor) : mid;
+
+        // Remember the center for previous rotations with the same undo action
+        if (has_anchor && (actionkey == "selector:rotate:ccw" || actionkey == "selector:rotate:cw")) {
+            center = _previous_rotate_anchor;
+        }
 
         if (auto d = desktop()) {
             angle_degrees = d->yaxisdir() ? angle_degrees : -angle_degrees;
@@ -242,10 +252,13 @@ void Selection::rotateAnchored(double angle_degrees, double zoom)
 
         rotateRelative(center, angle_degrees);
 
+        // Remember the rotation anchor for multiple rotation events.
+        _previous_rotate_anchor = center;
+
         if (angle_degrees == 90.0) {
-            DocumentUndo::done(document(), _("Rotate 90\xc2\xb0 CW"), INKSCAPE_ICON("object-rotate-right"));
+            DocumentUndo::maybeDone(document(), "selector:rotate:cw", _("Rotate 90\xc2\xb0 CW"), INKSCAPE_ICON("object-rotate-right"));
         } else if (angle_degrees == -90.0) {
-            DocumentUndo::done(document(), _("Rotate 90\xc2\xb0 CCW"), INKSCAPE_ICON("object-rotate-left"));
+            DocumentUndo::maybeDone(document(), "selector:rotate:ccw", _("Rotate 90\xc2\xb0 CCW"), INKSCAPE_ICON("object-rotate-left"));
         } else {
             DocumentUndo::maybeDone(document(),
                                 ( ( angle_degrees > 0 )? "selector:rotate:ccw": "selector:rotate:cw" ),

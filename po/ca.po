@@ -12,7 +12,7 @@
 # Xavier Beà, <xavier.bea@gmail.com>, 2015
 # Carles Ferrando, <carles.ferrando@gmail.com>, 2015
 # Jaume Jorba <jaume.jorba@gmail.com>, 2018
-# Jordi Mas i Hernàndez, <jmas@softcatala.org>, 2015-2016, 2019-2023
+# Jordi Mas i Hernàndez, <jmas@softcatala.org>, 2015-2016, 2019-2025
 # Xavi Ivars <xavi.ivars@gmail.com>, 2023
 # Artur Vicedo <arturovc89@hotmail.com>, 2023
 #
@@ -33,7 +33,7 @@ msgstr ""
 "Project-Id-Version: inkscape\n"
 "Report-Msgid-Bugs-To: inkscape-translator@lists.inkscape.org\n"
 "POT-Creation-Date: 2023-08-23 09:41+0200\n"
-"PO-Revision-Date: 2024-11-24 16:14+0200\n"
+"PO-Revision-Date: 2025-02-22 16:14+0200\n"
 "Last-Translator: \n"
 "Language-Team: Catalan <gnome@llistes.softcatala.org>\n"
 "Language: ca\n"
@@ -3897,7 +3897,7 @@ msgstr "Primers auxilis"
 #: ../build/share/symbols/symbols.h:15 ../build/share/symbols/symbols.h:16
 msgctxt "Symbol"
 msgid "Lost and Found"
-msgstr "Perdut i trobat"
+msgstr "Objectes perduts"
 
 #: ../build/share/symbols/symbols.h:17 ../build/share/symbols/symbols.h:18
 msgctxt "Symbol"
@@ -5005,10 +5005,9 @@ msgid "Gate"
 msgstr "Porta"
 
 #: ../build/share/symbols/symbols.h:384 ../build/share/symbols/symbols.h:396
-#, fuzzy
 msgctxt "Symbol"
 msgid "Kissing gate"
-msgstr "Porta de petons"
+msgstr "Porta interceptora en U"
 
 #: ../build/share/symbols/symbols.h:385 ../build/share/symbols/symbols.h:397
 #, fuzzy
@@ -5275,16 +5274,14 @@ msgid "SJJB Map Icons [Money Set]"
 msgstr "Icones de mapa SJJB [Configuració de diners]"
 
 #: ../build/share/symbols/symbols.h:482 ../build/share/symbols/symbols.h:487
-#, fuzzy
 msgctxt "Symbol"
 msgid "Automated teller machine"
-msgstr "Indicador automàtic"
+msgstr "Caixer automàtic"
 
 #: ../build/share/symbols/symbols.h:483 ../build/share/symbols/symbols.h:488
-#, fuzzy
 msgctxt "Symbol"
 msgid "Automated teller machine 2"
-msgstr "Indicador automàtic màquina 2"
+msgstr "Caixer automàtic 2"
 
 #: ../build/share/symbols/symbols.h:484 ../build/share/symbols/symbols.h:489
 #, fuzzy
@@ -6669,7 +6666,7 @@ msgstr "Importa el número de la pàgina"
 
 #: ../src/actions/actions-base.cpp:214
 msgid "Select PDF page number to import"
-msgstr "Nombre de la pàgina PDF a importar"
+msgstr "Selecciona el número de pàgina PDF a importa"
 
 #: ../src/actions/actions-base.cpp:215
 msgid "Import DPI Method"
@@ -14906,7 +14903,7 @@ msgstr "Gràfic de vectors escalables (*.svg)"
 
 #: ../src/extension/internal/svg.cpp:745
 msgid "Inkscape native file format and W3C standard"
-msgstr "Format natiu de l'Inkscape i W3C estàndard"
+msgstr "Format natiu de l'Inkscape i estàndard W3C"
 
 #: ../src/extension/internal/svg.cpp:752
 msgid "SVG Output Inkscape"
@@ -19754,7 +19751,7 @@ msgstr "Centre horitzontal"
 
 #: ../src/live_effects/lpe-offset.cpp:86
 msgid "Live update"
-msgstr "Actualitza"
+msgstr "Actualització en temps real"
 
 #: ../src/live_effects/lpe-offset.cpp:86
 msgid "Update while moving handle"
@@ -21471,7 +21468,7 @@ msgid ""
 "reset"
 msgstr ""
 "<b>Espais verticals entre les fitxes</b>: arrossegueu per ajustar, "
-"<b>Maj+clic</b>per restablir"
+"<b>Maj+clic</b> per restablir"
 
 #: ../src/live_effects/lpe-transform_2pts.cpp:33
 msgid "Elastic"
@@ -30641,7 +30638,7 @@ msgid ""
 "preserves any LPEs and shapes within the clones."
 msgstr ""
 "«Objecte a camí» només desenllaça els clons quan es converteixen en camins, "
-"però preserva qualsevol LPE i formes dins dels clons."
+"però conserva qualsevol LPE i formes dins dels clons."
 
 #. TRANSLATORS: Heading for the Inkscape Preferences "Clones" Page
 #: ../src/ui/dialog/inkscape-preferences.cpp:2715
@@ -32228,7 +32225,7 @@ msgstr "Bl_oca"
 
 #: ../src/ui/dialog/object-properties.cpp:63
 msgid "Preserve Ratio"
-msgstr "Preserva la ràtio"
+msgstr "Conserva la ràtio"
 
 #: ../src/ui/dialog/object-properties.cpp:64
 msgid "_Interactivity"
@@ -32278,7 +32275,7 @@ msgstr ""
 
 #: ../src/ui/dialog/object-properties.cpp:261
 msgid "Check to preserve aspect ratio on images"
-msgstr "Feu clic per a preservar la relació d'aspecte a les imatges"
+msgstr "Feu clic per a mantenir la relació d'aspecte a les imatges"
 
 #: ../src/ui/dialog/object-properties.cpp:270
 msgid "_Set"
@@ -32336,7 +32333,7 @@ msgstr "Desbloca l'objecte"
 
 #: ../src/ui/dialog/object-properties.cpp:538
 msgid "Set preserve ratio"
-msgstr "Preserva la ràtio"
+msgstr "Conserva la ràtio"
 
 #: ../src/ui/dialog/object-properties.cpp:554
 msgid "Hide object"
@@ -33151,7 +33148,7 @@ msgstr ""
 
 #: ../src/ui/dialog/transformation.cpp:87
 msgid "Preserve the width/height ratio of the scaled objects"
-msgstr "Preserva la relació d'amplada/alçada dels objectes escalats"
+msgstr "Conserva la relació d'amplada/alçada dels objectes escalats"
 
 #: ../src/ui/dialog/transformation.cpp:89
 msgid ""
@@ -34003,7 +34000,7 @@ msgid ""
 "<b>Shift+Ctrl+Alt</b>: preserve length and snap rotation angle to %g° "
 "increments, and rotate both handles"
 msgstr ""
-"<b>Maj+Ctrl+Alt</b>: preserva la longitud i ajusta l'angle de rotació a "
+"<b>Maj+Ctrl+Alt</b>: conserva la longitud i ajusta l'angle de rotació a "
 "increments de %gº, i gira els dos gestors"
 
 #: ../src/ui/tool/node.cpp:619
@@ -34012,19 +34009,19 @@ msgctxt "Status line hint"
 msgid ""
 "<b>Ctrl+Alt</b>: preserve length and snap rotation angle to %g° increments"
 msgstr ""
-"<b>Ctrl+Alt</b>: preserva la longitud i ajusta l'angle de rotació a "
+"<b>Ctrl+Alt</b>: conserva la longitud i ajusta l'angle de rotació a "
 "increments de %gº"
 
 #: ../src/ui/tool/node.cpp:627
 msgctxt "Path handle tip"
 msgid "<b>Shift+Alt</b>: preserve handle length and rotate both handles"
 msgstr ""
-"<b>Maj+Alt</b>: preserva la longitud entre nanses i gira les dues nanses"
+"<b>Maj+Alt</b>: conserva la longitud entre nanses i gira les dues nanses"
 
 #: ../src/ui/tool/node.cpp:631
 msgctxt "Path handle tip"
 msgid "<b>Alt</b>: preserve handle length while dragging"
-msgstr "<b>Alt</b>: preserva la longitud mentre s'arrossega"
+msgstr "<b>Alt</b>: conserva la longitud mentre s'arrossega"
 
 #: ../src/ui/tool/node.cpp:639
 #, c-format

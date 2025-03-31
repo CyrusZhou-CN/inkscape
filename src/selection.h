@@ -285,6 +285,8 @@ private:
 
     sigc::signal<void (Selection *)> _changed_signal;
     sigc::signal<void (Selection *, unsigned)> _modified_signal;
+
+    Geom::Point _previous_rotate_anchor;
 };
 
 } // namespace Inkscape

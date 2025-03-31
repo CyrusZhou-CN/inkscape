@@ -378,7 +378,8 @@ void NodeToolbar::edit_add_bottommost()
 void NodeToolbar::edit_delete()
 {
     if (auto nt = get_node_tool()) {
-        nt->_multipath->deleteNodes(Preferences::get()->getBool("/tools/nodes/delete_preserves_shape", true));
+        auto prefs = Preferences::get();
+        nt->_multipath->deleteNodes((NodeDeleteMode)prefs->getInt("/tools/node/delete-mode-default", (int)NodeDeleteMode::automatic));
     }
 }
 

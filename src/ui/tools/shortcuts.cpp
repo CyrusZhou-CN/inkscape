@@ -24,7 +24,6 @@ std::vector<std::vector<Glib::ustring>> raw_data_tools_shortcuts = {
     , {"tool.pen.to-line",          N_("Pen Segment To Line"),    "Tools", N_("Convert the last pen segment to a straight line.")                 }
     , {"tool.pen.to-curve",         N_("Pen Segment To Curve"),   "Tools", N_("Convert the last pen segment to a curved line.")                   }
     , {"tool.pen.to-guides",        N_("Pen Segments To Guides"), "Tools", N_("Convert the pen shape into guides.")                               }
-
     // clang-format on
 };
 
