@@ -1042,7 +1042,7 @@ void InkscapePreferences::initPageTools()
     _page_node.add_line( false, "+ Ctrl", _t_node_delete_mode1, "", _("What happens when nodes are deleted while ctrl is held."), false);
     _page_node.add_line( false, "+ Alt", _t_node_delete_mode2, "", _("What happens when nodes are deleted while alt is held."), false);
     _page_node.add_line( false, "+ Shift", _t_node_delete_mode3, "", _("What happens when nodes are deleted while shift is held."), false);
-    _page_node.add_line( false, _("Cut Mode:"), _t_node_cut_mode, "", _("What happens when nodes cut deleted."), false);
+    _page_node.add_line( false, _("Cut Mode:"), _t_node_cut_mode, "", _("What happens when nodes are cut."), false);
 
     //Tweak
     this->AddNewObjectsStyle(_page_tweak, "/tools/tweak", _("Object paint style"));
