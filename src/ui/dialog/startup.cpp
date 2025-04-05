@@ -794,7 +794,6 @@ StartScreen::keyboard_changed()
     auto prefs = Inkscape::Preferences::get();
     Glib::ustring set_to = row[cols.col_id];
     prefs->setString("/options/kbshortcuts/shortcutfile", set_to);
-    Inkscape::Shortcuts::getInstance().init();
     refresh_keys_warning();
 }
 
