@@ -52,6 +52,9 @@ public:
     const char *  get_filetypename     (bool translated=false) const;
     const char *  get_filetypetooltip  (bool translated=false) const;
     bool          can_open_filename    (gchar const *filename) const;
+
+    static Extension *find_by_mime(char const *mime);
+    static Extension *find_by_filename(char const *filename);
 };
 
 } }  /* namespace Inkscape, Extension */

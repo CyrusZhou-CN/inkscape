@@ -32,7 +32,7 @@
 #include "layer-manager.h"
 
 #include "colors/dragndrop.h"
-#include "extension/find_extension_by_mime.h"
+#include "extension/input.h"
 
 #include "object/sp-shape.h"
 #include "object/sp-text.h"
@@ -344,7 +344,7 @@ bool on_drop(Glib::ValueBase const &value, double x, double y, SPDesktopWidget *
         DocumentUndo::done(doc, _("Drop Symbol"), "");
         return true;
     } else if (G_VALUE_HOLDS(value.gobj(), GDK_TYPE_TEXTURE)) {
-        auto const ext = Inkscape::Extension::find_by_mime("image/png");
+        auto const ext = Inkscape::Extension::Input::find_by_mime("image/png");
         bool const save = std::strcmp(ext->get_param_optiongroup("link"), "embed") == 0;
         ext->set_param_optiongroup("link", "embed");
         ext->set_gui(false);

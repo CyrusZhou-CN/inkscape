@@ -12,6 +12,7 @@
 
 #include "timer.h"
 
+#include "db.h"
 #include "implementation/implementation.h"
 
 #include "xml/attribute-record.h"
@@ -224,6 +225,45 @@ Input::get_filetypetooltip(bool translated) const
     } else {
         return filetypetooltip;
     }
+}
+
+/**
+ * Get an input extension by mime-type matching.
+ *
+ * @arg mime - The mime to match against.
+ *
+ * @returns the first Input extension found or nullptr
+ */
+Extension *Input::find_by_mime(char const *mime)
+{
+    DB::InputList list;
+    db.get_input_list(list);
+
+    auto it = list.begin();
+    while (true) {
+        if (it == list.end()) return nullptr;
+        if (std::strcmp((*it)->get_mimetype(), mime) == 0) return *it;
+        ++it;
+    }
+}
+
+/**
+ * Get an input extension by filename matching. Does not look at file contents.
+ *
+ * @arg filename - The filename to match against.
+ *
+ * @returns the first Input extension found or nullptr
+ */
+Extension *Input::find_by_filename(char const *filename)
+{
+    DB::InputList list;
+
+    for (auto imod : db.get_input_list(list)) {
+        if (imod->can_open_filename(filename)) {
+            return imod;
+        }
+    }
+    return nullptr;
 }
 
 } }  /* namespace Inkscape, Extension */

@@ -54,7 +54,6 @@
 
 #include "display/curve.h"
 #include "extension/db.h" // extension database
-#include "extension/find_extension_by_mime.h"
 #include "extension/input.h"
 #include "extension/output.h"
 #include "live_effects/lpe-bspline.h"
@@ -1542,7 +1541,7 @@ bool ClipboardManagerImpl::_pasteImage(SPDocument *doc)
     prefs->setBool("/dialogs/import/ask", false);
     prefs->setString("/dialogs/import/import_mode_svg", "embed");
 
-    auto png = Extension::find_by_mime("image/png");
+    auto png = Extension::Input::find_by_mime("image/png");
     png->set_gui(false);
     file_import(doc, filename, png);
 

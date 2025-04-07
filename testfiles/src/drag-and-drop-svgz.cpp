@@ -17,7 +17,7 @@
 
 #include "extension/init.h"
 #include "extension/db.h"
-#include "extension/find_extension_by_mime.h"
+#include "extension/input.h"
 #include "extension/internal/svgz.h"
 #include "io/resource.h"
 #include "path-prefix.h"
@@ -35,7 +35,7 @@ class SvgzImportTest : public DocPerCaseTest {
         ASSERT_TRUE(_doc->getRoot() != nullptr);
         Inkscape::Preferences *prefs = Inkscape::Preferences::get();
         prefs->setBool("/dialogs/import/ask_svg", true);
-        auto ext = Inkscape::Extension::find_by_mime("image/svg+xml-compressed");
+        auto ext = Inkscape::Extension::Input::find_by_mime("image/svg+xml-compressed");
         if (!ext) {
             std::cerr << "SvgzImportTest: Failed to find mime type!" << std::endl;
         }
