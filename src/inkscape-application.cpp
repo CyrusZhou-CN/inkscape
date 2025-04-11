@@ -1024,7 +1024,7 @@ void InkscapeApplication::on_activate()
         document = document_new();
     }
     if (_start_screen) {
-        _start_screen->close();
+        _start_screen.reset();
     }
 
     if (!document) {
@@ -1059,6 +1059,9 @@ void InkscapeApplication::windowClose(InkscapeWindow *window)
 // type_vec_files == std::vector<Glib::RefPtr<Gio::File> >
 void InkscapeApplication::on_open(Gio::Application::type_vec_files const &files, Glib::ustring const &hint)
 {
+    // on_activate isn't called in this instance
+    _start_screen.reset();
+
     if(_pdf_poppler)
         INKSCAPE.set_pdf_poppler(_pdf_poppler);
     if(!_pages.empty())
