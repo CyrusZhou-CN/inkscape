@@ -1070,6 +1070,9 @@ void InkscapeApplication::on_open(Gio::Application::type_vec_files const &files,
     INKSCAPE.set_pdf_font_strategy((int)_pdf_font_strategy);
 
     if (files.size() > 1 && !_file_export.export_filename.empty()) {
+        for (auto &file : files) {
+            std::cerr << " * input-filename: '" << file->get_path().c_str() << "'\n";
+        }
         std::cerr << "InkscapeApplication::on_open: "
                      "Can't use '--export-filename' with multiple input files "
                      "(output file would be overwritten for each input file). "
