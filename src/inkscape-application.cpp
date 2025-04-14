@@ -705,6 +705,7 @@ InkscapeApplication::InkscapeApplication()
     gapp->add_main_option_entry(T::OptionType::BOOL,     "query-y",                'Y', N_("Y coordinate of drawing or object (if specified by --query-id)"),          "");
     gapp->add_main_option_entry(T::OptionType::BOOL,     "query-width",            'W', N_("Width of drawing or object (if specified by --query-id)"),                 "");
     gapp->add_main_option_entry(T::OptionType::BOOL,     "query-height",           'H', N_("Height of drawing or object (if specified by --query-id)"),                "");
+    gapp->add_main_option_entry(T::OptionType::BOOL,     "query-pages",            '\0', N_("Number of pages in the opened file."),                                    "");
 
     // Processing
     _start_main_option_section(_("Advanced file processing"));
@@ -1492,6 +1493,7 @@ InkscapeApplication::on_handle_local_options(const Glib::RefPtr<Glib::VariantDic
         options->contains("query-y")               ||
         options->contains("query-width")           ||
         options->contains("query-height")          ||
+        options->contains("query-pages")           ||
 
         options->contains("vacuum-defs")           ||
         options->contains("select")                ||
@@ -1622,7 +1624,7 @@ InkscapeApplication::on_handle_local_options(const Glib::RefPtr<Glib::VariantDic
     if (options->contains("query-y"))      _command_line_actions.emplace_back("query-y",     base);
     if (options->contains("query-width"))  _command_line_actions.emplace_back("query-width", base);
     if (options->contains("query-height")) _command_line_actions.emplace_back("query-height",base);
-
+    if (options->contains("query-pages"))  _command_line_actions.emplace_back("query-pages", base);
 
     // =================== PROCESS =====================
 
