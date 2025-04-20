@@ -60,6 +60,7 @@
 #include "ui/themes.h"
 #include "ui/tools/tool-base.h"
 #include "ui/util.h"
+#include "ui/widget/ink-spin-button.h"
 #include "util/font-discovery.h"
 #include "util/units.h"
 
@@ -244,6 +245,8 @@ Application::Application(bool use_gui) :
         auto scale = prefs->getDoubleLimited(UI::ThemeContext::get_font_scale_pref_path(), 100, 50, 150);
         themecontext->adjustGlobalFontScale(scale / 100.0);
         Inkscape::UI::ThemeContext::initialize_source_syntax_styles();
+        // register custom widget types
+        Inkscape::UI::Widget::InkSpinButton::register_type();
     }
 
     /* set language for user interface according setting in preferences */
