@@ -31,12 +31,10 @@ inline const std::vector<double> d65_inv[3] = {{0.41239079926595949381, 0.357584
 class XYZ : public RGB
 {
 public:
-    XYZ() = default;
+    XYZ(): RGB(Type::XYZ, 3, "XYZ", "XYZ", "color-selector-xyz", true) {}
     ~XYZ() override = default;
 
-    Type getType() const override { return Type::XYZ; }
-    std::string const getName() const override { return "XYZ"; }
-    std::string const getIcon() const override { return "color-selector-xyz"; }
+    unsigned int getComponentCount() const override { return 3; }
 
 protected:
     friend class Inkscape::Colors::Color;

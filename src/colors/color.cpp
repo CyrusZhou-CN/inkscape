@@ -72,7 +72,13 @@ Color::Color(std::shared_ptr<Space::AnySpace> space, std::vector<double> colors)
  */
 bool Color::operator==(Color const &other) const
 {
-    return _space == other._space && _isnear(other._values);
+    // TODO: Adjust epsilon value to ignore roundtrip conversion rounding errors,
+    // but still keep high precision of color comparision.
+    //
+    // I arrived at this value empirically. If it is too big, then sometimes changes (by the user) are not picked up,
+    // and no refresh happens. If it is too small, then roundtrip conversions will also trigger changes, while they ideally should not.
+    // It's all a bit fragile.
+    return _space == other._space && _isnear(other._values, 0.00001);
 }
 
 /**

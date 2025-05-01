@@ -18,12 +18,9 @@ namespace Inkscape::Colors::Space {
 class Lch : public RGB
 {
 public:
-    Lch() = default;
+    Lch(): RGB(Type::LCH, 3, "Lch", "Lch", "color-selector-lch", true) {}
+    // Lch() = default;
     ~Lch() override = default;
-
-    Type getType() const override { return Type::LCH; }
-    std::string const getName() const override { return "Lch"; }
-    std::string const getIcon() const override { return "color-selector-lch"; }
 
 protected:
     friend class Inkscape::Colors::Color;

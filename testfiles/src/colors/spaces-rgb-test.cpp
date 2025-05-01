@@ -81,7 +81,7 @@ TEST(ColorsSpacesRgb, components)
 
     auto c2 = Manager::get().find(RGB)->getComponents(true);
     ASSERT_EQ(c2.size(), 4);
-    ASSERT_EQ(c2[3].id, "a");
+    ASSERT_EQ(c2[3].id, "alpha");
     ASSERT_EQ(c2[3].index, 3);
 }
 

@@ -11,19 +11,18 @@
 #include "base.h"
 
 #include <sstream>
+#include <utility>
 
 #include "colors/cms/profile.h"
 #include "colors/cms/transform.h"
 #include "colors/color.h"
 #include "components.h"
+#include "gamut.h"
 
 namespace Inkscape::Colors::Space {
 
-AnySpace::AnySpace()
-{
-    if (!srgb_profile) {
-        srgb_profile = Colors::CMS::Profile::create_srgb();
-    }
+AnySpace::AnySpace(Type type, int components, std::string name, std::string shortName, std::string icon, bool spaceIsUnbounded):
+    _name(std::move(name)), _shortName(std::move(shortName)), _icon(std::move(icon)), _type(type), _components(components), _spaceIsUnbounded(spaceIsUnbounded) {
 }
 
 /**
@@ -126,6 +125,17 @@ bool AnySpace::outOfGamut(std::vector<double> const &input, std::shared_ptr<AnyS
     return _gamut_checkers[to_profile_id]->check_gamut(input);
 }
 
+bool AnySpace::isOutOfGamut(const Colors::Color& color, double eps) {
+    return out_of_gamut(color, shared_from_this(), eps);
+}
+
+Color AnySpace::toGamut(const Colors::Color& color) {
+    // By default apply CSS Level 4 gamut mapping: https://www.w3.org/TR/css-color-4/#gamut-mapping
+    // This approach will match behavior of browsers.
+    // If we had an ICC profile selected, we could use that instead.
+    return to_gamut_css(color, shared_from_this());
+}
+
 /**
  * Return a list of Component objects, in order of the channels in this color space
  *
@@ -136,4 +146,4 @@ Components const &AnySpace::getComponents(bool alpha) const
     return Space::Components::get(getComponentType(), alpha);
 }
 
-}; // namespace Inkscape::Colors::Space
+} // namespace Inkscape::Colors::Space

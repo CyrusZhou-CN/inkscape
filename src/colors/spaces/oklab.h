@@ -15,15 +15,10 @@
 
 namespace Inkscape::Colors::Space {
 
-class OkLab : public RGB
-{
+class OkLab : public RGB {
 public:
-    OkLab() = default;
+    OkLab(): RGB(Type::OKLAB, 3, "OkLab", "OkLab", "color-selector-oklab", true) {}
     ~OkLab() override = default;
-
-    Type getType() const override { return Type::OKLAB; }
-    std::string const getName() const override { return "OkLab"; }
-    std::string const getIcon() const override { return "color-selector-oklab"; }
 
 protected:
     friend class Inkscape::Colors::Color;

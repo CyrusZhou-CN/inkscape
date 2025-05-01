@@ -38,10 +38,19 @@ inline Traits operator | (const Traits lhs, const Traits rhs) {
     return static_cast<Traits>(static_cast<underlying>(lhs) | static_cast<underlying>(rhs));
 }
 
+// Unit impacts component presentation in the UI and dictates what its scale is
+enum class Unit {
+    EightBit,   // one byte, values from 0..255, unitless
+    Percent,    // 0..100%
+    Degree,     // 0..360 degree
+    Linear1024, // 0..1024 for linear RGB
+    Chroma40    // an oddball 0..40 for OkLch hue encoding
+};
+
 struct Component
 {
-    Component(Type type, unsigned int index, std::string id, std::string name, std::string tip, unsigned scale);
-    Component(std::string id, std::string name, std::string tip, unsigned scale);
+    Component(Type type, unsigned int index, std::string id, std::string name, std::string tip, Unit unit = Unit::EightBit);
+    Component(std::string id, std::string name, std::string tip, Unit unit = Unit::EightBit);
 
     Type type;
     unsigned int index;
@@ -49,6 +58,7 @@ struct Component
     std::string name;
     std::string tip;
     unsigned scale;
+    Unit unit = Unit::EightBit;
 
     double normalize(double value) const;
 };
@@ -71,7 +81,7 @@ public:
     Type getType() const { return _type; }
     unsigned size() const { return _components.size(); }
 
-    void add(std::string id, std::string name, std::string tip, unsigned scale);
+    void add(std::string id, std::string name, std::string tip, Unit unit = Unit::EightBit);
     void setType(Type type, Type color_wheel = Type::NONE) { _type = type; _wheel_type = color_wheel; }
     // Says which space the color wheel should be in when picking this color space
     Type get_wheel_type() const;

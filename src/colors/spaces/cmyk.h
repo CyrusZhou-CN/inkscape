@@ -21,13 +21,8 @@ namespace Inkscape::Colors::Space {
 class DeviceCMYK : public RGB
 {
 public:
-    DeviceCMYK() = default;
+    DeviceCMYK(): RGB(Type::CMYK, 4, "DeviceCMYK", "CMYK", "color-selector-cmyk") {}
     ~DeviceCMYK() override = default;
-
-    Type getType() const override { return Type::CMYK; }
-    std::string const getName() const override { return "DeviceCMYK"; }
-    std::string const getIcon() const override { return "color-selector-cmyk"; }
-    unsigned int getComponentCount() const override { return 4; }
 
     void spaceToProfile(std::vector<double> &output) const override;
     void profileToSpace(std::vector<double> &output) const override;

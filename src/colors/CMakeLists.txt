@@ -15,6 +15,7 @@ set(colors_SRC
 	spaces/cms.cpp
 	spaces/cmyk.cpp
 	spaces/components.cpp
+	spaces/gamut.cpp
 	spaces/gray.cpp
 	spaces/hsl.cpp
 	spaces/hsluv.cpp
@@ -23,7 +24,9 @@ set(colors_SRC
 	spaces/lch.cpp
 	spaces/linear-rgb.cpp
 	spaces/luv.cpp
+	spaces/ok-color.cpp
 	spaces/okhsl.cpp
+	spaces/okhsv.cpp
 	spaces/oklab.cpp
 	spaces/oklch.cpp
 	spaces/named.cpp
@@ -49,6 +52,7 @@ set(colors_SRC
 	spaces/cmyk.h
 	spaces/components.h
 	spaces/enum.h
+	spaces/gamut.h
 	spaces/gray.h
 	spaces/hsl.h
 	spaces/hsluv.h
@@ -57,7 +61,9 @@ set(colors_SRC
 	spaces/lch.h
 	spaces/linear-rgb.h
 	spaces/luv.h
+	spaces/ok-color.h
 	spaces/okhsl.h
+	spaces/okhsv.h
 	spaces/oklab.h
 	spaces/oklch.h
 	spaces/named.h

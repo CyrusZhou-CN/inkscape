@@ -73,6 +73,39 @@ TEST(ColorManagerTest, spaceComponents)
     ASSERT_EQ(comp[3].name, "_K");
 }
 
+TEST(ColorManagerTest, isUnbounded) {
+    auto cm = TestManager();
+
+    auto rgb = cm.find(Space::Type::RGB);
+    ASSERT_TRUE(rgb);
+    ASSERT_FALSE(rgb->isUnbounded());
+
+    auto hsl = cm.find(Space::Type::HSL);
+    ASSERT_TRUE(hsl);
+    ASSERT_FALSE(hsl->isUnbounded());
+
+    auto cmyk = cm.find(Space::Type::CMYK);
+    ASSERT_TRUE(cmyk);
+    ASSERT_FALSE(cmyk->isUnbounded());
+
+    // auto cms = cm.find(Space::Type::CMS);
+    // ASSERT_TRUE(cms);
+    // ASSERT_FALSE(cms->isUnbounded());
+
+    auto xyz = cm.find(Space::Type::XYZ);
+    ASSERT_TRUE(xyz);
+    ASSERT_TRUE(xyz->isUnbounded());
+
+    auto lab = cm.find(Space::Type::LAB);
+    ASSERT_TRUE(lab);
+    ASSERT_TRUE(lab->isUnbounded());
+
+    auto oklab = cm.find(Space::Type::OKLAB);
+    ASSERT_TRUE(oklab);
+    ASSERT_TRUE(oklab->isUnbounded());
+
+}
+
 TEST(ColorManagerTest, addAndRemoveSpaces)
 {
     auto cm = TestManager();

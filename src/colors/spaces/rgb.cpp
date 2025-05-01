@@ -29,6 +29,10 @@ std::shared_ptr<Inkscape::Colors::CMS::Profile> const RGB::getProfile() const
     return srgb_profile;
 }
 
+RGB::RGB(Type type, int components, std::string name, std::string shortName, std::string icon, bool spaceIsUnbounded):
+    AnySpace(type, components, std::move(name), std::move(shortName), std::move(icon), spaceIsUnbounded) {
+}
+
 /**
  * Print the RGB color to a CSS Hex code of 6 or 8 digits.
  *
@@ -76,4 +80,4 @@ bool RGB::Parser::parse(std::istringstream &ss, std::vector<double> &output) con
            && end;
 }
 
-}; // namespace Inkscape::Colors::Space
+} // namespace Inkscape::Colors::Space

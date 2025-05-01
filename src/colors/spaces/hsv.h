@@ -18,12 +18,8 @@ namespace Inkscape::Colors::Space {
 class HSV : public RGB
 {
 public:
-    HSV() = default;
+    HSV(): RGB(Type::HSV, 3, "HSV", "HSV", "color-selector-hsx") {}
     ~HSV() override = default;
-
-    Type getType() const override { return Type::HSV; }
-    std::string const getName() const override { return "HSV"; }
-    std::string const getIcon() const override { return "color-selector-hsx"; }
 
     void spaceToProfile(std::vector<double> &output) const override;
     void profileToSpace(std::vector<double> &output) const override;

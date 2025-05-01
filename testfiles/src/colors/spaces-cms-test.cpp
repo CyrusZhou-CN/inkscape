@@ -27,8 +27,8 @@ class CMS : public Space::CMS
 public:
     CMS(unsigned size, Space::Type type = Space::Type::CMYK)
         : Space::CMS("test-profile", size, type){};
-    CMS(std::shared_ptr<Inkscape::Colors::CMS::Profile> profile)
-        : Space::CMS(profile){};
+    CMS(std::shared_ptr<Inkscape::Colors::CMS::Profile> profile, std::string name = {})
+        : Space::CMS(profile, name) {};
     std::string toString(std::vector<double> const &values, bool opacity = true) const
     {
         return Space::CMS::toString(values, opacity);
@@ -38,7 +38,6 @@ public:
     {
         return outOfGamut(values, space);
     }
-    void testName(std::string const &name) { setName(name); }
 };
 
 TEST(ColorsSpacesCms, parseColor)
@@ -106,8 +105,7 @@ TEST(ColorsSpacesCms, fallbackColor)
 TEST(ColorsSpacesCms, renderingIntent)
 {
     auto cmyk_profile = Inkscape::Colors::CMS::Profile::create_from_uri(cmyk_icc);
-    auto cmyk = std::make_shared<CMS>(cmyk_profile);
-    cmyk->testName("vals");
+    auto cmyk = std::make_shared<CMS>(cmyk_profile, "vals");
 
     auto color1 = Color(cmyk, {0, 0, 0, 1});
     auto color2 = Color(cmyk, {0.5, 0, 0, 0});

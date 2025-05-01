@@ -232,4 +232,4 @@ std::string NamedColor::getNameFor(unsigned int rgba)
     return "";
 }
 
-}; // namespace Inkscape::Colors::Space
+} // namespace Inkscape::Colors::Space

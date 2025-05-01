@@ -18,12 +18,8 @@ namespace Inkscape::Colors::Space {
 class LinearRGB : public RGB
 {
 public:
-    LinearRGB() = default;
+    LinearRGB(): RGB(Type::linearRGB, 3, "linearRGB", "linearRGB", "color-selector-linear-rgb") {}
     ~LinearRGB() override = default;
-
-    Type getType() const override { return Type::linearRGB; }
-    std::string const getName() const override { return "linearRGB"; }
-    std::string const getIcon() const override { return "color-selector-linear-rgb"; }
 
 protected:
     friend class Inkscape::Colors::Color;

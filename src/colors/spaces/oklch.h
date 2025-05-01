@@ -18,12 +18,8 @@ namespace Inkscape::Colors::Space {
 class OkLch : public RGB
 {
 public:
-    OkLch() = default;
+    OkLch(): RGB(Type::OKLCH, 3, "OkLch", "OkLch", "color-selector-oklch") {}
     ~OkLch() override = default;
-
-    Type getType() const override { return Type::OKLCH; }
-    std::string const getName() const override { return "OkLch"; }
-    std::string const getIcon() const override { return "color-selector-oklch"; }
 
 protected:
     friend class Inkscape::Colors::Color;

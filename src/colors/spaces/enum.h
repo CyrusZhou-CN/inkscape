@@ -62,6 +62,7 @@ enum class Type
     LAB, // Lightness, Green-Magenta and Blue-Yellow, aka CIELAB
     HSLUV,
     OKHSL,
+    OKHSV,
     OKLCH,
     OKLAB,
     YCbCr,

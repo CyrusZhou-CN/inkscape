@@ -24,12 +24,8 @@ namespace Inkscape::Colors::Space {
 class HSLuv : public RGB
 {
 public:
-    HSLuv() = default;
+    HSLuv(): RGB(Type::HSLUV, 3, "HSLuv", "HSLuv", "color-selector-hsluv") {}
     ~HSLuv() override = default;
-
-    Type getType() const override { return Type::HSLUV; }
-    std::string const getName() const override { return "HSLuv"; }
-    std::string const getIcon() const override { return "color-selector-hsluv"; }
 
 protected:
     friend class Inkscape::Colors::Color;

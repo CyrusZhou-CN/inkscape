@@ -65,6 +65,7 @@ set(TEST_SOURCES
     colors/color-test
     colors/document-cms-test
     colors/dragndrop-test
+    colors/gamut-test
     colors/manager-test
     colors/parser-test
     colors/printer-test
@@ -81,6 +82,7 @@ set(TEST_SOURCES
     colors/spaces-luv-test
     colors/spaces-named-test
     colors/spaces-okhsl-test
+    colors/spaces-okhsv-test
     colors/spaces-oklab-test
     colors/spaces-oklch-test
     colors/spaces-rgb-test

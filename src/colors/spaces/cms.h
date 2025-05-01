@@ -23,13 +23,10 @@ namespace Inkscape::Colors::Space {
 class CMS : public AnySpace
 {
 public:
-    CMS(std::shared_ptr<Colors::CMS::Profile> profile);
+    CMS(std::shared_ptr<Colors::CMS::Profile> profile, std::string name = {});
     CMS(std::string profile_name, unsigned profile_size, Type profile_type = Type::NONE);
     ~CMS() override = default;
 
-    Type getType() const override { return _profile_type; }
-    std::string const getName() const override { return _profile_name; }
-    std::string const getIcon() const override { return "color-selector-cms"; }
     unsigned int getComponentCount() const override;
 
     std::shared_ptr<Colors::CMS::Profile> const getProfile() const override;
@@ -47,11 +44,9 @@ protected:
     std::string toString(std::vector<double> const &values, bool opacity = true) const override;
     uint32_t toRGBA(std::vector<double> const &values, double opacity = 1.0) const override;
 
-    void setName(std::string name) { _profile_name = std::move(name); }
     bool overInk(std::vector<double> const &input) const override;
 
 private:
-    std::string _profile_name;
     unsigned _profile_size;
     Type _profile_type;
     std::shared_ptr<Colors::CMS::Profile> _profile;

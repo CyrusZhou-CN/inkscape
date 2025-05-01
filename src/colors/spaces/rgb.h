@@ -18,16 +18,14 @@ namespace Inkscape::Colors::Space {
 class RGB : public AnySpace
 {
 public:
-    RGB() = default;
+    RGB(): AnySpace(Type::RGB, 3, "RGB", "RGB", "color-selector-rgb") {}
     ~RGB() override = default;
 
-    Type getType() const override { return Type::RGB; }
-    std::string const getName() const override { return "RGB"; }
-    std::string const getIcon() const override { return "color-selector-rgb"; }
-    unsigned int getComponentCount() const override { return 3; }
     std::shared_ptr<Colors::CMS::Profile> const getProfile() const override;
 
 protected:
+    RGB(Type type, int components, std::string name, std::string shortName, std::string icon, bool spaceIsUnbounded = false);
+
     friend class Inkscape::Colors::Color;
 
     std::string toString(std::vector<double> const &values, bool opacity = true) const override;

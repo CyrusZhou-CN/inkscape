@@ -18,12 +18,8 @@ namespace Inkscape::Colors::Space {
 class Lab : public RGB
 {
 public:
-    Lab() = default;
+    Lab(): RGB(Type::LAB, 3, "Lab", "Lab", "color-selector-lab", true) {}
     ~Lab() override = default;
-
-    Type getType() const override { return Type::LAB; }
-    std::string const getName() const override { return "Lab"; }
-    std::string const getIcon() const override { return "color-selector-lab"; }
 
 protected:
     friend class Inkscape::Colors::Color;

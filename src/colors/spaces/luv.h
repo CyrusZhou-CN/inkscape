@@ -22,12 +22,8 @@ constexpr double EPSILON = 0.00885645167903563082;
 class Luv : public RGB
 {
 public:
-    Luv() = default;
+    Luv(): RGB(Type::LUV, 3, "Luv", "Luv", "color-selector-luv") {}
     ~Luv() override = default;
-
-    Type getType() const override { return Type::LUV; }
-    std::string const getName() const override { return "Luv"; }
-    std::string const getIcon() const override { return "color-selector-luv"; }
 
 protected:
     friend class Inkscape::Colors::Color;

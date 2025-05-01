@@ -213,13 +213,11 @@ std::shared_ptr<Space::CMS> DocumentCMS::addProfileURI(std::string uri, std::str
 std::shared_ptr<Space::CMS> DocumentCMS::addProfile(std::shared_ptr<CMS::Profile> profile, std::string name,
                                                     RenderingIntent intent)
 {
-    auto space = std::make_shared<Space::CMS>(profile);
+    // The name from the color-profile xml element overrides any internal name
+    auto space = std::make_shared<Space::CMS>(profile, name);
 
-    if (!name.empty()) {
-        // The name from the color-profile xml element overrides any internal name
-        space->setName(std::move(name));
-    }
     name = space->getName();
+  printf("prof: '%s'\n",name.c_str());
     if (_spaces.contains(name))
         throw ColorError("Color profile with that name already exists.");
 

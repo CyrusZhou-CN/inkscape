@@ -29,6 +29,7 @@
 #include "spaces/luv.h"
 #include "spaces/named.h"
 #include "spaces/okhsl.h"
+#include "spaces/okhsv.h"
 #include "spaces/oklab.h"
 #include "spaces/oklch.h"
 #include "spaces/rgb.h"
@@ -54,6 +55,7 @@ Manager::Manager()
     addSpace(new Space::Lch());
     addSpace(new Space::Luv());
     addSpace(new Space::OkHsl());
+    addSpace(new Space::OkHsv());
     addSpace(new Space::OkLab());
     addSpace(new Space::OkLch());
     addSpace(new Space::XYZ());

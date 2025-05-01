@@ -18,12 +18,8 @@ namespace Inkscape::Colors::Space {
 class OkHsl : public RGB
 {
 public:
-    OkHsl() = default;
+    OkHsl(): RGB(Type::OKHSL, 3, "OkHsl", "OkHsl", "color-selector-okhsl", true) {}
     ~OkHsl() override = default;
-
-    Type getType() const override { return Type::OKHSL; }
-    std::string const getName() const override { return "OkHsl"; }
-    std::string const getIcon() const override { return "color-selector-okhsl"; }
 
 protected:
     friend class Inkscape::Colors::Color;

@@ -91,7 +91,8 @@ void OkLab::toLinearRGB(std::vector<double> &in_out)
         cones[i] = Geom::cube(dot3(M2_INVERSE[i], in_out));
     }
     for (unsigned i = 0; i < 3; i++) {
-        in_out[i] = std::clamp(dot3(CONE2LRGB[i], cones), 0.0, 1.0);
+        // input is unbounded, so don't clip it in linearRGB either, or else we loose information
+        in_out[i] = dot3(CONE2LRGB[i], cones);
     }
 }
 
