@@ -2379,20 +2379,24 @@ void CanvasPrivate::paint_rect(Geom::IntRect const &rect)
             });
         }
 
-        try {
-
-            paint_single_buffer(surface, rect, need_background, outline_pass);
-
-        } catch (std::bad_alloc const &) {
-            // Note: std::bad_alloc actually indicates a Cairo error that occurs regularly at high zoom, and we must handle it.
-            // See https://gitlab.com/inkscape/inkscape/-/issues/3975
+        auto on_error = [&, this] (char const *err) {
+            std::cerr << "paint_rect: " << err << std::endl;
             sync.runInMain([&] {
-                std::cerr << "Rendering failure. You probably need to zoom out!" << std::endl;
                 if (q->get_opengl_enabled()) q->make_current();
                 graphics->junk_tile_surface(std::move(surface));
                 surface = graphics->request_tile_surface(rect, false);
                 paint_error_buffer(surface);
             });
+        };
+
+        try {
+            paint_single_buffer(surface, rect, need_background, outline_pass);
+        } catch (std::bad_alloc const &e) {
+            // Note: std::bad_alloc actually indicates a Cairo error that occurs regularly at high zoom, and we must handle it.
+            // See https://gitlab.com/inkscape/inkscape/-/issues/3975
+            on_error(e.what());
+        } catch (Cairo::logic_error const &e) {
+            on_error(e.what());
         }
 
         return surface;

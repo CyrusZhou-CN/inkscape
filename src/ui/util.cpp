@@ -18,6 +18,7 @@
 #include <cairomm/pattern.h>
 #include <glibmm/i18n.h>
 #include <glibmm/regex.h>
+#include <glibmm/spawn.h>
 #include <gtkmm/adjustment.h>
 #include <gtkmm/cssprovider.h>
 #include <gtkmm/image.h>
@@ -136,6 +137,19 @@ void gui_warning(const std::string &msg, Gtk::Window *parent_window) {
         warning.set_transient_for(parent_window ? *parent_window : *INKSCAPE.active_desktop()->getInkscapeWindow());
         dialog_run(warning);
     }
+}
+
+void system_open(const Glib::ustring &path)
+{
+#ifdef _WIN32
+    ShellExecute(nullptr, "open", path.c_str(), nullptr, nullptr, SW_SHOWDEFAULT);
+#elif defined(__APPLE__)
+    Glib::spawn_async("", { "open", path.raw() }, Glib::SpawnFlags::SEARCH_PATH);
+#else
+    char * const uripath = g_filename_to_uri(path.c_str(), nullptr, nullptr);
+    Glib::spawn_async("", { "xdg-open", uripath }, Glib::SpawnFlags::SEARCH_PATH);
+    g_free(uripath);
+#endif
 }
 
 std::vector<Gtk::Widget *> get_children(Gtk::Widget &widget)

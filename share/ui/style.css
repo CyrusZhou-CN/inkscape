@@ -1460,6 +1460,13 @@ InkSpinButton {
     min-height: 22px;
 }
 
+/* Helper class to make icons in GtkEntry disappear */
+.no-icon image {
+    margin: 0;
+    padding: 0;
+    -gtk-icon-size: 0;
+}
+
 separator.faint {
     opacity: 0.5;
 }

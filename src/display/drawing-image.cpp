@@ -107,6 +107,7 @@ unsigned DrawingImage::_renderItem(DrawingContext &dc, RenderContext &rc, Geom::
 
     if (!outline) {
         if (!_pixbuf) return RENDER_OK;
+        if (_scale.vector().x() * _scale.vector().y() == 0.0) return RENDER_OK;
 
         Inkscape::DrawingContext::Save save(dc);
         dc.transform(_ctm);

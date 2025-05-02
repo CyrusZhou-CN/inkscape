@@ -2564,12 +2564,18 @@ void InkscapePreferences::initPageIO()
     // Autosave options
     _save_autosave_enable.init( _("Enable autosave"), "/options/autosave/enable", true);
     _page_autosave.add_line(false, "", _save_autosave_enable, "", _("Automatically save the current document(s) at a given interval, thus minimizing loss in case of a crash"), false);
-    _save_autosave_path.init("/options/autosave/path", true);
     if (prefs->getString("/options/autosave/path").empty()) {
-        // Show the default fallback "tmp dir" if autosave path is not set.
-        _save_autosave_path.set_text(Glib::build_filename(Glib::get_user_cache_dir(), "inkscape"));
+        // Set the default fallback "tmp dir" if autosave path is not set.
+        prefs->setString("/options/autosave/path", Glib::build_filename(Glib::get_user_cache_dir(), "inkscape"));
     }
-    _page_autosave.add_line(false, C_("Filesystem", "Autosave _directory:"), _save_autosave_path, "", _("The directory where autosaves will be written. This should be an absolute path (starts with / on UNIX or a drive letter such as C: on Windows)."), false);
+
+    _save_autosave_path_dir.init(prefs->getString("/options/autosave/path"), "/options/autosave/path",
+                                 Glib::build_filename(Glib::get_user_cache_dir(), "inkscape"));
+    _page_autosave.add_line(false, C_("Filesystem", "Autosave _directory:"), _save_autosave_path_dir, "",
+                            _("The directory where autosaves will be written. This should be an absolute path (starts "
+                              "with / on UNIX or a drive letter such as C: on Windows)."),
+                            true);
+
     _save_autosave_interval.init("/options/autosave/interval", 1.0, 10800.0, 1.0, 10.0, 10.0, true, false);
     _page_autosave.add_line(false, _("_Interval (in minutes):"), _save_autosave_interval, "", _("Interval (in minutes) at which document will be autosaved"), false);
     _save_autosave_max.init("/options/autosave/max", 1.0, 10000.0, 1.0, 10.0, 10.0, true, false);

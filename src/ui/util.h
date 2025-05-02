@@ -78,6 +78,8 @@ enum class ForEachResult {
     _skip      // do not recurse into current widget, go to the next one
 };
 
+/// Opens the given path with platform-specific tools.
+void system_open(const Glib::ustring &path);
 /// Get a vector of the widgetʼs children, from get_first_child() through each get_next_sibling().
 std::vector<Gtk::Widget *> get_children(Gtk::Widget &widget);
 /// Get the widgetʼs child at the given position. Throws std::out_of_range if the index is invalid.

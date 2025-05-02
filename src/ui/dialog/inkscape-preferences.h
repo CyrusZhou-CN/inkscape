@@ -511,7 +511,7 @@ protected:
     UI::Widget::PrefCheckButton _save_use_current_dir;
     UI::Widget::PrefCheckButton _save_autosave_enable;
     UI::Widget::PrefSpinButton  _save_autosave_interval;
-    UI::Widget::PrefEntry       _save_autosave_path;
+    UI::Widget::PrefEditFolder  _save_autosave_path_dir;
     UI::Widget::PrefSpinButton  _save_autosave_max;
 
     Gtk::ComboBoxText   _cms_display_profile;

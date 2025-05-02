@@ -19,6 +19,7 @@ set(ui_SRC
 	shortcuts.cpp
 	svg-renderer.cpp
 	syntax.cpp
+	query-file-info.cpp
 	themes.cpp
 	tool-factory.cpp
 	util.cpp
@@ -316,6 +317,7 @@ set(ui_SRC
 	shortcuts.h
 	svg-renderer.h
 	syntax.h
+	query-file-info.h
 	themes.h
 	tool-factory.h
 	util.h

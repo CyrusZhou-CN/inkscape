@@ -47,40 +47,55 @@ render_preview(SPDocument *doc, std::shared_ptr<Inkscape::Drawing> drawing, uint
     auto area = Geom::IntRect::from_xywh(ibox.min() - Geom::IntPoint(dx, dy), pdim);
 
     /* Actual renderable area */
-    Geom::IntRect ua = *Geom::intersect(ibox, area);
-    auto surface = Cairo::ImageSurface::create(Cairo::Surface::Format::ARGB32, ua.width(), ua.height());
+    auto const ua = Geom::intersect(ibox, area);
+    if (!ua) {
+        return {};
+    }
+    auto surface = Cairo::ImageSurface::create(Cairo::Surface::Format::ARGB32, ua->width(), ua->height());
 
-    {
-        auto cr = Cairo::Context::create(surface);
-        cr->rectangle(0, 0, ua.width(), ua.height());
+    auto on_error = [&] (char const *err) {
+        std::cerr << "render_preview: " << err << std::endl;
+        surface = Cairo::ImageSurface::create(Cairo::Surface::Format::ARGB32, ua->width(), ua->height());
+    };
 
-        // We always use checkerboard to indicate transparency.
-        if (SP_RGBA32_A_F(bg) < 1.0) {
-            auto pattern = ink_cairo_pattern_create_checkerboard(bg, false);
-            auto background = Cairo::RefPtr<Cairo::Pattern>(new Cairo::Pattern(pattern, true));
-            cr->set_source(background);
+    try {
+        {
+            auto cr = Cairo::Context::create(surface);
+            cr->rectangle(0, 0, ua->width(), ua->height());
+
+            // We always use checkerboard to indicate transparency.
+            if (SP_RGBA32_A_F(bg) < 1.0) {
+                auto pattern = ink_cairo_pattern_create_checkerboard(bg, false);
+                auto background = Cairo::RefPtr<Cairo::Pattern>(new Cairo::Pattern(pattern, true));
+                cr->set_source(background);
+                cr->fill();
+            }
+
+            // We always draw the background on top to indicate partial backgrounds.
+            cr->set_source_rgba(SP_RGBA32_R_F(bg), SP_RGBA32_G_F(bg), SP_RGBA32_B_F(bg), SP_RGBA32_A_F(bg));
             cr->fill();
         }
 
-        // We always draw the background on top to indicate partial backgrounds.
-        cr->set_source_rgba(SP_RGBA32_R_F(bg), SP_RGBA32_G_F(bg), SP_RGBA32_B_F(bg), SP_RGBA32_A_F(bg));
-        cr->fill();
+        // Resize the contents to the available space with a scale factor.
+        drawing->root()->setTransform(Geom::Scale(sf));
+        drawing->update();
+
+        auto dc = Inkscape::DrawingContext(surface->cobj(), ua->min());
+        if (item) {
+            // Render just one item
+            item->render(dc, *ua);
+        } else {
+            // Render drawing.
+            drawing->render(dc, *ua);
+        }
+
+        surface->flush();
+    } catch (std::bad_alloc const &e) {
+        on_error(e.what());
+    } catch (Cairo::logic_error const &e) {
+        on_error(e.what());
     }
 
-    // Resize the contents to the available space with a scale factor.
-    drawing->root()->setTransform(Geom::Scale(sf));
-    drawing->update();
-
-    auto dc = Inkscape::DrawingContext(surface->cobj(), ua.min());
-    if (item) {
-        // Render just one item
-        item->render(dc, ua);
-    } else {
-        // Render drawing.
-        drawing->render(dc, ua);
-    }
-
-    surface->flush();
     return surface;
 }
 

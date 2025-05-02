@@ -29,6 +29,7 @@
 #include <gtkmm/signallistitemfactory.h>
 #include <gtkmm/textview.h>
 
+#include "ui/query-file-info.h"
 #include "ui/widget/color-picker.h"
 #include "ui/widget/drop-down-list.h"
 #include "ui/widget/unit-menu.h"
@@ -281,6 +282,42 @@ private:
     Gtk::Button *relatedButton;
     Gtk::Entry *relatedEntry;
     void onRelatedButtonClickedCallback();
+};
+
+class PrefEditFolder : public Gtk::Box {
+public:
+    enum Fileis
+    {
+        DIRECTORY,
+        NONEXISTENT,
+        OTHER
+    };
+
+    PrefEditFolder() : Gtk::Box(Gtk::Orientation::HORIZONTAL) {}
+
+    void init(Glib::ustring const &entry_string, Glib::ustring const &prefs_path, Glib::ustring const &reset_string);
+
+private:
+    Glib::ustring _prefs_path;
+    Glib::ustring _reset_string;
+    Gtk::Box *relatedPathBox;
+    Gtk::Entry *relatedEntry;
+    Gtk::Button *selectButton;
+    Gtk::Button *openButton;
+    Gtk::Button *resetButton;
+    Gtk::Box *warningPopup;
+    Gtk::Label *warningPopupLabel;
+    Gtk::Button *warningPopupButton;
+    Gtk::Popover *popover;
+    std::unique_ptr<QueryFileInfo> _fileInfo;
+    void setFolderPath(Glib::RefPtr<Gio::File const> folder);
+    void checkPathValidity();
+    void checkPathValidityResults(Glib::RefPtr<Gio::FileInfo> info);
+    void onChangeButtonClickedCallback();
+    void onOpenButtonClickedCallback();
+    void onResetButtonClickedCallback();
+    void onRelatedEntryChangedCallback();
+    void onCreateButtonClickedCallback();
 };
 
 class PrefColorPicker : public ColorPicker

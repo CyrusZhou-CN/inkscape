@@ -22,7 +22,10 @@
 #include <glibmm/i18n.h>
 #include <glibmm/convert.h>
 #include <glibmm/regex.h>
+#include <giomm/file.h> // query_info_async
 #include <gtkmm/box.h>
+#include <gtkmm/popover.h>
+#include <gtkmm/filedialog.h> // select_folder
 #include <gtkmm/scale.h>
 #include <sigc++/functors/mem_fun.h>
 
@@ -30,6 +33,7 @@
 #include "inkscape.h"
 #include "inkscape-window.h"
 #include "message-stack.h"
+#include "preferences-widget.h"
 #include "preferences.h"
 #include "selcue.h"
 #include "selection-chemistry.h"
@@ -39,6 +43,7 @@
 #include "ui/dialog/choose-file-utils.h"
 #include "ui/icon-loader.h"
 #include "ui/pack.h"
+#include "ui/popup-menu.h"
 #include "ui/util.h"
 #include "ui/widget/preferences-widget.h"
 
@@ -846,19 +851,200 @@ void PrefOpenFolder::init(Glib::ustring const &entry_string, Glib::ustring const
 void PrefOpenFolder::onRelatedButtonClickedCallback()
 {
     g_mkdir_with_parents(relatedEntry->get_text().c_str(), 0700);
-    // https://stackoverflow.com/questions/42442189/how-to-open-spawn-a-file-with-glib-gtkmm-in-windows
-#ifdef _WIN32
-    ShellExecute(NULL, "open", relatedEntry->get_text().c_str(), NULL, NULL, SW_SHOWDEFAULT);
-#elif defined(__APPLE__)
-    std::vector<std::string> argv = { "open", relatedEntry->get_text().raw() };
-    Glib::spawn_async("", argv, Glib::SpawnFlags::SEARCH_PATH);
-#else
-    char * const path = g_filename_to_uri(relatedEntry->get_text().c_str(), NULL, NULL);
-    std::vector<std::string> argv = { "xdg-open", path };
-    Glib::spawn_async("", argv, Glib::SpawnFlags::SEARCH_PATH);
-    g_free(path);
-#endif
+    // helper function in ui/util.h to open folder path
+    system_open(relatedEntry->get_text());
 }
+
+void PrefEditFolder::init(Glib::ustring const &entry_string, Glib::ustring const &prefs_path, Glib::ustring const &reset_string)
+{
+    _prefs_path = prefs_path;
+    _reset_string = reset_string;
+
+    // warning popup
+    warningPopup = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 3);
+    warningPopupLabel = Gtk::make_managed<Gtk::Label>();
+    warningPopupButton = Gtk::make_managed<Gtk::Button>();
+    UI::pack_start(*warningPopup, *warningPopupLabel);
+    warningPopupButton->set_label(_("Create"));
+    warningPopupButton->set_visible(true);
+    UI::pack_end(*warningPopup, *warningPopupButton, false, false, 4);
+    popover = Gtk::make_managed<Gtk::Popover>();
+    popover->set_child(*warningPopup);
+    popover->set_parent(*this);
+    warningPopupButton->signal_clicked().connect(sigc::mem_fun(*this, &PrefEditFolder::onCreateButtonClickedCallback));
+
+    // reset button
+    resetButton = Gtk::make_managed<Gtk::Button>();
+    auto const resetim = sp_get_icon_image("reset-settings", Gtk::IconSize::NORMAL);
+    resetButton->set_child(*resetim);
+    resetButton->set_tooltip_text(_("Reset to default directory"));
+    resetButton->set_margin_start(4);
+    UI::pack_end(*this, *resetButton, false, false, 0);
+    resetButton->signal_clicked().connect(
+            sigc::mem_fun(*this, &PrefEditFolder::onResetButtonClickedCallback));
+
+    // open button
+    openButton = Gtk::make_managed<Gtk::Button>();
+    auto const openim = sp_get_icon_image("document-open", Gtk::IconSize::NORMAL);
+    openButton->set_child(*openim);
+    openButton->set_tooltip_text(_("Open directory"));
+    openButton->set_margin_start(4);
+    UI::pack_end(*this, *openButton, false, false, 0);
+    openButton->signal_clicked().connect(
+            sigc::mem_fun(*this, &PrefEditFolder::onOpenButtonClickedCallback));
+
+    // linked entry/select box
+    relatedPathBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 0);
+    relatedPathBox->set_css_classes({"linked"});
+
+    // select button
+    selectButton = Gtk::make_managed<Gtk::Button>();
+    auto const selectl = Gtk::make_managed<Gtk::Label>();
+    selectl->set_markup_with_mnemonic(_("..."));
+    selectButton->set_child(*selectl);
+    selectButton->set_tooltip_text(_("Select a new directory"));
+    UI::pack_end(*relatedPathBox, *selectButton, false, false, 0);
+    selectButton->signal_clicked().connect(
+            sigc::mem_fun(*this, &PrefEditFolder::onChangeButtonClickedCallback));
+
+    // entry string
+    relatedEntry = Gtk::make_managed<Gtk::Entry>();
+    relatedEntry->set_text(entry_string);
+    relatedEntry->set_width_chars(12);
+    relatedEntry->set_sensitive(true);
+    UI::pack_start(*relatedPathBox, *relatedEntry, true, true);
+    
+    // when warning icon clicked
+    relatedEntry->signal_icon_press().connect([&](Gtk::Entry::IconPosition) {
+            UI::popup_at(*popover, *relatedEntry, relatedEntry->get_icon_area(Gtk::Entry::IconPosition::SECONDARY));
+    });
+    relatedEntry->signal_changed().connect(
+            sigc::mem_fun(*this, &PrefEditFolder::onRelatedEntryChangedCallback));
+
+    UI::pack_start(*this, *relatedPathBox, true, true);
+
+    // check path at init
+    checkPathValidity();
+}
+
+void PrefEditFolder::onChangeButtonClickedCallback()
+{
+    // Get the current directory for finding files.
+    static std::string current_folder;
+    Inkscape::UI::Dialog::get_start_directory(current_folder, _prefs_path, true);
+
+    // Create a dialog.
+    auto dialog = Gtk::FileDialog::create();
+    dialog->set_initial_folder(Gio::File::create_for_path(current_folder));
+    dialog->select_folder(dynamic_cast<Gtk::Window &>(*get_root()), sigc::track_object([&dialog = *dialog, this] (auto &result) {
+        try {
+            if (auto folder = dialog.select_folder_finish(result)) {
+                // write folder path into prefs & update entry
+                setFolderPath(folder);
+                return;
+            }
+        } catch (Gtk::DialogError const& e) {
+            if (e.code() == Gtk::DialogError::Code::FAILED) {
+                std::cerr << "PrefEditFolder::onChangeButtonClickedCallback: "
+                          << "Gtk::FileDialog returned " << e.what() << std::endl;
+            }
+        }
+    }, *this), {});
+}
+
+void PrefEditFolder::setFolderPath(Glib::RefPtr<Gio::File const> folder)
+{
+    Glib::ustring folder_path = folder->get_parse_name();
+    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    prefs->setString(_prefs_path, folder_path);
+    relatedEntry->set_text(folder_path);
+}
+
+void PrefEditFolder::onOpenButtonClickedCallback()
+{
+    // helper function in ui/util.h to open folder path
+    system_open(relatedEntry->get_text());
+}
+
+void PrefEditFolder::onResetButtonClickedCallback()
+{
+    relatedEntry->set_text(_reset_string);
+}
+
+void PrefEditFolder::onRelatedEntryChangedCallback()
+{
+    checkPathValidity();
+    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    prefs->setString(_prefs_path, Glib::filename_to_utf8(relatedEntry->get_text()));
+}
+
+void PrefEditFolder::checkPathValidity()
+{
+    _fileInfo = std::make_unique<QueryFileInfo>(relatedEntry->get_text().raw(), [this](auto info) {
+        checkPathValidityResults(info);
+    });
+}
+
+void PrefEditFolder::checkPathValidityResults(Glib::RefPtr<Gio::FileInfo> fileInfo)
+{
+    PrefEditFolder::Fileis fileis = NONEXISTENT;
+    if (fileInfo) { // failsafe, is possible it returns nullptr
+        if (fileInfo->get_file_type() == Gio::FileType::DIRECTORY) {
+            fileis = PrefEditFolder::Fileis::DIRECTORY;
+        } else {
+            fileis = PrefEditFolder::Fileis::OTHER;
+        }
+    }
+
+    // test path validity
+    switch (fileis)
+    {
+        case PrefEditFolder::Fileis::DIRECTORY:
+            relatedEntry->unset_icon(Gtk::Entry::IconPosition::SECONDARY);
+            // helper class in the stylesheet to remove icons (hack)
+            relatedEntry->add_css_class("no-icon");
+            relatedEntry->set_icon_sensitive(Gtk::Entry::IconPosition::SECONDARY, false);
+            // invalidate the icon tooltip, making it inherit the Gtk::Entry one
+            relatedEntry->set_has_tooltip(false);
+            openButton->set_sensitive(true);
+            break;
+        case PrefEditFolder::Fileis::OTHER:
+            relatedEntry->set_icon_from_icon_name("dialog-warning", Gtk::Entry::IconPosition::SECONDARY);
+            relatedEntry->remove_css_class("no-icon");
+            relatedEntry->set_icon_tooltip_markup(_("This is a file. Please select a directory."), Gtk::Entry::IconPosition::SECONDARY);
+            relatedEntry->set_icon_sensitive(Gtk::Entry::IconPosition::SECONDARY, true);
+            warningPopupLabel->set_markup(relatedEntry->get_icon_tooltip_markup(Gtk::Entry::IconPosition::SECONDARY));
+            warningPopupButton->set_visible(false);
+            openButton->set_sensitive(false);
+            break;
+        case PrefEditFolder::Fileis::NONEXISTENT:
+            relatedEntry->set_icon_from_icon_name("dialog-warning", Gtk::Entry::IconPosition::SECONDARY);
+            relatedEntry->remove_css_class("no-icon");
+            relatedEntry->set_icon_sensitive(Gtk::Entry::IconPosition::SECONDARY, true);
+            relatedEntry->set_icon_tooltip_markup(_("This directory does not exist."), Gtk::Entry::IconPosition::SECONDARY);
+            warningPopupLabel->set_markup(relatedEntry->get_icon_tooltip_markup(Gtk::Entry::IconPosition::SECONDARY));
+            warningPopupButton->set_visible(true);
+            openButton->set_sensitive(false);
+            break;
+        default:
+            std::cerr << "PrefEditFolder::checkPathValidityResults: "
+                      << "Invalid fileis value!" << std::endl;
+            break;
+    }
+
+    // disable reset button if path is same as default path
+    (relatedEntry->get_text() == _reset_string)
+        ? resetButton->set_sensitive(false)
+        : resetButton->set_sensitive(true);
+}
+
+void PrefEditFolder::onCreateButtonClickedCallback()
+{
+    g_mkdir_with_parents(relatedEntry->get_text().c_str(), 0700);
+    popover->popdown();
+    checkPathValidity();
+}
+
 
 void PrefEntry::init(Glib::ustring const &prefs_path, bool visibility)
 {
