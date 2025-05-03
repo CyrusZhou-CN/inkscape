@@ -825,7 +825,12 @@ void MeshTool::new_default()
         Inkscape::Preferences *prefs = Inkscape::Preferences::get();
         Inkscape::PaintTarget fill_or_stroke_pref =
             static_cast<Inkscape::PaintTarget>(prefs->getInt("/tools/mesh/newfillorstroke"));
+        Inkscape::Preferences::Entry _show_handles_value = prefs->getEntry("/tools/mesh/show_handles");
 
+        // Ensure that the preference show_handles is enable by default 
+        if (!_show_handles_value.isSet()) {
+            prefs->setBool("/tools/mesh/show_handles", true);
+        }
         // Ensure mesh is immediately editable.
         // Editing both fill and stroke at same time doesn't work well so avoid.
         if (fill_or_stroke_pref == Inkscape::FOR_FILL) {

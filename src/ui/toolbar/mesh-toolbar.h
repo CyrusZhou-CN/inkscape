@@ -62,6 +62,7 @@ private:
 
     Gtk::ToggleButton *_edit_fill_btn;
     Gtk::ToggleButton *_edit_stroke_btn;
+    Gtk::ToggleButton *_show_handles_btn;
 
     UI::Widget::SpinButton &_row_item;
     UI::Widget::SpinButton &_col_item;

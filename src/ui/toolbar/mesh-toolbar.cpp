@@ -127,10 +127,9 @@ MeshToolbar::MeshToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
     , _col_item{get_derived_widget<UI::Widget::SpinButton>(builder, "_col_item")}
     , _edit_fill_btn{&get_widget<Gtk::ToggleButton>(builder, "_edit_fill_btn")}
     , _edit_stroke_btn{&get_widget<Gtk::ToggleButton>(builder, "_edit_stroke_btn")}
+    , _show_handles_btn{&get_widget<Gtk::ToggleButton>(builder, "show_handles_btn")}
 {
     auto prefs = Preferences::get();
-
-    auto show_handles_btn = &get_widget<Gtk::ToggleButton>(builder, "show_handles_btn");
 
     // Configure the types combo box.
     UI::Widget::ComboToolItemColumns columns;
@@ -214,14 +213,14 @@ MeshToolbar::MeshToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
     _edit_stroke_pusher.reset(new UI::SimplePrefPusher(_edit_stroke_btn, "/tools/mesh/edit_stroke"));
 
     // Show/hide side and tensor handles.
-    _show_handles_pusher.reset(new UI::SimplePrefPusher(show_handles_btn, "/tools/mesh/show_handles"));
+    _show_handles_pusher.reset(new UI::SimplePrefPusher(_show_handles_btn, "/tools/mesh/show_handles"));
 
     _initMenuBtns();
 
     // Signals.
     _edit_fill_btn->signal_toggled().connect(sigc::mem_fun(*this, &MeshToolbar::toggle_fill_stroke));
     _edit_stroke_btn->signal_toggled().connect(sigc::mem_fun(*this, &MeshToolbar::toggle_fill_stroke));
-    show_handles_btn->signal_toggled().connect(sigc::mem_fun(*this, &MeshToolbar::toggle_handles));
+    _show_handles_btn->signal_toggled().connect(sigc::mem_fun(*this, &MeshToolbar::toggle_handles));
     get_widget<Gtk::Button>(builder, "toggle_sides_btn")
         .signal_clicked()
         .connect(sigc::mem_fun(*this, &MeshToolbar::toggle_sides));
@@ -332,6 +331,9 @@ void MeshToolbar::toggle_fill_stroke()
 
 void MeshToolbar::toggle_handles()
 {
+    auto prefs = Preferences::get();
+    prefs->setBool("/tools/mesh/show_handles", _show_handles_btn->get_active());
+
     if (auto mt = get_mesh_tool()) {
         mt->get_drag()->refreshDraggers();
     }
