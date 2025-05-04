@@ -289,10 +289,9 @@ bool SPMaskReference::_acceptObject(SPObject *obj) const
         obj_name = obj_repr->name();
         obj_id = obj_repr->attribute("id");
     }
-    std::printf("WARNING: Ignoring recursive mask reference "
-               "<%s mask=\"%s\"> in <%s id=\"%s\">",
-               owner_name, owner_mask,
-               obj_name, obj_id);
+    std::cerr << "WARNING: Ignoring recursive mask reference "
+        << "<" << (owner_name ? owner_name : "(null)") << " mask=\"" <<  (owner_mask ? owner_mask : "(null)") << "\">"
+        << " in <" << (obj_name ? obj_name : "(null)") << " id=\"" << (obj_id ? obj_id : "(null)") << "\">" << std::endl;
 
     return false;
 }

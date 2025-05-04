@@ -308,10 +308,9 @@ bool SPClipPathReference::_acceptObject(SPObject *obj) const
         obj_name = obj_repr->name();
         obj_id = obj_repr->attribute("id");
     }
-    std::printf("WARNING: Ignoring recursive clippath reference "
-                "<%s clippath=\"%s\"> in <%s id=\"%s\">",
-                owner_name, owner_clippath,
-                obj_name, obj_id);
+    std::cerr << "WARNING: Ignoring recursive clippath reference "
+        << "<" << (owner_name ? owner_name : "(null)") << " clippath=\"" <<  (owner_clippath ? owner_clippath : "(null)") << "\">"
+        << " in <" << (obj_name ? obj_name : "(null)") << " id=\"" << (obj_id ? obj_id : "(null)") << "\">" << std::endl;
 
     return false;
 }

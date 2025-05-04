@@ -1235,7 +1235,7 @@ take_style_from_item(SPObject *object)
     // This function should only take SPItems, but currently SPString is not an Item.
 
     // write the complete cascaded style, context-free
-    SPCSSAttr *css = sp_css_attr_from_object(object, SP_STYLE_FLAG_ALWAYS);
+    SPCSSAttr *css = sp_css_attr_from_object(object, SP_STYLE_FLAG_IFSET);
     if (!css) {
         return nullptr;
     }
