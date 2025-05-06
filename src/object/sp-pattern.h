@@ -69,6 +69,9 @@ public:
     double y() const;
     double width() const;
     double height() const;
+    Geom::Rect getBox() const {
+        return Geom::Rect::from_xywh(x(), y(), width(), height());
+    }
     Geom::OptRect viewbox() const;
     SPPattern::PatternUnits patternUnits() const;
     SPPattern::PatternUnits patternContentUnits() const;
@@ -88,6 +91,7 @@ public:
                                SPDocument *document, Geom::Affine const &transform, Geom::Affine const &move);
 
     bool isValid() const override;
+    bool hasItemChildren() const;
 
 protected:
     void build(SPDocument *doc, Inkscape::XML::Node *repr) override;
@@ -105,7 +109,6 @@ protected:
     void setBBox(unsigned key, Geom::OptRect const &bbox) override;
 
 private:
-    bool _hasItemChildren() const;
 
     SPPattern *_chain() const;
 

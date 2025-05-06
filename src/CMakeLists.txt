@@ -408,6 +408,9 @@ if(NOT GTKMM4_FOUND)
     SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--disable-new-dtags")
 endif()
 
+if(WITH_CAPYPDF)
+    add_dependencies(inkscape_base capypdf)
+endif()
 
 # added so that locally installed inkscape can find lib2geom if it's not installed systemwide
 if(NOT APPLE)

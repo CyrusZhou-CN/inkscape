@@ -52,6 +52,7 @@ public:
 
   SPItemCtx get_rctx( const SPItemCtx* ictx, double scale_none = 1.0);
 
+  Geom::OptRect get_paintbox(double width, double height, Geom::OptRect const &size) const;
 };
 
 #endif

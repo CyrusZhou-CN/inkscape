@@ -113,32 +113,36 @@ void Layout::FontMetrics::computeEffective( const double &line_height_multiplier
     descent += half_leading;
 }
 
-void Layout::_getGlyphTransformMatrix(int glyph_index, Geom::Affine *matrix) const
+// TODO: Refactor this so it can work without passing layout around
+Geom::Affine Layout::Glyph::transform(Layout const &layout) const
 {
-    Span const &span = _glyphs[glyph_index].span(this);
-    double rotation = _glyphs[glyph_index].rotation;
-    if ( (span.block_progression == LEFT_TO_RIGHT || span.block_progression == RIGHT_TO_LEFT) &&
-        _glyphs[glyph_index].orientation == ORIENTATION_SIDEWAYS ) {
+    Geom::Affine matrix;
+
+    auto const &glyph_span = span(&layout);
+    double r = rotation;
+    if ( (glyph_span.block_progression == LEFT_TO_RIGHT || glyph_span.block_progression == RIGHT_TO_LEFT) &&
+        orientation == ORIENTATION_SIDEWAYS ) {
         // Vertical sideways text
-        rotation += M_PI/2.0;
+        r += M_PI/2.0;
     }
-    double sin_rotation = sin(rotation);
-    double cos_rotation = cos(rotation);
-    (*matrix)[0] = span.font_size * cos_rotation;
-    (*matrix)[1] = span.font_size * sin_rotation;
-    (*matrix)[2] = span.font_size * sin_rotation;
-    (*matrix)[3] = -span.font_size * cos_rotation * (_glyphs[glyph_index].vertical_scale); // unscale vertically so the specified text height is preserved if lengthAdjust=spacingAndGlyphs
-    if (span.block_progression == LEFT_TO_RIGHT || span.block_progression == RIGHT_TO_LEFT) {
+    double sin_rotation = sin(r);
+    double cos_rotation = cos(r);
+    matrix[0] = glyph_span.font_size * cos_rotation;
+    matrix[1] = glyph_span.font_size * sin_rotation;
+    matrix[2] = glyph_span.font_size * sin_rotation;
+    matrix[3] = -glyph_span.font_size * cos_rotation * vertical_scale; // unscale vertically so the specified text height is preserved if lengthAdjust=spacingAndGlyphs
+    if (glyph_span.block_progression == LEFT_TO_RIGHT || glyph_span.block_progression == RIGHT_TO_LEFT) {
         // Vertical text
         // This effectively swaps x for y which changes handedness of coordinate system. This is a bit strange
         // and not what one would expect but the compute code already reverses y so OK.
-        (*matrix)[4] = _lines[_chunks[span.in_chunk].in_line].baseline_y + _glyphs[glyph_index].y;
-        (*matrix)[5] = _chunks[span.in_chunk].left_x + _glyphs[glyph_index].x;
+        matrix[4] = line(&layout).baseline_y + y;
+        matrix[5] = chunk(&layout).left_x + x;
     } else {
         // Horizontal text
-        (*matrix)[4] = _chunks[span.in_chunk].left_x + _glyphs[glyph_index].x;
-        (*matrix)[5] = _lines[_chunks[span.in_chunk].in_line].baseline_y + _glyphs[glyph_index].y;
+        matrix[4] = chunk(&layout).left_x + x;
+        matrix[5] = line(&layout).baseline_y + y;
     }
+    return matrix;
 }
 
 void Layout::show(DrawingGroup *parent, StyleAttachments &style_attachments, Geom::OptRect const &paintbox) const
@@ -203,8 +207,7 @@ void Layout::show(DrawingGroup *parent, StyleAttachments &style_attachments, Geo
         bool first_line_glyph = true;
         while (glyph_index < _glyphs.size() && _characters[_glyphs[glyph_index].in_character].in_span == i) {
             if (_characters[_glyphs[glyph_index].in_character].in_glyph != -1) {
-                Geom::Affine glyph_matrix;
-                _getGlyphTransformMatrix(glyph_index, &glyph_matrix);
+                Geom::Affine glyph_matrix = _glyphs[glyph_index].transform(*this);
                 if (first_line_glyph && style->text_decoration_data.tspan_line_start) {
                     first_line_glyph = false;
                     phase0 =  glyph_matrix.translation().x();
@@ -244,8 +247,7 @@ Geom::OptRect Layout::bounds(Geom::Affine const &transform, bool with_stroke, in
             if ((int) _glyphs[glyph_index].in_character > start + length) continue;
         }
         // this could be faster
-        Geom::Affine glyph_matrix;
-        _getGlyphTransformMatrix(glyph_index, &glyph_matrix);
+        Geom::Affine glyph_matrix = _glyphs[glyph_index].transform(*this);
         Geom::Affine total_transform = glyph_matrix;
         total_transform *= transform;
         if(_glyphs[glyph_index].span(this).font) {
@@ -290,7 +292,7 @@ Geom::Affine glyph_matrix;
             Geom::PathVector const *pv = span.font->PathVector(_glyphs[glyph_index].glyph);
             InputStreamTextSource const *text_source = static_cast<InputStreamTextSource const *>(_input_stream[span.in_input_stream_item]);
             if (pv) {
-                _getGlyphTransformMatrix(glyph_index, &glyph_matrix);
+                glyph_matrix = _glyphs[glyph_index].transform(*this);
                 Geom::PathVector temp_pv = (*pv) * glyph_matrix;
                 if (!text_source->style->fill.isNone())
                     ctx->fill(temp_pv, ctm, text_source->style, pbox, dbox, bbox);
@@ -465,9 +467,7 @@ void Layout::showGlyphs(CairoRenderContext *ctx) const
             Span const &span = _spans[_characters[_glyphs[glyph_index].in_character].in_span];
             InputStreamTextSource const *text_source = static_cast<InputStreamTextSource const *>(_input_stream[span.in_input_stream_item]);
 
-            Geom::Affine glyph_matrix;
-            _getGlyphTransformMatrix(glyph_index, &glyph_matrix);
-
+            Geom::Affine glyph_matrix = _glyphs[glyph_index].transform(*this);
             Geom::Affine font_matrix = glyph_matrix;
             font_matrix[4] = 0;
             font_matrix[5] = 0;
@@ -492,7 +492,7 @@ void Layout::showGlyphs(CairoRenderContext *ctx) const
                 unsigned same_character = _glyphs[glyph_index].in_character;
                 while (glyph_index < _glyphs.size() && _glyphs[glyph_index].in_character == same_character) {
                     if (glyph_index != first_index)
-                        _getGlyphTransformMatrix(glyph_index, &glyph_matrix);
+                        glyph_matrix = _glyphs[glyph_index].transform(*this);
 
                     CairoGlyphInfo info;
                     info.index = _glyphs[glyph_index].glyph;
@@ -829,10 +829,8 @@ SPCurve Layout::convertToCurves(iterator const &from_glyph, iterator const &to_g
     SPCurve curve;
 
     for (int glyph_index = from_glyph._glyph_index ; glyph_index < to_glyph._glyph_index ; glyph_index++) {
-        Geom::Affine glyph_matrix;
         Span const &span = _glyphs[glyph_index].span(this);
-        _getGlyphTransformMatrix(glyph_index, &glyph_matrix);
-
+        Geom::Affine glyph_matrix = _glyphs[glyph_index].transform(*this);
         Geom::PathVector const *pathv = span.font->PathVector(_glyphs[glyph_index].glyph);
         if (pathv) {
             Geom::PathVector pathv_trans = (*pathv) * glyph_matrix;

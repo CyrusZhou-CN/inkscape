@@ -397,10 +397,6 @@ void sp_validate_marker(SPMarker *sp_marker, SPDocument *doc) {
     }
 }
 
-Geom::OptRect SPMarker::bbox(Geom::Affine const &/*transform*/, SPItem::BBoxType /*type*/) const {
-	return Geom::OptRect();
-}
-
 void SPMarker::print(SPPrintContext* /*ctx*/) {
 }
 

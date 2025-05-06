@@ -36,7 +36,7 @@ ModifierIdToTypeMap const &modifier_type_from_id()
         {"select-in-groups", Type::SELECT_IN_GROUPS},
         {"select-touch-path", Type::SELECT_TOUCH_PATH},
         {"select-always-box", Type::SELECT_ALWAYS_BOX},
-        {"select-first-hit", Type::SELECT_FIRST_HIT},
+        {"select-remove-from", Type::SELECT_REMOVE_FROM},
         {"select-force-drag", Type::SELECT_FORCE_DRAG},
         {"select-cycle", Type::SELECT_CYCLE},
         {"move-confine", Type::MOVE_CONFINE},
@@ -94,7 +94,7 @@ Modifier::Container &Modifier::_modifiers()
         make_modifier("select-in-groups", _("Select inside groups"), _("Ignore groups when selecting items"), CTRL, SELECT, CLICK),
         make_modifier("select-touch-path", _("Select with touch-path"), _("Draw a band around items to select them"), ALT, SELECT, DRAG),
         make_modifier("select-always-box", _("Select with box"), _("Don't drag items, select more with a box"), SHIFT, SELECT, DRAG),
-        make_modifier("select-first-hit", _("Select the first"), _("Drag the first item the mouse hits"), CTRL, SELECT, DRAG),
+        make_modifier("select-remove-from", _("Remove from selection"), _("Remove items from existing selection"), SHIFT | CTRL, SELECT, DRAG),
         make_modifier("select-force-drag", _("Forced Drag"), _("Drag objects even if the mouse isn't over them"), ALT, SELECT, DRAG),
         make_modifier("select-cycle", _("Cycle through objects"), _("Scroll through objects under the cursor"), ALT, SELECT, SCROLL),
 

@@ -123,7 +123,8 @@ public:
     /** Linear and Radial Gradients */
 
     /** Composed vector */
-    SPGradientVector vector;
+    mutable SPGradientVector vector;
+    SPGradientVector const &getGradientVector() const;
 
     sigc::connection modified_connection;
 
@@ -185,7 +186,7 @@ public:
      */
     void setSpread(SPGradientSpread spread);
 
-    SPGradientSpread fetchSpread();
+    SPGradientSpread fetchSpread() const;
     SPGradientUnits fetchUnits();
 
     void setSwatch(bool swatch = true);
@@ -211,10 +212,12 @@ public:
     void set_gs2d_matrix(Geom::Affine const &ctm, Geom::Rect const &bbox,
                          Geom::Affine const &gs2d);
 
+    Geom::OptRect getAllItemsBox() const;
+
 private:
     bool invalidateVector();
     bool invalidateArray();
-    void rebuildVector();
+    void rebuildVector() const;
     void rebuildArray();
 
 protected:

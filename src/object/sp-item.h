@@ -147,6 +147,7 @@ public:
 
     std::optional<Geom::PathVector> getClipPathVector() const;
     std::optional<Geom::PathVector> getClipPathVector(SPItem const *root) const;
+    SPText const *getClipTextObject() const;
 
     SPAvoidRef &getAvoidRef();
     std::vector<std::pair <Glib::ustring, Glib::ustring> > rootsatellites;

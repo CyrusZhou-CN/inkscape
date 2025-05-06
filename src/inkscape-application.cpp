@@ -696,6 +696,7 @@ InkscapeApplication::InkscapeApplication()
     gapp->add_main_option_entry(T::OptionType::STRING,   "export-png-compression", '\0', N_("Compression level for PNG export (0 to 9); default is 6"), N_("LEVEL"));
     // FIXME: Antialias should really be an INT, but an upstream bug means 0 is detected as NULL
     gapp->add_main_option_entry(T::OptionType::STRING,   "export-png-antialias",   '\0', N_("Antialias level for PNG export (0 to 3); default is 2"),   N_("LEVEL"));
+    gapp->add_main_option_entry(T::OptionType::BOOL,     "export-make-paths",      '\0', N_("Attempt to make the export directory if it doesn't exist."), ""); // Bxx
 
     // Query - Geometry
     _start_main_option_section(_("Query object/document geometry"));
@@ -1486,6 +1487,7 @@ InkscapeApplication::on_handle_local_options(const Glib::RefPtr<Glib::VariantDic
         options->contains("export-png-use-dithering") ||
         options->contains("export-png-compression") ||
         options->contains("export-png-antialias") ||
+        options->contains("export-make-paths")     ||
 
         options->contains("query-id")              ||
         options->contains("query-x")               ||
@@ -1710,6 +1712,7 @@ InkscapeApplication::on_handle_local_options(const Glib::RefPtr<Glib::VariantDic
 
     if (options->contains("export-latex"))        _file_export.export_latex       = true;
     if (options->contains("export-use-hints"))    _file_export.export_use_hints   = true;
+    if (options->contains("export-make-paths"))   _file_export.make_paths = true;
 
     if (options->contains("export-background")) {
         options->lookup_value("export-background",_file_export.export_background);

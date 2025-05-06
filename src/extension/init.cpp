@@ -41,6 +41,9 @@
 #ifdef WITH_POPPLER
 #include "internal/pdfinput/pdf-input.h"
 #endif
+#ifdef WITH_CAPYPDF
+#include "internal/pdfoutput/pdf-output.h"
+#endif
 #include <cairo.h>
 #ifdef CAIRO_HAS_PDF_SURFACE
 # include "internal/cairo-renderer-pdf-out.h"
@@ -166,6 +169,9 @@ init()
     Internal::TemplateSocial::init();
     Internal::TemplateOther::init();
 
+#ifdef WITH_CAPYPDF
+    Internal::PdfOutput::init();
+#endif
 #ifdef CAIRO_HAS_PDF_SURFACE
     Internal::CairoRendererPdfOutput::init();
 #endif

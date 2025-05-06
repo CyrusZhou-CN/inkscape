@@ -1961,6 +1961,20 @@ unsigned SPIPaintOrder::get_order(SPPaintOrderLayer paint_order) const
     return paint_order - 1;
 }
 
+/**
+ * Get the actual layer order, converting "normal" to layers
+ */
+std::array<SPPaintOrderLayer, PAINT_ORDER_LAYERS> SPIPaintOrder::get_layers() const
+{
+    std::array<SPPaintOrderLayer, PAINT_ORDER_LAYERS> ret = {SP_CSS_PAINT_ORDER_FILL, SP_CSS_PAINT_ORDER_STROKE, SP_CSS_PAINT_ORDER_MARKER};
+    for (unsigned i = 0; i < 3; i++) {
+        if (layer[i] != SP_CSS_PAINT_ORDER_NORMAL) {
+            ret[i] = layer[i];
+        }
+    }
+    return ret;
+}
+
 const Glib::ustring SPIPaintOrder::get_value() const
 {
     if (this->inherit) return Glib::ustring("inherit");

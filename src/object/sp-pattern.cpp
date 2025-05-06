@@ -666,15 +666,10 @@ Geom::OptRect SPPattern::viewbox() const
     return viewbox;
 }
 
-bool SPPattern::_hasItemChildren() const
+bool SPPattern::hasItemChildren() const
 {
-    for (auto &child : children) {
-        if (is<SPItem>(&child)) {
-            return true;
-        }
-    }
-
-    return false;
+    return std::any_of(children.begin(), children.end(),
+                       [](SPObject const &child) -> bool { return is<SPItem>(&child); });
 }
 
 bool SPPattern::isValid() const

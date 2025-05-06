@@ -242,3 +242,9 @@ function(filter_and_install_translated_content file_list destination)
 
     set(${file_list} ${remaining_files} PARENT_SCOPE)
 endfunction(filter_and_install_translated_content)
+
+# Tells CMake to regenerate itself if one of these files change
+# as if the CMakeList files had been edited. Useful for test suites.
+function(watch)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${ARGV})
+endfunction()

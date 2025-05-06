@@ -16,6 +16,7 @@
 
 #include "sp-gradient.h"
 #include "svg/svg-length.h"
+#include <2geom/line.h>
 
 /** Linear gradient. */
 class SPLinearGradient final
@@ -32,6 +33,10 @@ public:
     SVGLength y2;
 
     std::unique_ptr<Inkscape::DrawingPaintServer> create_drawing_paintserver() override;
+
+    Geom::Line getLine() const {
+        return Geom::Line({x1.computed, y1.computed}, {x2.computed, y2.computed});
+    }
 
 protected:
     void build(SPDocument *document, Inkscape::XML::Node *repr) override;

@@ -491,8 +491,6 @@ SPStyle::~SPStyle() {
     // std::cout << "SPStyle::~SPStyle(): Exit\n" << std::endl;
 }
 
-const std::vector<SPIBase *> SPStyle::properties() { return this->_properties; }
-
 void
 SPStyle::clear(SPAttr id) {
     SPIBase *p = _prop_helper.get(this, id);

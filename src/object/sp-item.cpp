@@ -113,9 +113,22 @@ std::optional<Geom::PathVector> SPItem::getClipPathVector() const
 {
     if (auto clip = getClipObject()) {
         return clip->getPathVector(Geom::identity());
-    } else {
-        return {};
     }
+    return {};
+}
+
+/**
+ * Return the text object, IF and only if this item is clipped
+ * by a single SPText object.
+ *
+ * @return The text object, or nulptr if no clip or not a text clip.
+ */
+SPText const *SPItem::getClipTextObject() const
+{
+    if (auto clip = getClipObject()) {
+        return clip->getTextObject();
+    }
+    return nullptr;
 }
 
 /**

@@ -29,7 +29,7 @@
 
 #define SP_IMAGE_HREF_MODIFIED_FLAG SP_OBJECT_USER_MODIFIED_FLAG_A
 
-namespace Inkscape { class Pixbuf; }
+namespace Inkscape { class Pixbuf; class URI; }
 class SPImage final : public SPItem, public SPViewBox, public SPDimensions {
 public:
     SPImage();
@@ -72,6 +72,8 @@ public:
     void refresh_if_outdated();
     bool cropToArea(Geom::Rect area);
     bool cropToArea(const Geom::IntRect &area);
+
+    Inkscape::URI getURI() const;
 private:
     static Inkscape::Pixbuf *readImage(gchar const *href, gchar const *absref, gchar const *base, double svgdpi = 0);
     static Inkscape::Pixbuf *getBrokenImage(double width, double height);

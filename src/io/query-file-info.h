@@ -23,6 +23,7 @@ public:
     ~QueryFileInfo();
 private:
     void results(Glib::RefPtr<Gio::AsyncResult>& result) const;
+    static void results_callback(QueryFileInfo* self, Glib::RefPtr<Gio::AsyncResult>& result);
 
     std::function<void (Glib::RefPtr<Gio::FileInfo>)> _on_result;
     Glib::RefPtr<Gio::File> _file;

@@ -224,14 +224,13 @@ bool SelectTool::item_handler(SPItem *local_item, CanvasEvent const &event)
 
                 // remember what modifiers were on before button press
                 button_press_state = event.modifiers;
-                bool first_hit = Modifier::get(Modifiers::Type::SELECT_FIRST_HIT)->active(button_press_state);
                 bool force_drag = Modifier::get(Modifiers::Type::SELECT_FORCE_DRAG)->active(button_press_state);
                 bool always_box = Modifier::get(Modifiers::Type::SELECT_ALWAYS_BOX)->active(button_press_state);
                 bool touch_path = Modifier::get(Modifiers::Type::SELECT_TOUCH_PATH)->active(button_press_state);
 
                 // if shift or ctrl was pressed, do not move objects;
                 // pass the event to root handler which will perform rubberband, shift-click, ctrl-click, ctrl-drag
-                if (!(always_box || first_hit || touch_path)) {
+                if (!(always_box || touch_path)) {
 
                     dragging = true;
                     moved = false;
@@ -484,7 +483,6 @@ bool SelectTool::root_handler(CanvasEvent const &event)
 
             tolerance = prefs->getIntLimited("/options/dragtolerance/value", 0, 0, 100);
 
-            bool first_hit = Modifier::get(Modifiers::Type::SELECT_FIRST_HIT)->active(button_press_state);
             bool force_drag = Modifier::get(Modifiers::Type::SELECT_FORCE_DRAG)->active(button_press_state);
             bool always_box = Modifier::get(Modifiers::Type::SELECT_ALWAYS_BOX)->active(button_press_state);
 
@@ -495,8 +493,8 @@ bool SelectTool::root_handler(CanvasEvent const &event)
 
                 Geom::Point const p(_desktop->w2d(event.pos));
 
-                if (first_hit || (force_drag && !always_box && !selection->isEmpty())) {
-                    // if it's not click and ctrl or alt was pressed (the latter with some selection
+                if (force_drag && !always_box && !selection->isEmpty()) {
+                    // if it's not click and alt was pressed (with some selection
                     // but not with shift) we want to drag rather than rubberband
                     dragging = true;
                     set_cursor("select-dragging.svg");
@@ -571,16 +569,17 @@ bool SelectTool::root_handler(CanvasEvent const &event)
                         Inkscape::Rubberband::get(_desktop)->move(p);
 
                         auto touch_path = Modifier::get(Modifiers::Type::SELECT_TOUCH_PATH)->get_label();
+                        auto remove_from = Modifier::get(Modifiers::Type::SELECT_REMOVE_FROM)->get_label();
                         auto mode = Inkscape::Rubberband::get(_desktop)->getMode();
                         if (mode == Rubberband::Mode::TOUCHPATH) {
                             defaultMessageContext()->setF(Inkscape::NORMAL_MESSAGE,
-                                _("<b>Draw over</b> objects to select them; release <b>%s</b> to switch to rubberband selection"), touch_path.c_str());
+                                _("<b>Draw over</b> objects to select them; press <b>%s</b> to deselect them; release <b>%s</b> to switch to rubberband selection"), remove_from.c_str(), touch_path.c_str());
                         } else if (mode == Rubberband::Mode::TOUCHRECT) {
                             defaultMessageContext()->setF(Inkscape::NORMAL_MESSAGE,
-                                _("<b>Drag near</b> objects to select them; press <b>%s</b> to switch to touch selection"), touch_path.c_str());
+                                _("<b>Drag near</b> objects to select them; press <b>%s</b> to deselect them; press <b>%s</b> to switch to touch selection"), remove_from.c_str(), touch_path.c_str());
                         } else {
                             defaultMessageContext()->setF(Inkscape::NORMAL_MESSAGE,
-                                _("<b>Drag around</b> objects to select them; press <b>%s</b> to switch to touch selection"), touch_path.c_str());
+                                _("<b>Drag around</b> objects to select them; press <b>%s</b> to deselect them; press <b>%s</b> to switch to touch selection"), remove_from.c_str(), touch_path.c_str());
                         }
 
                         gobble_motion_events(GDK_BUTTON1_MASK);
@@ -646,6 +645,7 @@ bool SelectTool::root_handler(CanvasEvent const &event)
 
                     if (r->isStarted() && !within_tolerance) {
                         // this was a rubberband drag
+                        set_cursor(_default_cursor);
                         std::vector<SPItem*> items;
 
                         if (r->getMode() == Rubberband::Mode::RECT) {
@@ -663,12 +663,15 @@ bool SelectTool::root_handler(CanvasEvent const &event)
                         r->stop();
                         defaultMessageContext()->clear();
 
-                        if(Modifier::get(Modifiers::Type::SELECT_ADD_TO)->active(event.modifiers)) {
+                        if (Modifier::get(Modifiers::Type::SELECT_REMOVE_FROM)->active(event.modifiers)) {
+                            // with ctrl and shift, remove from selection
+                            selection->removeList(items);
+                        } else if (Modifier::get(Modifiers::Type::SELECT_ADD_TO)->active(event.modifiers)) {
                             // with shift, add to selection
-                            selection->addList (items);
+                            selection->addList(items);
                         } else {
                             // without shift, simply select anew
-                            selection->setList (items);
+                            selection->setList(items);
                         }
 
                     } else { // it was just a click, or a too small rubberband

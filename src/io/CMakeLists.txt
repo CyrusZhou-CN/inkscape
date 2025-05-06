@@ -8,6 +8,7 @@ set(io_SRC
   resource.cpp
   sandbox.cpp
   fix-broken-links.cpp
+  query-file-info.cpp
   stream/bufferstream.cpp
   stream/gzipstream.cpp
   stream/inkscapestream.cpp
@@ -25,6 +26,7 @@ set(io_SRC
   resource.h
   sandbox.h
   fix-broken-links.h
+  query-file-info.h
   stream/bufferstream.h
   stream/gzipstream.h
   stream/inkscapestream.h

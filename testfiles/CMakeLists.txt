@@ -134,6 +134,12 @@ set(TEST_SOURCES
     ${LPE_TESTS_64bit}
     )
 
+if(WITH_CAPYPDF)
+    list(APPEND TEST_SOURCES
+        extensions-pdfoutput-test
+    )
+endif()
+
 add_library(cpp_test_static_library SHARED inkscape-test.cpp doc-per-case-test.cpp compare-paths-test.h lpespaths-test.h store-integrity-test.h test-with-svg-object-pairs.cpp)
 target_link_libraries(cpp_test_static_library PUBLIC ${GTEST_LIBRARIES} inkscape_base)
 

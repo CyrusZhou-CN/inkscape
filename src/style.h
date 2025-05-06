@@ -46,7 +46,7 @@ class SPStyle
 public:
     SPStyle(SPDocument *document = nullptr, SPObject *object = nullptr); // document is ignored if valid object given
     ~SPStyle();
-    const std::vector<SPIBase *> properties();
+    std::vector<SPIBase *> const &properties() const { return _properties; }
     void clear();
     void clear(SPAttr id);
     void read(SPObject *object, Inkscape::XML::Node *repr);

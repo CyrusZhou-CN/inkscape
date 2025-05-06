@@ -449,6 +449,14 @@ const char* SPImage::displayName() const {
     return _("Image");
 }
 
+/**
+ * Return this image's href as a URI object.
+ */
+Inkscape::URI SPImage::getURI() const
+{
+    return Inkscape::URI::from_href_and_basedir(href, document->getDocumentBase());
+}
+
 gchar* SPImage::description() const {
     char *href_desc;
 

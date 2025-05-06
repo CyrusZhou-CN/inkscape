@@ -60,7 +60,7 @@ function(add_cli_test_run fixture testname)
     if(DEFINED ARG_OUTPUT_FILENAME)
         # for actions: if an export-do is present do not append export-filename option to prevent
         if(NOT ARG_PARAMETERS MATCHES "export-do")
-            set(ARG_PARAMETERS ${ARG_PARAMETERS} "--export-filename=${ARG_OUTPUT_FILENAME}")
+            set(ARG_PARAMETERS ${ARG_PARAMETERS} "--export-filename=${ARG_OUTPUT_FILENAME}" "--export-make-paths")
         endif()
     endif()
     if(DEFINED ARG_INPUT_FILENAME)
@@ -477,10 +477,10 @@ add_cli_test(export-eps-level_3_content PARAMETERS --export-ps-level=3 --export-
                                         TEST_SCRIPT match_regex.sh "export-ps-level-3.eps" "%%LanguageLevel: 3")
 
 # --export-pdf-version=VERSION
-add_cli_test(export-pdf-version-14 PARAMETERS --export-pdf-version=1.4 --export-type=pdf
+add_cli_test(export-pdf-version-14 PARAMETERS --export-pdf-version=1.4 --export-extension=org.inkscape.output.pdf.cairorenderer
                                    INPUT_FILENAME rects.svg OUTPUT_FILENAME export-pdf-version-14.pdf
                                    TEST_SCRIPT match_regex.sh "export-pdf-version-14.pdf" "^%PDF-1.4$")
-add_cli_test(export-pdf-version-15 PARAMETERS --export-pdf-version=1.5 --export-type=pdf
+add_cli_test(export-pdf-version-15 PARAMETERS --export-pdf-version=1.5 --export-extension=org.inkscape.output.pdf.cairorenderer
                                    INPUT_FILENAME rects.svg OUTPUT_FILENAME export-pdf-version-15.pdf
                                    TEST_SCRIPT match_regex.sh "export-pdf-version-15.pdf" "^%PDF-1.5$")
 
@@ -541,9 +541,13 @@ add_cli_test(regression-2797         INPUT_FILENAME regression-2797.svg
 
 # --export-latex
 # PDF, PS, EPS only function by design.
-add_cli_test(export-latex PARAMETERS --export-type=pdf,ps,eps --export-latex
+add_cli_test(export-latex PARAMETERS --export-type=ps,eps --export-latex
                           INPUT_FILENAME text.svg OUTPUT_FILENAME export-latex
-                          EXPECTED_FILES export-latex.pdf export-latex.pdf_tex export-latex.ps export-latex.ps_tex export-latex.eps export-latex.eps_tex
+                          EXPECTED_FILES export-latex.ps export-latex.ps_tex export-latex.eps export-latex.eps_tex
+                          TEST_SCRIPT match_regex.sh "export-latex.eps_tex" "some text")
+add_cli_test(export-latex-pdf PARAMETERS --export-latex --export-extension=org.inkscape.output.pdf.cairorenderer
+                          INPUT_FILENAME text.svg OUTPUT_FILENAME export-latex
+                          EXPECTED_FILES export-latex.pdf export-latex.pdf_tex
                           TEST_SCRIPT match_regex.sh "export-latex.pdf_tex" "some text")
 
 # --export-ignore-filters
@@ -578,12 +582,6 @@ add_cli_test(export-clone-group-filtered-mp PARAMETERS --export-type=pdf
                                             OUTPUT_PAGE 1
                                             FUZZYREF_FILENAME export-clone-group-filtered-mp_expected.png
                                             FUZZ_PERCENTAGE 3)
-add_cli_test(export-marker-on-clone PARAMETERS --export-type=pdf
-                                    INPUT_FILENAME  export-marker-on-clone.svg
-                                    OUTPUT_FILENAME export-marker-on-clone.pdf
-                                    RASTER_DPI 100
-                                    FUZZYREF_FILENAME export-marker-on-clone_expected.png
-                                    FUZZ_PERCENTAGE 1)
 add_cli_test(export-text-paintorder PARAMETERS --export-type=pdf
                                     INPUT_FILENAME  export-text-paintorder.svg
                                     OUTPUT_FILENAME export-text-paintorder.pdf
@@ -591,7 +589,7 @@ add_cli_test(export-text-paintorder PARAMETERS --export-type=pdf
                                     FUZZYREF_FILENAME export-text-paintorder_expected.png
                                     FUZZ_PERCENTAGE 3)
 # This tests the paint order in the text-to-path conversion
-add_cli_test(convert-text-paintorder PARAMETERS --export-type=pdf --export-text-to-path
+add_cli_test(convert-text-paintorder PARAMETERS --export-text-to-path --export-extension=org.inkscape.output.pdf.cairorenderer
                                      INPUT_FILENAME  export-text-paintorder.svg
                                      OUTPUT_FILENAME export-text-paintorder.pdf
                                      RASTER_DPI 200
@@ -669,7 +667,7 @@ add_cli_test(export-background-opacity_png  PARAMETERS --export-background=yello
 add_cli_test(export-extension_svg  PARAMETERS --export-type=svg --export-extension=org.inkscape.output.svg.inkscape INPUT_FILENAME shapes.svg OUTPUT_FILENAME shapes.svg REFERENCE_FILENAME shapes.svg)
 add_cli_test(export-extension_ps   PARAMETERS --export-type=ps --export-extension=org.inkscape.print.ps.cairo INPUT_FILENAME shapes.svg OUTPUT_FILENAME shapes.ps  REFERENCE_FILENAME shapes_expected.ps)
 add_cli_test(export-extension_eps  PARAMETERS --export-type=eps --export-extension=org.inkscape.print.eps.cairo  INPUT_FILENAME shapes.svg OUTPUT_FILENAME shapes.eps REFERENCE_FILENAME shapes_expected.eps)
-add_cli_test(export-extension_pdf  PARAMETERS --export-type=pdf --export-extension=org.inkscape.output.pdf.cairorenderer INPUT_FILENAME shapes.svg OUTPUT_FILENAME shapes.pdf REFERENCE_FILENAME shapes_expected.pdf)
+add_cli_test(export-extension_pdf  PARAMETERS --export-type=pdf --export-extension=org.inkscape.output.pdf.capypdf INPUT_FILENAME shapes.svg OUTPUT_FILENAME shapes.pdf REFERENCE_FILENAME shapes_expected.pdf)
 add_cli_test(export-extension_emf  PARAMETERS --export-type=emf --export-extension=org.inkscape.output.emf  INPUT_FILENAME shapes.svg OUTPUT_FILENAME shapes.emf REFERENCE_FILENAME shapes_expected.emf)
 add_cli_test(export-extension_wmf  PARAMETERS --export-type=wmf --export-extension=org.inkscape.output.wmf INPUT_FILENAME shapes.svg OUTPUT_FILENAME shapes.wmf REFERENCE_FILENAME shapes_expected.wmf)
 add_cli_test(export-plain-extension-svg PARAMETERS --export-type=svg --export-extension=org.inkscape.output.svg.plain
@@ -1015,6 +1013,49 @@ add_pdfinput_test(gs_linewidth all draw-all)
 add_pdfinput_test(XObj_layer all draw-all)
 add_pdfinput_test(Annot_w_AP all draw-all)
 add_pdfinput_test(clipping_shift 1 keep)
+
+function(add_pdfoutput_test name)
+    set(SOURCE_SVG "${CMAKE_CURRENT_SOURCE_DIR}/testcases/pdfoutput/${name}.svg")
+    execute_process(COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/get-pages.py ${SOURCE_SVG}
+                    ERROR_VARIABLE PAGE_NUMBERS
+                    OUTPUT_VARIABLE PAGE_LABELS)
+    # Watching the source SVG means changes will regenerate the CTests
+    watch("${SOURCE_SVG}")
+
+    add_cli_test_run(cli_pdfoutput-${name} cli_pdfoutput-${name}-build
+        INPUT_FILENAME pdfoutput/${name}.svg
+        OUTPUT_FILENAME pdfoutput/${name}.pdf
+    )
+    foreach(NUM LABEL IN ZIP_LISTS PAGE_NUMBERS PAGE_LABELS)
+        add_cli_test_cmp(cli_pdfoutput-${name} cli_pdfoutput-${name}-${LABEL}
+            pdfoutput-${name}
+            OUTPUT_FILENAME pdfoutput/${name}.pdf
+            OUTPUT_PAGE "${NUM}"
+            PNG_FILENAME "pdfoutput/expected/${name}-${NUM}.png"
+            FUZZYREF_FILENAME pdfoutput/expected/${name}-${NUM}.png
+            FUZZ_PERCENTAGE 1
+        )
+    endforeach()
+    add_cli_test_cln(cli_pdfoutput-${name} cli_pdfoutput-${name}-clean
+        OUTPUT_FILENAME pdfoutput/${name}.pdf)
+endfunction(add_pdfoutput_test)
+
+add_pdfoutput_test(00-one-thing)
+add_pdfoutput_test(01-test-pages)
+add_pdfoutput_test(02-test-fills)
+add_pdfoutput_test(03-test-strokes)
+add_pdfoutput_test(04-test-transforms)
+add_pdfoutput_test(05-test-transparencies)
+add_pdfoutput_test(06-test-markers)
+add_pdfoutput_test(07-test-shapes)
+add_pdfoutput_test(08-clones)
+add_pdfoutput_test(09-text-layout)
+add_pdfoutput_test(10-text-paint)
+add_pdfoutput_test(11-text-decoration)
+add_pdfoutput_test(12-rasters)
+add_pdfoutput_test(13-clips)
+add_pdfoutput_test(14-filters)
+add_pdfoutput_test(15-many-items)
 
 ###########################
 ### file format support ###

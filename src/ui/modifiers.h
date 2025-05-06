@@ -67,7 +67,7 @@ enum class Type {
     SELECT_IN_GROUPS,     // Select within groups {CTRL+CLICK}
     SELECT_TOUCH_PATH,    // Draw band to select {ALT+DRAG+Nothing selected}
     SELECT_ALWAYS_BOX,    // Draw box to select {SHIFT+DRAG}
-    SELECT_FIRST_HIT,     // Start dragging first item hit {CTRL+DRAG} (Is this an actual feature?)
+    SELECT_REMOVE_FROM,     // Remove from selection {CTRL+SHIFT+DRAG}
     SELECT_FORCE_DRAG,    // Drag objects even if the mouse isn't over them {ALT+DRAG+Selected}
     SELECT_CYCLE,         // Cycle through objects under cursor {ALT+SCROLL}
 

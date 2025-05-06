@@ -498,6 +498,29 @@ FontGlyph const *FontInstance::LoadGlyph(unsigned int glyph_id)
     return ret.first->second.get();
 }
 
+/**
+ * Attempt to get the ttf filename for this font instance. If this is a memory font, then blank will be returned.
+ */
+Glib::ustring FontInstance::GetFilename() const
+{
+    if (p_font) {
+        if (PangoFcFont *fc_font = PANGO_FC_FONT(p_font)) {
+            char *fn;
+            if (FcPatternGetString(fc_font->font_pattern, FC_FILE, 0, (FcChar8 **)&fn)== FcResultMatch) {
+                Glib::ustring out(fn);
+#ifdef _WIN32
+                // Filenames from fontconfig something have backslashes on windows instead of forward slashes.
+                for (auto ind = out.find('/'); ind != Glib::ustring::npos; ind = out.find('/')) {
+                    out.replace(ind, 1, "\\");
+                }
+#endif
+                return out;
+            }
+        }
+    }
+    return "";
+}
+
 bool FontInstance::FontMetrics(double &ascent, double &descent, double &xheight) const
 {
     ascent = _ascent;

@@ -778,6 +778,27 @@ Extension::get_param_optiongroup_contains(char const *name, char const *value) c
 }
 
 /**
+ * Find out if an option is set to specific value
+ *
+ * @param name The name of the optiongroup parameter to get.
+ * @param value The value to check for
+ * @param alt The default value to return
+ *
+ * @return true if value is set, alt if not set or doesn't exist
+ */
+bool Extension::get_param_optiongroup_is(char const *name, std::string_view value, bool alt) const
+{
+    try {
+        if (auto ret = get_param_optiongroup(name)) {
+            return value == ret;
+        }
+    } catch (Extension::param_not_exist) {
+        // Do nothing
+    }
+    return alt;
+}
+
+/**
     \return   The unsigned integer RGBA value for the parameter specified
     \brief    Gets a parameter identified by name with the unsigned int placed in value.
     \param    name   The name of the parameter to get

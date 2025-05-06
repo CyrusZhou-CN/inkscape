@@ -265,6 +265,7 @@ public:
     Colors::Color get_param_color(char const *name) const;
 
     bool get_param_optiongroup_contains (char const *name, char const   *value) const;
+    bool get_param_optiongroup_is(char const *name, std::string_view value, bool alt = false) const;
 
     bool        set_param_bool          (char const *name, bool    value);
     int         set_param_int           (char const *name, int     value);

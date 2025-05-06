@@ -1021,12 +1021,6 @@ void CairoRenderContext::popState()
     g_assert(!_state_stack.empty());
 }
 
-static bool pattern_hasItemChildren(SPPattern const *pat)
-{
-    return std::any_of(pat->children.begin(), pat->children.end(),
-                       [](SPObject const &child) -> bool { return is<SPItem>(&child); });
-}
-
 cairo_pattern_t*
 CairoRenderContext::_createPatternPainter(SPPaintServer const *const paintserver, Geom::OptRect const &pbox)
 {
@@ -1118,7 +1112,7 @@ CairoRenderContext::_createPatternPainter(SPPaintServer const *const paintserver
 
     // show items and render them
     for (SPPattern *pat_i = pat; pat_i != nullptr; pat_i = pat_i->ref.getObject()) {
-        if (pat_i && pattern_hasItemChildren(pat_i)) { // find the first one with item children
+        if (pat_i && pat_i->hasItemChildren()) { // find the first one with item children
             for (auto& child: pat_i->children) {
                 if (is<SPItem>(&child)) {
                     cast<SPItem>(&child)->invoke_show(drawing, dkey, SP_ITEM_REFERENCE_FLAGS);
@@ -1145,7 +1139,7 @@ CairoRenderContext::_createPatternPainter(SPPaintServer const *const paintserver
 
     // hide all items
     for (SPPattern *pat_i = pat; pat_i != nullptr; pat_i = pat_i->ref.getObject()) {
-        if (pat_i && pattern_hasItemChildren(pat_i)) { // find the first one with item children
+        if (pat_i && pat_i->hasItemChildren()) { // find the first one with item children
             for (auto& child: pat_i->children) {
                 if (is<SPItem>(&child)) {
                     cast<SPItem>(&child)->invoke_hide(dkey);

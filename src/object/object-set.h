@@ -332,6 +332,20 @@ public:
         _emitChanged();
     }
 
+    /**
+     * Remove the specified objects from selection.
+     *
+     * @param objs the objects to select
+     */
+    template <class T>
+    typename boost::enable_if<boost::is_base_of<SPObject, T>, void>::type
+    removeList(const std::vector<T*> &objs) {
+        for (auto obj: objs) {
+            remove(obj);
+        }
+        _emitChanged();
+    }
+
     /** Returns the bounding rectangle of the selection. */
     Geom::OptRect bounds(SPItem::BBoxType type) const;
     Geom::OptRect visualBounds() const;

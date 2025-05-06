@@ -167,6 +167,30 @@ if(WIN32)
 	)
 endif()
 
+if(WITH_CAPYPDF)
+    list(APPEND extension_SRC
+	internal/pdfoutput/build-document.cpp
+	internal/pdfoutput/build-drawing.cpp
+	internal/pdfoutput/build-images.cpp
+	internal/pdfoutput/build-page.cpp
+	internal/pdfoutput/build-paths.cpp
+	internal/pdfoutput/build-patterns.cpp
+	internal/pdfoutput/build-styles.cpp
+        internal/pdfoutput/build-text.cpp
+	internal/pdfoutput/pdf-output.cpp
+	internal/pdfoutput/remember-styles.cpp
+
+        #Header
+	internal/pdfoutput/build-document.h
+	internal/pdfoutput/build-drawing.h
+	internal/pdfoutput/build-page.h
+	internal/pdfoutput/build-patterns.h
+	internal/pdfoutput/build-text.h
+	internal/pdfoutput/pdf-output.h
+	internal/pdfoutput/remember-styles.h
+    )
+endif()
+
 if(WITH_POPPLER)
     list(APPEND extension_SRC
         internal/pdfinput/pdf-utils.cpp

@@ -97,6 +97,8 @@ public:
     const double* GetBaselines()   const { return _baselines; }
     int           GetDesignUnits() const { return _design_units; }
 
+    Glib::ustring GetFilename() const;
+
     bool FontMetrics(double &ascent, double &descent, double &leading) const;
 
     bool FontDecoration(double &underline_position, double &underline_thickness,

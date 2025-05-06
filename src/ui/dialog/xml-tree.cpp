@@ -200,7 +200,7 @@ XmlTree::XmlTree()
         } else if (layout == Vertical) {
             icon = "layout-vertical";
         }
-        get_widget<Gtk::Image>(_builder, "layout-img").set_from_icon_name(icon + "-symbolic");
+        get_widget<Gtk::MenuButton>(_builder, "layout-btn").set_icon_name(icon + "-symbolic");
         prefs->setInt("/dialogs/xml/layout", layout);
         arrange_panels(layout, get_width(), get_height());
         _layout = layout;

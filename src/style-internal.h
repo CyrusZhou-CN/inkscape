@@ -802,7 +802,7 @@ enum SPPaintOrderLayer {
 // where order matters (in contrast to 'text-decoration-line' where order does not matter).
 
 // Each layer represents a layer of paint which can be a fill, a stroke, or markers.
-const size_t PAINT_ORDER_LAYERS = 3;
+inline constexpr size_t PAINT_ORDER_LAYERS = 3;
 
 /// Paint order type internal to SPStyle
 class SPIPaintOrder : public SPIBase
@@ -851,6 +851,7 @@ public:
 
     bool equals(const SPIBase& rhs) const override;
 
+    std::array<SPPaintOrderLayer, PAINT_ORDER_LAYERS> get_layers() const;
 
   // To do: make private
 public:
@@ -885,6 +886,14 @@ public:
     bool equals(const SPIBase& rhs) const override;
 
     bool is_valid() const;
+
+    std::vector<double> get_computed() const {
+        std::vector<double> output;
+        for (auto val : values) {
+            output.push_back(val.computed);
+        }
+        return output;
+    }
 
   // To do: make private, change double to SVGLength
 public:

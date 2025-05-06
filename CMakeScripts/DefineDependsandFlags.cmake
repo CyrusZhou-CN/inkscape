@@ -175,6 +175,26 @@ if(WITH_INTERNAL_2GEOM)
   set(2Geom_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/src/3rdparty/2geom/include)
 endif()
 
+if(APPLE)
+    message(STATUS "New CMYK PDF exporter disabled on macOSX")
+elseif(WITH_CAPYPDF)
+    set(CAPY_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/deps)
+    set(CAPY_LIBDIR ${CAPY_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+    include(ExternalProject)
+    ExternalProject_Add(capypdf
+        URL https://github.com/jpakkane/capypdf/archive/refs/tags/0.16.0.zip
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        CONFIGURE_COMMAND meson setup . ../capypdf --libdir=${CAPY_LIBDIR} --prefix=${CAPY_PREFIX}
+        BUILD_COMMAND meson compile
+        INSTALL_COMMAND meson install
+    )
+    include_directories(${CAPY_PREFIX}/include/capypdf-0)
+    link_directories(${CAPY_LIBDIR})
+    set(CMAKE_INSTALL_RPATH "${CAPY_LIBDIR}")
+    list(APPEND INKSCAPE_LIBS -lcapypdf)
+    add_definitions(-DWITH_CAPYPDF)
+endif()
+
 if(WITH_POPPLER)
     find_package(PopplerCairo)
     if(POPPLER_FOUND)
@@ -314,6 +334,7 @@ if(NOT GTKMM4_FOUND)
 
     # check we can actually build it
     message("To build gtkmm4, you need the packages glslc, mm-common, and libgstreamer-plugins-bad1.0-dev")
+
     find_program(glslc glslc REQUIRED)
     find_program(mmcp mm-common-prepare REQUIRED)
     pkg_check_modules(TMP-gtkmm-gstreamer gstreamer-player-1.0 REQUIRED)

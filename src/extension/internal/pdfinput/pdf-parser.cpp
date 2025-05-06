@@ -303,7 +303,7 @@ PdfParser::PdfParser(std::shared_ptr<PDFDoc> pdf_doc, Inkscape::Extension::Inter
                              state->getPageHeight() / page_box.height());
     builder->setMargins(getRect(page->getTrimBox()) * scale,
                         getRect(page->getArtBox()) * scale,
-                        getRect(page->getBleedBox()) * scale);
+                        getRect(page->getMediaBox()) * scale);
     if (cropBox && getRect(cropBox) != page_box) {
         builder->cropPage(getRect(cropBox) * scale);
     }

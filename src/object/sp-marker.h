@@ -81,7 +81,6 @@ public:
 	virtual Inkscape::DrawingItem* private_show(Inkscape::Drawing &drawing, unsigned int key, unsigned int flags);
 	void hide(unsigned int key) override;
 
-	Geom::OptRect bbox(Geom::Affine const &transform, SPItem::BBoxType type) const override;
 	void print(SPPrintContext *ctx) override;
 };
 

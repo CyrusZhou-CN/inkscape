@@ -50,6 +50,7 @@ public:
 
     Geom::OptRect geometricBounds(Geom::Affine const &transform) const;
     Geom::PathVector getPathVector(Geom::Affine const &transform) const;
+    SPText const *getTextObject() const;
     void transform_multiply(Geom::Affine postmul, bool set = true);
     void removeTransformsRecursively(SPObject const *root);
 

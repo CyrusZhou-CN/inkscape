@@ -29,7 +29,7 @@
 #include <gtkmm/signallistitemfactory.h>
 #include <gtkmm/textview.h>
 
-#include "ui/query-file-info.h"
+#include "io/query-file-info.h"
 #include "ui/widget/color-picker.h"
 #include "ui/widget/drop-down-list.h"
 #include "ui/widget/unit-menu.h"

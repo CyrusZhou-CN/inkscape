@@ -67,13 +67,14 @@ InkFileExportCmd::InkFileExportCmd()
     , export_ignore_filters(false)
     , export_text_to_path(false)
     , export_ps_level(3)
-    , export_pdf_level("1.5")
+    , export_pdf_level("1.7")
     , export_latex(false)
     , export_id_only(false)
     , export_background_opacity(-1) // default is unset != actively set to 0
     , export_plain_svg(false)
-    ,export_png_compression(6)
-    ,export_png_antialias(2)
+    , export_png_compression(6)
+    , export_png_antialias(2)
+    , make_paths(false)
 {
 }
 
@@ -165,6 +166,18 @@ InkFileExportCmd::do_export(SPDocument* doc, std::string filename_in)
 
     // Export filename should be used when specified as the output file
     auto const filename_out = !export_filename.empty() ? export_filename : filename_in;
+
+    auto path_out = Glib::path_get_dirname(filename_out);
+    if (make_paths && !Inkscape::IO::file_test(path_out.c_str(), (GFileTest)(G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))) {
+        g_mkdir_with_parents(path_out.c_str(), 0755);
+    }
+
+    if (!Inkscape::IO::file_test(path_out.c_str(), (GFileTest)(G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))) {
+        std::cerr << "InkFileExportCmd::do_export: "
+                  << "file directory doesn't exist for export: "
+                  << path_out.c_str() << std::endl;
+        return;
+    }
 
     for (auto const &Type : export_type_list) {
         // use lowercase type for following comparisons
@@ -853,8 +866,6 @@ int InkFileExportCmd::do_export_ps_pdf(SPDocument *doc, std::string const &filen
         extension.set_param_optiongroup("textToPath", "paths");
     } else if (export_latex) {
         extension.set_param_optiongroup("textToPath", "LaTeX");
-    } else {
-        extension.set_param_optiongroup("textToPath", "embed");
     }
 
     if (export_ignore_filters) {

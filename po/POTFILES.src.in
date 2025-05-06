@@ -119,6 +119,7 @@ ${_build_dir}/share/templates/templates.h
 ../src/extension/internal/latex-pstricks.cpp
 ../src/extension/internal/odf.cpp
 ../src/extension/internal/pdfinput/pdf-input.cpp
+../src/extension/internal/pdfoutput/pdf-output.cpp
 ../src/extension/internal/png-output.cpp
 ../src/extension/internal/pov-out.cpp
 ../src/extension/internal/rvng-import-dialog.cpp

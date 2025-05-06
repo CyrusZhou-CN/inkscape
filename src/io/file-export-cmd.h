@@ -87,6 +87,8 @@ public:
     bool          export_png_use_dithering;
     int           export_png_compression;
     int           export_png_antialias;
+    bool          make_paths = false;
+
     void set_export_area(const Glib::ustring &area);
     void set_export_area_type(ExportAreaType type);
 };

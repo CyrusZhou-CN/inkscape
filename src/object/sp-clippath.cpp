@@ -26,6 +26,8 @@
 
 #include "sp-item.h"
 #include "sp-defs.h"
+#include "sp-text.h"
+#include "sp-use.h"
 
 #include "display/drawing-item.h"
 #include "display/drawing-group.h"
@@ -245,16 +247,45 @@ void SPClipPath::removeTransformsRecursively(SPObject const *root)
 Geom::PathVector SPClipPath::getPathVector(Geom::Affine const &transform) const
 {
     Geom::PathVector ret;
-    for (auto &child : children) {
-        if (auto shape = cast<SPShape>(&child)) {
+    auto add_curve = [&ret](SPObject const *obj, Geom::Affine const &tr) {
+        if (auto shape = cast<SPShape>(obj)) {
             if (!shape->curve()) {
-                continue;
+                return;
             }
             for (auto &path : shape->curve()->get_pathvector()) {
                 if (!path.empty()) {
-                    ret.push_back(path * (shape->transform * transform));
+                    ret.push_back(path * (shape->transform * tr));
                 }
             }
+        }
+    };
+
+    for (auto &child : children) {
+        if (auto use = cast<SPUse>(&child)) {
+            if (auto orig = use->get_original()) {
+                add_curve(orig, use->transform * transform);
+            }
+        } else {
+            add_curve(&child, transform);
+        }
+    }
+    return ret;
+}
+
+/**
+ * This gets a text object, if the clip path is made up of a single sp-text.
+ */
+SPText const *SPClipPath::getTextObject() const
+{
+    SPText const *ret = nullptr;
+    for (auto &child : children) {
+        if (auto text = cast<SPText>(&child)) {
+            if (ret) { // One text object only.
+                return nullptr;
+            }
+            ret = text;
+        } else if (is<SPShape>(&child)) {
+            return nullptr; // Failure, has a path shape.
         }
     }
     return ret;

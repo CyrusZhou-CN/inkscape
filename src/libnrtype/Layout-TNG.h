@@ -329,7 +329,6 @@ public:
         scanline widths for all non-last lines plus text width of last line. */
     double getActualLength() const;
 
-
     // ************************** doing the actual flowing *************************
 
     /** \name Processing
@@ -681,12 +680,13 @@ private:
 
     // ******************* input flow
 
+public:
     enum InputStreamItemType {TEXT_SOURCE, CONTROL_CODE};
 
     class InputStreamItem {
     public:
         virtual ~InputStreamItem() = default;
-        virtual InputStreamItemType Type() =0;
+        virtual InputStreamItemType Type() const = 0;
         SPObject *source;
     };
 
@@ -694,7 +694,7 @@ private:
     Most of the members are copies of the values passed to appendText(). */
     class InputStreamTextSource : public InputStreamItem {
     public:
-        InputStreamItemType Type() override {return TEXT_SOURCE;}
+        InputStreamItemType Type() const override {return TEXT_SOURCE;}
         ~InputStreamTextSource() override;
         Glib::ustring const *text;    /// owned by the caller
         Glib::ustring::const_iterator text_begin, text_end;
@@ -722,12 +722,13 @@ private:
         Alignment styleGetAlignment(Direction para_direction, bool try_text_align) const;
     };
 
+private:
     /** Represents a control code item in the input stream. See
     #_input_streams. All the members are copies of the values passed to
     appendControlCode(). */
     class InputStreamControlCode : public InputStreamItem {
     public:
-        InputStreamItemType Type() override {return CONTROL_CODE;}
+        InputStreamItemType Type() const override {return CONTROL_CODE;}
         TextControlCode code;
         double ascent;
         double descent;
@@ -796,6 +797,7 @@ private:
     /** as passed to fitToPathAlign() */
     Path const *_path_fitted = nullptr;
 
+public:
     struct Glyph;
     struct Character;
     struct Span;
@@ -814,9 +816,20 @@ private:
         Orientation orientation; /// Orientation of glyph in vertical text
         float advance;   /// for positioning next glyph
         float vertical_scale; /// to implement lengthAdjust="spacingAndGlyphs" that must scale glyphs only horizontally; instead we change font size and then undo that change vertically only
+        inline std::vector<gunichar> const characters(Layout const *l) const {
+            auto glyph_index = l->_characters[in_character].in_glyph;
+            std::vector<gunichar> ret;
+            for (auto i = in_character; i < l->_characters.size() && l->_characters[i].in_glyph == glyph_index; i++) {
+                ret.push_back(l->_characters[i].the_char);
+            }
+            return ret;
+        }
         inline Span  const & span (Layout const *l) const {return                      l->_spans[l->_characters[in_character].in_span];}
         inline Chunk const & chunk(Layout const *l) const {return           l->_chunks[l->_spans[l->_characters[in_character].in_span].in_chunk];}
         inline Line  const & line (Layout const *l) const {return l->_lines[l->_chunks[l->_spans[l->_characters[in_character].in_span].in_chunk].in_line];}
+
+        // Get the total transformation for this glyph
+        Geom::Affine transform(Layout const &layout) const;
     };
 
     // A unicode character
@@ -874,15 +887,20 @@ private:
         Alignment alignment;
     };
 
+    /**
+     * Publically allow access to the Layout::show logic outside of the Layout engine.
+     */
+    std::vector<Layout::Glyph> const &glyphs() const { return _glyphs; }
+    std::vector<Layout::Span> const &spans() const { return _spans; }
+    std::vector<InputStreamItem *> const &input_stream() const { return _input_stream; }
+
+private:
     std::vector<Paragraph> _paragraphs;
     std::vector<Line> _lines;
     std::vector<Chunk> _chunks;
     std::vector<Span> _spans;
     std::vector<Character> _characters;
     std::vector<Glyph> _glyphs;
-
-    /// Gets the overall matrix that transforms the given glyph from local space to world space.
-    void _getGlyphTransformMatrix(int glyph_index, Geom::Affine *matrix) const;
 
     inline unsigned _lineToSpan(unsigned line_index) const
     {
