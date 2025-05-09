@@ -21,8 +21,11 @@
 #include "document.h"
 #include "object/sp-root.h"
 #include "display/drawing.h"
+#include "display/drawing-pattern.h"
 #include "display/drawing-surface.h"
 #include "display/drawing-context.h"
+
+namespace Inkscape {
 
 TEST(DrawingPatternTest, fragments)
 {
@@ -87,7 +90,7 @@ TEST(DrawingPatternTest, fragments)
         int y = rand() % (area.height() - h + 1);
         return Geom::IntRect::from_xywh(x, y, w, h);
     };
-    
+
     int maxdiff = 0;
     auto compare = [&] (Cairo::RefPtr<Cairo::ImageSurface> const &part, Geom::IntPoint const &off) {
         for (int y = 0; y < part->get_height(); y++) {
@@ -115,3 +118,26 @@ TEST(DrawingPatternTest, fragments)
 
     ASSERT_LE(maxdiff, 10);
 }
+
+struct TestDrawingPattern : public DrawingPattern
+{
+    TestDrawingPattern()
+        : DrawingPattern{[]() -> Drawing & {
+            static Drawing fakeDrawing;
+            return fakeDrawing;
+        }()}
+    {}
+    ~TestDrawingPattern() override = default;
+};
+
+/// Regression test for https://gitlab.com/inkscape/inkscape/-/issues/5677
+TEST(DrawingPatternTest, ZeroRankPatternMatrix)
+{
+    RenderContext fakeContext;
+
+    TestDrawingPattern testPattern;
+    testPattern.setTileRect(Geom::Rect::from_xywh(0, 0, 1, 1));
+
+    EXPECT_FALSE(testPattern.renderPattern(fakeContext, Geom::IntRect::from_xywh(0, 0, 1, 1), 1.0, 1));
+}
+} // namespace Inkscape

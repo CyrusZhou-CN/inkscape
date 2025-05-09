@@ -27,6 +27,7 @@
 #include "db.h"
 #include "internal/emf-inout.h"
 #include "internal/emf-print.h"
+#include "internal/gif.h"
 #include "internal/svgz.h"
 #include "internal/template-from-file.h"
 #include "internal/template-other.h"
@@ -200,6 +201,7 @@ init()
 #ifdef WITH_LIBCDR
     Internal::CdrInput::init();
 #endif
+    Internal::Gif::init();
 
     /* Effects */
     Internal::BlurEdge::init();

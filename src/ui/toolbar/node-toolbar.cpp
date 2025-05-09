@@ -89,50 +89,34 @@ NodeToolbar::NodeToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
     get_widget<Gtk::Box>(builder, "unit_menu_box").append(*unit_menu);
 
     // Attach the signals.
+    struct ButtonMapping
+    {
+        char const *button_id;
+        void (NodeToolbar::*callback)();
+    };
 
-    get_widget<Gtk::Button>(builder, "insert_node_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &NodeToolbar::edit_add));
+    static constexpr ButtonMapping button_mapping[] = {
+        {"insert_node_btn", &NodeToolbar::edit_add},
+        {"delete_btn", &NodeToolbar::edit_delete},
+        {"join_btn", &NodeToolbar::edit_join},
+        {"break_btn", &NodeToolbar::edit_break},
+        {"join_segment_btn", &NodeToolbar::edit_join_segment},
+        {"delete_segment_btn", &NodeToolbar::edit_delete_segment},
+        {"cusp_btn", &NodeToolbar::edit_cusp},
+        {"smooth_btn", &NodeToolbar::edit_smooth},
+        {"symmetric_btn", &NodeToolbar::edit_symmetrical},
+        {"auto_btn", &NodeToolbar::edit_auto},
+        {"line_btn", &NodeToolbar::edit_toline},
+        {"curve_btn", &NodeToolbar::edit_tocurve},
+    };
+
+    for (auto const &button_info : button_mapping) {
+        get_widget<Gtk::Button>(builder, button_info.button_id)
+            .signal_clicked()
+            .connect(sigc::mem_fun(*this, button_info.callback));
+    }
 
     setup_insert_node_menu();
-
-    get_widget<Gtk::Button>(builder, "delete_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &NodeToolbar::edit_delete));
-
-    get_widget<Gtk::Button>(builder, "join_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &NodeToolbar::edit_join));
-    get_widget<Gtk::Button>(builder, "break_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &NodeToolbar::edit_break));
-
-    get_widget<Gtk::Button>(builder, "join_segment_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &NodeToolbar::edit_join_segment));
-    get_widget<Gtk::Button>(builder, "delete_segment_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &NodeToolbar::edit_delete_segment));
-
-    get_widget<Gtk::Button>(builder, "cusp_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &NodeToolbar::edit_cusp));
-    get_widget<Gtk::Button>(builder, "smooth_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &NodeToolbar::edit_smooth));
-    get_widget<Gtk::Button>(builder, "symmetric_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &NodeToolbar::edit_symmetrical));
-    get_widget<Gtk::Button>(builder, "auto_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &NodeToolbar::edit_auto));
-
-    get_widget<Gtk::Button>(builder, "line_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &NodeToolbar::edit_toline));
-    get_widget<Gtk::Button>(builder, "curve_btn")
-        .signal_clicked()
-        .connect(sigc::mem_fun(*this, &NodeToolbar::edit_tocurve));
 
     _pusher_show_outline = std::make_unique<SimplePrefPusher>(_show_helper_path_btn, "/tools/nodes/show_outline");
     _show_helper_path_btn->signal_toggled().connect(sigc::bind(sigc::mem_fun(*this, &NodeToolbar::on_pref_toggled),

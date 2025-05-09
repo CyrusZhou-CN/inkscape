@@ -188,9 +188,9 @@ elseif(WITH_CAPYPDF)
         BUILD_COMMAND meson compile
         INSTALL_COMMAND meson install
     )
-    include_directories(${CAPY_PREFIX}/include/capypdf-0)
-    link_directories(${CAPY_LIBDIR})
-    set(CMAKE_INSTALL_RPATH "${CAPY_LIBDIR}")
+    include_directories("${CAPY_PREFIX}/include/capypdf-0")
+    link_directories("${CAPY_LIBDIR}")
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${CAPY_LIBDIR}")
     list(APPEND INKSCAPE_LIBS -lcapypdf)
     add_definitions(-DWITH_CAPYPDF)
 endif()

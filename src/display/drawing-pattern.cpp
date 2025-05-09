@@ -23,6 +23,8 @@
 
 namespace Inkscape {
 
+auto constexpr PATTERN_MATRIX_EPSILON = 1e-18;
+
 DrawingPattern::Surface::Surface(Geom::IntRect const &rect, int device_scale)
     : rect(rect)
     , surface(Cairo::ImageSurface::create(Cairo::Surface::Format::ARGB32, rect.width() * device_scale, rect.height() * device_scale))
@@ -39,11 +41,12 @@ DrawingPattern::DrawingPattern(Drawing &drawing)
 void DrawingPattern::setPatternToUserTransform(Geom::Affine const &transform)
 {
     defer([=, this] {
-        auto constexpr EPS = 1e-18;
         auto current = _pattern_to_user ? *_pattern_to_user : Geom::identity();
-        if (Geom::are_near(transform, current, EPS)) return;
+        if (Geom::are_near(transform, current, PATTERN_MATRIX_EPSILON)) {
+            return;
+        }
         _markForRendering();
-        _pattern_to_user = transform.isIdentity(EPS) ? nullptr : std::make_unique<Geom::Affine>(transform);
+        _pattern_to_user = transform.isIdentity(PATTERN_MATRIX_EPSILON) ? nullptr : std::make_unique<Geom::Affine>(transform);
         _markForUpdate(STATE_ALL, true);
     });
 }
@@ -79,6 +82,9 @@ cairo_pattern_t *DrawingPattern::renderPattern(RenderContext &rc, Geom::IntRect 
 
     // Calculate various transforms.
     auto const dt = Geom::Translate(-_tile_rect->min()) * Geom::Scale(_pattern_resolution / _tile_rect->dimensions()); // AKA user_to_tile.
+    if (dt.isSingular(PATTERN_MATRIX_EPSILON)) {
+        return nullptr;
+    }
     auto const idt = dt.inverse();
     auto const pattern_to_tile = _pattern_to_user ? _pattern_to_user->inverse() * dt : dt;
     auto const screen_to_tile = _ctm.inverse() * pattern_to_tile;

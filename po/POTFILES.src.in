@@ -113,6 +113,7 @@ ${_build_dir}/share/templates/templates.h
 ../src/extension/internal/filter/textures.h
 ../src/extension/internal/filter/transparency.h
 ../src/extension/internal/gdkpixbuf-input.cpp
+../src/extension/internal/gif.cpp
 ../src/extension/internal/gimpgrad.cpp
 ../src/extension/internal/grid.cpp
 ../src/extension/internal/latex-pstricks-out.cpp

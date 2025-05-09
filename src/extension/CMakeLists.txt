@@ -29,6 +29,7 @@ set(extension_SRC
 	internal/emf-inout.cpp
 	internal/emf-print.cpp
 	internal/gdkpixbuf-input.cpp
+	internal/gif.cpp
 	internal/gimpgrad.cpp
 	internal/grid.cpp
 	internal/image-resolution.cpp
@@ -119,6 +120,8 @@ set(extension_SRC
 	internal/filter/textures.h
 	internal/filter/transparency.h
 	internal/gdkpixbuf-input.h
+	internal/gif.h
+	internal/lib-gif.h
 	internal/gimpgrad.h
 	internal/grid.h
 	internal/image-resolution.h
