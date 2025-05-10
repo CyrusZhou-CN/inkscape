@@ -1,10 +1,12 @@
 <?xml version="1.0"?>
-<keys name="Adobe Illustrator" xmlns:xi="http://www.w3.org/2001/XInclude">
+<keys name="Adobe Illustrator CS (legacy)" xmlns:xi="http://www.w3.org/2001/XInclude">
 
 <!-- inherit -->
 <xi:include href="inkscape.xml" />
 
 <!--  
+This is a legacy file and will no longer be maintained. It has been replaced by the adobe-illustrator-cc2024.xml file. Consider switching if you need updated Illustrator shortcuts.
+
 This file contains a profile of keyboard shortcuts for Inkscape in the
 style of Adobe Illustrator CC 2020. If the binding is not specified here, it
 is still the Inkscape default. In case of conflict, these bindings override

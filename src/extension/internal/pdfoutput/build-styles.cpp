@@ -115,19 +115,16 @@ std::vector<PaintLayer> get_paint_layers(SPStyle const *style, SPStyle const *co
 {
     std::vector<PaintLayer> output;
 
-    bool no_fill = style->fill.isNone() || style->fill_opacity.value < 1e-9;
+    // If context paint is used outside of a marker or clone, we do not output them if not context_style is provided.
+    auto context_paint_is_none = [context_style](SPIPaint const &paint) {
+        return (paint.paintOrigin == SP_CSS_PAINT_ORIGIN_CONTEXT_FILL && (!context_style || context_style->fill.isNone())) ||
+               (paint.paintOrigin == SP_CSS_PAINT_ORIGIN_CONTEXT_STROKE && (!context_style || context_style->stroke.isNone()));
+    };
+    bool no_fill = style->fill.isNone() || style->fill_opacity.value < 1e-9 || context_paint_is_none(style->fill);
     bool no_stroke = style->stroke.isNone() ||
                      (!style->stroke_extensions.hairline && style->stroke_width.computed < 1e-9) ||
-                     style->stroke_opacity.value == 0;
-
-    if (context_style) {
-        auto no_context_paint = [context_style](SPIPaint const &paint) {
-            return (paint.paintOrigin == SP_CSS_PAINT_ORIGIN_CONTEXT_FILL && context_style->fill.isNone()) ||
-                   (paint.paintOrigin == SP_CSS_PAINT_ORIGIN_CONTEXT_STROKE && context_style->stroke.isNone());
-        };
-        no_fill = no_fill || no_context_paint(style->fill);
-        no_stroke = no_stroke || no_context_paint(style->stroke);
-    }
+                     style->stroke_opacity.value == 0 ||
+                     context_paint_is_none(style->stroke);
 
     if (no_fill && no_stroke) {
         return output;

@@ -42,6 +42,8 @@ override) the bindings in the main default.xml.
 
   <modifier action="move-confine" modifiers="Ctrl"/>
   <modifier action="move-increment" modifiers="Alt"/>
+  <modifier action="move-snapping" />
+  
   <modifier action="trans-confine" modifiers="Ctrl"/>
   <modifier action="trans-increment" modifiers="Alt"/>
   <modifier action="trans-off-center" modifiers="Shift"/>
@@ -94,6 +96,7 @@ override) the bindings in the main default.xml.
 
   <!-- Tools -->
   <bind gaction="win.tool-switch('Select')"              keys="s,   F1"/>
+  <bind gaction="win.tool-toggle('Select')" />
   <bind gaction="win.tool-switch('Node')"                keys="n,   F2"/>
   <bind gaction="win.tool-switch('Booleans')"            keys="x"/>
 
@@ -121,9 +124,12 @@ override) the bindings in the main default.xml.
 
   <bind gaction="win.tool-switch('Zoom')"                keys="z,   F3"/>
   <bind gaction="win.tool-switch('Measure')"             keys="m"/>
+  <bind gaction="win.tool-switch('Pages')" />
 
   <!-- Snapping -->
   <bind gaction="win.snap-global-toggle"                 keys="percent"/>
+  <bind gaction="win.snap-grid" />
+  <bind gaction="win.snap-node-category" />
 
 
   <!-- ROUGHLY IN MENU ORDER -->
@@ -220,6 +226,7 @@ override) the bindings in the main default.xml.
   <!-- View - Other -->
   <bind gaction="doc.show-grids"                         keys="&lt;shift&gt;numbersign, numbersign" /> <!-- # -->
   <bind gaction="doc.show-all-guides"                    keys="&lt;shift&gt;bar,        bar" />        <!-- | -->
+  <bind gaction="doc.lock-all-guides" />
   <bind gaction="win.canvas-commands-bar" />
   <bind gaction="win.canvas-snap-controls-bar" />
   <bind gaction="win.canvas-tool-control-bar" />
@@ -238,6 +245,7 @@ override) the bindings in the main default.xml.
 
   <!-- Layers -->
   <bind gaction="win.layer-new"                          keys="&lt;primary&gt;&lt;shift&gt;n" />
+  <bind gaction="win.layer-new-above" />
   <bind gaction="win.layer-rename" />
   <bind gaction="win.layer-hide-toggle" />
   <bind gaction="win.layer-lock-toggle" />
@@ -265,6 +273,12 @@ override) the bindings in the main default.xml.
   <bind gaction="app.selection-group"                    keys="&lt;primary&gt;g,              &lt;primary&gt;&lt;shift&gt;u" />
   <bind gaction="app.selection-ungroup"                  keys="&lt;primary&gt;&lt;shift&gt;g, &lt;primary&gt;u" />
   <bind gaction="app.selection-ungroup-pop" />
+  
+  <bind gaction="app.selection-lock" />
+  <bind gaction="app.unlock-all" />
+  
+  <bind gaction="app.selection-hide" />
+  <bind gaction="app.unhide-all" />
 
   <bind gaction="app.object-set-clip"                    keys="&lt;primary&gt;m" /> 
   <bind gaction="app.object-set-inverse-clip"            keys="&lt;primary&gt;alt&gt;m" /> 
@@ -307,6 +321,8 @@ override) the bindings in the main default.xml.
   <bind gaction="app.transform-grow-step(-1.0)"          keys="               comma,                 less" />
   <bind gaction="win.transform-grow-screen(2.0)"         keys="    &lt;alt&gt;period,     &lt;alt&gt;greater" />
   <bind gaction="win.transform-grow-screen(-2.0)"        keys="    &lt;alt&gt;comma,      &lt;alt&gt;less" />
+  <bind gaction="app.transform-grow-screen(2.0)" />
+  <bind gaction="app.transform-grow-screen(-2.0)" />
 
   <bind gaction="app.transform-rotate(90.0)"             keys="&lt;primary&gt;bracketright" />
   <bind gaction="app.transform-rotate(-90.0)"            keys="&lt;primary&gt;bracketleft" />

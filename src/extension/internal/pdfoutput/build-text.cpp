@@ -287,7 +287,7 @@ void DrawContext::paint_text_layout(Text::Layout const &layout, SPStyle const *c
             continue;
         }
 
-        for (auto layer : get_paint_layers(style, nullptr)) {
+        for (auto layer : get_paint_layers(style, context_style)) {
             switch (layer) {
                 case PAINT_FILLSTROKE:
                     tx.set_text_mode(CAPY_TEXT_FILL_STROKE);
