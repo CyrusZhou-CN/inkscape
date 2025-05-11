@@ -686,7 +686,7 @@ void SPShape::update_patheffect(bool write)
 }
 
 Inkscape::DrawingItem* SPShape::show(Inkscape::Drawing &drawing, unsigned int /*key*/, unsigned int /*flags*/) {
-    // std::cout << "SPShape::set_visible(true): " << (getId()?getId():"null") << std::endl;
+    // std::cout << "SPShape::show(): " << (getId()?getId():"null") << std::endl;
     Inkscape::DrawingShape *s = new Inkscape::DrawingShape(drawing);
 
     bool has_markers = this->hasMarkers();

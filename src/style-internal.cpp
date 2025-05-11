@@ -1700,6 +1700,7 @@ SPIPaint::read( gchar const *str ) {
         if (streq(str, "currentColor")) {
             set = true;
             paintOrigin = SP_CSS_PAINT_ORIGIN_CURRENT_COLOR;
+            paintSource = paintOrigin;
             if (style) {
                 setColor(style->color.getColor());
             } else {
@@ -1713,9 +1714,11 @@ SPIPaint::read( gchar const *str ) {
         } else if (streq(str, "context-fill")) {
             set = true;
             paintOrigin = SP_CSS_PAINT_ORIGIN_CONTEXT_FILL;
+            paintSource = paintOrigin;
         } else if (streq(str, "context-stroke")) {
             set = true;
             paintOrigin = SP_CSS_PAINT_ORIGIN_CONTEXT_STROKE;
+            paintSource = paintOrigin;
         } else if (streq(str, "none")) {
             set = true;
             noneSet = true;
@@ -1735,7 +1738,7 @@ const Glib::ustring SPIPaint::get_value() const
     if (this->href && this->href->getURI()) {
         ret += this->href->getURI()->cssStr();
     }
-    switch(this->paintOrigin) {
+    switch(this->paintSource) {
         case SP_CSS_PAINT_ORIGIN_CURRENT_COLOR:
             if (!ret.empty()) ret += " ";
             ret += "currentColor";
@@ -1784,6 +1787,7 @@ SPIPaint::reset( bool init ) {
     // std::cout << "SPIPaint::reset(): " << name << " " << init << std::endl;
     SPIBase::clear();
     paintOrigin = SP_CSS_PAINT_ORIGIN_NORMAL;
+    paintSource = paintOrigin;
     noneSet = false;
     _color.reset();
     tag = nullptr;
@@ -1817,6 +1821,8 @@ SPIPaint::cascade( const SPIBase* const parent ) {
             } else if( p->paintOrigin == SP_CSS_PAINT_ORIGIN_CURRENT_COLOR ) {
                 paintOrigin = SP_CSS_PAINT_ORIGIN_CURRENT_COLOR;
                 _color = style->color.getColor();
+            } else if( p->paintOrigin != SP_CSS_PAINT_ORIGIN_NORMAL ) {
+                paintOrigin = p->paintOrigin; // context fill/stroke
             } else if( isNone() ) {
                 //
             } else {
@@ -1854,7 +1860,8 @@ SPIPaint::equals(const SPIBase& rhs) const {
 
         if ( (this->isColor()       != r->isColor()       )  ||
              (this->isPaintserver() != r->isPaintserver() )  ||
-             (this->paintOrigin     != r->paintOrigin     ) ) {
+             (this->paintOrigin     != r->paintOrigin     )  ||
+             (this->paintSource     != r->paintSource     )) {
             return false;
         }
 

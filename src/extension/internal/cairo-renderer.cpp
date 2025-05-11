@@ -179,16 +179,16 @@ public:
     {
         auto const fill_origin = target_style->fill.paintOrigin;
         if (fill_origin == SP_CSS_PAINT_ORIGIN_CONTEXT_FILL) {
-            _copyPaint(&target_style->fill, _findContextPaint(true));
+            _copyPaint(&target_style->fill, *_origin->style->getFillOrStroke(true));
         } else if (fill_origin == SP_CSS_PAINT_ORIGIN_CONTEXT_STROKE) {
-            _copyPaint(&target_style->fill, _findContextPaint(false));
+            _copyPaint(&target_style->fill, *_origin->style->getFillOrStroke(false));
         }
 
         auto const stroke_origin = target_style->stroke.paintOrigin;
         if (stroke_origin == SP_CSS_PAINT_ORIGIN_CONTEXT_FILL) {
-            _copyPaint(&target_style->stroke, _findContextPaint(true));
+            _copyPaint(&target_style->stroke, *_origin->style->getFillOrStroke(true));
         } else if (stroke_origin == SP_CSS_PAINT_ORIGIN_CONTEXT_STROKE) {
-            _copyPaint(&target_style->stroke, _findContextPaint(false));
+            _copyPaint(&target_style->stroke, *_origin->style->getFillOrStroke(false));
         }
     }
 
@@ -204,24 +204,6 @@ public:
     }
 
 private:
-    /** @brief Find the paint that context-fill or context-stroke is referring to.
-     *
-     * @param is_fill If true, handle context-fill, otherwise context-stroke.
-     * @return The paint relevant to the specified context.
-     */
-    SPIPaint _findContextPaint(bool is_fill) const
-    {
-        if (auto *clone = cast<SPUse>(_origin); clone && clone->child) {
-            // Copy the paint of the child and merge with the parent's. This is similar
-            // to style merge operations performed when unlinking a clone, but here it's
-            // done only for a paint.
-            SPIPaint paint = *clone->child->style->getFillOrStroke(is_fill);
-            paint.merge(clone->style->getFillOrStroke(is_fill));
-            return paint;
-        }
-        return *_origin->style->getFillOrStroke(is_fill);
-    }
-
     /** Copy paint from origin to destination, saving a copy of the old paint. */
     template<typename PainT>
     void _copyPaint(PainT *destination, SPIPaint paint)
@@ -265,17 +247,7 @@ static void sp_shape_render(SPShape const *shape, CairoRenderContext *ctx, SPIte
     std::unique_ptr<ContextPaintManager> context_fs_manager;
 
     if (origin) {
-        // If the shape is a child of a marker, we must set styles from the origin.
-        auto parentobj = shape->parent;
-        while (parentobj) {
-            if (is<SPMarker>(parentobj)) {
-                // Create a manager to temporarily rewrite any fill/stroke properties
-                // set to context-fill/context-stroke with usable values.
-                context_fs_manager = std::make_unique<ContextPaintManager>(style, origin);
-                break;
-            }
-            parentobj = parentobj->parent;
-        }
+        context_fs_manager = std::make_unique<ContextPaintManager>(style, origin);
     }
 
     if (style->paint_order.layer[0] == SP_CSS_PAINT_ORDER_NORMAL ||
@@ -295,12 +267,13 @@ static void sp_shape_render(SPShape const *shape, CairoRenderContext *ctx, SPIte
 
     // Render markers
     bool has_stroke = style->stroke_width.computed > 0.f;
-    if (shape && shape->hasMarkers() && has_stroke) {
+    if (shape->hasMarkers() && has_stroke) {
         for (auto const &[_, marker, tr] : shape->get_markers()) {
             if (auto marker_item = sp_item_first_item_child(marker)) {
                 auto const old_tr = marker_item->transform;
                 marker_item->transform = old_tr * marker->c2p * tr;
-                ctx->getRenderer()->renderItem(ctx, marker_item, origin ? origin : shape);
+                // Marker's context-fill/context-stroke always refer to shape.
+                ctx->getRenderer()->renderItem(ctx, marker_item, shape);
                 marker_item->transform = old_tr;
             }
         }

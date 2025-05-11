@@ -1341,11 +1341,14 @@ void CairoRenderContext::_setFillStyle(SPStyle const *const style, Geom::OptRect
 {
     g_return_if_fail( !style->fill.set
                       || style->fill.isColor()
+                      || style->fill.isContext()
                       || style->fill.isPaintserver() );
 
     float const alpha = _mergedOpacity(SP_SCALE24_TO_FLOAT(style->fill_opacity.value));
     SPPaintServer const *paint_server = style->getFillPaintServer();
-    if (paint_server && paint_server->isValid()) {
+    if (style->fill.isContext()) {
+        // Do nothing. These are valid values but if not inside a <use> or <marker> element do nothing.
+    } else if (paint_server && paint_server->isValid()) {
 
         g_assert(is<SPGradient>(SP_STYLE_FILL_SERVER(style))
                  || is<SPPattern>(SP_STYLE_FILL_SERVER(style))
@@ -1368,7 +1371,9 @@ void CairoRenderContext::_setFillStyle(SPStyle const *const style, Geom::OptRect
 void CairoRenderContext::_setStrokeStyle(SPStyle const *style, Geom::OptRect const &pbox)
 {
     float const alpha = _mergedOpacity(SP_SCALE24_TO_FLOAT(style->stroke_opacity.value));
-    if (style->stroke.isColor() || (style->stroke.isPaintserver() && !style->getStrokePaintServer()->isValid())) {
+    if (style->stroke.isContext()) {
+        // Do nothing. These are valid values but if not inside a <use> or <marker> element do nothing.
+    } else if (style->stroke.isColor() || (style->stroke.isPaintserver() && !style->getStrokePaintServer()->isValid())) {
         ink_cairo_set_source_color(_cr, style->stroke.getColor(), alpha);
     } else {
         g_assert( style->stroke.isPaintserver()
@@ -1524,10 +1529,17 @@ bool CairoRenderContext::renderPathVector(Geom::PathVector const &pathv,
         return true;
     }
 
-    bool no_fill = style->fill.isNone() || style->fill_opacity.value == 0 ||
+    bool no_fill =
+        style->fill.isNone()           ||
+        style->fill.isContext()        ||
+        style->fill_opacity.value == 0 ||
         order == STROKE_ONLY;
-    bool no_stroke = style->stroke.isNone() || (!style->stroke_extensions.hairline && style->stroke_width.computed < 1e-9) ||
-                     style->stroke_opacity.value == 0 || order == FILL_ONLY;
+    bool no_stroke =
+        style->stroke.isNone()           ||
+        style->stroke.isContext()        ||
+        (!style->stroke_extensions.hairline && style->stroke_width.computed < 1e-9) ||
+        style->stroke_opacity.value == 0 ||
+        order == FILL_ONLY;
 
     if (no_fill && no_stroke)
         return true;

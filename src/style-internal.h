@@ -737,6 +737,7 @@ public:
     SPIPaint& operator=(const SPIPaint& rhs) {
         SPIBase::operator=(rhs);
         paintOrigin = rhs.paintOrigin;
+        paintSource = rhs.paintSource;
         noneSet     = rhs.noneSet;
         _color      = rhs._color;
         href        = rhs.href;
@@ -746,7 +747,11 @@ public:
     bool equals(const SPIBase& rhs) const override;
 
     bool isSameType( SPIPaint const & other ) const {
-        return (isPaintserver() == other.isPaintserver()) && (isColor() == other.isColor()) && (paintOrigin == other.paintOrigin);
+        return
+            (isPaintserver() == other.isPaintserver()) &&
+            (isColor() == other.isColor()) &&
+            (paintOrigin == other.paintOrigin) &&
+            (paintSource == other.paintSource);
     }
 
     bool isNoneSet() const {
@@ -765,6 +770,12 @@ public:
         return href && href->getObject() != nullptr;
     }
 
+    bool isContext() const {
+        return
+            paintOrigin == SP_CSS_PAINT_ORIGIN_CONTEXT_FILL ||
+            paintOrigin == SP_CSS_PAINT_ORIGIN_CONTEXT_STROKE;
+    }
+
     void setNone() {
         noneSet = true;
         _color.reset();
@@ -780,7 +791,8 @@ public:
     Colors::DocumentCMS const &getCMS() const;
   // To do: make private
 public:
-    SPPaintOrigin paintOrigin : 2;
+    SPPaintOrigin paintOrigin : 2; // Inherited value (from cascade)
+    SPPaintOrigin paintSource:  2; // Set value (from XML)
     bool noneSet : 1;
     std::shared_ptr<SPPaintServerReference> href;
     SPObject *tag = nullptr;
