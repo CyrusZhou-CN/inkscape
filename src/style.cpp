@@ -1553,6 +1553,8 @@ sp_css_attr_unset_uris(SPCSSAttr *css)
     if (is_url(sp_repr_css_property(css, "marker-end", nullptr))) sp_repr_css_set_property(css, "marker-end", nullptr);
     if (is_url(sp_repr_css_property(css, "mask", nullptr))) sp_repr_css_set_property(css, "mask", nullptr);
     if (is_url(sp_repr_css_property(css, "fill", nullptr))) sp_repr_css_set_property(css, "fill", nullptr);
+    if (is_url(sp_repr_css_property(css, "shape-inside", nullptr))) sp_repr_css_set_property(css, "shape-inside", nullptr);
+    if (is_url(sp_repr_css_property(css, "shape-subtract", nullptr))) sp_repr_css_set_property(css, "shape-subtract", nullptr);
     if (is_url(sp_repr_css_property(css, "stroke", nullptr))) sp_repr_css_set_property(css, "stroke", nullptr);
 
     return css;

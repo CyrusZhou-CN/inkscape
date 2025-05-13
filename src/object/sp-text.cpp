@@ -1220,7 +1220,10 @@ const std::vector<SPItem *> SPText::get_all_shape_dependencies() const
     std::vector<SPItem *> ret;
     if (style->shape_inside.set) {
         for (auto *href : style->shape_inside.hrefs) {
-            ret.push_back(href->getObject());
+            // If the link is set but the object doesn't exist, skip it
+            if (auto obj = href->getObject()) {
+                ret.push_back(obj);
+            }
         }
     } else if (auto textpath = cast<SPTextPath>(firstChild())) {
         ret.push_back(sp_textpath_get_path_item(textpath));
