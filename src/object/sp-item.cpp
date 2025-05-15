@@ -225,11 +225,18 @@ bool SPItem::isLocked() const {
     return false;
 }
 
-void SPItem::setLocked(bool locked) {
+void SPItem::setLocked(bool locked, bool recursive) {
     setAttribute("sodipodi:insensitive",
                  ( locked ? "1" : nullptr ));
     updateRepr();
     document->_emitModified();
+
+    // Recursively unlock parents too
+    if (recursive) {
+        if (SPItem *p_item = cast<SPItem>(parent)) {
+            p_item->setLocked(locked, recursive);
+        }
+    }
 }
 
 bool SPItem::isHidden() const {

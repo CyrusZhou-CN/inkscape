@@ -414,7 +414,7 @@ ContextMenu::unhide_or_unlock(SPDocument* document, bool unhide)
             }
         } else {
             if (item->isLocked()) {
-                item->setLocked(false);
+                item->setLocked(false, true);
             }
         }
     }

@@ -2053,7 +2053,9 @@ void FilterEffectsDialog::PrimitiveList::draw_connection(const Cairo::RefPtr<Cai
     Gtk::TreeModel::iterator res = find_result(input, attr, src_id, pos); 
 
     const bool is_first = input == get_model()->children().begin();
-    const bool is_selected = input == get_selection()->get_selected();
+    const bool is_selected = (get_selection()->get_selected())
+                             ? input == get_selection()->get_selected()
+                             : false; // if get_selected() is invalid, comparison crashes in gtk
     const bool is_merge = is<SPFeMerge>((SPFilterPrimitive*)(*input)[_columns.primitive]);
     const bool use_default = !res && !is_merge;
     int arc_radius = 4;
