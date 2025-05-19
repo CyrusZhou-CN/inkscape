@@ -201,8 +201,10 @@ Gtk::Widget *ParamString::get_widget(sigc::signal<void ()> *changeSignal)
         auto const textarea = Gtk::make_managed<Gtk::ScrolledWindow>();
         textarea->set_vexpand();
         textarea->set_has_frame(true);
+        textarea->set_propagate_natural_height();
 
         auto const entry = Gtk::make_managed<ParamMultilineStringEntry>(this, changeSignal);
+        entry->set_vexpand();
         textarea->set_child(*entry);
 
         UI::pack_start(*box, *textarea, true, true);

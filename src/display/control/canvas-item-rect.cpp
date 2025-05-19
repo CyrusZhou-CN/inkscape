@@ -181,13 +181,13 @@ void CanvasItemRect::_render(Inkscape::CanvasItemBuffer &buf) const
     }
 
     // Draw fill pattern
-    if (_fill_pattern) {
+    if (_fill_pattern && !buf.outline_pass) {
         buf.cr->set_source(_fill_pattern);
         buf.cr->fill_preserve();
     }
 
     // Draw fill
-    if (SP_RGBA32_A_U(_fill) > 0) {
+    if (SP_RGBA32_A_U(_fill) > 0 && !buf.outline_pass) {
         ink_cairo_set_source_rgba32(buf.cr, _fill);
         buf.cr->fill_preserve();
     }

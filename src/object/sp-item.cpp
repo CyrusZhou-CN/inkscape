@@ -941,6 +941,11 @@ Geom::OptRect SPItem::visualBounds(Geom::Affine const &transform, bool wfilter, 
         // call the subclass method
         bbox = gbox(); // see LP Bug 1229971
 
+        if (!bbox) {
+            // If we don't have a valid bbox, don't go on and create one.
+            return bbox;
+        }
+
         // default filter area per the SVG spec:
         SVGLength x, y, w, h;
         x.set(SVGLength::PERCENT, -0.10, 0);
@@ -955,7 +960,6 @@ Geom::OptRect SPItem::visualBounds(Geom::Affine const &transform, bool wfilter, 
         if (filter->height._set) h = filter->height;
 
         auto const len = bbox ? bbox->dimensions() : Geom::Point();
-
         x.update(12, 6, len.x());
         y.update(12, 6, len.y());
         w.update(12, 6, len.x());
@@ -976,6 +980,11 @@ Geom::OptRect SPItem::visualBounds(Geom::Affine const &transform, bool wfilter, 
     } else {
         // call the subclass method
         bbox = this->bbox(transform, SPItem::VISUAL_BBOX);
+
+        if (!bbox) {
+            // If we don't have a valid bbox, don't do clipping/masking etc.
+            return bbox;
+        }
     }
 
     auto transform_with_units = [&] (bool contentunits) {
