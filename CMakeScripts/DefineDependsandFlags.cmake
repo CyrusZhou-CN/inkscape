@@ -183,6 +183,7 @@ elseif(WITH_CAPYPDF)
     include(ExternalProject)
     ExternalProject_Add(capypdf
         URL https://github.com/jpakkane/capypdf/archive/refs/tags/0.16.0.zip
+        URL_HASH SHA512=24b80a384ee2a78c17b3591a8c78a4677867bc3474771ad8e9dc245dfc960959689f0b19a9dbae3cf78d8b4aaaa66f5e7c924e5650341de0af74f654e3259027
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
         CONFIGURE_COMMAND meson setup . ../capypdf --libdir=${CAPY_LIBDIR} --prefix=${CAPY_PREFIX}
         BUILD_COMMAND meson compile
