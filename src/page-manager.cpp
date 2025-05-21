@@ -234,15 +234,18 @@ void PageManager::deletePage(SPPage *page, bool content)
 {
     if (page) {
         if (content) {
-            for (auto &item : page->getExclusiveItems()) {
-                item->deleteObject();
-            }
-            for (auto &item : page->getOverlappingItems()) {
+            auto const exclusive_items = page->getExclusiveItems();
+
+            ObjectSet items_to_delete{_document};
+            items_to_delete.add(exclusive_items.begin(), exclusive_items.end());
+
+            for (auto *item : page->getOverlappingItems()) {
                 // Only delete objects when they rest on one page.
                 if (getPagesFor(item, false).size() == 1) {
-                    item->deleteObject();
+                    items_to_delete.add(item);
                 }
             }
+            items_to_delete.deleteItems(true);
         }
         // Only adjust if there will be a page after viewport page is deleted
         bool fit_viewport = page->isViewportPage() && getPageCount() > 2;

@@ -490,20 +490,25 @@ void sp_textpath_to_text(SPObject *tp)
 
     // set x/y on text (to be near where it was when on path)
     // Copied from Layout::fitToPathAlign
-    Path *path = cast<SPTextPath>(tp)->originalPath;
-    SVGLength const startOffset = cast<SPTextPath>(tp)->startOffset;
-    double offset = 0.0;
-    if (startOffset._set) {
-        if (startOffset.unit == SVGLength::PERCENT)
-            offset = startOffset.computed * path->Length();
-        else
-            offset = startOffset.computed;
-    }
-    int unused = 0;
-    Path::cut_position *cut_pos = path->CurvilignToPosition(1, &offset, unused);
+    // SVG 2 allows the path to be set by the "path" attribute within <textPath>, so
+    // path may not exist (we don't support this yet).
     Geom::Point midpoint;
-    Geom::Point tangent;
-    path->PointAndTangentAt(cut_pos[0].piece, cut_pos[0].t, midpoint, tangent);
+    if (auto path = cast<SPTextPath>(tp)->originalPath) {
+        SVGLength const startOffset = cast<SPTextPath>(tp)->startOffset;
+        double offset = 0.0;
+        if (startOffset._set) {
+            if (startOffset.unit == SVGLength::PERCENT)
+                offset = startOffset.computed * path->Length();
+            else
+                offset = startOffset.computed;
+        }
+        int unused = 0;
+        Path::cut_position *cut_pos = path->CurvilignToPosition(1, &offset, unused);
+        Geom::Point tangent;
+        path->PointAndTangentAt(cut_pos[0].piece, cut_pos[0].t, midpoint, tangent);
+    } else {
+        std::cerr << "sp_textpath_to_text: no path" << std::endl;
+    }
     text->getRepr()->setAttributeSvgDouble("x", midpoint[Geom::X]);
     text->getRepr()->setAttributeSvgDouble("y", midpoint[Geom::Y]);
 

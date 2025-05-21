@@ -249,6 +249,7 @@ parts:
       INKSCAPE_VERSION=`g++ -I${SNAPCRAFT_PART_SRC}/src ${SNAPCRAFT_PART_BUILD}/src/inkscape-version.cpp ${SNAPCRAFT_PROJECT_DIR}/snap/local/print-inkscape-version.cpp -o print-inkscape-version && ./print-inkscape-version`
       echo "Inkscape Version: ${INKSCAPE_VERSION}"
       craftctl set version="${INKSCAPE_VERSION}"
+      cp ${CRAFT_PART_BUILD}/deps/lib/libcapy* ${CRAFT_PART_INSTALL}/lib/
     override-prime: |
       craftctl default
       sed -i "s|_have.*$||" $SNAPCRAFT_PRIME/share/bash-completion/completions/inkscape
@@ -293,6 +294,8 @@ apps:
     plugs:
       - cups # printing
       - dot-config-inkscape
+      - home # direct access to /home, needed because e.g. drag-and-drop is not working via XDG portal
+      - removable-media # direct access to /mnt, same reason as /home
       - raw-usb # plotter support
       - network # for extension manager
     slots:
