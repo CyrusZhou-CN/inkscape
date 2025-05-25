@@ -565,7 +565,9 @@ objects_query_fillstroke (const std::vector<SPItem*> &objects, SPStyle *style_re
                 paint_res->setColor(copy);
             }
             // Remove colors from this list somehow?
-            colors.set(obj->getId(), copy);
+            if (auto id = obj->getId()) {
+                colors.set(id, copy);
+            }
         }
 
        paintImpossible = false;

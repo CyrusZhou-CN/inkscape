@@ -10,8 +10,8 @@
  */
 
 #include <glibmm/ustring.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <set>
 #include <string>
 #include <variant>
 
@@ -26,94 +26,19 @@ ustring::ustring(char const *c_string)
 ustring::~ustring() noexcept = default;
 } // namespace Glib
 
-/// Mock SPAttributeRelSVG::isSVGElement
+struct MockStatics
+{
+    MOCK_CONST_METHOD1(m_isSVGElement, bool(std::string const &));
+
+    MockStatics() { instance = this; }
+    ~MockStatics() { instance = nullptr; }
+
+    inline static MockStatics *instance = nullptr;
+};
+
 bool SPAttributeRelSVG::isSVGElement(Glib::ustring const &element)
 {
-    static constexpr char const *svg_elements[] = {"color-profile",
-                                                   "a",
-                                                   "clipPath",
-                                                   "defs",
-                                                   "desc",
-                                                   "ellipse",
-                                                   "circle",
-                                                   "filter",
-                                                   "flowDiv",
-                                                   "flowSpan",
-                                                   "flowPara",
-                                                   "flowLine",
-                                                   "flowRegionBreak",
-                                                   "flowRegion",
-                                                   "flowRegionExclude",
-                                                   "flowRoot",
-                                                   "font",
-                                                   "font-face",
-                                                   "glyph",
-                                                   "hkern",
-                                                   "vkern",
-                                                   "hatch",
-                                                   "hatchpath",
-                                                   "hatchPath",
-                                                   "image",
-                                                   "g",
-                                                   "line",
-                                                   "linearGradient",
-                                                   "marker",
-                                                   "mask",
-                                                   "mesh",
-                                                   "meshGradient",
-                                                   "meshgradient",
-                                                   "meshPatch",
-                                                   "meshpatch",
-                                                   "meshRow",
-                                                   "meshrow",
-                                                   "metadata",
-                                                   "missing-glyph",
-                                                   "path",
-                                                   "pattern",
-                                                   "polygon",
-                                                   "polyline",
-                                                   "radialGradient",
-                                                   "rect",
-                                                   "svg",
-                                                   "script",
-                                                   "solidColor",
-                                                   "solidcolor",
-                                                   "stop",
-                                                   "style",
-                                                   "switch",
-                                                   "symbol",
-                                                   "text",
-                                                   "title",
-                                                   "tref",
-                                                   "tspan",
-                                                   "textPath",
-                                                   "use",
-                                                   "feBlend",
-                                                   "feColorMatrix",
-                                                   "feComponentTransfer",
-                                                   "feFuncR",
-                                                   "feFuncG",
-                                                   "feFuncB",
-                                                   "feFuncA",
-                                                   "feComposite",
-                                                   "feConvolveMatrix",
-                                                   "feDiffuseLighting",
-                                                   "feDisplacementMap",
-                                                   "feDistantLight",
-                                                   "feFlood",
-                                                   "feGaussianBlur",
-                                                   "feImage",
-                                                   "feMerge",
-                                                   "feMergeNode",
-                                                   "feMorphology",
-                                                   "feOffset",
-                                                   "fePointLight",
-                                                   "feSpecularLighting",
-                                                   "feSpotLight",
-                                                   "feTile",
-                                                   "feTurbulence"};
-    static std::set<std::string> const elements{std::begin(svg_elements), std::end(svg_elements)};
-    return elements.contains(element.raw());
+    return MockStatics::instance->m_isSVGElement(element.raw());
 }
 
 namespace Inkscape::CSS {
@@ -206,8 +131,18 @@ rect { fill: none; }
     {.input_css = "@charset 'UTF-8';", .expected_repr = {SimpleOutput{R"(@charset "UTF-8";)"}}},
 };
 
-struct ParseCSSTest : ::testing::TestWithParam<ParseCSSTestCase>
+using namespace ::testing;
+
+struct ParseCSSTest : TestWithParam<ParseCSSTestCase>
 {
+    ParseCSSTest()
+    {
+        EXPECT_CALL(mock, m_isSVGElement(AnyOf(StrEq("text"), StrEq("circle"), StrEq("rect"))))
+            .WillRepeatedly(Return(true));
+        EXPECT_CALL(mock, m_isSVGElement(StrEq("div"))).WillRepeatedly(Return(false));
+    }
+
+    MockStatics mock;
 };
 
 TEST_P(ParseCSSTest, ParseCSSForDialogDisplay)
