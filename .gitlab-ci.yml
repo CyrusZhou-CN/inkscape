@@ -188,14 +188,14 @@ inkscape:macos:
   variables:
     MSYSTEM: UCRT64
     CCACHE_DIR: $CI_PROJECT_DIR/ccache
-    CCACHE_MAXSIZE: "1.0G"
+    CCACHE_MAXSIZE: "500M"
     # IDW = Inkscape Deps Windows, https://gitlab.com/inkscape/deps/windows
-    IDW_VERSION: 69
+    IDW_VERSION: 115
     IDW_NAME: ink$IDW_VERSION
-    IDW_RELEASE_URL: $CI_API_V4_URL/projects/46863172/packages/generic/windows/r$IDW_VERSION/$IDW_NAME.7z
+    IDW_RELEASE_URL: $CI_API_V4_URL/projects/46863172/packages/generic/windows/r$IDW_VERSION/${IDW_NAME}_$MSYSTEM.7z
   before_script:
     - wget.exe --quiet --no-check-certificate $IDW_RELEASE_URL
-    - 7z x -oC:/ "$Env:IDW_NAME.7z"
+    - 7z x -oC:/ "${Env:IDW_NAME}_${Env:MSYSTEM}.7z"
 
 
 inkscape:windows:

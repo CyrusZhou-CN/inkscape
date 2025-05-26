@@ -27,7 +27,6 @@
 #include <gtkmm/infobar.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/notebook.h>
-#include <gtkmm/overlay.h>
 #include <gtkmm/picture.h>
 #include <gtkmm/settings.h>
 #include <gtkmm/stack.h>
@@ -35,6 +34,7 @@
 #include <gtkmm/switch.h>
 #include <gtkmm/togglebutton.h>
 #include <gtkmm/treeview.h>
+#include <gtkmm/windowhandle.h>
 
 #include "inkscape-application.h"
 #include "inkscape.h"
@@ -145,7 +145,7 @@ StartScreen::StartScreen()
     , opt_shown(std::string("/options/boot/shown/ver") + Inkscape::version_string_without_revision)
     , build_splash(create_builder("inkscape-splash.glade"))
     // Global widgets
-    , banners        (get_widget<Gtk::Overlay>         (build_splash, "banner"))
+    , banners        (get_widget<Gtk::WindowHandle>         (build_splash, "banner"))
     , close_btn      (get_widget<Gtk::Button>          (build_splash, "close_window"))
     , messages       (get_widget<Gtk::Label>           (build_splash, "messages"))
 {

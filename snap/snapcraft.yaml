@@ -75,6 +75,7 @@ parts:
       - libxml-parser-perl
       - libxslt1-dev
       - ragel
+      - libgmock-dev
     stage-packages:
 #       NOTE: Most dependencies are already provided by "extension: gnome" (see later).
       - libboost-filesystem1.83.0

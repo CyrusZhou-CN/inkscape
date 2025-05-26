@@ -29,9 +29,9 @@ class Button;
 class ComboBox;
 class Label;
 class Notebook;
-class Overlay;
 class TreeView;
 class Widget;
+class WindowHandle;
 } // namespace Gtk
 
 class SPDocument;
@@ -81,7 +81,7 @@ private:
     Glib::Timer _timer;
 
     Glib::RefPtr<Gtk::Builder> build_splash;
-    Gtk::Overlay &banners;
+    Gtk::WindowHandle &banners;
     Gtk::Button &close_btn;
     Gtk::Label &messages;
     Inkscape::UI::Widget::TemplateList templates;

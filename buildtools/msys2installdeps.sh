@@ -73,7 +73,8 @@ $ARCH-gtkmm4
 # install packaging tools (required for dist-win-* targets)
 eval pacman -S $PACMAN_OPTIONS \
 $ARCH-7zip \
-$ARCH-nsis
+$ARCH-nsis \
+$ARCH-ntldd
 
 # install Inkscape dependencies (optional)
 eval pacman -S $PACMAN_OPTIONS \

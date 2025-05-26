@@ -10,7 +10,8 @@ export DEB_BUILD_MAINT_OPTIONS=hardening=+all
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
-	-DCMAKE_BUILD_TYPE=Release
+	-DCMAKE_BUILD_TYPE=Release \
+	-DWITH_CAPYPDF=OFF
 
 override_dh_auto_test:
 	export CTEST_OUTPUT_ON_FAILURE=1
