@@ -157,6 +157,7 @@ endforeach()
 include(${CMAKE_SOURCE_DIR}/CMakeScripts/UnitTest.cmake)
 
 ### Unit tests
+add_unit_test(assertions-in-tests)
 add_unit_test(version-test SOURCES version.cpp)
 add_unit_test(css-syntactic-decomposition-test SOURCES "css/syntactic-decomposition.cpp" EXTRA_LIBS croco_LIB)
 add_dependencies(tests unit_tests)

@@ -22,6 +22,11 @@ function(add_unit_test test_name)
 
     add_executable(${test_name} src/${test_name}.cpp ${test_sources})
     target_include_directories(${test_name} SYSTEM PRIVATE ${GTEST_INCLUDE_DIRS})
+
+    target_compile_definitions(${test_name} PRIVATE "-D_GLIBCXX_ASSERTIONS")
+    target_compile_options(${test_name} PRIVATE "-fsanitize=address" "-fno-omit-frame-pointer" "-UNDEBUG")
+    target_link_options(${test_name} PRIVATE "-fsanitize=address")
+
     target_link_libraries(${test_name} GTest::gtest GTest::gmock GTest::gmock_main ${ARG_EXTRA_LIBS})
     add_test(NAME ${test_name} COMMAND ${test_name})
     add_dependencies(unit_tests ${test_name} ${ARG_EXTRA_LIBS})

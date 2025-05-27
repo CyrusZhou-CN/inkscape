@@ -955,6 +955,11 @@ void CairoRenderContext::transform(Geom::Affine const &transform)
 {
     g_assert(_is_valid);
 
+    // Cairo internally does not like object transforms that can not be inverted
+    if (std::abs(transform.det()) < 1e-6) {
+        return;
+    }
+
     ink_cairo_transform(_cr, transform);
 
     // store new CTM
@@ -964,9 +969,7 @@ void CairoRenderContext::transform(Geom::Affine const &transform)
 void CairoRenderContext::setTransform(Geom::Affine const &transform)
 {
     g_assert(_is_valid);
-    cairo_matrix_t matrix;
-    ink_matrix_to_cairo(matrix, transform);
-    cairo_set_matrix(_cr, &matrix);
+    ink_cairo_transform(_cr, transform);
     _state_stack.back().transform = transform;
 }
 
@@ -1132,10 +1135,7 @@ CairoRenderContext::_createPatternPainter(SPPaintServer const *const paintserver
     cairo_pattern_set_extend(result, CAIRO_EXTEND_REPEAT);
 
     // set pattern transformation
-    cairo_matrix_t pattern_matrix;
-    ink_matrix_to_cairo(pattern_matrix, ps2user);
-    cairo_matrix_invert(&pattern_matrix);
-    cairo_pattern_set_matrix(result, &pattern_matrix);
+    ink_cairo_pattern_set_matrix(result, ps2user.inverse());
 
     // hide all items
     for (SPPattern *pat_i = pat; pat_i != nullptr; pat_i = pat_i->ref.getObject()) {
@@ -1307,25 +1307,14 @@ CairoRenderContext::_createPatternForPaintServer(SPPaintServer const *const pain
             }
         }
 
-        cairo_matrix_t pattern_matrix;
-        if (g->gradientTransform_set) {
-            // apply gradient transformation
-            cairo_matrix_init(&pattern_matrix,
-                g->gradientTransform[0], g->gradientTransform[1],
-                g->gradientTransform[2], g->gradientTransform[3],
-                g->gradientTransform[4], g->gradientTransform[5]);
-        } else {
-            cairo_matrix_init_identity (&pattern_matrix);
-        }
-
+        // apply gradient transformation
+        auto pattern_matrix = g->gradientTransform_set ? g->gradientTransform : Geom::identity();
         if (apply_bbox2user) {
             // convert to userspace
-            cairo_matrix_t bbox2user;
-            cairo_matrix_init (&bbox2user, pbox->width(), 0, 0, pbox->height(), pbox->left(), pbox->top());
-            cairo_matrix_multiply (&pattern_matrix, &bbox2user, &pattern_matrix);
+            pattern_matrix *= Geom::Affine(pbox->width(), 0, 0, pbox->height(), pbox->left(), pbox->top());
         }
-        cairo_matrix_invert(&pattern_matrix);   // because Cairo expects a userspace->patternspace matrix
-        cairo_pattern_set_matrix(pattern, &pattern_matrix);
+        // Inverse because Cairo expects a userspace->patternspace matrix
+        ink_cairo_pattern_set_matrix(pattern, pattern_matrix.inverse());
     }
 
     return pattern;
