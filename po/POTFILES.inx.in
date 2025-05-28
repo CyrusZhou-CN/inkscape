@@ -1,6 +1,7 @@
 ../share/extensions/addnodes.inx
 ../share/extensions/aisvg.inx
 ../share/extensions/cgm_input.inx
+../share/extensions/clean_up_path.inx
 ../share/extensions/color_blackandwhite.inx
 ../share/extensions/color_brighter.inx
 ../share/extensions/color_custom.inx

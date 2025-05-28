@@ -77,7 +77,9 @@ bool XSLT::load(Inkscape::Extension::Extension *module)
 
 void XSLT::unload(Inkscape::Extension::Extension *module)
 {
-    if (!module->loaded()) { return; }
+    if (!module->loaded() && !_stylesheet) {
+        return;
+    }
     xsltFreeStylesheet(_stylesheet);
     // No need to use xmlfreedoc(_parsedDoc), it's handled by xsltFreeStylesheet(_stylesheet);
 }

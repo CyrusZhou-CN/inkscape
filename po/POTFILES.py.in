@@ -3,12 +3,14 @@
 ../share/extensions/barcode/Code25i.py
 ../share/extensions/barcode/Upce.py
 ../share/extensions/barcode/__init__.py
+../share/extensions/clean_up_path.py
 ../share/extensions/color_randomize.py
 ../share/extensions/convert2dashes.py
 ../share/extensions/dhw_input.py
 ../share/extensions/dimension.py
 ../share/extensions/distribute_along_path.py
 ../share/extensions/docinfo.py
+../share/extensions/dxf12_outlines.py
 ../share/extensions/dxf_input.py
 ../share/extensions/dxf_outlines.py
 ../share/extensions/extrude.py

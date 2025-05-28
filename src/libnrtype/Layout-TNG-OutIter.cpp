@@ -320,6 +320,20 @@ Geom::Path Layout::baseline() const
     return baseline;
 }
 
+void Layout::_calculateBaselines()
+{
+    _baselines.clear();
+    auto pos = begin();
+
+    while (pos != end()) {
+        auto const start_anchor_pt = characterAnchorPoint(pos);
+        pos.thisEndOfLine();
+        auto const end_anchor_pt = characterAnchorPoint(pos);
+
+        _baselines.push_back(Geom::LineSegment{start_anchor_pt, end_anchor_pt});
+        pos.nextCharacter();
+    }
+}
 
 Geom::Point Layout::chunkAnchorPoint(iterator const &it) const
 {

@@ -413,7 +413,10 @@ void SPNamedView::updateViewPort()
     if (auto page = document->getPageManager().getPageAt(box->corner(0))) {
         // An existing page is set as the main page, so hide th viewport canvas item.
         _viewport->hide();
-        page->setDesktopRect(*box);
+        // This means the page is in the middle of being moved, so please don't move.
+        if (page->isViewportPage()) {
+            page->setDesktopRect(*box);
+        }
     } else {
         // Otherwise we are showing the viewport item.
         _viewport->show();

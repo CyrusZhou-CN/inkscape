@@ -269,7 +269,6 @@ void Inkscape::ObjectSnapper::_snapTranslatingGuide(IntermSnapResults &isr,
     }
 }
 
-
 /// @todo investigate why Geom::Point p is passed in but ignored.
 void Inkscape::ObjectSnapper::_collectPaths(Geom::Point /*p*/,
                                          SnapSourceType const source_type,
@@ -319,7 +318,6 @@ void Inkscape::ObjectSnapper::_collectPaths(Geom::Point /*p*/,
         }
 
         for (const auto & _candidate : *_snapmanager->_obj_snapper_candidates) {
-
             /* Transform the requested snap point to this item's coordinates */
             Geom::Affine i2doc(Geom::identity());
             SPItem *root_item = nullptr;
@@ -341,12 +339,16 @@ void Inkscape::ObjectSnapper::_collectPaths(Geom::Point /*p*/,
                 if (p_is_other || p_is_a_node || (!_snapmanager->snapprefs.getStrictSnapping() && p_is_a_bbox)) {
                     if (is<SPText>(root_item) || is<SPFlowtext>(root_item)) {
                         if (_snapmanager->snapprefs.isTargetSnappable(SNAPTARGET_TEXT_BASELINE)) {
-                            // Snap to the text baseline
+                            // Snap to the text baselines
                             Text::Layout const *layout = te_get_layout(static_cast<SPItem *>(root_item));
                             if (layout != nullptr && layout->outputExists()) {
                                 Geom::Affine transform = root_item->i2dt_affine() * _candidate.additional_affine * _snapmanager->getDesktop()->doc2dt();
-                                auto pv = Geom::PathVector();
-                                pv.push_back(layout->baseline() * transform);
+                                Geom::PathVector pv;
+                                for (auto const& baseline : layout->getBaselines()) {
+                                    std::array<Geom::LineSegment, 1> const segments{baseline};
+                                    Geom::Path const baseline_path{segments.begin(), segments.end()};
+                                    pv.push_back(baseline_path * transform);
+                                }
                                 _paths_to_snap_to->emplace_back(std::move(pv), SNAPTARGET_TEXT_BASELINE, Geom::OptRect());
                             }
                         }

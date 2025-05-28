@@ -2391,6 +2391,8 @@ bool Layout::calculateFlow()
     if (_characters.empty()) {
         _calculateCursorShapeForEmpty();
     }
+
+    _calculateBaselines();
     return result;
 }
 

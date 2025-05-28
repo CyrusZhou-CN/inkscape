@@ -415,7 +415,7 @@ bool SPPage::itemOnPage(SPItem const *item, bool contains, bool groups) const
 bool SPPage::isViewportPage() const
 {
     auto rect = document->preferredBounds();
-    return getDocumentRect().corner(0).floor() == rect->corner(0).floor();
+    return _can_be_viewport && getDocumentRect().corner(0).floor() == rect->corner(0).floor();
 }
 
 /**
@@ -581,21 +581,32 @@ void SPPage::moveItems(Geom::Affine translate, std::vector<SPItem *> const &item
  */
 void SPPage::swapPage(SPPage *other, bool with_objects)
 {
+    // Flip direction so we know which page will be the viewport
+    if (other->isViewportPage()) {
+        other->swapPage(this, with_objects);
+        return;
+    }
+
     // Swapping with the viewport page must be handled gracefully.
     if (this->isViewportPage()) {
         auto other_rect = other->getDesktopRect();
         auto new_rect = Geom::Rect(Geom::Point(0, 0),
             Geom::Point(other_rect.width(), other_rect.height()));
         this->document->fitToRect(new_rect, false);
-    } else if (other->isViewportPage()) {
-        other->swapPage(this, with_objects);
-        return;
     }
+
+    // Prevent any resizing of these pages by the viewport when doc->ensureUpToDate()
+    // is called by the move objects functionality that needs accurate bboxes.
+    _can_be_viewport = false;
+    other->_can_be_viewport = false;
 
     auto this_affine = Geom::Translate(getDesktopRect().corner(0));
     auto other_affine = Geom::Translate(other->getDesktopRect().corner(0));
     movePage(this_affine.inverse() * other_affine, with_objects);
     other->movePage(other_affine.inverse() * this_affine, with_objects);
+
+    _can_be_viewport = true;
+    other->_can_be_viewport = true;
 }
 
 void SPPage::update(SPCtx * /*ctx*/, unsigned int /*flags*/)

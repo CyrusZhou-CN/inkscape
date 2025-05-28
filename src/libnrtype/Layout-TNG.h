@@ -533,6 +533,11 @@ public:
 
     Geom::Path baseline() const;
 
+    /**
+     * Returns all the baselines of a text element.
+     */
+    std::vector<Geom::LineSegment> getBaselines() const { return _baselines; }
+
     /** This is that value to apply to the x,y attributes of tspan role=line
     elements, and hence it takes alignment into account. */
     Geom::Point chunkAnchorPoint(iterator const &it) const;
@@ -901,6 +906,7 @@ private:
     std::vector<Span> _spans;
     std::vector<Character> _characters;
     std::vector<Glyph> _glyphs;
+    std::vector<Geom::LineSegment> _baselines;
 
     inline unsigned _lineToSpan(unsigned line_index) const
     {
@@ -947,6 +953,8 @@ private:
     /** calculates the width of a chunk, which is the largest x
     coordinate (start or end) of the spans contained within it. */
     double _getChunkWidth(unsigned chunk_index) const;
+
+    void _calculateBaselines();
 };
 
 /** \brief Holds a position within the glyph output of Layout.

@@ -16,6 +16,9 @@
 #include <glibmm/i18n.h>
 #include <glibmm/convert.h>
 #include <glibmm/fileutils.h>
+#ifdef GDK_WINDOWING_WAYLAND
+#include <gdk/wayland/gdkwayland.h>
+#endif
 #include <gdkmm/display.h>
 #include <gtkmm/builder.h>
 #include <gtkmm/button.h>
@@ -196,6 +199,16 @@ void StartScreen::show_welcome()
 {
     _welcome = true;
 
+#ifdef GDK_WINDOWING_WAYLAND
+    // Hide the window for a short time so it can be repositioned
+    if (GDK_IS_WAYLAND_DISPLAY(this->get_display()->gobj())) {
+        hide();
+        auto main_context = Glib::MainContext::get_default();
+        while (main_context->iteration(false)) {
+        }
+    }
+#endif
+
     set_default_size(700, 360);
     grab_focus();
     messages.hide();
@@ -306,6 +319,8 @@ void StartScreen::show_welcome()
     }
     // Refresh keyboard warning message
     refresh_keys_warning();
+
+    show();
 
     // Splash screen is now finished
     _timer.stop();

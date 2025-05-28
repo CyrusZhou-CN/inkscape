@@ -126,6 +126,10 @@ private:
     SVGBox margin;
     SVGBox bleed;
     std::string _size_label;
+
+    // This stores a value when the page is being moved or shuffled and we need
+    // to prevent double resizing as viewBox changes pages and visa-versa
+    bool _can_be_viewport = true;
 };
 
 #endif // SEEN_SP_PAGE_H
