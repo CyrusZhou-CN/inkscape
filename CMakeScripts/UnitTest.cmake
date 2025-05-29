@@ -4,24 +4,23 @@
 add_custom_target(unit_tests)
 
 # Add a unit test as follows:
-# add_unit_test(name-of-my-test SOURCES foo.cpp ...)
-#
-# Note that the main test file must exist as testfiles/src/name-of-my-test.cpp
-# Additional sources are given after SOURCES; their paths are relative to Inkscape's src/
-# and are meant to be limited to only the source files containing the tested functionality.
-#
-# You can also add the argument EXTRA_LIBS followed by additional libraries you would like
-# to be linked to your test. This is not recommended unless you explicitly intend to test
-# integrations with the functionality provided by those libraries.
+# add_unit_test(name-of-my-test TEST_SOURCE foo-test.cpp [SOURCES foo.cpp ...] [EXTRA_LIBS ...])
 function(add_unit_test test_name)
     set(MULTI_VALUE_ARGS "SOURCES" "EXTRA_LIBS")
-    cmake_parse_arguments(ARG "UNUSED_OPTIONS" "UNUSED_MONOVAL" "${MULTI_VALUE_ARGS}" ${ARGN})
+    cmake_parse_arguments(ARG "UNUSED_OPTIONS" "TEST_SOURCE" "${MULTI_VALUE_ARGS}" ${ARGN})
     foreach(source_file ${ARG_SOURCES})
-        list(APPEND test_sources ${CMAKE_SOURCE_DIR}/src/${source_file})
+        list(APPEND test_sources "${CMAKE_SOURCE_DIR}/src/${source_file}")
     endforeach()
+    if(EXISTS "${CMAKE_SOURCE_DIR}/testfiles/src/${test_name}.cpp")
+        list(APPEND test_sources "${CMAKE_SOURCE_DIR}/testfiles/src/${test_name}.cpp")
+    endif()
+    if(EXISTS "${CMAKE_SOURCE_DIR}/testfiles/src/${TEST_SOURCE}")
+        list(APPEND test_sources "${CMAKE_SOURCE_DIR}/testfiles/src/${TEST_SOURCE}")
+    endif()
 
-    add_executable(${test_name} src/${test_name}.cpp ${test_sources})
+    add_executable(${test_name} ${test_sources})
     target_include_directories(${test_name} SYSTEM PRIVATE ${GTEST_INCLUDE_DIRS})
+    set_target_properties(${test_name} PROPERTIES LINKER_LANGUAGE CXX)
 
     target_compile_definitions(${test_name} PRIVATE "-D_GLIBCXX_ASSERTIONS")
     target_compile_options(${test_name} PRIVATE "-fsanitize=address" "-fno-omit-frame-pointer" "-UNDEBUG")

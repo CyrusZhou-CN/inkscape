@@ -135,7 +135,7 @@ PageToolbar::PageToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
     });
 
     _entry_page_sizes = dynamic_cast<Gtk::Entry *>(_combo_page_sizes.get_child());
-
+    // TODO(Gtk::DropDown migration): set up the tooltip for the dropdown's button.
     if (_entry_page_sizes) {
         _entry_page_sizes->set_placeholder_text(_("ex.: 100x100cm"));
         _entry_page_sizes->set_tooltip_text(_("Type in width & height of a page. (ex.: 15x10cm, 10in x 100mm)\n"
@@ -148,7 +148,7 @@ PageToolbar::PageToolbar(Glib::RefPtr<Gtk::Builder> const &builder)
             DocumentUndo::maybeDone(_document, "page-resize", _("Resize Page"), INKSCAPE_ICON("tool-pages"));
             setSizeText();
         });
-
+        _entry_page_sizes->set_icon_tooltip_text(_("Change page orientation"), Gtk::Entry::IconPosition::SECONDARY);
         _entry_page_sizes->property_has_focus().signal_changed().connect([this] {
             if (!_document)
                 return;

@@ -158,10 +158,26 @@ endforeach()
 include(${CMAKE_SOURCE_DIR}/CMakeScripts/UnitTest.cmake)
 
 ### Unit tests
-add_unit_test(assertions-in-tests)
-add_unit_test(version-test SOURCES version.cpp)
-add_unit_test(css-syntactic-decomposition-test SOURCES "css/syntactic-decomposition.cpp" EXTRA_LIBS croco_LIB)
-add_unit_test(xslt-extension-test SOURCES "extension/implementation/xslt.cpp" EXTRA_LIBS 2Geom::2geom)
+#
+# In order to add a unit test, call add_unit_test() providing a unique name for the test,
+# and then the following named parameters:
+# TEST_SOURCE followed by the file containing the test code (relative to testfiles/src)
+# SOURCES     followed by a list of files containing the code under test (relative to src/)
+# EXTRA_LIBS  followed by libraries which you need to be linked to the test.
+#
+add_unit_test(assertions-in-tests TEST_SOURCE "assertions-in-tests.cpp")
+add_unit_test(version-test TEST_SOURCE "version-test.cpp"
+                               SOURCES "version.cpp")
+add_unit_test(css-syntactic-decomposition-test TEST_SOURCE "css-syntactic-decomposition-test.cpp"
+                                                   SOURCES "css/syntactic-decomposition.cpp"
+                                                EXTRA_LIBS croco_LIB)
+add_unit_test(xslt-extension-test TEST_SOURCE "xslt-extension-test.cpp"
+                                      SOURCES "extension/implementation/xslt.cpp"
+                                   EXTRA_LIBS 2Geom::2geom)
+add_unit_test(mod360-test TEST_SOURCE "mod360-test.cpp"
+                              SOURCES "mod360.cpp"
+                           EXTRA_LIBS 2Geom::2geom)
+
 add_dependencies(tests unit_tests)
 
 ### CLI rendering tests and LPE

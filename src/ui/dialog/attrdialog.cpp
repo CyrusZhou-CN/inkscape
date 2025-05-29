@@ -59,7 +59,7 @@
 #include "ui/pack.h"
 #include "ui/popup-menu.h"
 #include "ui/syntax.h"
-#include "ui/widget/shapeicon.h"
+#include "ui/widget/iconrenderer.h"
 #include "util/numeric/converters.h"
 
 /**
@@ -155,9 +155,8 @@ AttrDialog::AttrDialog()
     _store = Gtk::ListStore::create(_attrColumns);
     _treeView.set_model(_store);
 
-    // high-res aware icon renderer for a trash can
-    auto const delete_renderer = Gtk::make_managed<UI::Widget::CellRendererItemIcon>();
-    delete_renderer->property_shape_type().set_value("edit-delete");
+    auto const delete_renderer = Gtk::make_managed<UI::Widget::IconRenderer>();
+    delete_renderer->add_icon("edit-delete");
     delete_renderer->signal_activated().connect(sigc::mem_fun(*this, &AttrDialog::onAttrDelete));
     _treeView.append_column("", *delete_renderer);
 
