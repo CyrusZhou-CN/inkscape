@@ -62,7 +62,10 @@ def get_dependencies(filename, deps):
         # which is indicated by the string '=>' followed by the determined location or 'not found'
         if ('=>' in line):
             (lib, location) = line.lstrip().split(' => ')
-            if location == 'not found':
+            if lib == "OPENGL32.dll": #ignored since it's a system library but is absent from the CI (no display)
+                skip_indent = indent
+                continue
+            elif location == 'not found':
                 location = None
             else:
                 location = location.rsplit('(', 1)[0].strip()

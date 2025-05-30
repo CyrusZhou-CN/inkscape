@@ -94,6 +94,8 @@ private:
     void update_tip(CanvasEvent const &event);
     void update_tip();
     void handleControlUiStyleChange();
+
+    void _updateSelectionColor(CanvasEvent const &event);
 };
 
 void sp_update_helperpath(SPDesktop *desktop);

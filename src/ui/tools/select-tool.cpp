@@ -566,7 +566,15 @@ bool SelectTool::root_handler(CanvasEvent const &event)
 
                 } else {
                     if (Inkscape::Rubberband::get(_desktop)->isStarted()) {
-                        Inkscape::Rubberband::get(_desktop)->move(p);
+                        auto rubberband = Inkscape::Rubberband::get(_desktop);
+                        rubberband->move(p);
+
+                        // set selection color
+                        if (Modifier::get(Modifiers::Type::SELECT_REMOVE_FROM)->active(event.modifiers)) {
+                            rubberband->setOperation(Rubberband::Operation::REMOVE);
+                        } else {
+                            rubberband->setOperation(Rubberband::Operation::ADD);
+                        }
 
                         auto touch_path = Modifier::get(Modifiers::Type::SELECT_TOUCH_PATH)->get_label();
                         auto remove_from = Modifier::get(Modifiers::Type::SELECT_REMOVE_FROM)->get_label();
@@ -790,9 +798,9 @@ bool SelectTool::root_handler(CanvasEvent const &event)
         [&] (KeyPressEvent const &event) {
             auto keyval = get_latin_keyval (event);
 
-            // Why this?
-            bool alt = mod_alt(event)           ||
-                       keyval == GDK_KEY_Alt_L  ||
+            // Workaround for non-working modifiers code
+            // TODO check what the Option key emits
+            bool alt = keyval == GDK_KEY_Alt_L  ||
                        keyval == GDK_KEY_Alt_R  ||
                        keyval == GDK_KEY_Meta_L ||
                        keyval == GDK_KEY_Meta_R;
@@ -804,8 +812,14 @@ bool SelectTool::root_handler(CanvasEvent const &event)
                 defaultMessageContext()->clear();
             } else if (grabbed || _seltrans->isGrabbed()) {
                 if (auto rubberband = Inkscape::Rubberband::get(_desktop); rubberband->isStarted()) {
-                    // if Alt then change cursor to moving cursor:
-                    if (Modifier::get(Modifiers::Type::SELECT_TOUCH_PATH)->active(event.modifiers | keyval)) {
+                    // if Ctrl then change rubberband operation to remove (changes color)
+                    if (Modifier::get(Modifiers::Type::SELECT_REMOVE_FROM)->active(event.modifiersAfter())) {
+                        rubberband->setOperation(Rubberband::Operation::REMOVE);
+                        // update the rubberband
+                        rubberband->move(_desktop->point());
+                    }
+                    // if Alt then change mode to touch path mode
+                    if (Modifier::get(Modifiers::Type::SELECT_TOUCH_PATH)->active(event.modifiersAfter())) {
                         rubberband->setMode(Rubberband::Mode::TOUCHPATH);
                         rubberband->setHandle(CanvasItemCtrlType::RUBBERBAND_TOUCHPATH_SELECT);
                     }
@@ -826,7 +840,6 @@ bool SelectTool::root_handler(CanvasEvent const &event)
                     _force_dragging = true;
                     _default_cursor = "select.svg";
                 }
-                //*/
                 return;
             }
 
@@ -969,9 +982,8 @@ bool SelectTool::root_handler(CanvasEvent const &event)
                 defaultMessageContext()->clear();
             }
             
-            // Why this?
-            bool alt = mod_alt(event)           ||
-                       keyval == GDK_KEY_Alt_L  ||
+            // Workaround for non-working modifier detection
+            bool alt = keyval == GDK_KEY_Alt_L  ||
                        keyval == GDK_KEY_Alt_R  ||
                        keyval == GDK_KEY_Meta_L ||
                        keyval == GDK_KEY_Meta_R;
@@ -980,11 +992,17 @@ bool SelectTool::root_handler(CanvasEvent const &event)
             }
 
             if (auto rubberband = Inkscape::Rubberband::get(_desktop); rubberband->isStarted()) {
-                // if Alt then change cursor to moving cursor:
+                // if Alt release then change mode back to default
                 if (alt) {
                     auto const [mode, handle] = get_default_rubberband_state();
                     rubberband->setMode(mode);
                     rubberband->setHandle(handle);
+                }
+                // if Ctrl release then change rubberband operation to add
+                if (!Modifier::get(Modifiers::Type::SELECT_REMOVE_FROM)->active(event.modifiersAfter())) {
+                    rubberband->setOperation(Rubberband::Operation::ADD);
+                    // update the rubberband
+                    rubberband->move(_desktop->point());
                 }
             } else {
                 if (alt) {

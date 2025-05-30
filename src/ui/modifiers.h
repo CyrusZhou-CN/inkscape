@@ -67,7 +67,7 @@ enum class Type {
     SELECT_IN_GROUPS,     // Select within groups {CTRL+CLICK}
     SELECT_TOUCH_PATH,    // Draw band to select {ALT+DRAG+Nothing selected}
     SELECT_ALWAYS_BOX,    // Draw box to select {SHIFT+DRAG}
-    SELECT_REMOVE_FROM,     // Remove from selection {CTRL+SHIFT+DRAG}
+    SELECT_REMOVE_FROM,   // Remove from selection {CTRL+DRAG}
     SELECT_FORCE_DRAG,    // Drag objects even if the mouse isn't over them {ALT+DRAG+Selected}
     SELECT_CYCLE,         // Cycle through objects under cursor {ALT+SCROLL}
 
@@ -82,6 +82,8 @@ enum class Type {
 
     BOOL_SHIFT,           // Shift the shape builder into its alternative mode.
     NODE_GROW_LINEAR,     // Scroll wheel selection of nodes
+    NODE_INVERT,          // Select nodes outside of the selection box
+    NODE_REMOVE_FROM,     // Remove selected nodes from selection
     NODE_GROW_SPATIAL,    // Scroll wheel selection of nodes
     // TODO: Alignment omitted because it's UX is not completed
 };

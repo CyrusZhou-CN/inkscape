@@ -274,3 +274,29 @@ Notes:
    stroke-width: 2px;
    outline-width: 1px;
 }
+
+/* selection rubberbands while in the remove operation (Ctrl) */
+.inkscape-selection-deselect {
+   fill: #f299d6;
+   fill-opacity: 10%;
+   stroke: #f299d6;
+}
+
+/* select tool while holding "Alt" key (remove operation) */
+.inkscape-selection-deselect.selector {
+   fill-opacity: 0%;
+   stroke: #f299d6;
+}
+
+/* selection rubberbands while in the remove operation (Ctrl) */
+.inkscape-selection-invert {
+   fill: #444444;
+   fill-opacity: 10%;
+   stroke: #444444;
+}
+
+/* select tool while holding "Alt" key (remove operation) */
+.inkscape-selection-invert.selector {
+   fill-opacity: 0%;
+   stroke: #444444;
+}

@@ -48,6 +48,8 @@ ModifierIdToTypeMap const &modifier_type_from_id()
         {"trans-snapping", Type::TRANS_SNAPPING},
         {"bool-shift", Type::BOOL_SHIFT},
         {"node-grow-linear", Type::NODE_GROW_LINEAR},
+        {"node-invert", Type::NODE_INVERT},
+        {"node-remove-from", Type::NODE_REMOVE_FROM},
         {"node-grow-spatial", Type::NODE_GROW_SPATIAL}
     };
     return static_id_to_type_map;
@@ -94,7 +96,7 @@ Modifier::Container &Modifier::_modifiers()
         make_modifier("select-in-groups", _("Select inside groups"), _("Ignore groups when selecting items"), CTRL, SELECT, CLICK),
         make_modifier("select-touch-path", _("Select with touch-path"), _("Draw a band around items to select them"), ALT, SELECT, DRAG),
         make_modifier("select-always-box", _("Select with box"), _("Don't drag items, select more with a box"), SHIFT, SELECT, DRAG),
-        make_modifier("select-remove-from", _("Remove from selection"), _("Remove items from existing selection"), SHIFT | CTRL, SELECT, DRAG),
+        make_modifier("select-remove-from", _("Remove from selection"), _("Remove items from existing selection"), CTRL, SELECT, DRAG),
         make_modifier("select-force-drag", _("Forced Drag"), _("Drag objects even if the mouse isn't over them"), ALT, SELECT, DRAG),
         make_modifier("select-cycle", _("Cycle through objects"), _("Scroll through objects under the cursor"), ALT, SELECT, SCROLL),
 
@@ -111,6 +113,8 @@ Modifier::Container &Modifier::_modifiers()
         make_modifier("bool-shift", _("Switch mode"), _("Change shape builder mode temporarily by holding a modifier key."), SHIFT, BOOLEANS_TOOL, DRAG),
 
         make_modifier("node-grow-linear", _("Linear node selection"), _("Select the next nodes with scroll wheel or keyboard"), CTRL, NODE_TOOL, SCROLL),
+        make_modifier("node-invert", _("Inverted node selection"), _("Select nodes outside the selection area"), CTRL, NODE_TOOL, DRAG),
+        make_modifier("node-remove-from", _("Remove nodes from selection"), _("Remove selected nodes from the selection"), SHIFT | CTRL, NODE_TOOL, DRAG),
         make_modifier("node-grow-spatial", _("Spatial node selection"), _("Select more nodes with scroll wheel or keyboard"), ALWAYS, NODE_TOOL, SCROLL),
     };
     return static_modifiers;

@@ -22,6 +22,7 @@
 #include "desktop.h"
 #include "display/cairo-utils.h"
 #include "display/control/canvas-item-bpath.h"
+#include "display/control/canvas-item-enums.h"
 #include "display/control/canvas-item-rect.h"
 #include "display/control/ctrl-handle-manager.h"
 #include "display/control/ctrl-handle-styling.h"
@@ -83,6 +84,7 @@ void Inkscape::Rubberband::stop()
 
     _mode = default_mode;
     _handle = default_handle;
+    _deselect_handle = default_deselect_handle;
 
     _touchpath_curve->reset();
     _path.clear();
@@ -135,44 +137,64 @@ void Inkscape::Rubberband::move(Geom::Point const &p)
 
     auto const &css = Handles::Manager::get().getCss()->style_map;
     auto const &style = css.at(Handles::TypeState{.type = _handle});
+    auto const &invert_style = css.at(Handles::TypeState{.type = _invert_handle});
+    auto const &deselect_style = css.at(Handles::TypeState{.type = _deselect_handle});
+
+    // the initial values are for Operation::ADD
+    auto fill_color = style.getFill();
+    auto stroke_color = style.getStroke();
+
+    // operation to add or remove objects
+    switch (_operation) {
+        case Inkscape::Rubberband::Operation::INVERT:
+            fill_color = invert_style.getFill();
+            stroke_color = invert_style.getStroke();
+            break;
+        case Inkscape::Rubberband::Operation::REMOVE:
+            fill_color = deselect_style.getFill();
+            stroke_color = deselect_style.getStroke();
+            break;
+        default:
+            break;
+    }
 
     switch (_mode) {
         case Inkscape::Rubberband::Mode::RECT:
             if (!_rect) {
                 _rect = make_canvasitem<CanvasItemRect>(_desktop->getCanvasControls());
-                _rect->set_stroke(style.getStroke());
                 _rect->set_stroke_width(style.stroke_width());
-                _rect->set_fill(style.getFill());
                 _rect->set_outline(style.getOutline());
                 _rect->set_outline_width(style.outline_width());
                 _rect->set_shadow(0xffffffff, 0); // Not a shadow
             }
             _rect->set_rect(Geom::Rect(_start, _end));
+            _rect->set_fill(fill_color);
+            _rect->set_stroke(stroke_color);
             _rect->set_visible(true);
             break;
         case Inkscape::Rubberband::Mode::TOUCHRECT:
             if (!_rect) {
                 _rect = make_canvasitem<CanvasItemRect>(_desktop->getCanvasControls());
-                _rect->set_stroke(style.getStroke());
                 _rect->set_stroke_width(style.stroke_width());
-                _rect->set_fill_pattern(get_cached_pattern(style.getFill()));
                 _rect->set_outline(style.getOutline());
                 _rect->set_outline_width(style.outline_width());
                 _rect->set_shadow(0xffffffff, 0); // Not a shadow
             }
             _rect->set_rect(Geom::Rect(_start, _end));
+            _rect->set_fill_pattern(get_cached_pattern(fill_color));
+            _rect->set_stroke(stroke_color);
             _rect->set_visible(true);
             break;
         case Inkscape::Rubberband::Mode::TOUCHPATH:
             if (!_touchpath) {
                 _touchpath = make_canvasitem<CanvasItemBpath>(_desktop->getCanvasControls()); // Should be sketch?
-                _touchpath->set_stroke(style.getStroke());
                 _touchpath->set_stroke_width(style.stroke_width());
-                _touchpath->set_fill(style.getFill(), SP_WIND_RULE_EVENODD);
                 _touchpath->set_outline(style.getOutline());
                 _touchpath->set_outline_width(style.outline_width());
             }
             _touchpath->set_bpath(_touchpath_curve);
+            _touchpath->set_fill(fill_color, SP_WIND_RULE_EVENODD);
+            _touchpath->set_stroke(stroke_color);
             _touchpath->set_visible(true);
             break;
         default:

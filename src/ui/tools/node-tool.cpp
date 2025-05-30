@@ -399,9 +399,9 @@ bool NodeTool::root_handler(CanvasEvent const &event)
 
     auto selection = _desktop->getSelection();
     auto prefs = Preferences::get();
-    auto rband = get_rubberband();
+    auto rubberband = get_rubberband();
 
-    if (!rband->isStarted()) {
+    if (!rubberband->isStarted()) {
         if (_multipath->event(this, event) || _selected_nodes->event(this, event)) {
             return true;
         }
@@ -418,12 +418,13 @@ bool NodeTool::root_handler(CanvasEvent const &event)
         auto const motion_dt = _desktop->w2d(motion_w);
 
         if (event.modifiers & GDK_BUTTON1_MASK) {
-            if (rband->isStarted()) {
-                rband->move(motion_dt);
+            if (rubberband->isStarted()) {
+                rubberband->move(motion_dt);
+                _updateSelectionColor(event);
             }
   
             auto touch_path = Modifier::get(Modifiers::Type::SELECT_TOUCH_PATH)->get_label();
-            if (rband->getMode() == Rubberband::Mode::TOUCHPATH) {
+            if (rubberband->getMode() == Rubberband::Mode::TOUCHPATH) {
                 defaultMessageContext()->setF(Inkscape::NORMAL_MESSAGE,
                     _("<b>Draw over</b> lines to select their nodes; release <b>%s</b> to switch to rubberband selection"), touch_path.c_str());
             } else {
@@ -432,9 +433,9 @@ bool NodeTool::root_handler(CanvasEvent const &event)
             }
             ret = true;
             return;
-        } else if (rband->isMoved()) {
-            // Mouse button is up, but rband is still kicking.
-            rband->stop();
+        } else if (rubberband->isMoved()) {
+            // Mouse button is up, but rubberband is still kicking.
+            rubberband->stop();
         }
 
         auto &m = _desktop->getNamedView()->snap_manager;
@@ -494,6 +495,9 @@ bool NodeTool::root_handler(CanvasEvent const &event)
     },
 
     [&] (KeyPressEvent const &event) {
+        _updateSelectionColor(event);
+        rubberband->move(_desktop->point());
+
         // Unconfigurable shortcuts
         switch (get_latin_keyval(event)) {
         case GDK_KEY_Escape: // deselect everything
@@ -542,6 +546,8 @@ bool NodeTool::root_handler(CanvasEvent const &event)
     },
 
     [&] (KeyReleaseEvent const &event) {
+        _updateSelectionColor(event);
+        rubberband->move(_desktop->point());
         update_tip(event);
     },
 
@@ -556,10 +562,10 @@ bool NodeTool::root_handler(CanvasEvent const &event)
         if (event.num_press == 1) {
 
             if (Modifier::get(Modifiers::Type::SELECT_TOUCH_PATH)->active(event.modifiers)) {
-                rband->setMode(Rubberband::Mode::TOUCHPATH);
-                rband->setHandle(RUBBERBAND_TOUCHPATH);
+                rubberband->setMode(Rubberband::Mode::TOUCHPATH);
+                rubberband->setHandle(RUBBERBAND_TOUCHPATH);
             }
-            rband->start(_desktop, desktop_pt, true);
+            rubberband->start(_desktop, desktop_pt, true);
             ret = true;
             return;
 
@@ -590,12 +596,12 @@ bool NodeTool::root_handler(CanvasEvent const &event)
             return;
         }
 
-        if (rband->isStarted() && rband->isMoved()) {
-            select_area(rband->getPath(), event);
+        if (rubberband->isStarted() && rubberband->isMoved()) {
+            select_area(rubberband->getPath(), event);
         } else {
             select_point(event);
         }
-        rband->stop();
+        rubberband->stop();
         ret = true;
         return;
     },
@@ -807,6 +813,21 @@ void NodeTool::mouseover_changed(Inkscape::UI::ControlPoint *p) {
 
 void NodeTool::handleControlUiStyleChange() {
     this->_multipath->updateHandles();
+}
+
+void NodeTool::_updateSelectionColor(CanvasEvent const &event)
+{
+    auto rubberband = get_rubberband();
+    if (Modifier::get(Modifiers::Type::NODE_REMOVE_FROM)->active(event.modifiersAfter())) {
+        // if Ctrl+Shift is pressed, change rubberband operation to remove
+        rubberband->setOperation(Rubberband::Operation::REMOVE);
+    } else if (Modifier::get(Modifiers::Type::NODE_INVERT)->active(event.modifiersAfter())) {
+        // Ctrl pressed, it's an invert option
+        rubberband->setOperation(Rubberband::Operation::INVERT);
+    } else {
+        // Nothing pressed, switch back to add
+        rubberband->setOperation(Rubberband::Operation::ADD);
+    }
 }
 
 } // namespace Inkscape::UI::Tools

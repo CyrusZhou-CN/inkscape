@@ -40,6 +40,11 @@ public:
         TOUCHPATH,
         TOUCHRECT
     };
+    enum class Operation {
+        ADD,
+        INVERT,
+        REMOVE
+    };
 
     void start(SPDesktop *desktop, Geom::Point const &p, bool tolerance = false);
     void move(Geom::Point const &p);
@@ -53,10 +58,14 @@ public:
     Geom::Path getPath() const;
 
     static constexpr auto default_mode = Rubberband::Mode::RECT;
+    static constexpr auto default_operation = Rubberband::Operation::ADD;
     static constexpr auto default_handle = CanvasItemCtrlType::RUBBERBAND_RECT;
+    static constexpr auto default_deselect_handle = CanvasItemCtrlType::RUBBERBAND_DESELECT;
+    static constexpr auto default_invert_handle = CanvasItemCtrlType::RUBBERBAND_INVERT;
 
     void setMode(Rubberband::Mode mode) { _mode = mode; };
-    void setHandle(CanvasItemCtrlType handle) { _handle = handle; };
+    void setOperation(Rubberband::Operation operation) { _operation = operation; };
+    void setHandle(CanvasItemCtrlType handle) { _handle = handle; _invert_handle = _get_invert_handle(handle); _deselect_handle = _get_deselect_handle(handle); };
 
     static Rubberband* get(SPDesktop *desktop);
 
@@ -71,14 +80,31 @@ private:
 
     CanvasItemPtr<CanvasItemRect> _rect;
     CanvasItemPtr<CanvasItemBpath> _touchpath;
-    CanvasItemCtrlType _handle = CanvasItemCtrlType::RUBBERBAND_RECT; // Used for styling through css
+    CanvasItemCtrlType _handle = default_handle; // Used for styling through css
+    CanvasItemCtrlType _invert_handle = default_invert_handle;
+    CanvasItemCtrlType _deselect_handle = default_deselect_handle;
     SPCurve *_touchpath_curve = nullptr;
+
+    CanvasItemCtrlType _get_deselect_handle(CanvasItemCtrlType handle) {
+        // use default deselect mechanism unless it's a freehand path
+        if (handle == CanvasItemCtrlType::RUBBERBAND_TOUCHPATH_SELECT) {
+            return CanvasItemCtrlType::RUBBERBAND_TOUCHPATH_DESELECT;
+        } else {
+            return CanvasItemCtrlType::RUBBERBAND_DESELECT;
+        }
+    }
+
+    CanvasItemCtrlType _get_invert_handle(CanvasItemCtrlType handle) {
+        // use default invert mechanism unless it's a freehand path
+        return handle == CanvasItemCtrlType::RUBBERBAND_TOUCHPATH_SELECT ? CanvasItemCtrlType::RUBBERBAND_TOUCHPATH_INVERT : CanvasItemCtrlType::RUBBERBAND_INVERT;
+    }
 
     void delete_canvas_items();
 
     bool _started = false;
     bool _moved = false;
     Rubberband::Mode _mode = default_mode;
+    Rubberband::Operation _operation = default_operation;
     double _tolerance = 0.0;
 };
 
