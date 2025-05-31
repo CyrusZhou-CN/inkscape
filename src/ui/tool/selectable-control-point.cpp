@@ -58,7 +58,7 @@ bool SelectableControlPoint::clicked(ButtonReleaseEvent const &event)
     }
 
     if (event.button != 1) return false;
-    if (held_shift(event)) {
+    if (mod_shift(event)) {
         if (selected()) {
             _selection.erase(this);
         } else {

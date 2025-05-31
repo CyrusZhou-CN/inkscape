@@ -363,7 +363,7 @@ bool Handle::_eventHandler(Tools::ToolBase *event_context, CanvasEvent const &ev
                        hold the handle in place; otherwise, process normally.
                        this handle is guaranteed not to be degenerate. */
 
-                    if (held_only_shift(event) && _parent->_type == NODE_CUSP) {
+                    if (mod_shift_only(event) && _parent->_type == NODE_CUSP) {
                         // make opposite handle collinear,
                         // but preserve length, unless degenerate
                         if (other()->isDegenerate())
@@ -389,7 +389,7 @@ bool Handle::_eventHandler(Tools::ToolBase *event_context, CanvasEvent const &ev
                        hold the handle in place; otherwise, process normally.
                        this handle is guaranteed not to be degenerate. */
 
-                    if (held_only_shift(event) &&
+                    if (mod_shift_only(event) &&
                         (_parent->_type == NODE_CUSP || _parent->_type == NODE_SMOOTH || _parent->_type == NODE_AUTO)) {
                         // make opposite handle collinear, and of equal length
                         other()->setRelativePos(-relativePos());
@@ -448,10 +448,10 @@ void Handle::dragged(Geom::Point &new_pos, MotionEvent const &event)
     Geom::Point parent_pos = _parent->position();
     Geom::Point origin = _last_drag_origin();
     SnapManager &sm = _desktop->getNamedView()->snap_manager;
-    bool snap = held_shift(event) ? false : sm.someSnapperMightSnap();
+    bool snap = mod_shift(event) ? false : sm.someSnapperMightSnap();
     std::optional<Inkscape::Snapper::SnapConstraint> ctrl_constraint;
 
-    if (held_alt(event)) {
+    if (mod_alt(event)) {
         // with Alt, preserve length of the handle
         new_pos = parent_pos + Geom::unit_vector(new_pos - parent_pos) * _saved_length;
         snap = false;
@@ -462,14 +462,14 @@ void Handle::dragged(Geom::Point &new_pos, MotionEvent const &event)
         _saved_dir = Geom::unit_vector(relativePos());
     }
 
-    if (_parent->type() != NODE_CUSP && held_shift(event) && !held_alt(event)) {
+    if (_parent->type() != NODE_CUSP && mod_shift(event) && !mod_alt(event)) {
         // if we hold Shift, and node is not cusp, link the two handles
         other()->setRelativePos(-relativePos());
     }
 
     // with Ctrl, constrain to M_PI/rotationsnapsperpi increments from vertical
     // and the original position.
-    if (held_ctrl(event)) {
+    if (mod_ctrl(event)) {
         Inkscape::Preferences *prefs = Inkscape::Preferences::get();
         int snaps = 2 * prefs->getIntLimited("/options/rotationsnapsperpi/value", 12, 1, 1000);
 
@@ -538,7 +538,7 @@ void Handle::dragged(Geom::Point &new_pos, MotionEvent const &event)
 
     // with Shift, if the node is cusp, rotate the other handle as well
     if (_parent->type() == NODE_CUSP && !_drag_out) {
-        if (held_shift(event)) {
+        if (mod_shift(event)) {
             Geom::Point other_relpos = _saved_other_pos - parent_pos;
             other_relpos *= Geom::Rotate(Geom::angle_between(origin - parent_pos, new_pos - parent_pos));
             other()->setRelativePos(other_relpos);
@@ -548,7 +548,7 @@ void Handle::dragged(Geom::Point &new_pos, MotionEvent const &event)
         }
     }
     // if it is BSpline, but SHIFT or CONTROL are not pressed, fix it in the original position
-    if (_pm()._isBSpline() && !held_shift(event) && !held_ctrl(event)) {
+    if (_pm()._isBSpline() && !mod_shift(event) && !mod_ctrl(event)) {
         new_pos = _last_drag_origin();
     }
     _pm().update();
@@ -581,7 +581,7 @@ void Handle::ungrabbed(ButtonReleaseEvent const *event)
 
 bool Handle::clicked(ButtonReleaseEvent const &event)
 {
-    if (held_ctrl(event) && !held_alt(event)) {
+    if (mod_ctrl(event) && !mod_alt(event)) {
         // we want to skip the Node Auto when we cycle between nodes
         if (_parent->type() == NODE_SMOOTH) {
             _parent->setType(NODE_AUTO, false);
@@ -627,9 +627,9 @@ Glib::ustring Handle::_getTip(unsigned state) const
     Glib::ustring s = C_("Status line hint",
                          "node control handle"); // not expected
 
-    if (state_held_alt(state) && !isBSpline) {
-        if (state_held_ctrl(state)) {
-            if (state_held_shift(state) && can_shift_rotate) {
+    if (mod_alt(state) && !isBSpline) {
+        if (mod_ctrl(state)) {
+            if (mod_shift(state) && can_shift_rotate) {
                 s = format_tip(C_("Status line hint", "<b>Shift+Ctrl+Alt</b>: "
                                                       "preserve length and snap rotation angle to %g° increments, "
                                                       "and rotate both handles"),
@@ -640,15 +640,15 @@ Glib::ustring Handle::_getTip(unsigned state) const
                                snap_increment_degrees());
             }
         } else {
-            if (state_held_shift(state) && can_shift_rotate) {
+            if (mod_shift(state) && can_shift_rotate) {
                 s = C_("Path handle tip", "<b>Shift+Alt</b>: preserve handle length and rotate both handles");
             } else {
                 s = C_("Path handle tip", "<b>Alt</b>: preserve handle length while dragging");
             }
         }
     } else {
-        if (state_held_ctrl(state)) {
-            if (state_held_shift(state) && can_shift_rotate && !isBSpline) {
+        if (mod_ctrl(state)) {
+            if (mod_shift(state) && can_shift_rotate && !isBSpline) {
                 s = format_tip(C_("Path handle tip", "<b>Shift+Ctrl</b>: "
                                                      "snap rotation angle to %g° increments, and rotate both handles"),
                                snap_increment_degrees());
@@ -660,9 +660,9 @@ Glib::ustring Handle::_getTip(unsigned state) const
                                                      "snap rotation angle to %g° increments, click to retract"),
                                snap_increment_degrees());
             }
-        } else if (state_held_shift(state) && can_shift_rotate && !isBSpline) {
+        } else if (mod_shift(state) && can_shift_rotate && !isBSpline) {
             s = C_("Path handle tip", "<b>Shift</b>: rotate both handles by the same angle");
-        } else if (state_held_shift(state) && isBSpline) {
+        } else if (mod_shift(state) && isBSpline) {
             s = C_("Path handle tip", "<b>Shift</b>: move handle");
         } else {
             char const *handletype = handle_type_to_localized_string(_parent->_type);
@@ -1365,7 +1365,7 @@ bool Node::grabbed(MotionEvent const &event)
     }
 
     // Dragging out handles with Shift + drag on a node.
-    if (!held_shift(event)) {
+    if (!mod_shift(event)) {
         return false;
     }
 
@@ -1410,7 +1410,7 @@ void Node::dragged(Geom::Point &new_pos, MotionEvent const &event)
     sm.setup(_desktop);
 
     // do not snap when Shift is pressed
-    bool snap = !held_shift(event) && sm.someSnapperMightSnap();
+    bool snap = !mod_shift(event) && sm.someSnapperMightSnap();
 
     Inkscape::SnappedPoint sp;
     std::vector<Inkscape::SnapCandidatePoint> unselected;
@@ -1474,12 +1474,12 @@ void Node::dragged(Geom::Point &new_pos, MotionEvent const &event)
         scp_free.addVector(*back_direction);
     }
 
-    if (held_ctrl(event)) {
+    if (mod_ctrl(event)) {
         // We're about to consider a constrained snap, which is already limited to 1D
         // Therefore tangential or perpendicular snapping will not be considered, and therefore
         // all calls above to scp_free.addVector() and scp_free.addOrigin() can be neglected
         std::vector<Inkscape::Snapper::SnapConstraint> constraints;
-        if (held_alt(event)) { // with Ctrl+Alt, constrain to handle lines
+        if (mod_alt(event)) { // with Ctrl+Alt, constrain to handle lines
             Inkscape::Preferences *prefs = Inkscape::Preferences::get();
             int snaps = prefs->getIntLimited("/options/rotationsnapsperpi/value", 12, 1, 1000);
             double min_angle = M_PI / snaps;
@@ -1513,13 +1513,13 @@ void Node::dragged(Geom::Point &new_pos, MotionEvent const &event)
             }
 
             sp = sm.multipleConstrainedSnaps(Inkscape::SnapCandidatePoint(new_pos, _snapSourceType()), constraints,
-                                             held_shift(event));
+                                             mod_shift(event));
         } else {
             // with Ctrl and no Alt: constrain to axes
             constraints.emplace_back(origin, Geom::Point(1, 0));
             constraints.emplace_back(origin, Geom::Point(0, 1));
             sp = sm.multipleConstrainedSnaps(Inkscape::SnapCandidatePoint(new_pos, _snapSourceType()), constraints,
-                                             held_shift(event));
+                                             mod_shift(event));
         }
         new_pos = sp.getPoint();
     } else if (snap) {
@@ -1614,7 +1614,7 @@ Glib::ustring Node::_getTip(unsigned state) const
     Glib::ustring s = C_("Path node tip",
                          "node handle"); // not expected
 
-    if (state_held_shift(state)) {
+    if (mod_shift(state)) {
         bool can_drag_out = (_next() && _front.isDegenerate()) || (_prev() && _back.isDegenerate());
 
         if (can_drag_out) {
@@ -1629,15 +1629,15 @@ Glib::ustring Node::_getTip(unsigned state) const
         }
     }
 
-    else if (state_held_ctrl(state)) {
-        if (state_held_alt(state)) {
+    else if (mod_ctrl(state)) {
+        if (mod_alt(state)) {
             s = C_("Path node tip", "<b>Ctrl+Alt</b>: move along handle lines or line segment, click to delete node");
         } else {
             s = C_("Path node tip", "<b>Ctrl</b>: move along axes, click to change node type");
         }
     }
 
-    else if (state_held_alt(state)) {
+    else if (mod_alt(state)) {
         s = C_("Path node tip", "<b>Alt</b>: sculpt nodes");
     }
 

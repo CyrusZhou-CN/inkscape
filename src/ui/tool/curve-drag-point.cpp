@@ -108,13 +108,13 @@ void CurveDragPoint::dragged(Geom::Point &new_pos, MotionEvent const &event)
         first->front()->move(first->front()->position() + offset0);
         second->back()->move(second->back()->position() + offset1);
     } else if (weight >= 0.8) {
-        if (held_shift(event)) {
+        if (mod_shift(event)) {
             second->back()->move(new_pos);
         } else {
             second->move(second->position() + delta);
         }
     } else if (weight <= 0.2) {
-        if (held_shift(event)) {
+        if (mod_shift(event)) {
             first->back()->move(new_pos);
         } else {
             first->move(first->position() + delta);
@@ -142,12 +142,12 @@ bool CurveDragPoint::clicked(ButtonReleaseEvent const &event)
     if (!second) return false;
 
     // insert nodes on Ctrl+Alt+click
-    if (held_ctrl(event) && held_alt(event)) {
+    if (mod_ctrl(event) && mod_alt(event)) {
         _insertNode(false);
         return true;
     }
 
-    if (held_shift(event)) {
+    if (mod_shift(event)) {
         // if both nodes of the segment are selected, deselect;
         // otherwise add to selection
         if (first->selected() && second->selected())  {
@@ -169,11 +169,11 @@ bool CurveDragPoint::clicked(ButtonReleaseEvent const &event)
 bool CurveDragPoint::doubleclicked(ButtonReleaseEvent const &event)
 {
     if (event.button != 1 || !first || !first.next()) return false;
-    if (held_ctrl(event)) {
+    if (mod_ctrl(event)) {
         _pm.deleteSegments();
         _pm.update(true);
         _pm._commit(_("Remove segment"));
-    } else if (held_alt(event)) {
+    } else if (mod_alt(event)) {
         _pm.setSegmentType(Inkscape::UI::SEGMENT_STRAIGHT);
         _pm.update(true);
         _pm._commit(_("Straighten segments"));
@@ -199,19 +199,19 @@ Glib::ustring CurveDragPoint::_getTip(unsigned state) const
     if (_pm.empty()) return "";
     if (!first || !first.next()) return "";
     bool linear = first->front()->isDegenerate() && first.next()->back()->isDegenerate();
-    if (state_held_shift(state) && _pm._isBSpline()) {
+    if (mod_shift(state) && _pm._isBSpline()) {
         return C_("Path segment tip",
             "<b>Shift</b>: drag to open or move BSpline handles");
     }
-    if (state_held_shift(state)) {
+    if (mod_shift(state)) {
         return C_("Path segment tip",
             "<b>Shift</b>: click to toggle segment selection");
     }
-    if (state_held_ctrl(state) && state_held_alt(state)) {
+    if (mod_ctrl(state) && mod_alt(state)) {
         return C_("Path segment tip",
             "<b>Ctrl+Alt</b>: click to insert a node");
     }
-    if (state_held_alt(state)) {
+    if (mod_alt(state)) {
         return C_("Path segment tip", "<b>Alt</b>: double click to change line type");
     }
     if (_pm._isBSpline()) {

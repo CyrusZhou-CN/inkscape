@@ -295,7 +295,7 @@ LPECloneOriginal::doBeforeEffect (SPLPEItem const* lpeitem){
         return;
     }
     bool init = false;
-    if (!linkeditem.linksToItem() || isOnClipboard()) {
+    if (!linkeditem.linksToItem()) {
         linkeditem.read_from_SVG();
         init = true;
     } 

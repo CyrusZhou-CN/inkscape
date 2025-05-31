@@ -512,7 +512,7 @@ bool NodeTool::root_handler(CanvasEvent const &event)
 
         case GDK_KEY_a:
         case GDK_KEY_A:
-            if (held_ctrl(event) && held_alt(event)) {
+            if (mod_ctrl(event) && mod_alt(event)) {
                 _selected_nodes->selectAll();
                 // Ctrl+A is handled in selection-chemistry.cpp via verb
                 update_tip(event);
@@ -523,7 +523,7 @@ bool NodeTool::root_handler(CanvasEvent const &event)
 
         case GDK_KEY_h:
         case GDK_KEY_H:
-            if (held_only_ctrl(event)) {
+            if (mod_ctrl_only(event)) {
                 prefs->setBool("/tools/nodes/show_handles", !show_handles);
                 ret = true;
                 return;
@@ -657,7 +657,7 @@ void NodeTool::update_tip(CanvasEvent const &event)
 
         auto modifiers_after = event.modifiers ^ modifiers_change;
 
-        if (state_held_shift(modifiers_after)) {
+        if (mod_shift(modifiers_after)) {
             if (_last_over) {
                 message_context->set(Inkscape::NORMAL_MESSAGE,
                     C_("Node tool tip", "<b>Shift</b>: drag to add nodes to the selection, "
@@ -745,8 +745,8 @@ void NodeTool::select_area(Geom::Path const &path, ButtonReleaseEvent const &eve
         auto items = _desktop->getDocument()->getItemsInBox(_desktop->dkey, sel_doc);
         selection->setList(items);
     } else {
-        bool shift = held_shift(event);
-        bool ctrl = held_ctrl(event);
+        bool shift = mod_shift(event);
+        bool ctrl = mod_ctrl(event);
 
         if (!shift) {
             // A/C. No modifier, selects all nodes, or selects all other nodes.
@@ -781,7 +781,7 @@ void NodeTool::select_point(ButtonReleaseEvent const &event)
         // if no Shift, deselect
         // if there are nodes selected, the first click should deselect the nodes
         // and the second should deselect the items
-        if (!held_shift(event)) {
+        if (!mod_shift(event)) {
             if (_selected_nodes->empty()) {
                 selection->clear();
             } else {
@@ -789,7 +789,7 @@ void NodeTool::select_point(ButtonReleaseEvent const &event)
             }
         }
     } else {
-        if (held_shift(event)) {
+        if (mod_shift(event)) {
             selection->toggle(item_clicked);
         } else if (!selection->includes(item_clicked)) {
             selection->set(item_clicked);

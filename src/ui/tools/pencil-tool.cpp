@@ -515,7 +515,7 @@ bool PencilTool::_handleKeyPress(KeyPressEvent const &event) {
         case GDK_KEY_KP_Up:
         case GDK_KEY_KP_Down:
             // Prevent the zoom field from activation.
-            if (!state_held_only_ctrl(event.modifiers)) {
+            if (!mod_ctrl_only(event.modifiers)) {
                 ret = true;
             }
             break;
@@ -530,7 +530,7 @@ bool PencilTool::_handleKeyPress(KeyPressEvent const &event) {
             break;
         case GDK_KEY_z:
         case GDK_KEY_Z:
-            if (state_held_only_ctrl(event.modifiers) && _npoints != 0) {
+            if (mod_ctrl_only(event.modifiers) && _npoints != 0) {
                 // if drawing, cancel, otherwise pass it up for undo
                 if (_state != SP_PENCIL_CONTEXT_IDLE) {
                     _cancel();
@@ -540,7 +540,7 @@ bool PencilTool::_handleKeyPress(KeyPressEvent const &event) {
             break;
         case GDK_KEY_g:
         case GDK_KEY_G:
-            if (state_held_only_shift(event.modifiers)) {
+            if (mod_shift_only(event.modifiers)) {
                 _desktop->getSelection()->toGuides();
                 ret = true;
             }

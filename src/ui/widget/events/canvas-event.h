@@ -324,7 +324,7 @@ void inspect_event(E &&event, Fs... funcs)
 }
 
 /*
- * Modifier-testing functions. ("mod" variant.)
+ * Modifier-testing functions.
  */
 
 /// All modifiers used by Inkscape.
@@ -336,42 +336,23 @@ inline bool mod_alt(unsigned modifiers) { return modifiers & GDK_ALT_MASK; }
 inline bool mod_shift_only(unsigned modifiers) { return (modifiers & INK_GDK_MODIFIER_MASK) == GDK_SHIFT_MASK; }
 inline bool mod_ctrl_only(unsigned modifiers) { return (modifiers & INK_GDK_MODIFIER_MASK) == GDK_CONTROL_MASK; }
 inline bool mod_alt_only(unsigned modifiers) { return (modifiers & INK_GDK_MODIFIER_MASK) == GDK_ALT_MASK; }
-
-inline bool mod_shift(KeyEvent const &event) { return mod_shift(event.modifiers); }
-inline bool mod_ctrl(KeyEvent const &event) { return mod_ctrl(event.modifiers); }
-inline bool mod_alt(KeyEvent const &event) { return mod_alt(event.modifiers); }
-inline bool mod_shift_only(KeyEvent const &event) { return mod_shift_only(event.modifiers); }
-inline bool mod_ctrl_only(KeyEvent const &event) { return mod_ctrl_only(event.modifiers); }
-inline bool mod_alt_only(KeyEvent const &event) { return mod_alt_only(event.modifiers); }
-
-/*
- * Modifier-testing functions. ("held" variant.)
- * Todo: Merge these into the above, since they are the same.
- */
-
-inline bool state_held_shift(unsigned state) { return state & GDK_SHIFT_MASK; }
-inline bool state_held_ctrl(unsigned state) { return state & GDK_CONTROL_MASK; }
-inline bool state_held_alt(unsigned state) { return state & GDK_ALT_MASK; }
-inline bool state_held_only_shift(unsigned state) { return (state & INK_GDK_MODIFIER_MASK) == GDK_SHIFT_MASK; }
-inline bool state_held_only_ctrl(unsigned state) { return (state & INK_GDK_MODIFIER_MASK) == GDK_CONTROL_MASK; }
-inline bool state_held_only_alt(unsigned state) { return (state & INK_GDK_MODIFIER_MASK) == GDK_ALT_MASK; }
-inline bool state_held_any_modifiers(unsigned state) { return state & INK_GDK_MODIFIER_MASK; }
-inline bool state_held_no_modifiers(unsigned state) { return !state_held_any_modifiers(state); }
+inline bool mod_any(unsigned modifiers) { return modifiers & INK_GDK_MODIFIER_MASK; }
+inline bool mod_none(unsigned modifiers) { return !mod_any(modifiers); }
 
 template <unsigned button>
-inline bool state_held_button(unsigned state) { return (1 <= button || button <= 5) && (state & (GDK_BUTTON1_MASK << (button - 1))); }
+inline bool mod_button(unsigned modifiers) { return (1 <= button || button <= 5) && (modifiers & (GDK_BUTTON1_MASK << (button - 1))); }
 
-inline bool held_shift(CanvasEvent const &event) { return state_held_shift(event.modifiers); }
-inline bool held_ctrl(CanvasEvent const &event) { return state_held_ctrl(event.modifiers); }
-inline bool held_alt(CanvasEvent const &event) { return state_held_alt(event.modifiers); }
-inline bool held_only_shift(CanvasEvent const &event) { return state_held_only_shift(event.modifiers); }
-inline bool held_only_ctrl(CanvasEvent const &event) { return state_held_only_ctrl(event.modifiers); }
-inline bool held_only_alt(CanvasEvent const &event) { return state_held_only_alt(event.modifiers); }
-inline bool held_any_modifiers(CanvasEvent const &event) { return state_held_any_modifiers(event.modifiers); }
-inline bool held_no_modifiers(CanvasEvent const &event) { return state_held_no_modifiers(event.modifiers); }
+inline bool mod_shift(CanvasEvent const &event) { return mod_shift(event.modifiers); }
+inline bool mod_ctrl(CanvasEvent const &event) { return mod_ctrl(event.modifiers); }
+inline bool mod_alt(CanvasEvent const &event) { return mod_alt(event.modifiers); }
+inline bool mod_shift_only(CanvasEvent const &event) { return mod_shift_only(event.modifiers); }
+inline bool mod_ctrl_only(CanvasEvent const &event) { return mod_ctrl_only(event.modifiers); }
+inline bool mod_alt_only(CanvasEvent const &event) { return mod_alt_only(event.modifiers); }
+inline bool mod_any(CanvasEvent const &event) { return mod_any(event.modifiers); }
+inline bool mod_none(CanvasEvent const &event) { return mod_none(event.modifiers); }
 
 template <unsigned button>
-inline bool held_button(CanvasEvent const &event) { return state_held_button<button>(event.modifiers); }
+inline bool mod_button(CanvasEvent const &event) { return mod_button<button>(event.modifiers); }
 
 } // namespace Inkscape
 

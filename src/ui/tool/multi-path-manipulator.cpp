@@ -660,7 +660,7 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
             return;
         case GDK_KEY_i:
         case GDK_KEY_I:
-            if (held_only_shift(event)) {
+            if (mod_shift_only(event)) {
                 // Shift+I - insert nodes (alternate keybinding for Mac keyboards
                 //           that don't have the Insert key)
                 insertNodes();
@@ -670,7 +670,7 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
             break;
         case GDK_KEY_d:
         case GDK_KEY_D:
-            if (held_only_shift(event)) {
+            if (mod_shift_only(event)) {
                 duplicateNodes();
                 ret = true;
                 return;
@@ -678,13 +678,13 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
             break;
         case GDK_KEY_j:
         case GDK_KEY_J:
-            if (held_only_shift(event)) {
+            if (mod_shift_only(event)) {
                 // Shift+J - join nodes
                 joinNodes();
                 ret = true;
                 return;
             }
-            if (held_only_alt(event)) {
+            if (mod_alt_only(event)) {
                 // Alt+J - join segments
                 joinSegments();
                 ret = true;
@@ -693,7 +693,7 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
             break;
         case GDK_KEY_b:
         case GDK_KEY_B:
-            if (held_only_shift(event)) {
+            if (mod_shift_only(event)) {
                 // Shift+B - break nodes
                 breakNodes();
                 ret = true;
@@ -702,7 +702,7 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
             break;
         case GDK_KEY_c:
         case GDK_KEY_C:
-            if (held_only_shift(event)) {
+            if (mod_shift_only(event)) {
                 // Shift+C - make nodes cusp
                 setNodeType(NODE_CUSP);
                 ret = true;
@@ -711,7 +711,7 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
             break;
         case GDK_KEY_s:
         case GDK_KEY_S:
-            if (held_only_shift(event)) {
+            if (mod_shift_only(event)) {
                 // Shift+S - make nodes smooth
                 setNodeType(NODE_SMOOTH);
                 ret = true;
@@ -720,7 +720,7 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
             break;
         case GDK_KEY_a:
         case GDK_KEY_A:
-            if (held_only_shift(event)) {
+            if (mod_shift_only(event)) {
                 // Shift+A - make nodes auto-smooth
                 setNodeType(NODE_AUTO);
                 ret = true;
@@ -729,7 +729,7 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
             break;
         case GDK_KEY_y:
         case GDK_KEY_Y:
-            if (held_only_shift(event)) {
+            if (mod_shift_only(event)) {
                 // Shift+Y - make nodes symmetric
                 setNodeType(NODE_SYMMETRIC);
                 ret = true;
@@ -738,7 +738,7 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
             break;
         case GDK_KEY_r:
         case GDK_KEY_R:
-            if (held_only_shift(event)) {
+            if (mod_shift_only(event)) {
                 // Shift+R - reverse subpaths
                 reverseSubpaths();
                 ret = true;
@@ -747,7 +747,7 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
             break;
         case GDK_KEY_l:
         case GDK_KEY_L:
-            if (held_only_shift(event)) {
+            if (mod_shift_only(event)) {
                 // Shift+L - make segments linear
                 setSegmentType(SEGMENT_STRAIGHT);
                 ret = true;
@@ -755,7 +755,7 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
             }
         case GDK_KEY_u:
         case GDK_KEY_U:
-            if (held_only_shift(event)) {
+            if (mod_shift_only(event)) {
                 // Shift+U - make segments curves
                 setSegmentType(SEGMENT_CUBIC_BEZIER);
                 ret = true;
@@ -764,18 +764,18 @@ bool MultiPathManipulator::event(Inkscape::UI::Tools::ToolBase *tool, CanvasEven
         case GDK_KEY_Delete:
         case GDK_KEY_KP_Delete:
         case GDK_KEY_BackSpace:
-            if (held_shift(event)) {
+            if (mod_shift(event)) {
                 deleteNodes((NodeDeleteMode)prefs->getInt("/tools/node/delete-mode-shift", (int)NodeDeleteMode::inverse_auto));
-            } else if (held_alt(event)) {
+            } else if (mod_alt(event)) {
                 deleteNodes((NodeDeleteMode)prefs->getInt("/tools/node/delete-mode-alt", (int)NodeDeleteMode::gap_nodes));
-            } else if (held_ctrl(event)) {
+            } else if (mod_ctrl(event)) {
                 deleteNodes((NodeDeleteMode)prefs->getInt("/tools/node/delete-mode-ctrl", (int)NodeDeleteMode::line_segment));
             } else {
                 deleteNodes((NodeDeleteMode)prefs->getInt("/tools/node/delete-mode-default", (int)NodeDeleteMode::automatic));
             }
 
             // Delete any selected gradient nodes as well
-            tool->deleteSelectedDrag(held_ctrl(event));
+            tool->deleteSelectedDrag(mod_ctrl(event));
 
             ret = true;
             return;

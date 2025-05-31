@@ -54,8 +54,12 @@ std::vector<SPObject *> SatelliteParam::param_get_satellites()
     return objs;
 }
 
-bool SatelliteParam::param_readSVGValue(const gchar *strvalue)
+bool SatelliteParam::param_readSVGValue(char const *strvalue)
 {
+    if (strvalue && strvalue[0] == '#' && lperef->getObject() && std::strcmp(strvalue + 1, lperef->getObject()->getId()) == 0) {
+        return false;
+    }
+
     if (strvalue) {
         bool write = false;
         auto lpeitems = param_effect->getCurrrentLPEItems();
@@ -82,7 +86,7 @@ bool SatelliteParam::param_readSVGValue(const gchar *strvalue)
         }
         if (strvalue[0] == '#') {
             try {
-                lperef->attach(Inkscape::URI(g_strdup(strvalue)));
+                lperef->attach(Inkscape::URI(strvalue));
                 // lp:1299948
                 SPObject *new_ref = lperef->getObject();
                 if (new_ref) {

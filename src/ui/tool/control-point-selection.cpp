@@ -393,7 +393,7 @@ void ControlPointSelection::_pointDragged(Geom::Point &new_pos, MotionEvent cons
 {
     Geom::Point abs_delta = new_pos - _original_positions[_grabbed_point];
     double fdist = Geom::distance(_original_positions[_grabbed_point], _original_positions[_farthest_point]);
-    if (held_only_alt(event) && fdist > 0) {
+    if (mod_alt_only(event) && fdist > 0) {
         // Sculpting
         for (auto cur : _points) {
             Geom::Affine trans;
@@ -469,7 +469,7 @@ bool ControlPointSelection::_pointClicked(SelectableControlPoint *p, ButtonRelea
 {
     // clicking a selected node should toggle the transform handles between rotate and scale mode,
     // if they are visible
-    if (held_no_modifiers(event) && _handles_visible && p->selected()) {
+    if (mod_none(event) && _handles_visible && p->selected()) {
         toggleTransformHandlesMode();
         return true;
     }
@@ -533,14 +533,14 @@ void ControlPointSelection::_updateTransformHandles(bool preserve_center)
  * the modifier state of the supplied event. */
 bool ControlPointSelection::_keyboardMove(KeyPressEvent const &event, Geom::Point const &dir)
 {
-    if (held_ctrl(event)) return false;
+    if (mod_ctrl(event)) return false;
     unsigned num = 1 + Tools::gobble_key_events(event.keyval, 0);
 
     auto prefs = Preferences::get();
 
     Geom::Point delta = dir * num; 
-    if (held_shift(event)) delta *= 10;
-    if (held_alt(event)) {
+    if (mod_shift(event)) delta *= 10;
+    if (mod_alt(event)) {
         delta /= _desktop->current_zoom();
     } else {
         double nudge = prefs->getDoubleLimited("/options/nudgedistance/value", 2, 0, 1000, "px");
@@ -605,7 +605,7 @@ bool ControlPointSelection::_keyboardRotate(KeyPressEvent const &event, int dir)
     }
 
     double angle;
-    if (held_alt(event)) {
+    if (mod_alt(event)) {
         // Rotate by "one pixel". We interpret this as rotating by an angle that causes
         // the topmost point of a circle circumscribed about the selection's bounding box
         // to move on an arc 1 screen pixel long.
@@ -641,7 +641,7 @@ bool ControlPointSelection::_keyboardScale(KeyPressEvent const &event, int dir)
     }
 
     double length_change;
-    if (held_alt(event)) {
+    if (mod_alt(event)) {
         // Scale by "one pixel". It means shrink/grow 1px for the larger dimension
         // of the bounding box.
         length_change = 1.0 / _desktop->current_zoom() * dir;
@@ -738,16 +738,16 @@ bool ControlPointSelection::event(Inkscape::UI::Tools::ToolBase *, CanvasEvent c
         // NOTE: H is horizontal flip, while Shift+H switches transform handle mode!
         case GDK_KEY_h:
         case GDK_KEY_H:
-            if (held_shift(keyevent)) {
+            if (mod_shift(keyevent)) {
                 toggleTransformHandlesMode();
                 return true;
             }
             // any modifiers except shift should cause no action
-            if (held_any_modifiers(keyevent)) break;
+            if (mod_any(keyevent)) break;
             return _keyboardFlip(Geom::X);
         case GDK_KEY_v:
         case GDK_KEY_V:
-            if (held_any_modifiers(keyevent)) break;
+            if (mod_any(keyevent)) break;
             return _keyboardFlip(Geom::Y);
         default:
             break;

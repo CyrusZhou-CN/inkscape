@@ -1673,7 +1673,7 @@ Inkscape::XML::Node *PathManipulator::_getXMLNode()
 bool PathManipulator::_nodeClicked(Node *n, ButtonReleaseEvent const &event)
 {
     if (event.button != 1) return false;
-    if (held_alt(event) && held_ctrl(event)) {
+    if (mod_alt(event) && mod_ctrl(event)) {
         // Ctrl+Alt+click: delete nodes
         hideDragPoint();
         NodeList::iterator iter = NodeList::get_iterator(n);
@@ -1695,7 +1695,7 @@ bool PathManipulator::_nodeClicked(Node *n, ButtonReleaseEvent const &event)
         _multi_path_manipulator._doneWithCleanup(_("Delete node"));
 
         return true;
-    } else if (held_ctrl(event)) {
+    } else if (mod_ctrl(event)) {
         // Ctrl+click: cycle between node types
         if (!n->isEndNode()) {
             n->setType(static_cast<NodeType>((n->type() + 1) % NODE_LAST_REAL_TYPE));
@@ -1721,7 +1721,7 @@ void PathManipulator::_handleUngrabbed()
 bool PathManipulator::_handleClicked(Handle *h, ButtonReleaseEvent const &event)
 {
     // retracting by Alt+Click
-    if (event.button == 1 && held_alt(event)) {
+    if (event.button == 1 && mod_alt(event)) {
         h->move(h->parent()->position());
         update();
         _commit(_("Retract handle"));
